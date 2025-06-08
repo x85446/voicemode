@@ -1,6 +1,13 @@
-# voice-mcp
+# voice-mcp - Converse with Claude Code
 
 A Model Context Protocol (MCP) server that enables voice interactions with Claude and other LLMs. Requires only an OpenAI API key and microphone/speakers.
+
+## 🎯 Simple Requirements
+
+**All you need to get started:**
+
+1. **🔑 OpenAI API Key** (or compatible service) - for speech-to-text and text-to-speech
+2. **🎤 Computer with microphone and speakers** OR **☁️ LiveKit server** ([LiveKit Cloud](https://docs.livekit.io/home/cloud/) or [self-hosted](https://github.com/livekit/livekit))
 
 ## Quick Start
 
