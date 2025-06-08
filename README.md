@@ -1,6 +1,15 @@
-# voice-mcp
+# voice-mcp - Converse with Claude Code
 
-MCP servers that enable voice interactions between LLMs and users through LiveKit.
+A Model Context Protocol (MCP) server that enables voice interactions between LLMs and users through multiple transport methods.
+
+## 🎯 Simple Requirements
+
+**All you need to get started:**
+
+1. **🔑 OpenAI API Key** (or compatible service) - for speech-to-text and text-to-speech
+2. **🎤 Computer with microphone and speakers** OR **☁️ LiveKit server** ([LiveKit Cloud](https://docs.livekit.io/home/cloud/) or [self-hosted](https://github.com/livekit/livekit))
+
+That's it! No complex setup, no local services to install.
 
 ## Quick Start with Python Package
 
@@ -8,10 +17,13 @@ The easiest way to use voice-mcp is through our Python package:
 
 ```bash
 # Install with pip
-pip install livekit-voice-mcp
+pip install voice-mcp
 
 # Or use with uvx (no installation needed)
-uvx livekit-voice-mcp
+uvx voice-mcp
+
+# Or use pipx for isolated installation  
+pipx install voice-mcp
 ```
 
 ### Configure Claude Desktop
@@ -24,14 +36,13 @@ Add to your Claude Desktop configuration file:
 ```json
 {
   "mcpServers": {
-    "livekit-voice": {
-      "command": "uvx",
-      "args": ["livekit-voice-mcp"],
+    "voice-mcp": {
+      "command": "voice-mcp",
       "env": {
-        "LIVEKIT_URL": "wss://your-app.livekit.cloud",
-        "LIVEKIT_API_KEY": "your-api-key",
-        "LIVEKIT_API_SECRET": "your-api-secret",
-        "OPENAI_API_KEY": "your-openai-key"
+        "OPENAI_API_KEY": "your-openai-key",
+        "LIVEKIT_URL": "ws://localhost:7880",
+        "LIVEKIT_API_KEY": "devkey",
+        "LIVEKIT_API_SECRET": "secret"
       }
     }
   }
@@ -42,57 +53,51 @@ Restart Claude Desktop and you can now use voice commands!
 
 ## Overview
 
-voice-mcp provides Model Context Protocol (MCP) servers that allow LLMs to communicate via voice, enabling natural spoken conversations with AI assistants.
+voice-mcp provides a Model Context Protocol server that allows LLMs to communicate via voice, enabling natural spoken conversations with AI assistants. 
 
-### Architecture
-
-```
-┌─────────────────────┐     ┌──────────────────┐     ┌─────────────────────┐
-│   Claude/LLM        │     │  LiveKit Server  │     │  Voice Frontend     │
-│   (MCP Client)      │◄────►│  (Port 7880)     │◄────►│  (Port 3001)        │
-└─────────────────────┘     └──────────────────┘     └─────────────────────┘
-         │                            │
-         │                            │
-         ▼                            ▼
-┌─────────────────────┐     ┌──────────────────┐
-│  Voice MCP Server   │     │   Agent.py       │
-│  (ask_voice_question│     │  (Voice Logic)   │
-│   check_room_status)│     └──────────────────┘
-└─────────────────────┘              │
-                                     │
-                    ┌────────────────┴────────────────┐
-                    │                                 │
-                    ▼                                 ▼
-         ┌──────────────────┐             ┌──────────────────┐
-         │  Whisper.cpp     │             │  Kokoro TTS      │
-         │  (Port 2022)     │             │  (Port 8880)     │
-         │  Local STT       │             │  Local TTS       │
-         └──────────────────┘             └──────────────────┘
-```
+**🎯 Simple & Flexible:**
+- **Works immediately** with just an OpenAI API key + microphone/speakers
+- **Local microphone**: Direct recording and playback on your machine  
+- **LiveKit rooms**: Real-time voice communication through [LiveKit Cloud](https://docs.livekit.io/home/cloud/) or [self-hosted](https://github.com/livekit/livekit)
+- **OpenAI-compatible**: Use any compatible STT/TTS service (local or cloud)
+- **Automatic transport selection**: Seamlessly switches between available methods
 
 ## Features
 
-- **Voice Input/Output**: Bidirectional voice communication through LiveKit
-- **Speech-to-Text**: Local whisper.cpp or OpenAI Whisper API
-- **Text-to-Speech**: Multiple TTS providers (OpenAI TTS + local Kokoro-FastAPI)
-- **Local STT/TTS**: Cost-free local speech recognition and voice generation
-- **Real-time Streaming**: Low-latency voice interactions
-- **MCP Integration**: Works seamlessly with Claude and other MCP-compatible clients
+- **🎙️ Voice Input/Output**: Bidirectional voice communication
+- **🗣️ Text-to-Speech**: OpenAI TTS API support with configurable voices
+- **👂 Speech-to-Text**: OpenAI Whisper API with local fallback support
+- **🔄 Multiple Transports**: Local microphone or LiveKit room-based communication
+- **⚡ Real-time**: Low-latency voice interactions
+- **🔧 MCP Integration**: Works seamlessly with Claude and other MCP-compatible clients
+- **🛡️ Privacy-conscious**: Clear user consent requirements for microphone access
+
+## Available MCP Tools
+
+Once configured, Claude can use these voice interaction tools:
+
+- **`ask_voice_question`**: Ask a question via voice and get a text response
+- **`speak_text`**: Convert text to speech and play it through speakers
+- **`listen_for_speech`**: Listen for speech input and convert to text
+- **`check_room_status`**: Check active LiveKit rooms and participants
+- **`check_audio_devices`**: List available audio input and output devices
 
 ## Installation Options
 
-### Option 1: Python Package (Recommended for Users)
+### Option 1: Python Package (Recommended)
 
 ```bash
 # Install globally
-pip install livekit-voice-mcp
+pip install voice-mcp
 
 # Or use without installation
-uvx livekit-voice-mcp
+uvx voice-mcp
 
 # Or use pipx for isolated installation  
-pipx install livekit-voice-mcp
+pipx install voice-mcp
 ```
+
+**Requirements**: Python 3.8+, UV package manager
 
 ### Option 2: Container Image
 
@@ -112,8 +117,8 @@ See [CONTAINER.md](CONTAINER.md) for detailed container usage instructions.
 
 ```bash
 # Clone the repository
-git clone https://github.com/mbailey/voice-mcp-public.git
-cd voice-mcp-public
+git clone https://github.com/mbailey/voice-mcp.git
+cd voice-mcp
 
 # Build container image
 make build-container
@@ -124,90 +129,110 @@ make install
 
 ## Configuration
 
-### Python Package Configuration
+### 🔑 Required: OpenAI API Key
 
-Set environment variables before running:
+The only required configuration is your OpenAI API key (or compatible service):
+
 ```bash
+export OPENAI_API_KEY="your-openai-key"
+```
+
+**That's it!** voice-mcp works out of the box with:
+- **Local microphone and speakers** (automatic detection)
+- **OpenAI Whisper API** (speech-to-text) 
+- **OpenAI TTS API** (text-to-speech)
+
+### 🔧 Optional: Custom Service Endpoints
+
+Use alternative OpenAI-compatible services by setting base URLs:
+
+```bash
+# For local Whisper STT (if running)
+export STT_BASE_URL="http://localhost:2022/v1"
+
+# For local TTS services (if running)  
+export TTS_BASE_URL="http://localhost:8880/v1"
+
+# Customize voice and models
+export TTS_VOICE="nova"        # Voice for text-to-speech
+export TTS_MODEL="tts-1"       # TTS model
+export STT_MODEL="whisper-1"   # STT model
+```
+
+### ☁️ Optional: LiveKit Server
+
+For LiveKit room-based communication instead of local microphone:
+
+```bash
+# LiveKit Cloud (https://docs.livekit.io/home/cloud/)
 export LIVEKIT_URL="wss://your-app.livekit.cloud"
-export LIVEKIT_API_KEY="your-api-key"
+export LIVEKIT_API_KEY="your-api-key" 
 export LIVEKIT_API_SECRET="your-api-secret"
-export OPENAI_API_KEY="your-openai-key"  # For STT/TTS
+
+# OR self-hosted LiveKit (https://github.com/livekit/livekit)
+export LIVEKIT_URL="ws://localhost:7880"
+export LIVEKIT_API_KEY="devkey"
+export LIVEKIT_API_SECRET="secret"
+```
+
+### 🐛 Optional: Debug Mode
+
+```bash
+export VOICE_MCP_DEBUG="true"  # Saves audio files and enables verbose logging
 ```
 
 ### Local Development Configuration
 
-Copy the example configuration and customize:
+For local development with the full stack (including Kokoro TTS and Whisper STT):
+
 ```bash
 cp .env.example .env.local
 # Edit .env.local with your settings
 ```
 
-### Provider Selection
-voice-mcp supports multiple STT/TTS providers with smart fallback:
-
-#### TTS Providers
-- **`TTS_PROVIDER=auto`** (default): Try Kokoro → OpenAI → LiveKit
-- **`TTS_PROVIDER=kokoro`**: Use only local Kokoro TTS  
-- **`TTS_PROVIDER=openai`**: Use only OpenAI TTS
-
-#### STT Configuration
-- **Local Whisper**: Automatically used when available at `http://localhost:2022`
-- **OpenAI Whisper**: Fallback when local whisper is not running
-
-### Key Configuration Options
-```bash
-# TTS Provider (auto/kokoro/openai)
-TTS_PROVIDER=auto
-
-# Kokoro TTS (local)
-KOKORO_URL=http://127.0.0.1:8880
-KOKORO_ENABLED=true
-
-# Whisper STT (local)
-WHISPER_BASE_URL=http://localhost:2022
-
-# OpenAI (fallback for both STT and TTS)
-OPENAI_API_KEY=your_key_here
-
-# LiveKit
-LIVEKIT_URL=ws://localhost:7880
-```
-
 ## Usage
 
-### Using the Python Package
+### Using with Claude Desktop
 
-Once installed and configured in Claude Desktop, you can use voice commands:
+1. Install and configure voice-mcp in Claude Desktop (see Quick Start above)
+2. Ask Claude: "Can you help me with voice?"
+3. Claude will use voice MCP tools to enable voice communication
+4. Speak your questions and hear responses
 
-1. Ask Claude: "Can you help me with voice?"
-2. Claude will use the voice MCP tools to communicate
-3. Speak your questions and hear responses
+### Example Voice Interactions
 
-Available MCP tools:
-- `ask_voice_question`: Ask a question via voice and get a text response
-- `check_room_status`: Check active voice rooms and participants
+```
+You: "Claude, can you ask me a question via voice?"
+Claude: [Uses ask_voice_question tool]
+You: [Speaks response]
+Claude: [Processes voice input and responds]
 
-### Local Development Usage
+You: "Claude, please read this text aloud"
+Claude: [Uses speak_text tool to convert text to speech]
 
-1. **Download external repositories:**
-   ```bash
-   mt sync
-   ```
+You: "What audio devices do I have available?"
+Claude: [Uses check_audio_devices tool to list devices]
+```
 
-2. **Install and build all dependencies:**
-   ```bash
-   make install
-   ```
+## Local Development Stack
 
-3. **Start the development environment:**
-   ```bash
-   make dev
-   ```
+For advanced users who want the full local voice processing stack:
 
-This will start:
+```bash
+# Download external repositories
+mt sync
+
+# Install and build all dependencies
+make install
+
+# Start the complete development environment
+make dev
+```
+
+This starts:
 - LiveKit server (port 7880)
-- Kokoro TTS (port 8880) 
-- Whisper STT (port 2022)
+- Kokoro TTS (port 8880) - Local text-to-speech
+- Whisper STT (port 2022) - Local speech-to-text
 - Voice assistant frontend (port 3001)
 
 Individual components:
@@ -220,70 +245,61 @@ make whisper-start    # Start Whisper STT
 
 ## Architecture
 
-- **livekit-voice-mcp**: MCP server for voice interactions
-- **livekit-admin-mcp**: Administrative tools for LiveKit management  
-- **livekit-agent**: Python agent handling voice processing
-- **kokoro-fastapi**: Local TTS server providing OpenAI-compatible API
-- **whisper.cpp**: Local STT server providing OpenAI-compatible API
-
-## Kokoro-FastAPI (Local TTS)
-
-voice-mcp includes Kokoro-FastAPI for cost-free local text-to-speech generation:
-
-- **70+ Voice Options**: Multiple languages and voice styles
-- **OpenAI Compatible**: Drop-in replacement for OpenAI TTS API
-- **Web Interface**: Interactive voice testing at http://127.0.0.1:8880/web/
-- **Browser Support**: Chrome/Chromium recommended (Firefox has streaming limitations)
-
-### Kokoro Commands
-```bash
-make kokoro-start     # Start Kokoro TTS service
-make kokoro-stop      # Stop Kokoro TTS service  
-make kokoro-build     # Build Kokoro container
-make test-kokoro      # Test Kokoro functionality
+```
+┌─────────────────────┐     ┌──────────────────┐     ┌─────────────────────┐
+│   Claude/LLM        │     │  LiveKit Server  │     │  Voice Frontend     │
+│   (MCP Client)      │◄────►│  (Port 7880)     │◄────►│  (Port 3001)        │
+└─────────────────────┘     └──────────────────┘     └─────────────────────┘
+         │                            │
+         │                            │
+         ▼                            ▼
+┌─────────────────────┐     ┌──────────────────┐
+│  Voice MCP Server   │     │   Local Services │
+│  • ask_voice_question     │  • Whisper STT   │
+│  • speak_text       │     │  • Kokoro TTS    │
+│  • listen_for_speech│     │  • OpenAI APIs   │
+│  • check_room_status│     └──────────────────┘
+│  • check_audio_devices
+└─────────────────────┘
 ```
 
-### Quick Test
+## Troubleshooting
+
+### Common Issues
+
+1. **"No microphone access"**: Ensure your system allows microphone access for the terminal/application
+2. **"UV not found"**: Install UV package manager: `curl -LsSf https://astral.sh/uv/install.sh | sh`
+3. **"OpenAI API error"**: Verify your `OPENAI_API_KEY` is set correctly
+4. **"No audio output"**: Check your system's audio settings and available devices
+
+### Debug Mode
+
+Enable debug mode for detailed logging and audio file saving:
+
 ```bash
-# Generate speech using Kokoro API
-curl -X POST http://127.0.0.1:8880/v1/audio/speech \
-  -H "Content-Type: application/json" \
-  -d '{"input": "Hello from Kokoro!", "voice": "nova"}' \
-  --output test.mp3
+export VOICE_MCP_DEBUG=true
+voice-mcp
 ```
 
-## Whisper.cpp (Local STT)
+Debug files are saved to `~/voice-mcp_recordings/`
 
-voice-mcp includes whisper.cpp for cost-free local speech-to-text:
+## 📋 Requirements Summary
 
-- **Hardware Optimization**: Automatically selects best model for your hardware
-- **OpenAI Compatible**: Drop-in replacement for OpenAI Whisper API
-- **Multiple Models**: From tiny to large-v3-turbo
-- **GPU Support**: CUDA, Metal, and Vulkan acceleration
+### ✅ Minimal Requirements (Get Started Immediately)
 
-### Whisper Commands
-```bash
-make whisper-build    # Build Whisper container
-make whisper-start    # Start Whisper STT service
-make whisper-stop     # Stop Whisper STT service
-```
+1. **🔑 OpenAI API key** - Or any OpenAI-compatible service (local Whisper, local TTS, etc.)
+2. **🎤 Computer with microphone and speakers** - OR LiveKit server ([cloud](https://docs.livekit.io/home/cloud/)/[self-hosted](https://github.com/livekit/livekit))
 
-### Quick Test
-```bash
-# Test whisper API (OpenAI-compatible)
-curl -X POST http://localhost:2022/v1/audio/transcriptions \
-  -H "Content-Type: multipart/form-data" \
-  -F "file=@audio.wav"
-```
+### 🔧 Technical Requirements
 
-## Requirements
+- **Python 3.8+** (for the package)
+- **UV package manager** (automatically installed with the package)
 
-- Python 3.8+
-- LiveKit server  
-- Podman or Docker (for Kokoro TTS only)
-- Build tools (cmake, make, gcc/g++) for Whisper.cpp
-- OpenAI API key (optional, for cloud fallback)
-- `mt` command for managing external repos
+### 🚀 Optional Enhancements
+
+- **[LiveKit Cloud](https://docs.livekit.io/home/cloud/) or [self-hosted server](https://github.com/livekit/livekit)** - For room-based voice communication
+- **Local STT/TTS services** - For cost-free speech processing
+- **Development tools** - For building the full local stack (Docker, cmake, etc.)
 
 ## Development
 

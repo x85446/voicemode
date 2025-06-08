@@ -2,6 +2,15 @@
 
 A Model Context Protocol (MCP) server that enables voice interactions between LLMs and users through multiple transport methods.
 
+## 🎯 Simple Requirements
+
+**All you need to get started:**
+
+1. **🔑 OpenAI API Key** (or compatible service) - for speech-to-text and text-to-speech
+2. **🎤 Computer with microphone and speakers** OR **☁️ LiveKit server** ([LiveKit Cloud](https://docs.livekit.io/home/cloud/) or [self-hosted](https://github.com/livekit/livekit))
+
+That's it! No complex setup, no local services to install.
+
 ## Quick Start with Python Package
 
 The easiest way to use voice-mcp is through our Python package:
@@ -44,11 +53,14 @@ Restart Claude Desktop and you can now use voice commands!
 
 ## Overview
 
-voice-mcp provides a Model Context Protocol server that allows LLMs to communicate via voice, enabling natural spoken conversations with AI assistants through multiple transport methods:
+voice-mcp provides a Model Context Protocol server that allows LLMs to communicate via voice, enabling natural spoken conversations with AI assistants. 
 
-- **Local microphone**: Direct recording and playback on your machine
-- **LiveKit rooms**: Real-time voice communication through LiveKit infrastructure
-- **Automatic fallback**: Seamlessly switches between transport methods
+**🎯 Simple & Flexible:**
+- **Works immediately** with just an OpenAI API key + microphone/speakers
+- **Local microphone**: Direct recording and playback on your machine  
+- **LiveKit rooms**: Real-time voice communication through [LiveKit Cloud](https://docs.livekit.io/home/cloud/) or [self-hosted](https://github.com/livekit/livekit)
+- **OpenAI-compatible**: Use any compatible STT/TTS service (local or cloud)
+- **Automatic transport selection**: Seamlessly switches between available methods
 
 ## Features
 
@@ -117,27 +129,55 @@ make install
 
 ## Configuration
 
-### Environment Variables
+### 🔑 Required: OpenAI API Key
 
-Set these environment variables before running:
+The only required configuration is your OpenAI API key (or compatible service):
 
 ```bash
-# Required
-export OPENAI_API_KEY="your-openai-key"  # For STT/TTS
+export OPENAI_API_KEY="your-openai-key"
+```
 
-# Optional - LiveKit configuration
+**That's it!** voice-mcp works out of the box with:
+- **Local microphone and speakers** (automatic detection)
+- **OpenAI Whisper API** (speech-to-text) 
+- **OpenAI TTS API** (text-to-speech)
+
+### 🔧 Optional: Custom Service Endpoints
+
+Use alternative OpenAI-compatible services by setting base URLs:
+
+```bash
+# For local Whisper STT (if running)
+export STT_BASE_URL="http://localhost:2022/v1"
+
+# For local TTS services (if running)  
+export TTS_BASE_URL="http://localhost:8880/v1"
+
+# Customize voice and models
+export TTS_VOICE="nova"        # Voice for text-to-speech
+export TTS_MODEL="tts-1"       # TTS model
+export STT_MODEL="whisper-1"   # STT model
+```
+
+### ☁️ Optional: LiveKit Server
+
+For LiveKit room-based communication instead of local microphone:
+
+```bash
+# LiveKit Cloud (https://docs.livekit.io/home/cloud/)
+export LIVEKIT_URL="wss://your-app.livekit.cloud"
+export LIVEKIT_API_KEY="your-api-key" 
+export LIVEKIT_API_SECRET="your-api-secret"
+
+# OR self-hosted LiveKit (https://github.com/livekit/livekit)
 export LIVEKIT_URL="ws://localhost:7880"
 export LIVEKIT_API_KEY="devkey"
 export LIVEKIT_API_SECRET="secret"
+```
 
-# Optional - Service customization
-export STT_BASE_URL="https://api.openai.com/v1"  # Speech-to-text service
-export TTS_BASE_URL="https://api.openai.com/v1"  # Text-to-speech service
-export TTS_VOICE="nova"                           # Voice for TTS
-export TTS_MODEL="tts-1"                          # TTS model
-export STT_MODEL="whisper-1"                      # STT model
+### 🐛 Optional: Debug Mode
 
-# Optional - Debug mode
+```bash
 export VOICE_MCP_DEBUG="true"  # Saves audio files and enables verbose logging
 ```
 
@@ -243,18 +283,23 @@ voice-mcp
 
 Debug files are saved to `~/voice-mcp_recordings/`
 
-## Requirements
+## 📋 Requirements Summary
 
-- **Python 3.8+**
+### ✅ Minimal Requirements (Get Started Immediately)
+
+1. **🔑 OpenAI API key** - Or any OpenAI-compatible service (local Whisper, local TTS, etc.)
+2. **🎤 Computer with microphone and speakers** - OR LiveKit server ([cloud](https://docs.livekit.io/home/cloud/)/[self-hosted](https://github.com/livekit/livekit))
+
+### 🔧 Technical Requirements
+
+- **Python 3.8+** (for the package)
 - **UV package manager** (automatically installed with the package)
-- **OpenAI API key** (for STT/TTS)
-- **Audio devices** (microphone and speakers)
 
-Optional for local development:
-- LiveKit server
-- Podman or Docker (for local TTS/STT services)
-- Build tools (cmake, make, gcc/g++) for Whisper.cpp
-- `mt` command for managing external repositories
+### 🚀 Optional Enhancements
+
+- **[LiveKit Cloud](https://docs.livekit.io/home/cloud/) or [self-hosted server](https://github.com/livekit/livekit)** - For room-based voice communication
+- **Local STT/TTS services** - For cost-free speech processing
+- **Development tools** - For building the full local stack (Docker, cmake, etc.)
 
 ## Development
 
