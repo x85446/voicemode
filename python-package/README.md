@@ -1,4 +1,4 @@
-# voice-mcp
+# voice-mcp - Converse with Claude Code
 
 A Model Context Protocol (MCP) server that enables voice interactions between LLMs and users through multiple transport methods.
 
@@ -33,16 +33,64 @@ Add to your Claude Desktop configuration file:
 **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
 **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
 
+#### Using uvx (recommended)
+```json
+{
+  "mcpServers": {
+    "voice-mcp": {
+      "command": "uvx",
+      "args": ["voice-mcp"],
+      "env": {
+        "OPENAI_API_KEY": "your-openai-key"
+      }
+    }
+  }
+}
+```
+
+#### Using pip install
 ```json
 {
   "mcpServers": {
     "voice-mcp": {
       "command": "voice-mcp",
       "env": {
+        "OPENAI_API_KEY": "your-openai-key"
+      }
+    }
+  }
+}
+```
+
+#### Using python -m (if installed via pip)
+```json
+{
+  "mcpServers": {
+    "voice-mcp": {
+      "command": "python",
+      "args": ["-m", "voice_mcp"],
+      "env": {
+        "OPENAI_API_KEY": "your-openai-key"
+      }
+    }
+  }
+}
+```
+
+#### Optional: LiveKit Configuration
+If you want to use LiveKit instead of local microphone, add these environment variables:
+
+```json
+{
+  "mcpServers": {
+    "voice-mcp": {
+      "command": "uvx",
+      "args": ["voice-mcp"],
+      "env": {
         "OPENAI_API_KEY": "your-openai-key",
-        "LIVEKIT_URL": "ws://localhost:7880",
-        "LIVEKIT_API_KEY": "devkey",
-        "LIVEKIT_API_SECRET": "secret"
+        "LIVEKIT_URL": "wss://your-app.livekit.cloud",
+        "LIVEKIT_API_KEY": "your-api-key",
+        "LIVEKIT_API_SECRET": "your-api-secret"
       }
     }
   }
@@ -74,32 +122,84 @@ voice-mcp provides a Model Context Protocol server that allows LLMs to communica
 
 ## Available MCP Tools
 
-Once configured, Claude can use these voice interaction tools:
+| **Category** | **Tool** | **Description** |
+|-------------|----------|-----------------|
+| **Voice Interaction** | `ask_voice_question` | Ask a question via voice and get a text response. Supports auto-transport selection (local/LiveKit) |
+| **Speech Output** | `speak_text` | Convert text to speech and play it through speakers |
+| **Speech Input** | `listen_for_speech` | Listen for speech input and convert to text using configured STT service |
+| **Room Management** | `check_room_status` | Check active LiveKit rooms and participants |
+| **Device Management** | `check_audio_devices` | List available audio input and output devices on the system |
 
-- **`ask_voice_question`**: Ask a question via voice and get a text response
-- **`speak_text`**: Convert text to speech and play it through speakers
-- **`listen_for_speech`**: Listen for speech input and convert to text
-- **`check_room_status`**: Check active LiveKit rooms and participants
-- **`check_audio_devices`**: List available audio input and output devices
+## Example Usage Prompts
 
-## Installation Options
+Try these prompts with Claude to test voice functionality:
 
-### Option 1: Python Package (Recommended)
+- `"Can you ask me a question using voice and let me respond by speaking?"`
+- `"Please read this text aloud to me: [your text here]"`
+- `"Listen to what I'm saying for the next 10 seconds"`
+- `"What audio devices are available on my system?"`
+- `"Check if there are any active LiveKit rooms"`
+- `"Have a voice conversation with me - ask me about my day"`
+- `"Read me the latest commit message from this repository"`
+
+## Available Resources  
+
+Currently, voice-mcp does not provide static resources. All functionality is delivered through real-time tools.
+
+## Tool Reference
+
+### ask_voice_question
+**Purpose**: Interactive voice Q&A with automatic transport selection  
+**Parameters**:
+- `question` (required): The question to ask via voice
+- `transport` (optional): "auto", "local", or "livekit" (default: "auto")
+- `room_name` (optional): LiveKit room name for livekit transport
+- `duration` (optional): Recording duration in seconds for local transport (default: 5.0)
+- `timeout` (optional): Maximum wait time for response (default: 60.0)
+
+### speak_text  
+**Purpose**: Convert text to speech and play through speakers  
+**Parameters**:
+- `text` (required): Text to convert to speech
+
+### listen_for_speech
+**Purpose**: Record audio from microphone and convert to text  
+**Parameters**:
+- `duration` (optional): How long to listen in seconds (default: 5.0)
+
+### check_room_status
+**Purpose**: Get information about active LiveKit rooms  
+**Parameters**: None
+
+### check_audio_devices
+**Purpose**: List available audio input/output devices  
+**Parameters**: None
+
+## Installation
+
+### Using uvx (recommended)
+
+You can run voice-mcp directly without installation using `uvx`:
+
+```bash
+uvx voice-mcp
+```
+
+### Using pip
+
+Alternatively, you can install voice-mcp as a Python package:
 
 ```bash
 # Install globally
 pip install voice-mcp
 
-# Or use without installation
-uvx voice-mcp
-
 # Or use pipx for isolated installation  
 pipx install voice-mcp
 ```
 
-**Requirements**: Python 3.8+, UV package manager
+**Requirements**: Python 3.8+, UV package manager (automatically installed)
 
-### Option 2: Container Image
+### Alternative: Container Image
 
 ```bash
 # Pull and run the container
@@ -113,7 +213,7 @@ docker run -e OPENAI_API_KEY=your_key_here \
 
 See [CONTAINER.md](CONTAINER.md) for detailed container usage instructions.
 
-### Option 3: Local Development Setup
+### Alternative: Local Development Setup
 
 ```bash
 # Clone the repository
