@@ -2,6 +2,14 @@
 
 A Model Context Protocol (MCP) server that enables voice interactions between LLMs and users through multiple transport methods.
 
+## ✨ Features
+
+- **🎙️ Voice conversations** with Claude - ask questions and hear responses
+- **🔄 Multiple transports** - local microphone or LiveKit room-based communication  
+- **🗣️ OpenAI-compatible** - works with any STT/TTS service (local or cloud)
+- **⚡ Real-time** - low-latency voice interactions with automatic transport selection
+- **🔧 MCP Integration** - seamless with Claude Desktop and other MCP clients
+
 ## 🎯 Simple Requirements
 
 **All you need to get started:**
@@ -33,7 +41,9 @@ Add to your Claude Desktop configuration file:
 **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
 **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
 
-#### Using uvx (recommended)
+<details>
+<summary>Using uvx (recommended)</summary>
+
 ```json
 {
   "mcpServers": {
@@ -48,7 +58,36 @@ Add to your Claude Desktop configuration file:
 }
 ```
 
-#### Using pip install
+</details>
+
+<details>
+<summary>Using Docker/Podman</summary>
+
+```json
+{
+  "mcpServers": {
+    "voice-mcp": {
+      "command": "docker",
+      "args": [
+        "run", "--rm", "-i",
+        "--device", "/dev/snd",
+        "-e", "PULSE_RUNTIME_PATH=/run/user/1000/pulse",
+        "-v", "/run/user/1000/pulse:/run/user/1000/pulse",
+        "ghcr.io/mbailey/voice-mcp:latest"
+      ],
+      "env": {
+        "OPENAI_API_KEY": "your-openai-key"
+      }
+    }
+  }
+}
+```
+
+</details>
+
+<details>
+<summary>Using pip install</summary>
+
 ```json
 {
   "mcpServers": {
@@ -62,7 +101,11 @@ Add to your Claude Desktop configuration file:
 }
 ```
 
-#### Using python -m (if installed via pip)
+</details>
+
+<details>
+<summary>Using python -m (if installed via pip)</summary>
+
 ```json
 {
   "mcpServers": {
@@ -77,8 +120,12 @@ Add to your Claude Desktop configuration file:
 }
 ```
 
-#### Optional: LiveKit Configuration
-If you want to use LiveKit instead of local microphone, add these environment variables:
+</details>
+
+<details>
+<summary>With LiveKit Configuration</summary>
+
+If you want to use LiveKit instead of local microphone, add these environment variables to any of the above configurations:
 
 ```json
 {
@@ -96,6 +143,8 @@ If you want to use LiveKit instead of local microphone, add these environment va
   }
 }
 ```
+
+</details>
 
 Restart Claude Desktop and you can now use voice commands!
 
