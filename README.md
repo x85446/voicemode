@@ -1,4 +1,4 @@
-# voice-mcp - Converse with Claude Code
+# voice-mcp - Voice Mode for Claude Code
 
 A Model Context Protocol (MCP) server that enables voice interactions with Claude and other LLMs. Requires only an OpenAI API key and microphone/speakers.
 
