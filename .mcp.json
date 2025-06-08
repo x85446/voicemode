@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "livekit-admin-mcp": {
+      "type": "stdio",
+      "command": "./mcp-servers/livekit-admin-mcp",
+      "args": [],
+      "env": {}
+    },
+    "voice-mcp": {
+      "type": "stdio",
+      "command": "./mcp-servers/voice-mcp",
+      "args": []
+    }
+  }
+}

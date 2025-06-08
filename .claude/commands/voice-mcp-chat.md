@@ -1,0 +1,3 @@
+- Using tools from voice-mcp, have an ongoing two way conversation
+- End the chat when I indicate I want to end it
+- Keep your utterances brief unless a longer response is requested or necessary

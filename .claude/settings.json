@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__voice-mcp__ask_voice_question"
+    ],
+    "deny": []
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "voice-mcp"
+  ]
+}
