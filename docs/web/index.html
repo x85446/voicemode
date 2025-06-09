@@ -7,21 +7,33 @@
     <meta name="description" content="A Model Context Protocol (MCP) server that enables voice interactions with Claude and other LLMs. Requires only an OpenAI API key and microphone/speakers.">
     <style>
         body {
-            background-color: #000000;
+            background-color: #000011;
             color: #00FF00;
             font-family: "Comic Sans MS", cursive, sans-serif;
             margin: 0;
             padding: 20px;
             background-image: 
-                radial-gradient(circle at 20% 30%, #001100 2px, transparent 2px),
-                radial-gradient(circle at 80% 70%, #001100 1px, transparent 1px);
-            background-size: 50px 50px, 30px 30px;
-            animation: twinkle 3s infinite;
+                radial-gradient(circle at 10% 20%, #ffffff 1px, transparent 1px),
+                radial-gradient(circle at 80% 80%, #ffff88 1.5px, transparent 1.5px),
+                radial-gradient(circle at 40% 40%, #ffffff 0.8px, transparent 0.8px),
+                radial-gradient(circle at 20% 80%, #88ffff 1px, transparent 1px),
+                radial-gradient(circle at 80% 20%, #ffffff 1.2px, transparent 1.2px),
+                radial-gradient(circle at 60% 10%, #ffaaff 0.5px, transparent 0.5px);
+            background-size: 120px 120px, 150px 150px, 80px 80px, 200px 200px, 90px 90px, 60px 60px;
+            animation: twinkle 4s infinite, starfield 20s linear infinite;
+            overflow-x: hidden;
         }
 
         @keyframes twinkle {
             0%, 100% { opacity: 1; }
-            50% { opacity: 0.8; }
+            25% { opacity: 0.7; }
+            50% { opacity: 0.4; }
+            75% { opacity: 0.9; }
+        }
+
+        @keyframes starfield {
+            0% { background-position: 0px 0px, 0px 0px, 0px 0px, 0px 0px, 0px 0px, 0px 0px; }
+            100% { background-position: 120px 120px, -150px 150px, 80px -80px, -200px 200px, 90px 90px, -60px 60px; }
         }
 
         @keyframes blink {
@@ -210,12 +222,137 @@
             50% { background-position: 100% 50%; }
             100% { background-position: 0% 50%; }
         }
+
+        .comet {
+            position: fixed;
+            width: 3px;
+            height: 3px;
+            background: #ffffff;
+            border-radius: 50%;
+            box-shadow: 0 0 6px #ffffff, 0 0 12px #aaaaff;
+            z-index: 1;
+        }
+
+        .comet::after {
+            content: '';
+            position: absolute;
+            width: 80px;
+            height: 2px;
+            background: linear-gradient(90deg, rgba(255,255,255,0.8), transparent);
+            top: 50%;
+            left: -80px;
+            transform: translateY(-50%);
+        }
+
+        .comet1 {
+            animation: comet-fly1 8s linear infinite;
+        }
+
+        .comet2 {
+            animation: comet-fly2 12s linear infinite 4s;
+        }
+
+        @keyframes comet-fly1 {
+            0% { top: 10%; left: -100px; }
+            100% { top: 90%; left: calc(100% + 100px); }
+        }
+
+        @keyframes comet-fly2 {
+            0% { top: 20%; left: calc(100% + 100px); }
+            100% { top: 80%; left: -100px; }
+        }
+
+        .toaster {
+            position: fixed;
+            width: 60px;
+            height: 40px;
+            background: #C0C0C0;
+            border: 2px solid #808080;
+            border-radius: 8px;
+            z-index: 1;
+            font-size: 12px;
+            text-align: center;
+            line-height: 40px;
+            color: #000;
+            box-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .toaster::before {
+            content: '🍞';
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 16px;
+            animation: toast-bounce 0.5s ease-in-out infinite alternate;
+        }
+
+        .toaster::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-bottom: 12px solid #FF6B6B;
+            top: -12px;
+            right: 5px;
+            animation: flame-flicker 0.3s ease-in-out infinite alternate;
+        }
+
+        @keyframes toast-bounce {
+            0% { transform: translateX(-50%) translateY(0px); }
+            100% { transform: translateX(-50%) translateY(-3px); }
+        }
+
+        @keyframes flame-flicker {
+            0% { border-bottom-color: #FF6B6B; }
+            100% { border-bottom-color: #FF4444; }
+        }
+
+        .toaster1 {
+            animation: toaster-fly1 15s linear infinite;
+        }
+
+        .toaster2 {
+            animation: toaster-fly2 18s linear infinite 7s;
+        }
+
+        .toaster3 {
+            animation: toaster-fly3 20s linear infinite 14s;
+        }
+
+        @keyframes toaster-fly1 {
+            0% { top: 15%; left: -80px; transform: rotate(0deg); }
+            50% { top: 45%; left: 50%; transform: rotate(180deg); }
+            100% { top: 75%; left: calc(100% + 80px); transform: rotate(360deg); }
+        }
+
+        @keyframes toaster-fly2 {
+            0% { top: 60%; left: calc(100% + 80px); transform: rotate(0deg); }
+            50% { top: 30%; left: 30%; transform: rotate(-180deg); }
+            100% { top: 85%; left: -80px; transform: rotate(-360deg); }
+        }
+
+        @keyframes toaster-fly3 {
+            0% { top: 25%; left: -80px; transform: rotate(0deg) scale(0.8); }
+            25% { top: 70%; left: 25%; transform: rotate(90deg) scale(1.2); }
+            75% { top: 40%; left: 75%; transform: rotate(270deg) scale(0.9); }
+            100% { top: 65%; left: calc(100% + 80px); transform: rotate(360deg) scale(0.8); }
+        }
     </style>
 </head>
 <body>
+    <!-- Flying Elements -->
+    <div class="comet comet1"></div>
+    <div class="comet comet2"></div>
+    <div class="toaster toaster1"></div>
+    <div class="toaster toaster2"></div>
+    <div class="toaster toaster3"></div>
+
     <div class="container">
         <div class="marquee-container">
-            <div class="marquee">🔥 WELCOME TO THE OFFICIAL voice-mcp HOMEPAGE! 🔥 NOW WITH 100% MORE VOICE! 🎤</div>
+            <div class="marquee">🔥 WELCOME TO THE OFFICIAL voice-mcp HOMEPAGE! 🔥 NOW WITH 100% MORE VOICE! 🎤 ⭐ FEATURING FLYING TOASTERS! ⭐</div>
         </div>
 
         <h1 class="blink">🎙️ voice-mcp 🎙️</h1>
