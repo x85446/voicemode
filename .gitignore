@@ -46,3 +46,4 @@ test_output/
 .aider*
 
 .claude/settings.local.json
+docs/promote

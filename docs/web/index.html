@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>voice-mcp - Voice Mode for Claude Code</title>
+    <meta name="description" content="A Model Context Protocol (MCP) server that enables voice interactions with Claude and other LLMs. Requires only an OpenAI API key and microphone/speakers.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        header {
+            padding: 2rem 0;
+            text-align: center;
+            color: white;
+        }
+
+        .logo {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .tagline {
+            font-size: 1.2rem;
+            font-weight: 300;
+            opacity: 0.9;
+            margin-bottom: 2rem;
+        }
+
+        .main-content {
+            background: white;
+            border-radius: 20px;
+            padding: 3rem;
+            margin: 2rem 0;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin: 3rem 0;
+        }
+
+        .feature {
+            text-align: center;
+            padding: 2rem;
+            border-radius: 15px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            transition: transform 0.3s ease;
+        }
+
+        .feature:hover {
+            transform: translateY(-5px);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature h3 {
+            color: #444;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .feature p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .quick-start {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 2rem;
+            margin: 3rem 0;
+        }
+
+        .quick-start h2 {
+            color: #333;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .code-block {
+            background: #1a1a1a;
+            color: #f8f8f2;
+            padding: 1.5rem;
+            border-radius: 10px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+
+        .cta-section {
+            text-align: center;
+            padding: 3rem 0;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 1rem 2rem;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem 0;
+            color: rgba(255,255,255,0.8);
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .logo {
+                font-size: 2rem;
+            }
+            
+            .main-content {
+                padding: 1.5rem;
+                margin: 1rem 0;
+            }
+            
+            .features {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .feature {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">🎙️ voice-mcp</div>
+            <div class="tagline">Voice Mode for Claude Code</div>
+        </header>
+
+        <main class="main-content">
+            <div style="text-align: center; margin-bottom: 3rem;">
+                <h1 style="color: #333; font-size: 2.5rem; margin-bottom: 1rem;">Transform Your AI Interactions</h1>
+                <p style="font-size: 1.2rem; color: #666; max-width: 600px; margin: 0 auto;">
+                    A Model Context Protocol (MCP) server that enables natural voice conversations with Claude and other LLMs. 
+                    Just an OpenAI API key and your voice is all you need.
+                </p>
+            </div>
+
+            <div class="features">
+                <div class="feature">
+                    <div class="feature-icon">🎙️</div>
+                    <h3>Voice Conversations</h3>
+                    <p>Ask questions and hear responses in natural conversation flow with Claude</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🔄</div>
+                    <h3>Multiple Transports</h3>
+                    <p>Local microphone or LiveKit room-based communication with automatic selection</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🗣️</div>
+                    <h3>OpenAI Compatible</h3>
+                    <p>Works with any STT/TTS service - local Whisper, Kokoro, or cloud services</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">⚡</div>
+                    <h3>Real-time</h3>
+                    <p>Low-latency voice interactions with seamless transport switching</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🔧</div>
+                    <h3>MCP Integration</h3>
+                    <p>Seamless integration with Claude Desktop and other MCP clients</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🚀</div>
+                    <h3>Easy Setup</h3>
+                    <p>Simple installation with uvx, Docker, or pip - get started in minutes</p>
+                </div>
+            </div>
+
+            <div class="quick-start">
+                <h2>🎯 Quick Start</h2>
+                <p style="text-align: center; margin-bottom: 1.5rem; color: #666;">
+                    Setup for Claude Code in three simple commands:
+                </p>
+                <div class="code-block">claude mcp add --scope user voice-mcp uvx voice-mcp
+export OPENAI_API_KEY=your-openai-key
+claude</div>
+                <p style="text-align: center; margin-top: 1rem; color: #666;">
+                    Then try: <em>"Can you ask me a question using voice?"</em>
+                </p>
+            </div>
+
+            <div style="background: #f0f8ff; border-radius: 15px; padding: 2rem; margin: 3rem 0; text-align: center;">
+                <h2 style="color: #333; margin-bottom: 1rem;">🎛️ All You Need</h2>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
+                    <div>
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">🔑</div>
+                        <strong>OpenAI API Key</strong>
+                        <div style="font-size: 0.9rem; color: #666; margin-top: 0.5rem;">For speech-to-text and text-to-speech</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">🎤</div>
+                        <strong>Microphone & Speakers</strong>
+                        <div style="font-size: 0.9rem; color: #666; margin-top: 0.5rem;">Or LiveKit server for room-based chat</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <div class="cta-section">
+            <a href="https://github.com/mbailey/voice-mcp" class="cta-button">
+                Get Started on GitHub →
+            </a>
+        </div>
+
+        <footer>
+            <p>MIT Licensed • Made with ❤️ for the MCP ecosystem</p>
+        </footer>
+    </div>
+</body>
+</html>
