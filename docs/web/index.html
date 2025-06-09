@@ -5,259 +5,291 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>voice-mcp - Voice Mode for Claude Code</title>
     <meta name="description" content="A Model Context Protocol (MCP) server that enables voice interactions with Claude and other LLMs. Requires only an OpenAI API key and microphone/speakers.">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        * {
+        body {
+            background-color: #000000;
+            color: #00FF00;
+            font-family: "Comic Sans MS", cursive, sans-serif;
             margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+            padding: 20px;
+            background-image: 
+                radial-gradient(circle at 20% 30%, #001100 2px, transparent 2px),
+                radial-gradient(circle at 80% 70%, #001100 1px, transparent 1px);
+            background-size: 50px 50px, 30px 30px;
+            animation: twinkle 3s infinite;
         }
 
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
+        @keyframes twinkle {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        @keyframes rainbow {
+            0% { color: #ff0000; }
+            16% { color: #ff8000; }
+            33% { color: #ffff00; }
+            50% { color: #00ff00; }
+            66% { color: #0080ff; }
+            83% { color: #8000ff; }
+            100% { color: #ff0000; }
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 800px;
             margin: 0 auto;
-            padding: 0 20px;
-        }
-
-        header {
-            padding: 2rem 0;
             text-align: center;
-            color: white;
         }
 
-        .logo {
-            font-size: 3rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+        h1 {
+            font-size: 48px;
+            color: #FF00FF;
+            text-shadow: 2px 2px 4px #333;
+            animation: rainbow 2s infinite;
+            margin: 20px 0;
+        }
+
+        .blink {
+            animation: blink 1s infinite;
         }
 
         .tagline {
-            font-size: 1.2rem;
-            font-weight: 300;
-            opacity: 0.9;
-            margin-bottom: 2rem;
+            font-size: 24px;
+            color: #FFFF00;
+            text-shadow: 1px 1px 2px #333;
+            margin-bottom: 30px;
         }
 
-        .main-content {
-            background: white;
-            border-radius: 20px;
-            padding: 3rem;
-            margin: 2rem 0;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        .welcome {
+            border: 3px solid #00FFFF;
+            padding: 20px;
+            margin: 30px 0;
+            background-color: #000080;
+            color: #FFFFFF;
         }
 
         .features {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 2rem;
-            margin: 3rem 0;
+            background-color: #800080;
+            border: 3px dashed #FFFF00;
+            padding: 20px;
+            margin: 30px 0;
         }
 
-        .feature {
-            text-align: center;
-            padding: 2rem;
-            border-radius: 15px;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            transition: transform 0.3s ease;
+        .features h2 {
+            color: #00FFFF;
+            font-size: 32px;
+            text-decoration: underline;
         }
 
-        .feature:hover {
-            transform: translateY(-5px);
+        .feature-list {
+            text-align: left;
+            color: #FFFFFF;
+            font-size: 18px;
+            line-height: 1.8;
         }
 
-        .feature-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-        }
-
-        .feature h3 {
-            color: #444;
-            margin-bottom: 1rem;
-            font-weight: 600;
-        }
-
-        .feature p {
-            color: #666;
-            font-size: 0.9rem;
+        .feature-list li {
+            margin: 10px 0;
         }
 
         .quick-start {
-            background: #f8f9fa;
-            border-radius: 15px;
-            padding: 2rem;
-            margin: 3rem 0;
+            background-color: #008000;
+            border: 5px ridge #FFFF00;
+            padding: 20px;
+            margin: 30px 0;
+            color: #FFFFFF;
         }
 
         .quick-start h2 {
-            color: #333;
-            margin-bottom: 1.5rem;
-            text-align: center;
+            color: #FFFF00;
+            font-size: 28px;
         }
 
         .code-block {
-            background: #1a1a1a;
-            color: #f8f8f2;
-            padding: 1.5rem;
-            border-radius: 10px;
-            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-            font-size: 0.9rem;
-            overflow-x: auto;
-            margin: 1rem 0;
+            background-color: #000000;
+            color: #00FF00;
+            border: 2px solid #00FFFF;
+            padding: 15px;
+            font-family: "Courier New", monospace;
+            font-size: 16px;
+            margin: 20px 0;
+            text-align: left;
         }
 
-        .cta-section {
-            text-align: center;
-            padding: 3rem 0;
+        .requirements {
+            background-color: #FF0000;
+            color: #FFFF00;
+            border: 3px solid #FFFFFF;
+            padding: 20px;
+            margin: 30px 0;
+            font-weight: bold;
         }
 
-        .cta-button {
+        .requirements h2 {
+            color: #FFFFFF;
+            text-shadow: 2px 2px 4px #000;
+        }
+
+        .footer {
+            background-color: #000080;
+            color: #00FFFF;
+            border: 2px solid #FFFF00;
+            padding: 15px;
+            margin-top: 40px;
+            font-size: 14px;
+        }
+
+        .visitor-counter {
+            background-color: #FFFFFF;
+            color: #000000;
+            border: 2px solid #000000;
+            padding: 10px;
+            margin: 20px 0;
+            font-family: "Arial", sans-serif;
+            font-weight: bold;
+        }
+
+        .link {
+            color: #00FFFF;
+            text-decoration: underline;
+        }
+
+        .link:visited {
+            color: #FF00FF;
+        }
+
+        .link:hover {
+            color: #FFFF00;
+            background-color: #FF0000;
+        }
+
+        .construction {
+            color: #FFFF00;
+            font-size: 20px;
+            margin: 20px 0;
+        }
+
+        .marquee-container {
+            background-color: #FF0000;
+            color: #FFFF00;
+            padding: 10px;
+            margin: 20px 0;
+            border: 2px solid #FFFFFF;
+            overflow: hidden;
+        }
+
+        .marquee {
+            animation: scroll-left 15s linear infinite;
+            white-space: nowrap;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        @keyframes scroll-left {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+
+        .gif-placeholder {
+            width: 100px;
+            height: 50px;
+            background: linear-gradient(45deg, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff);
+            background-size: 400% 400%;
+            animation: gradient-shift 1s ease-in-out infinite;
             display: inline-block;
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-            padding: 1rem 2rem;
-            text-decoration: none;
-            border-radius: 50px;
-            font-weight: 600;
-            font-size: 1.1rem;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            margin: 0 10px;
+            border: 2px solid #ffffff;
         }
 
-        .cta-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
-        }
-
-        footer {
-            text-align: center;
-            padding: 2rem 0;
-            color: rgba(255,255,255,0.8);
-            font-size: 0.9rem;
-        }
-
-        @media (max-width: 768px) {
-            .logo {
-                font-size: 2rem;
-            }
-            
-            .main-content {
-                padding: 1.5rem;
-                margin: 1rem 0;
-            }
-            
-            .features {
-                grid-template-columns: 1fr;
-                gap: 1rem;
-            }
-            
-            .feature {
-                padding: 1.5rem;
-            }
+        @keyframes gradient-shift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <header>
-            <div class="logo">🎙️ voice-mcp</div>
-            <div class="tagline">Voice Mode for Claude Code</div>
-        </header>
-
-        <main class="main-content">
-            <div style="text-align: center; margin-bottom: 3rem;">
-                <h1 style="color: #333; font-size: 2.5rem; margin-bottom: 1rem;">Transform Your AI Interactions</h1>
-                <p style="font-size: 1.2rem; color: #666; max-width: 600px; margin: 0 auto;">
-                    A Model Context Protocol (MCP) server that enables natural voice conversations with Claude and other LLMs. 
-                    Just an OpenAI API key and your voice is all you need.
-                </p>
-            </div>
-
-            <div class="features">
-                <div class="feature">
-                    <div class="feature-icon">🎙️</div>
-                    <h3>Voice Conversations</h3>
-                    <p>Ask questions and hear responses in natural conversation flow with Claude</p>
-                </div>
-                <div class="feature">
-                    <div class="feature-icon">🔄</div>
-                    <h3>Multiple Transports</h3>
-                    <p>Local microphone or LiveKit room-based communication with automatic selection</p>
-                </div>
-                <div class="feature">
-                    <div class="feature-icon">🗣️</div>
-                    <h3>OpenAI Compatible</h3>
-                    <p>Works with any STT/TTS service - local Whisper, Kokoro, or cloud services</p>
-                </div>
-                <div class="feature">
-                    <div class="feature-icon">⚡</div>
-                    <h3>Real-time</h3>
-                    <p>Low-latency voice interactions with seamless transport switching</p>
-                </div>
-                <div class="feature">
-                    <div class="feature-icon">🔧</div>
-                    <h3>MCP Integration</h3>
-                    <p>Seamless integration with Claude Desktop and other MCP clients</p>
-                </div>
-                <div class="feature">
-                    <div class="feature-icon">🚀</div>
-                    <h3>Easy Setup</h3>
-                    <p>Simple installation with uvx, Docker, or pip - get started in minutes</p>
-                </div>
-            </div>
-
-            <div class="quick-start">
-                <h2>🎯 Quick Start</h2>
-                <p style="text-align: center; margin-bottom: 1.5rem; color: #666;">
-                    Setup for Claude Code in three simple commands:
-                </p>
-                <div class="code-block">claude mcp add --scope user voice-mcp uvx voice-mcp
-export OPENAI_API_KEY=your-openai-key
-claude</div>
-                <p style="text-align: center; margin-top: 1rem; color: #666;">
-                    Then try: <em>"Can you ask me a question using voice?"</em>
-                </p>
-            </div>
-
-            <div style="background: #f0f8ff; border-radius: 15px; padding: 2rem; margin: 3rem 0; text-align: center;">
-                <h2 style="color: #333; margin-bottom: 1rem;">🎛️ All You Need</h2>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
-                    <div>
-                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">🔑</div>
-                        <strong>OpenAI API Key</strong>
-                        <div style="font-size: 0.9rem; color: #666; margin-top: 0.5rem;">For speech-to-text and text-to-speech</div>
-                    </div>
-                    <div>
-                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">🎤</div>
-                        <strong>Microphone & Speakers</strong>
-                        <div style="font-size: 0.9rem; color: #666; margin-top: 0.5rem;">Or LiveKit server for room-based chat</div>
-                    </div>
-                </div>
-            </div>
-        </main>
-
-        <div class="cta-section">
-            <a href="https://github.com/mbailey/voice-mcp" class="cta-button">
-                Get Started on GitHub →
-            </a>
+        <div class="marquee-container">
+            <div class="marquee">🔥 WELCOME TO THE OFFICIAL voice-mcp HOMEPAGE! 🔥 NOW WITH 100% MORE VOICE! 🎤</div>
         </div>
 
-        <footer>
+        <h1 class="blink">🎙️ voice-mcp 🎙️</h1>
+        <div class="tagline">*** VOICE MODE FOR CLAUDE CODE ***</div>
+        
+        <div class="construction">
+            <div class="gif-placeholder"></div>
+            🚧 UNDER CONSTRUCTION 🚧
+            <div class="gif-placeholder"></div>
+        </div>
+
+        <div class="welcome">
+            <h2>WELCOME TO THE FUTURE OF AI!</h2>
+            <p>You have entered the AMAZING world of voice-controlled artificial intelligence! This site is TOTALLY RADICAL and will blow your mind! 🤯</p>
+        </div>
+
+        <div class="visitor-counter">
+            👁️ VISITOR COUNTER: 000001337 👁️
+            <br>You are visitor #1337! You're so cool! 😎
+        </div>
+
+        <div class="features">
+            <h2>🌟 AWESOME FEATURES! 🌟</h2>
+            <ul class="feature-list">
+                <li>🎙️ <strong>VOICE CONVERSATIONS</strong> - Talk to Claude like it's your best friend!</li>
+                <li>🔄 <strong>MULTIPLE TRANSPORTS</strong> - Works with your microphone OR fancy LiveKit rooms!</li>
+                <li>🗣️ <strong>OpenAI COMPATIBLE</strong> - Uses the same API as the big boys! So professional!</li>
+                <li>⚡ <strong>REAL-TIME</strong> - Faster than your dial-up modem! (Not hard!)</li>
+                <li>🔧 <strong>MCP INTEGRATION</strong> - Plugs right into Claude Desktop! Amazing!</li>
+                <li>🚀 <strong>EASY SETUP</strong> - Even your grandma could install this! (Maybe!)</li>
+            </ul>
+        </div>
+
+        <div class="requirements">
+            <h2>🎯 ALL YOU NEED!</h2>
+            <p>🔑 <strong>OpenAI API Key</strong> - For the magic voice stuff!</p>
+            <p>🎤 <strong>Microphone & Speakers</strong> - So you can actually talk! Duh!</p>
+            <p><em>(Or get fancy with a LiveKit server if you're feeling adventurous!)</em></p>
+        </div>
+
+        <div class="quick-start">
+            <h2>🎮 QUICK START GUIDE!</h2>
+            <p><strong>Setup for Claude Code in THREE SIMPLE COMMANDS:</strong></p>
+            <div class="code-block">claude mcp add --scope user voice-mcp uvx voice-mcp<br>export OPENAI_API_KEY=your-openai-key<br>claude</div>
+            <p>Then try saying: <em>"Can you ask me a question using voice?"</em></p>
+            <p><strong>IT'S THAT EASY!</strong> 🎉</p>
+        </div>
+
+        <div style="text-align: center; margin: 30px 0;">
+            <div class="gif-placeholder"></div>
+            <div class="gif-placeholder"></div>
+            <div class="gif-placeholder"></div>
+        </div>
+
+        <div style="background-color: #FFFF00; color: #000000; padding: 20px; border: 3px solid #FF0000; margin: 30px 0;">
+            <h2>🚀 GET STARTED NOW!</h2>
+            <p><a href="https://github.com/mbailey/voice-mcp" class="link"><strong>CLICK HERE TO VISIT OUR GITHUB!</strong></a></p>
+            <p>Don't forget to ⭐ STAR ⭐ our repository!</p>
+        </div>
+
+        <div class="footer">
             <p>MIT Licensed • Made with ❤️ for the MCP ecosystem</p>
-        </footer>
+            <p>This page is best viewed in Netscape Navigator 4.0!</p>
+            <p>
+                <a href="mailto:webmaster@voice-mcp.com" class="link">📧 Email the Webmaster!</a> | 
+                <a href="#" class="link">🏠 Home</a> | 
+                <a href="#" class="link">📋 Guestbook</a>
+            </p>
+            <p><em>Last updated: Today! (Because we're always updating!)</em></p>
+        </div>
+
+        <div style="text-align: center; margin-top: 20px; font-size: 12px; color: #666;">
+            <p>This page is a tribute to the golden age of the internet! 🌐</p>
+        </div>
     </div>
 </body>
 </html>
