@@ -2,6 +2,8 @@
 
 A Model Context Protocol (MCP) server that enables voice interactions with Claude and other LLMs. Requires only an OpenAI API key and microphone/speakers.
 
+[![Build and Publish Voice MCP Container](https://github.com/mbailey/voice-mcp/actions/workflows/build-container.yml/badge.svg)](https://github.com/mbailey/voice-mcp/actions/workflows/build-container.yml)
+
 ## ✨ Features
 
 - **🎙️ Voice conversations** with Claude - ask questions and hear responses
@@ -22,8 +24,11 @@ A Model Context Protocol (MCP) server that enables voice interactions with Claud
 Setup for Claude Code:
 
 ```bash
-claude mcp add --scope user voice-mcp uvx voice-mcp
 export OPENAI_API_KEY=your-openai-key
+claude mcp add voice-mcp uvx voice-mcp
+# Alternatively, run a container image
+# docker pull ghcr.io/mbailey/voice-mcp:latest
+# claude mcp add voice-mcp podman run -e OPENAI_API_KEY ghcr.io/mbailey/voice-mcp:latest
 claude
 ```
 
