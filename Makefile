@@ -3,7 +3,7 @@
 # Detect container runtime
 CONTAINER_CMD := $(shell command -v podman 2> /dev/null || command -v docker 2> /dev/null)
 
-.PHONY: help build-container push-container clean test login build-package test-package publish-test publish
+.PHONY: help build-container push-container clean test login build-package test-package publish-test publish release
 
 # Default target
 help:
@@ -21,6 +21,9 @@ help:
 	@echo "  test-package     - Test package installation"
 	@echo "  publish-test     - Publish to TestPyPI"
 	@echo "  publish          - Publish to PyPI"
+	@echo ""
+	@echo "Release targets:"
+	@echo "  release          - Create a new release (tags, pushes, triggers GitHub workflow)"
 	@echo ""
 	@echo "  help            - Show this help message"
 
@@ -95,3 +98,36 @@ publish: build-package
 	cd python-package && python -m twine upload dist/*
 	@echo "Published to PyPI. Install with:"
 	@echo "  pip install voice-mcp"
+
+# Release - Create a new release and tag
+release:
+	@echo "Creating a new release..."
+	@echo ""
+	@echo "Current version in pyproject.toml: $$(grep -E '^version = ' python-package/pyproject.toml | cut -d'"' -f2)"
+	@echo ""
+	@read -p "Enter new version (e.g., 0.1.3): " version; \
+	if [ -z "$$version" ]; then \
+		echo "Error: Version cannot be empty"; \
+		exit 1; \
+	fi; \
+	echo "Updating version to $$version..."; \
+	sed -i.bak 's/^version = .*/version = "'$$version'"/' python-package/pyproject.toml && \
+	rm python-package/pyproject.toml.bak; \
+	git add python-package/pyproject.toml && \
+	git commit -m "chore: bump version to $$version" && \
+	git tag -a "v$$version" -m "Release v$$version" && \
+	echo "" && \
+	echo "✅ Version bumped and tagged!" && \
+	echo "" && \
+	echo "Pushing to GitHub..." && \
+	git push origin && \
+	git push origin "v$$version" && \
+	echo "" && \
+	echo "🚀 Release pipeline triggered!" && \
+	echo "" && \
+	echo "GitHub Actions will now:" && \
+	echo "1. Create a GitHub release with changelog" && \
+	echo "2. Publish to PyPI" && \
+	echo "3. Build and push container images" && \
+	echo "" && \
+	echo "Monitor progress at: https://github.com/mbailey/voice-mcp/actions"
