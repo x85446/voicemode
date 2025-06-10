@@ -1,0 +1,61 @@
+name: Create Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Extract version from tag
+      id: version
+      run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+    
+    - name: Generate release notes
+      id: notes
+      run: |
+        echo "NOTES<<EOF" >> $GITHUB_OUTPUT
+        echo "## What's Changed" >> $GITHUB_OUTPUT
+        echo "" >> $GITHUB_OUTPUT
+        # Get commits since last tag
+        PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+        if [ -n "$PREV_TAG" ]; then
+          git log --pretty=format:"- %s (%h)" $PREV_TAG..HEAD >> $GITHUB_OUTPUT
+        else
+          git log --pretty=format:"- %s (%h)" HEAD >> $GITHUB_OUTPUT
+        fi
+        echo "" >> $GITHUB_OUTPUT
+        echo "" >> $GITHUB_OUTPUT
+        echo "## Installation" >> $GITHUB_OUTPUT
+        echo "" >> $GITHUB_OUTPUT
+        echo "### PyPI" >> $GITHUB_OUTPUT
+        echo '```bash' >> $GITHUB_OUTPUT
+        echo "pip install voice-mcp==${{ steps.version.outputs.VERSION }}" >> $GITHUB_OUTPUT
+        echo '```' >> $GITHUB_OUTPUT
+        echo "" >> $GITHUB_OUTPUT
+        echo "### Claude Code" >> $GITHUB_OUTPUT
+        echo '```bash' >> $GITHUB_OUTPUT
+        echo "claude mcp add voice-mcp uvx voice-mcp" >> $GITHUB_OUTPUT
+        echo '```' >> $GITHUB_OUTPUT
+        echo "" >> $GITHUB_OUTPUT
+        echo "### Container" >> $GITHUB_OUTPUT
+        echo '```bash' >> $GITHUB_OUTPUT
+        echo "docker pull ghcr.io/mbailey/voice-mcp:${{ steps.version.outputs.VERSION }}" >> $GITHUB_OUTPUT
+        echo '```' >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+    
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ github.ref }}
+        name: Release v${{ steps.version.outputs.VERSION }}
+        body: ${{ steps.notes.outputs.NOTES }}
+        draft: false
+        prerelease: false
