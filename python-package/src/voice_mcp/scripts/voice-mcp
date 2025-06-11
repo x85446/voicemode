@@ -11,6 +11,7 @@
 #   "livekit-plugins-openai",
 #   "livekit-plugins-silero",
 #   "pydub",
+#   "simpleaudio",
 # ]
 # requires-python = "~=3.11.0"
 # ///
@@ -58,6 +59,12 @@ from pydub import AudioSegment
 from openai import AsyncOpenAI
 
 from fastmcp import FastMCP
+
+# Workaround for sounddevice stderr redirection issue
+# This prevents sounddevice from redirecting stderr to /dev/null
+# which can interfere with audio playback in MCP server context
+if hasattr(sd._sounddevice, '_ignore_stderr'):
+    sd._sounddevice._ignore_stderr = lambda: None
 
 # Load environment variables
 load_dotenv(dotenv_path=".env.local")
@@ -207,12 +214,47 @@ async def text_to_speech(text: str) -> bool:
                         logger.error(f"Error querying audio devices: {dev_e}")
                 
                 logger.debug(f"Playing audio with sounddevice at {audio.frame_rate}Hz...")
-                sd.play(samples, audio.frame_rate)
-                sd.wait()
                 
-                logger.info("✓ TTS played successfully")
-                os.unlink(tmp_file.name)
-                return True
+                # Try to ensure sounddevice doesn't interfere with stdout/stderr
+                try:
+                    # Force initialization before playing
+                    sd.default.samplerate = audio.frame_rate
+                    sd.default.channels = audio.channels
+                    
+                    sd.play(samples, audio.frame_rate)
+                    sd.wait()
+                    
+                    logger.info("✓ TTS played successfully")
+                    os.unlink(tmp_file.name)
+                    return True
+                except Exception as sd_error:
+                    logger.error(f"Sounddevice playback failed: {sd_error}")
+                    
+                    # Fallback to file-based playback methods
+                    logger.info("Attempting alternative playback methods...")
+                    
+                    # Try using PyDub's playback (requires simpleaudio or pyaudio)
+                    try:
+                        from pydub.playback import play as pydub_play
+                        logger.debug("Using PyDub playback...")
+                        pydub_play(audio)
+                        logger.info("✓ TTS played successfully with PyDub")
+                        os.unlink(tmp_file.name)
+                        return True
+                    except Exception as pydub_error:
+                        logger.error(f"PyDub playback failed: {pydub_error}")
+                    
+                    # Last resort: save to user's home directory for manual playback
+                    try:
+                        fallback_path = Path.home() / f"voice-mcp-audio-{datetime.now().strftime('%Y%m%d_%H%M%S')}.mp3"
+                        shutil.copy(tmp_file.name, fallback_path)
+                        logger.warning(f"Audio saved to {fallback_path} for manual playback")
+                        os.unlink(tmp_file.name)
+                        return False
+                    except Exception as save_error:
+                        logger.error(f"Failed to save audio file: {save_error}")
+                        os.unlink(tmp_file.name)
+                        return False
                 
             except Exception as e:
                 logger.error(f"Error playing audio: {e}")
