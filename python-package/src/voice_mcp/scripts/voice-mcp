@@ -63,8 +63,16 @@ from fastmcp import FastMCP
 # Workaround for sounddevice stderr redirection issue
 # This prevents sounddevice from redirecting stderr to /dev/null
 # which can interfere with audio playback in MCP server context
-if hasattr(sd._sounddevice, '_ignore_stderr'):
-    sd._sounddevice._ignore_stderr = lambda: None
+try:
+    # The internal module might be at different locations depending on version
+    if hasattr(sd, '_sounddevice'):
+        if hasattr(sd._sounddevice, '_ignore_stderr'):
+            sd._sounddevice._ignore_stderr = lambda: None
+    elif hasattr(sd, '_ignore_stderr'):
+        sd._ignore_stderr = lambda: None
+except Exception:
+    # If we can't find/override it, continue anyway
+    pass
 
 # Load environment variables
 load_dotenv(dotenv_path=".env.local")
@@ -518,6 +526,102 @@ async def livekit_ask_voice_question(question: str, room_name: str = "", timeout
 
 
 @mcp.tool()
+async def converse(
+    message: str,
+    wait_for_response: bool = True,
+    listen_duration: float = 10.0,
+    transport: Literal["auto", "local", "livekit"] = "auto",
+    room_name: str = "",
+    timeout: float = 60.0
+) -> str:
+    """Have a voice conversation - speak a message and optionally listen for response
+    
+    This is the primary function for voice interactions. It combines speaking and listening
+    in a natural conversational flow.
+    
+    PRIVACY NOTICE: When wait_for_response is True, this tool will access your microphone
+    to record audio for speech-to-text conversion. Audio is processed using the configured
+    STT service and is not permanently stored.
+    
+    Args:
+        message: The message to speak
+        wait_for_response: Whether to listen for a response after speaking (default: True)
+        listen_duration: How long to listen for response in seconds (default: 10.0)
+        transport: Transport method - "auto" (try LiveKit then local), "local" (direct mic), "livekit" (room-based)
+        room_name: LiveKit room name (only for livekit transport, auto-discovered if empty)
+        timeout: Maximum wait time for response in seconds (LiveKit only)
+    
+    Returns:
+        If wait_for_response is False: Confirmation that message was spoken
+        If wait_for_response is True: The voice response received (or error/timeout message)
+    
+    Examples:
+        - Ask a question: converse("What's your name?")
+        - Make a statement and wait: converse("Tell me more about that")
+        - Just speak without waiting: converse("Goodbye!", wait_for_response=False)
+    """
+    logger.info(f"Converse: '{message[:50]}{'...' if len(message) > 50 else ''}' (wait_for_response: {wait_for_response})")
+    
+    # If not waiting for response, just speak and return
+    if not wait_for_response:
+        try:
+            success = await text_to_speech(message)
+            return "✓ Message spoken successfully" if success else "✗ Failed to speak message"
+        except Exception as e:
+            logger.error(f"Speak error: {e}")
+            return f"Error: {str(e)}"
+    
+    # Otherwise, speak and then listen for response
+    # Determine transport method
+    if transport == "auto":
+        if await check_livekit_available():
+            transport = "livekit"
+            logger.info("Auto-selected LiveKit transport")
+        else:
+            transport = "local"
+            logger.info("Auto-selected local transport")
+    
+    if transport == "livekit":
+        # For LiveKit, use the existing function but with the message parameter
+        return await livekit_ask_voice_question(message, room_name, timeout)
+    
+    elif transport == "local":
+        # Local microphone approach
+        try:
+            # Speak the message
+            tts_success = await text_to_speech(message)
+            if not tts_success:
+                return "Error: Could not speak message"
+            
+            # Brief pause before listening
+            await asyncio.sleep(0.5)
+            
+            # Record response
+            logger.info(f"🎤 Listening for {listen_duration} seconds...")
+            audio_data = await asyncio.get_event_loop().run_in_executor(
+                None, record_audio, listen_duration
+            )
+            
+            if len(audio_data) == 0:
+                return "Error: Could not record audio"
+            
+            # Convert to text
+            response_text = await speech_to_text(audio_data)
+            
+            if response_text:
+                return f"Voice response: {response_text}"
+            else:
+                return "No speech detected"
+                
+        except Exception as e:
+            logger.error(f"Local voice error: {e}")
+            return f"Error: {str(e)}"
+    
+    else:
+        return f"Unknown transport: {transport}"
+
+
+@mcp.tool()
 async def ask_voice_question(
     question: str,
     transport: Literal["auto", "local", "livekit"] = "auto",
@@ -525,7 +629,9 @@ async def ask_voice_question(
     duration: float = 5.0,
     timeout: float = 60.0
 ) -> str:
-    """Ask a voice question and get a voice response
+    """[DEPRECATED] Ask a voice question and get a voice response
+    
+    ⚠️ DEPRECATED: Use 'converse' instead. This function will be removed in a future version.
     
     PRIVACY NOTICE: This tool will access your microphone to record audio
     for speech-to-text conversion. Audio is processed using the configured
@@ -538,6 +644,7 @@ async def ask_voice_question(
         duration: Recording duration in seconds (only for local transport)
         timeout: Maximum wait time for response in seconds
     """
+    logger.warning("DEPRECATED: ask_voice_question is deprecated. Use 'converse' instead.")
     logger.info(f"Voice question: {question[:50]}... (transport: {transport})")
     
     # Determine transport method
@@ -590,11 +697,15 @@ async def ask_voice_question(
 
 @mcp.tool()
 async def speak_text(text: str) -> str:
-    """Convert text to speech and play it
+    """[DEPRECATED] Convert text to speech and play it
+    
+    ⚠️ DEPRECATED: Use 'converse' with wait_for_response=False instead.
+    This function will be removed in a future version.
     
     Args:
         text: Text to convert to speech
     """
+    logger.warning("DEPRECATED: speak_text is deprecated. Use 'converse' with wait_for_response=False instead.")
     logger.info(f"Speaking: {text[:50]}...")
     
     try:
