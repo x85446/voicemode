@@ -1,7 +1,8 @@
 # Instructions for Claude
 
-Read the following files:
+ALWAYS read the following files:
 
+- conventions/ai_entrypoints/CLAUDE.md
 - README.md
 - ai_docs/README.md
 - CONVENTIONS.md

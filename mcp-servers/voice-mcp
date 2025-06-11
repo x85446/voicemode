@@ -43,6 +43,7 @@ Environment Variables:
 import asyncio
 import logging
 import os
+import sys
 import tempfile
 import time
 import shutil
@@ -50,6 +51,10 @@ from datetime import datetime
 from typing import Optional, Literal
 from pathlib import Path
 from dotenv import load_dotenv
+
+# Force unbuffered output for proper MCP communication
+sys.stdout.reconfigure(line_buffering=True)
+sys.stderr.reconfigure(line_buffering=True)
 
 import sounddevice as sd
 import numpy as np
@@ -480,7 +485,7 @@ async def ask_voice_question(
     question: str,
     transport: Literal["auto", "local", "livekit"] = "auto",
     room_name: str = "",
-    duration: float = 5.0,
+    duration: float = 15.0,
     timeout: float = 60.0
 ) -> str:
     """Ask a voice question and get a voice response
@@ -489,11 +494,18 @@ async def ask_voice_question(
     for speech-to-text conversion. Audio is processed using the configured
     STT service and is not permanently stored.
     
+    IMPORTANT DURATION GUIDANCE:
+    - For simple yes/no questions: use 5-10 seconds
+    - For normal conversational responses: use 15-20 seconds (default)
+    - For detailed explanations or storytelling: use 30-45 seconds
+    - For very long responses: use 60+ seconds
+    - Always err on the side of longer duration to avoid cutting off responses
+    
     Args:
         question: The question to ask
         transport: Transport method - "auto" (try LiveKit then local), "local" (direct mic), "livekit" (room-based)
         room_name: LiveKit room name (only for livekit transport, auto-discovered if empty)
-        duration: Recording duration in seconds (only for local transport)
+        duration: Recording duration in seconds (only for local transport) - IMPORTANT: Set based on expected response length
         timeout: Maximum wait time for response in seconds
     """
     logger.info(f"Voice question: {question[:50]}... (transport: {transport})")
@@ -571,8 +583,15 @@ async def listen_for_speech(duration: float = 5.0) -> str:
     for the specified duration. Audio is processed locally and converted
     to text using the configured STT service.
     
+    IMPORTANT DURATION GUIDANCE:
+    - For single words or short phrases: use 3-5 seconds
+    - For normal sentences: use 5-10 seconds (default)
+    - For multiple sentences or paragraphs: use 15-30 seconds
+    - For dictation or long-form speech: use 30-60 seconds
+    - Consider the user's speaking pace and potential pauses
+    
     Args:
-        duration: How long to listen in seconds
+        duration: How long to listen in seconds - IMPORTANT: Set based on expected speech length
     """
     logger.info(f"Listening for {duration}s...")
     

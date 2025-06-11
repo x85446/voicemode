@@ -43,6 +43,13 @@ Once configured, try these prompts with Claude:
 - `"Listen to what I'm saying for the next 10 seconds"`
 - `"Have a voice conversation with me - ask me about my day"`
 
+### Duration Tips
+
+When asking Claude to use voice tools, you can specify durations:
+- `"Listen to me for 30 seconds"` - for longer responses
+- `"Ask me a question and give me 45 seconds to respond"` - for detailed answers
+- Default duration is 15 seconds, which may cut off longer responses
+
 ## Claude Desktop Setup
 
 Add to your Claude Desktop configuration file:
@@ -114,13 +121,13 @@ Add to your Claude Desktop configuration file:
 
 ## Tools
 
-| Tool | Description |
-|------|-------------|
-| `ask_voice_question` | Ask a question via voice, get spoken response |
-| `speak_text` | Convert text to speech |
-| `listen_for_speech` | Record and transcribe speech |
-| `check_room_status` | Show LiveKit room status |
-| `check_audio_devices` | List audio devices |
+| Tool | Description | Duration Parameter |
+|------|-------------|-------------------|
+| `ask_voice_question` | Ask a question via voice, get spoken response | `duration` (default: 15s) - Set based on expected response length |
+| `speak_text` | Convert text to speech | N/A |
+| `listen_for_speech` | Record and transcribe speech | `duration` (default: 5s) - Set based on expected speech length |
+| `check_room_status` | Show LiveKit room status | N/A |
+| `check_audio_devices` | List audio devices | N/A |
 
 ## Configuration
 
