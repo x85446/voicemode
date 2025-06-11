@@ -118,16 +118,10 @@ Add to your Claude Desktop configuration file:
 
 | Tool | Description | Key Parameters |
 |------|-------------|----------------|
-| `converse` | **Primary tool** - Speak and optionally listen for response | `wait_for_response` (default: true), `listen_duration` (default: 10s) |
+| `converse` | Speak and optionally listen for response | `wait_for_response` (default: true), `listen_duration` (default: 10s) |
 | `listen_for_speech` | Just listen and transcribe speech | `duration` (default: 5s) |
 | `check_room_status` | Show LiveKit room status | N/A |
 | `check_audio_devices` | List audio devices | N/A |
-
-### Deprecated Tools
-| Tool | Status | Replacement |
-|------|--------|-------------|
-| `ask_voice_question` | ⚠️ Deprecated | Use `converse` instead |
-| `speak_text` | ⚠️ Deprecated | Use `converse` with `wait_for_response=false` |
 
 ## Configuration
 

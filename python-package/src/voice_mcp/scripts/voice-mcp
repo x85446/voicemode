@@ -566,10 +566,14 @@ async def converse(
     if not wait_for_response:
         try:
             success = await text_to_speech(message)
-            return "✓ Message spoken successfully" if success else "✗ Failed to speak message"
+            result = "✓ Message spoken successfully" if success else "✗ Failed to speak message"
+            logger.info(f"Speak-only result: {result}")
+            return result
         except Exception as e:
             logger.error(f"Speak error: {e}")
-            return f"Error: {str(e)}"
+            error_msg = f"Error: {str(e)}"
+            logger.error(f"Returning error: {error_msg}")
+            return error_msg
     
     # Otherwise, speak and then listen for response
     # Determine transport method
@@ -621,99 +625,6 @@ async def converse(
         return f"Unknown transport: {transport}"
 
 
-@mcp.tool()
-async def ask_voice_question(
-    question: str,
-    transport: Literal["auto", "local", "livekit"] = "auto",
-    room_name: str = "",
-    duration: float = 5.0,
-    timeout: float = 60.0
-) -> str:
-    """[DEPRECATED] Ask a voice question and get a voice response
-    
-    ⚠️ DEPRECATED: Use 'converse' instead. This function will be removed in a future version.
-    
-    PRIVACY NOTICE: This tool will access your microphone to record audio
-    for speech-to-text conversion. Audio is processed using the configured
-    STT service and is not permanently stored.
-    
-    Args:
-        question: The question to ask
-        transport: Transport method - "auto" (try LiveKit then local), "local" (direct mic), "livekit" (room-based)
-        room_name: LiveKit room name (only for livekit transport, auto-discovered if empty)
-        duration: Recording duration in seconds (only for local transport)
-        timeout: Maximum wait time for response in seconds
-    """
-    logger.warning("DEPRECATED: ask_voice_question is deprecated. Use 'converse' instead.")
-    logger.info(f"Voice question: {question[:50]}... (transport: {transport})")
-    
-    # Determine transport method
-    if transport == "auto":
-        if await check_livekit_available():
-            transport = "livekit"
-            logger.info("Auto-selected LiveKit transport")
-        else:
-            transport = "local"
-            logger.info("Auto-selected local transport")
-    
-    if transport == "livekit":
-        return await livekit_ask_voice_question(question, room_name, timeout)
-    
-    elif transport == "local":
-        # Local microphone approach
-        try:
-            # Speak the question
-            tts_success = await text_to_speech(question)
-            if not tts_success:
-                return "Error: Could not speak question"
-            
-            # Brief pause
-            await asyncio.sleep(0.5)
-            
-            # Record response
-            logger.info(f"🎤 Listening for {duration} seconds...")
-            audio_data = await asyncio.get_event_loop().run_in_executor(
-                None, record_audio, duration
-            )
-            
-            if len(audio_data) == 0:
-                return "Error: Could not record audio"
-            
-            # Convert to text
-            response_text = await speech_to_text(audio_data)
-            
-            if response_text:
-                return f"Voice response: {response_text}"
-            else:
-                return "No speech detected"
-                
-        except Exception as e:
-            logger.error(f"Local voice error: {e}")
-            return f"Error: {str(e)}"
-    
-    else:
-        return f"Unknown transport: {transport}"
-
-
-@mcp.tool()
-async def speak_text(text: str) -> str:
-    """[DEPRECATED] Convert text to speech and play it
-    
-    ⚠️ DEPRECATED: Use 'converse' with wait_for_response=False instead.
-    This function will be removed in a future version.
-    
-    Args:
-        text: Text to convert to speech
-    """
-    logger.warning("DEPRECATED: speak_text is deprecated. Use 'converse' with wait_for_response=False instead.")
-    logger.info(f"Speaking: {text[:50]}...")
-    
-    try:
-        success = await text_to_speech(text)
-        return "✓ Text spoken successfully" if success else "✗ Failed to speak text"
-    except Exception as e:
-        logger.error(f"Speak error: {e}")
-        return f"Error: {str(e)}"
 
 
 @mcp.tool()
