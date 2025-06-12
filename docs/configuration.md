@@ -4,10 +4,38 @@ This guide covers how to configure voice-mcp for various MCP hosts and installat
 
 ## Table of Contents
 
-- [Claude Desktop](#claude-desktop)
 - [Claude Code](#claude-code)
+- [Claude Desktop](#claude-desktop)
 - [Configuration Options](#configuration-options)
 - [Environment Variables](#environment-variables)
+
+## Claude Code
+
+Claude Code uses the `claude mcp add` command to configure MCP servers.
+
+### Installation Methods
+
+#### Using uvx (Recommended)
+
+```bash
+export OPENAI_API_KEY=your-openai-key
+claude mcp add voice-mcp uvx voice-mcp
+```
+
+#### Using pip install
+
+```bash
+export OPENAI_API_KEY=your-openai-key
+pip install voice-mcp
+claude mcp add voice-mcp voice-mcp
+```
+
+#### Using Docker/Podman
+
+```bash
+export OPENAI_API_KEY=your-openai-key
+claude mcp add voice-mcp podman run -e OPENAI_API_KEY ghcr.io/mbailey/voice-mcp:latest
+```
 
 ## Claude Desktop
 
@@ -151,34 +179,6 @@ Add LiveKit configuration to any of the above:
 ```
 
 [Download config](../config-examples/claude-desktop/livekit.json)
-
-## Claude Code
-
-Claude Code uses the `claude mcp add` command to configure MCP servers.
-
-### Installation Methods
-
-#### Using uvx (Recommended)
-
-```bash
-export OPENAI_API_KEY=your-openai-key
-claude mcp add voice-mcp uvx voice-mcp
-```
-
-#### Using pip install
-
-```bash
-export OPENAI_API_KEY=your-openai-key
-pip install voice-mcp
-claude mcp add voice-mcp voice-mcp
-```
-
-#### Using Docker/Podman
-
-```bash
-export OPENAI_API_KEY=your-openai-key
-claude mcp add voice-mcp podman run -e OPENAI_API_KEY ghcr.io/mbailey/voice-mcp:latest
-```
 
 ## Configuration Options
 
