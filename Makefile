@@ -3,7 +3,7 @@
 # Detect container runtime
 CONTAINER_CMD := $(shell command -v podman 2> /dev/null || command -v docker 2> /dev/null)
 
-.PHONY: help build-container push-container clean test login build-package test-package publish-test publish release
+.PHONY: help build-container push-container clean test login build-package test-package publish-test publish release test
 
 # Default target
 help:
@@ -18,6 +18,7 @@ help:
 	@echo ""
 	@echo "Python package targets:"
 	@echo "  build-package    - Build Python package for PyPI"
+	@echo "  test             - Run unit tests with pytest"
 	@echo "  test-package     - Test package installation"
 	@echo "  publish-test     - Publish to TestPyPI"
 	@echo "  publish          - Publish to PyPI"
@@ -69,6 +70,14 @@ build-package:
 	@echo "Building Python package..."
 	cd python-package && python -m build
 	@echo "Package built successfully in python-package/dist/"
+
+# Run unit tests
+test:
+	@echo "Setting up test environment..."
+	cd python-package && uv pip install -e ".[test]"
+	@echo "Running unit tests..."
+	cd python-package && uv run pytest tests/ -v --tb=short
+	@echo "Tests completed!"
 
 # Test package installation
 test-package: build-package
