@@ -96,19 +96,12 @@ Visit `http://localhost:3000` to access your voice interface.
 
 ## Step 7: Set Up iPhone (Optional)
 
-### Get the App
-1. Install **TestFlight** from the App Store
-2. Join the beta: [Voice Assistant TestFlight](https://testflight.apple.com/join/ALk8IOGP)
-3. Install **Voice Assistant** when it appears in TestFlight
+The TestFlight beta has expired. To install Voice Assistant on your iPhone, you'll need to build it from source using Xcode.
 
-### Configure the App
-1. Open Voice Assistant
-2. Tap the settings icon (gear)
-3. Enter your project credentials:
-   - **Server URL**: Your project URL from Step 3
-   - **API Key**: Your API key
-   - **API Secret**: Your API secret
-4. Save settings
+See [iPhone Installation Guide](./iphone-install.md) for detailed instructions on:
+- Building the app from source
+- Installing on your device
+- Configuring with your LiveKit credentials
 
 ## Step 8: Start Talking!
 
