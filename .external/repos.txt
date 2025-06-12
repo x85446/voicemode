@@ -1,1 +1,2 @@
 _:mbailey/awesome-mcp-servers
+_:mbailey/modelcontextprotocol-servers
