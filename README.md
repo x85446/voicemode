@@ -4,6 +4,10 @@ A Model Context Protocol (MCP) server that enables voice interactions with Claud
 
 [![Build and Publish Voice MCP Container](https://github.com/mbailey/voice-mcp/actions/workflows/build-container.yml/badge.svg)](https://github.com/mbailey/voice-mcp/actions/workflows/build-container.yml)
 
+## 🖥️ Compatibility
+
+**Runs on:** Linux • macOS • Windows (WSL) | **Python:** 3.10+ | **Tested:** Ubuntu 24.04 LTS, Fedora 42
+
 ## ✨ Features
 
 - **🎙️ Voice conversations** with Claude - ask questions and hear responses
