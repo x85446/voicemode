@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "voice-mcp": {
+      "command": "uvx",
+      "args": ["voice-mcp"],
+      "env": {
+        "OPENAI_API_KEY": "your-openai-key",
+        "LIVEKIT_URL": "wss://your-app.livekit.cloud",
+        "LIVEKIT_API_KEY": "your-api-key",
+        "LIVEKIT_API_SECRET": "your-api-secret"
+      }
+    }
+  }
+}

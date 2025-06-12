@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "voice-mcp": {
+      "command": "python",
+      "args": ["-m", "voice_mcp"],
+      "env": {
+        "OPENAI_API_KEY": "your-openai-key"
+      }
+    }
+  }
+}

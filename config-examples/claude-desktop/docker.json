@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "voice-mcp": {
+      "command": "docker",
+      "args": [
+        "run", "--rm", "-i",
+        "--device", "/dev/snd",
+        "-e", "PULSE_RUNTIME_PATH=/run/user/1000/pulse",
+        "-v", "/run/user/1000/pulse:/run/user/1000/pulse",
+        "ghcr.io/mbailey/voice-mcp:latest"
+      ],
+      "env": {
+        "OPENAI_API_KEY": "your-openai-key"
+      }
+    }
+  }
+}

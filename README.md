@@ -122,42 +122,82 @@ Add to your Claude Desktop configuration file:
 
 | Tool | Description | Key Parameters |
 |------|-------------|----------------|
-| `converse` | Speak and optionally listen for response | `wait_for_response` (default: true), `listen_duration` (default: 10s) |
-| `listen_for_speech` | Just listen and transcribe speech | `duration` (default: 5s) |
-| `check_room_status` | Show LiveKit room status | N/A |
-| `check_audio_devices` | List audio devices | N/A |
+| `converse` | Have a voice conversation - speak and optionally listen | `message`, `wait_for_response` (default: true), `listen_duration` (default: 10s), `transport` (auto/local/livekit) |
+| `listen_for_speech` | Listen for speech and convert to text | `duration` (default: 5s) |
+| `check_room_status` | Check LiveKit room status and participants | None |
+| `check_audio_devices` | List available audio input/output devices | None |
+
+**Note:** The `converse` tool is the primary interface for voice interactions, combining speaking and listening in a natural flow.
 
 ## Configuration
 
-### Required
+**📖 See [docs/configuration.md](docs/configuration.md) for complete setup instructions for all MCP hosts**
+
+**📁 Ready-to-use config files in [config-examples/](config-examples/)**
+
+### Quick Setup
+
+The only required configuration is your OpenAI API key:
+
 ```bash
 export OPENAI_API_KEY="your-key"
 ```
 
-### Optional
+### Optional Settings
+
 ```bash
-# Custom services (OpenAI-compatible)
+# Custom STT/TTS services (OpenAI-compatible)
 export STT_BASE_URL="http://localhost:2022/v1"  # Local Whisper
 export TTS_BASE_URL="http://localhost:8880/v1"  # Local TTS
-export TTS_VOICE="af_sky"                       # Sky Voice (Kokoro)
-export TTS_MODEL="tts-1"
-export STT_MODEL="whisper-1"
+export TTS_VOICE="nova"                         # Voice selection
 
 # LiveKit (for room-based communication)
 export LIVEKIT_URL="wss://your-app.livekit.cloud"
 export LIVEKIT_API_KEY="your-api-key"
 export LIVEKIT_API_SECRET="your-api-secret"
 
-# Debug
+# Debug mode
 export VOICE_MCP_DEBUG="true"
+```
+
+## Architecture
+
+```
+┌─────────────────────┐     ┌──────────────────┐     ┌─────────────────────┐
+│   Claude/LLM        │     │  LiveKit Server  │     │  Voice Frontend     │
+│   (MCP Client)      │◄────►│  (Optional)      │◄────►│  (Optional)         │
+└─────────────────────┘     └──────────────────┘     └─────────────────────┘
+         │                            │
+         │                            │
+         ▼                            ▼
+┌─────────────────────┐     ┌──────────────────┐
+│  Voice MCP Server   │     │   Audio Services │
+│  • converse         │     │  • OpenAI APIs   │
+│  • listen_for_speech│◄────►│  • Local Whisper │
+│  • check_room_status│     │  • Local TTS     │
+│  • check_audio_devices    └──────────────────┘
+└─────────────────────┘
 ```
 
 ## Troubleshooting
 
-- **No microphone**: Check system permissions
-- **UV not found**: `curl -LsSf https://astral.sh/uv/install.sh | sh`
-- **API errors**: Verify `OPENAI_API_KEY`
-- **Debug mode**: Set `VOICE_MCP_DEBUG=true` (saves audio to `~/voice-mcp_recordings/`)
+### Common Issues
+
+- **No microphone access**: Check system permissions for terminal/application
+- **UV not found**: Install with `curl -LsSf https://astral.sh/uv/install.sh | sh`
+- **OpenAI API error**: Verify your `OPENAI_API_KEY` is set correctly
+- **No audio output**: Check system audio settings and available devices
+- **Container audio**: May need to adjust device paths for your system
+
+### Debug Mode
+
+Enable detailed logging and audio file saving:
+
+```bash
+export VOICE_MCP_DEBUG=true
+```
+
+Debug audio files are saved to: `~/voice-mcp_recordings/`
 
 ## License
 
