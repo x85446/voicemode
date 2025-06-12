@@ -1,179 +1,173 @@
-# LiveKit Cloud Setup Guide for Voice MCP
+# LiveKit Cloud Setup for Voice MCP
 
-This guide will get you talking to Claude through LiveKit Cloud in about 15 minutes.
+Get Claude talking through your browser or iPhone in under 10 minutes using LiveKit Cloud's free tier.
 
 ## Prerequisites
 
 - [ ] Voice MCP installed and working locally
 - [ ] OpenAI API key configured
+- [ ] Node.js installed (for the web frontend)
 - [ ] A web browser
-- [ ] (Optional) iPhone with TestFlight for voice-assistant-swift
+- [ ] (Optional) iPhone with TestFlight for mobile access
 
 ## Step 1: Create a LiveKit Cloud Account
 
 1. Go to [LiveKit Cloud](https://cloud.livekit.io)
 2. Click **"Sign Up"** or **"Get Started Free"**
-3. Create your account (GitHub login works great)
-4. You'll get free monthly credits - more than enough for personal use
+3. Create your account (GitHub login recommended)
+4. You'll get **10,000 free participant minutes per month** - plenty for personal use (~2.7 hours/day with Claude)
 
-## Step 2: Create Your First Project
+## Step 2: Create a LiveKit Project
 
-1. Once logged in, click **"Create Project"**
-2. Name it something like `voice-mcp-sandbox`
-3. Select the closest region to you
-4. Click **"Create"**
+1. After logging in, click **"Projects"** in the left sidebar
+2. Click **"Create Project"**
+3. Name it something like "voice-mcp" or "claude-voice"
+4. Select your preferred region (closest to you)
+5. Click **"Create"**
 
-## Step 3: Get Your Connection Details
+This creates a permanent project that won't expire like sandboxes do.
 
-You'll need three things from LiveKit Cloud:
+## Step 3: Get Your Project Credentials
 
-1. **Project URL**: Found at the top of your project dashboard
-   - Looks like: `wss://your-project-name.livekit.cloud`
-   
-2. **API Key**: In project settings → API Keys
-   - Click **"Create Key"**
-   - Give it a name like `voice-mcp-key`
-   - Copy the **API Key** (starts with `API`)
-   
-3. **API Secret**: Shown once when you create the key
-   - Copy it immediately (you won't see it again!)
-   - If you lose it, just create a new key
+1. In your new project, click **"Settings"** in the left sidebar
+2. Go to **"API Keys"**
+3. Click **"Add API Key"** to create your first key
+4. Give it a name (e.g., "voice-mcp-key")
+5. Copy these three values:
+   - **URL**: Your project URL (like `wss://your-project.livekit.cloud`)
+   - **API Key**: Starts with `API`
+   - **API Secret**: Click the eye icon to reveal
+
+**Important**: Save these credentials securely - you'll need them for all future connections.
+
 
 ## Step 4: Configure Voice MCP
 
-Add these to your environment:
+Create or update your `.env.local` file with your credentials:
 
 ```bash
-# Your existing OpenAI key
-export OPENAI_API_KEY="your-openai-key"
+# Copy the example file
+cp .env.local.ignore .env.local
 
-# New LiveKit configuration
-export LIVEKIT_URL="wss://your-project-name.livekit.cloud"
-export LIVEKIT_API_KEY="your-api-key-from-step-3"
-export LIVEKIT_API_SECRET="your-api-secret-from-step-3"
+# Edit .env.local and add your credentials:
+OPENAI_API_KEY=your-openai-key
+LIVEKIT_URL=wss://your-project.livekit.cloud
+LIVEKIT_API_KEY=your-api-key
+LIVEKIT_API_SECRET=your-api-secret
 ```
 
-### For Claude Code:
+Then restart voice-mcp:
 ```bash
 claude mcp restart voice-mcp
 ```
 
-### For Claude Desktop:
-Update your config file to include the LiveKit environment variables, then restart Claude Desktop.
+## Step 5: Test Voice MCP Connection
 
-## Step 5: Test the Connection
-
-In Claude, try:
+In Claude, say:
 ```
 "Check LiveKit room status"
 ```
 
-You should see a response about LiveKit rooms. If you get an error, double-check your credentials.
+You should see a response confirming LiveKit is connected. If not, double-check your credentials.
 
-## Step 6: Connect from a Web Frontend
+## Step 6: Set Up Web Frontend
 
-### Option A: LiveKit Playground (Quickest)
+### Install LiveKit CLI
+```bash
+curl -sSL https://get.livekit.io/cli | bash
+```
 
-1. Go to your LiveKit Cloud dashboard
-2. Find the **"Playground"** or **"Demo"** section
-3. Click **"Voice Assistant"** or similar demo
-4. It should connect to your project automatically
+### Create Voice Assistant App
+From your project root directory:
+```bash
+lk app create --template voice-assistant-frontend
+```
 
-### Option B: Voice Assist Frontend
+When prompted, enter your project credentials from Step 3.
 
-1. Clone the LiveKit examples:
-   ```bash
-   git clone https://github.com/livekit-examples/voice-assistant-frontend.git
-   cd voice-assistant-frontend
-   ```
+### Run Your Frontend
+```bash
+cd voice-assistant-frontend
+npm install
+npm run dev
+```
 
-2. Create a `.env.local` file:
-   ```
-   LIVEKIT_URL=wss://your-project-name.livekit.cloud
-   LIVEKIT_API_KEY=your-api-key
-   LIVEKIT_API_SECRET=your-api-secret
-   ```
+Visit `http://localhost:3000` to access your voice interface.
 
-3. Install and run:
-   ```bash
-   npm install
-   npm run dev
-   ```
+## Step 7: Set Up iPhone (Optional)
 
-4. Open http://localhost:3000 in your browser
+### Get the App
+1. Install **TestFlight** from the App Store
+2. Join the beta: [Voice Assistant TestFlight](https://testflight.apple.com/join/ALk8IOGP)
+3. Install **Voice Assistant** when it appears in TestFlight
 
-### Option C: LiveKit Meet (Simple Testing)
+### Configure the App
+1. Open Voice Assistant
+2. Tap the settings icon (gear)
+3. Enter your project credentials:
+   - **Server URL**: Your project URL from Step 3
+   - **API Key**: Your API key
+   - **API Secret**: Your API secret
+4. Save settings
 
-1. Go to [meet.livekit.io](https://meet.livekit.io)
-2. Click "Custom" tab
-3. Enter your LiveKit URL and a token (generate one from CLI or dashboard)
+## Step 8: Start Talking!
 
-## Step 7: Start Talking!
+### Web Frontend
+1. Open `http://localhost:3000` in your browser
+2. Click "Connect" or start talking
+3. You'll hear Claude respond through your browser
 
-1. In Claude, say:
+### iPhone App
+1. In Claude on your computer, say:
    ```
    "Let's have a voice conversation through LiveKit"
    ```
+2. On your iPhone, tap **"Connect"** in Voice Assistant
+3. Start talking - you'll hear Claude respond through your iPhone!
 
-2. Claude will connect to a LiveKit room
-3. Open your web frontend and join the same room
-4. Start talking - you should hear Claude respond!
+## Quick Test
 
-## Step 8: iPhone Setup (voice-assistant-swift)
-
-1. Install TestFlight on your iPhone
-2. Get the voice-assistant-swift TestFlight link (check LiveKit's GitHub)
-3. In the app settings, enter:
-   - Server URL: Your LiveKit URL
-   - API Key: Your API key
-   - API Secret: Your API secret
-4. Join a room and start talking!
+To verify everything works:
+- **In Claude**: "Check LiveKit room status" 
+- **Web Frontend**: Visit localhost:3000 and click Connect
+- **iPhone App**: Tap Connect, say "Hello Claude"
 
 ## Troubleshooting
 
-### "Connection failed" in Claude
-- Check your LIVEKIT_URL starts with `wss://` (not `https://`)
-- Verify API credentials are correct
-- Try `claude mcp restart voice-mcp`
+**"Connection failed" in Claude**
+- Make sure URL starts with `wss://` not `https://`
+- Run `claude mcp restart voice-mcp`
 
-### No audio in web frontend
-- Check browser permissions for microphone
-- Ensure you're using HTTPS (or localhost)
-- Try a different browser
+**Can't connect on iPhone**
+- Double-check all three credentials
+- Make sure you saved the settings
+- Try force-closing and reopening the app
 
-### Can't hear Claude's responses
-- Check speaker/headphone connection
-- Verify OpenAI API key is working
-- Look for errors in Claude's responses
+**No audio**
+- Check iPhone volume and mute switch
+- Ensure microphone permissions are granted
+- Try using headphones
 
-## What's Next?
+## Next Steps
 
-Now that you have LiveKit Cloud working:
+Once you have this working:
+- Try the [LiveKit Playground](https://cloud.livekit.io) for web access
+- Explore other [voice assistant examples](https://github.com/livekit-examples)
+- Build your own custom frontend
 
-1. **Mobile Access**: Install voice-assistant apps on your devices
-2. **Custom Frontend**: Build your own web interface
-3. **Advanced Features**: Explore recording, transcription, and more
+## Free Tier Usage
 
-## Useful Commands
+With LiveKit Cloud's free tier:
+- **10,000 participant minutes/month** included
+- **No credit card required**
+- Resets on the 1st of each month
+- Perfect for personal use (you + Claude = 2 participants = 5,000 minutes/month)
 
-Test LiveKit connection:
-```
-"Check LiveKit room status"
-```
-
-Start a conversation:
-```
-"Let's have a voice conversation through LiveKit"
-```
-
-Force LiveKit transport:
-```
-"Talk to me using LiveKit transport"
-```
+See [pricing guide](./pricing.md) for detailed calculations.
 
 ## Resources
 
 - [LiveKit Cloud Dashboard](https://cloud.livekit.io)
-- [LiveKit Documentation](https://docs.livekit.io)
-- [Voice Assistant Examples](https://github.com/livekit-examples)
+- [LiveKit Cloud Docs](https://docs.livekit.io/home/cloud/)
 - [Voice MCP Issues](https://github.com/mbailey/voice-mcp/issues)
+- [LiveKit Pricing](https://livekit.io/pricing)
