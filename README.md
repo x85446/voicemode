@@ -152,6 +152,7 @@ export TTS_BASE_URL="http://localhost:8880/v1"  # Local TTS
 export TTS_VOICE="nova"                         # Voice selection
 
 # LiveKit (for room-based communication)
+# See docs/livekit/ for setup guide
 export LIVEKIT_URL="wss://your-app.livekit.cloud"
 export LIVEKIT_API_KEY="your-api-key"
 export LIVEKIT_API_SECRET="your-api-secret"

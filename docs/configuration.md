@@ -183,24 +183,21 @@ Add LiveKit configuration to any of the above:
 
 ## LiveKit Configuration
 
-LiveKit enables room-based voice communication instead of using the local microphone. This is useful for:
-- Remote voice interactions
-- Multi-participant conversations
-- Cloud-based voice processing
+LiveKit enables room-based voice communication instead of using the local microphone. This is perfect for accessing voice-mcp from your phone, tablet, or any remote device.
 
-### LiveKit Cloud
+**📖 For detailed setup instructions, see the [LiveKit Integration Guide](livekit/README.md)**
 
-For [LiveKit Cloud](https://docs.livekit.io/home/cloud/):
+### Quick Configuration
+
+For [LiveKit Cloud](livekit/cloud-setup.md) (recommended):
 
 ```bash
-export LIVEKIT_URL="wss://your-app.livekit.cloud"
+export LIVEKIT_URL="wss://your-project.livekit.cloud"
 export LIVEKIT_API_KEY="your-api-key"
 export LIVEKIT_API_SECRET="your-api-secret"
 ```
 
-### Self-Hosted LiveKit
-
-For [self-hosted LiveKit](https://github.com/livekit/livekit):
+For [self-hosted LiveKit](livekit/local-setup.md):
 
 ```bash
 export LIVEKIT_URL="ws://localhost:7880"
