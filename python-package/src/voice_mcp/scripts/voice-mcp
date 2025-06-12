@@ -229,7 +229,13 @@ async def text_to_speech(text: str) -> bool:
                     sd.default.samplerate = audio.frame_rate
                     sd.default.channels = audio.channels
                     
-                    sd.play(samples, audio.frame_rate)
+                    # Add 100ms of silence at the beginning to prevent clipping
+                    silence_duration = 0.1  # seconds
+                    silence_samples = int(audio.frame_rate * silence_duration)
+                    silence = np.zeros((silence_samples, audio.channels if audio.channels > 1 else 1), dtype=np.float32)
+                    samples_with_buffer = np.vstack([silence, samples])
+                    
+                    sd.play(samples_with_buffer, audio.frame_rate)
                     sd.wait()
                     
                     logger.info("✓ TTS played successfully")
