@@ -30,9 +30,6 @@ Setup for Claude Code:
 ```bash
 export OPENAI_API_KEY=your-openai-key
 claude mcp add voice-mcp uvx voice-mcp
-# Alternatively, run a container image
-# docker pull ghcr.io/mbailey/voice-mcp:latest
-# claude mcp add voice-mcp podman run -e OPENAI_API_KEY ghcr.io/mbailey/voice-mcp:latest
 claude
 ```
 
