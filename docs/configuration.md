@@ -6,6 +6,7 @@ This guide covers how to configure voice-mcp for various MCP hosts and installat
 
 - [Claude Code](#claude-code)
 - [Claude Desktop](#claude-desktop)
+- [LiveKit Configuration](#livekit-configuration)
 - [Configuration Options](#configuration-options)
 - [Environment Variables](#environment-variables)
 
@@ -179,6 +180,41 @@ Add LiveKit configuration to any of the above:
 ```
 
 [Download config](../config-examples/claude-desktop/livekit.json)
+
+## LiveKit Configuration
+
+LiveKit enables room-based voice communication instead of using the local microphone. This is useful for:
+- Remote voice interactions
+- Multi-participant conversations
+- Cloud-based voice processing
+
+### LiveKit Cloud
+
+For [LiveKit Cloud](https://docs.livekit.io/home/cloud/):
+
+```bash
+export LIVEKIT_URL="wss://your-app.livekit.cloud"
+export LIVEKIT_API_KEY="your-api-key"
+export LIVEKIT_API_SECRET="your-api-secret"
+```
+
+### Self-Hosted LiveKit
+
+For [self-hosted LiveKit](https://github.com/livekit/livekit):
+
+```bash
+export LIVEKIT_URL="ws://localhost:7880"
+export LIVEKIT_API_KEY="devkey"
+export LIVEKIT_API_SECRET="secret"
+```
+
+### Transport Selection
+
+When LiveKit is configured, voice-mcp can automatically select the best transport:
+
+- **`transport: "auto"`** (default) - Try LiveKit first, fall back to local microphone
+- **`transport: "livekit"`** - Force LiveKit transport
+- **`transport: "local"`** - Force local microphone
 
 ## Configuration Options
 
