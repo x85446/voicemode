@@ -112,7 +112,7 @@ publish: build-package
 release:
 	@echo "Creating a new release..."
 	@echo ""
-	@echo "Current version in pyproject.toml: $$(grep -E '^version = ' python-package/pyproject.toml | cut -d'"' -f2)"
+	@echo "Current version: $$(grep -E '^__version__ = ' python-package/src/voice_mcp/__version__.py | cut -d'"' -f2)"
 	@echo ""
 	@read -p "Enter new version (e.g., 0.1.3): " version; \
 	if [ -z "$$version" ]; then \
@@ -120,9 +120,9 @@ release:
 		exit 1; \
 	fi; \
 	echo "Updating version to $$version..."; \
-	sed -i.bak 's/^version = .*/version = "'$$version'"/' python-package/pyproject.toml && \
-	rm python-package/pyproject.toml.bak; \
-	git add python-package/pyproject.toml && \
+	sed -i.bak 's/^__version__ = .*/__version__ = "'$$version'"/' python-package/src/voice_mcp/__version__.py && \
+	rm python-package/src/voice_mcp/__version__.py.bak; \
+	git add python-package/src/voice_mcp/__version__.py && \
 	git commit -m "chore: bump version to $$version" && \
 	git tag -a "v$$version" -m "Release v$$version" && \
 	echo "" && \

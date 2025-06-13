@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "voice-mcp"
-version = "0.1.9"
+dynamic = ["version"]
 description = "Voice interaction capabilities for Model Context Protocol (MCP) servers"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -68,3 +68,6 @@ packages = ["src/voice_mcp"]
 
 [tool.hatch.build.targets.wheel.force-include]
 "src/voice_mcp/scripts" = "voice_mcp/scripts"
+
+[tool.hatch.version]
+path = "src/voice_mcp/__version__.py"

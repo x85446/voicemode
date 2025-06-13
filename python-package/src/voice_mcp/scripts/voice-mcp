@@ -731,7 +731,13 @@ async def check_audio_devices() -> str:
 
 
 if __name__ == "__main__":
-    logger.info("Voice MCP Server - Unified Transport")
+    try:
+        from voice_mcp import __version__
+        version_info = f" v{__version__}"
+    except ImportError:
+        version_info = ""
+    
+    logger.info(f"Voice MCP Server{version_info} - Unified Transport")
     logger.info(f"Debug mode: {'ENABLED' if DEBUG else 'DISABLED'}")
     if DEBUG:
         logger.info(f"Debug recordings will be saved to: {DEBUG_DIR}")
