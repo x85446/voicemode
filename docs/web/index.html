@@ -4,36 +4,219 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>voice-mcp - Voice Mode for Claude Code</title>
-    <meta name="description" content="A Model Context Protocol (MCP) server that enables voice interactions with Claude and other LLMs. Requires only an OpenAI API key and microphone/speakers.">
+    <meta name="description" content="A Model Context Protocol (MCP) server that enables voice interactions with Claude and other LLMs through a simple, reliable interface.">
     <style>
-        body {
-            background-color: #000011;
-            color: #00FF00;
-            font-family: "Comic Sans MS", cursive, sans-serif;
+        :root {
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #1a1a1a;
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0a0;
+            --accent: #00d4aa;
+            --accent-hover: #00b894;
+            --accent-alt: #ff6b6b;
+            --accent-alt-hover: #ff5252;
+            --border: #333;
+            --code-bg: #161616;
+            --max-width: 800px;
+        }
+
+        * {
             margin: 0;
-            padding: 20px;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Ubuntu', 'Helvetica Neue', sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
             background-image: 
-                radial-gradient(circle at 10% 20%, #ffffff 1px, transparent 1px),
-                radial-gradient(circle at 80% 80%, #ffff88 1.5px, transparent 1.5px),
-                radial-gradient(circle at 40% 40%, #ffffff 0.8px, transparent 0.8px),
-                radial-gradient(circle at 20% 80%, #88ffff 1px, transparent 1px),
-                radial-gradient(circle at 80% 20%, #ffffff 1.2px, transparent 1.2px),
-                radial-gradient(circle at 60% 10%, #ffaaff 0.5px, transparent 0.5px);
-            background-size: 120px 120px, 150px 150px, 80px 80px, 200px 200px, 90px 90px, 60px 60px;
-            animation: twinkle 4s infinite, starfield 20s linear infinite;
-            overflow-x: hidden;
+                radial-gradient(circle at 10% 20%, rgba(0, 212, 170, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 107, 107, 0.1) 0%, transparent 50%);
         }
 
-        @keyframes twinkle {
-            0%, 100% { opacity: 1; }
-            25% { opacity: 0.7; }
-            50% { opacity: 0.4; }
-            75% { opacity: 0.9; }
+        .container {
+            max-width: var(--max-width);
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
         }
 
-        @keyframes starfield {
-            0% { background-position: 0px 0px, 0px 0px, 0px 0px, 0px 0px, 0px 0px, 0px 0px; }
-            100% { background-position: 120px 120px, -150px 150px, 80px -80px, -200px 200px, 90px 90px, -60px 60px; }
+        header {
+            text-align: center;
+            padding: 3rem 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 3rem;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 300;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-alt) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .tagline {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .github-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            background-color: var(--bg-secondary);
+            border: 2px solid var(--accent);
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .github-cta::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 212, 170, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .github-cta:hover::before {
+            left: 100%;
+        }
+
+        .github-cta:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 212, 170, 0.3);
+            border-color: var(--accent-hover);
+        }
+
+        .compatibility {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            font-size: 0.95rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .compatibility::after {
+            content: '/* tested and approved */';
+            position: absolute;
+            top: 0.5rem;
+            right: 1rem;
+            color: var(--accent);
+            font-family: monospace;
+            font-size: 0.8rem;
+            opacity: 0.5;
+        }
+
+        .compatibility strong {
+            color: var(--accent);
+        }
+
+        section {
+            margin-bottom: 3rem;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            font-weight: 500;
+            margin-bottom: 1rem;
+            color: var(--accent);
+        }
+
+        p {
+            margin-bottom: 1rem;
+            color: var(--text-secondary);
+        }
+
+        .features {
+            display: grid;
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .feature {
+            background-color: var(--bg-secondary);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .feature h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .feature p {
+            font-size: 0.95rem;
+            margin-bottom: 0;
+        }
+
+        .feature:hover {
+            border-color: var(--accent);
+            transform: translateX(4px);
+            transition: all 0.3s;
+        }
+
+        .code-block {
+            background-color: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            overflow-x: auto;
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            position: relative;
+        }
+
+        .code-block::before {
+            content: '$ ';
+            color: var(--accent);
+            position: absolute;
+            left: 1.5rem;
+            top: 1.5rem;
+        }
+
+        .code-block code {
+            color: var(--text-primary);
+            display: block;
+            padding-left: 1.2rem;
+        }
+
+        .comment {
+            color: #6a737d;
+        }
+
+        .typing-indicator {
+            display: inline-block;
+            width: 2px;
+            height: 1.2em;
+            background-color: var(--accent);
+            animation: blink 1s infinite;
+            vertical-align: text-bottom;
+            margin-left: 2px;
         }
 
         @keyframes blink {
@@ -41,538 +224,192 @@
             51%, 100% { opacity: 0; }
         }
 
-        @keyframes rainbow {
-            0% { color: #ff0000; }
-            16% { color: #ff8000; }
-            33% { color: #ffff00; }
-            50% { color: #00ff00; }
-            66% { color: #0080ff; }
-            83% { color: #8000ff; }
-            100% { color: #ff0000; }
+        .links {
+            display: flex;
+            gap: 2rem;
+            margin-top: 2rem;
+            flex-wrap: wrap;
         }
 
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            text-align: center;
+        .links a {
+            color: var(--accent);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: color 0.2s;
         }
 
-        h1 {
-            font-size: 48px;
-            color: #FF00FF;
-            text-shadow: 2px 2px 4px #333;
-            animation: rainbow 2s infinite;
-            margin: 20px 0;
-        }
-
-        .blink {
-            animation: blink 1s infinite;
-        }
-
-        .tagline {
-            font-size: 24px;
-            color: #FFFF00;
-            text-shadow: 1px 1px 2px #333;
-            margin-bottom: 30px;
-        }
-
-        .welcome {
-            border: 3px solid #00FFFF;
-            padding: 20px;
-            margin: 30px 0;
-            background-color: #000080;
-            color: #FFFFFF;
-        }
-
-        .features {
-            background-color: #800080;
-            border: 3px dashed #FFFF00;
-            padding: 20px;
-            margin: 30px 0;
-        }
-
-        .features h2 {
-            color: #00FFFF;
-            font-size: 32px;
+        .links a:hover {
+            color: var(--accent-hover);
             text-decoration: underline;
-        }
-
-        .feature-list {
-            text-align: left;
-            color: #FFFFFF;
-            font-size: 18px;
-            line-height: 1.8;
-        }
-
-        .feature-list li {
-            margin: 10px 0;
-        }
-
-        .quick-start {
-            background-color: #008000;
-            border: 5px ridge #FFFF00;
-            padding: 20px;
-            margin: 30px 0;
-            color: #FFFFFF;
-        }
-
-        .quick-start h2 {
-            color: #FFFF00;
-            font-size: 28px;
-        }
-
-        .code-block {
-            background-color: #000000;
-            color: #00FF00;
-            border: 2px solid #00FFFF;
-            padding: 15px;
-            font-family: "Courier New", monospace;
-            font-size: 16px;
-            margin: 20px 0;
-            text-align: left;
         }
 
         .requirements {
-            background-color: #FF0000;
-            color: #FFFF00;
-            border: 3px solid #FFFFFF;
-            padding: 20px;
-            margin: 30px 0;
-            font-weight: bold;
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 2rem 0;
         }
 
-        .requirements h2 {
-            color: #FFFFFF;
-            text-shadow: 2px 2px 4px #000;
+        .requirements h3 {
+            margin-bottom: 1rem;
+            color: var(--text-primary);
         }
 
-        .footer {
-            background-color: #000080;
-            color: #00FFFF;
-            border: 2px solid #FFFF00;
-            padding: 15px;
-            margin-top: 40px;
-            font-size: 14px;
+        .requirements ul {
+            list-style-position: inside;
+            color: var(--text-secondary);
         }
 
-        .keywords {
-            background-color: #000000;
-            color: #FFFFFF;
-            border: 1px solid #888888;
-            padding: 20px;
-            margin-top: 30px;
-            font-size: 11px;
-            line-height: 1.4;
-            text-align: justify;
+        .requirements li {
+            margin-bottom: 0.5rem;
         }
 
-        .enhanced-section {
-            background: #000000;
-            color: #FFFFFF;
-            border: 2px inset #C0C0C0;
-            padding: 15px;
-            margin: 20px 0;
-            font-family: "Times New Roman", serif;
-        }
-
-        .center-text {
+        footer {
+            margin-top: 4rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border);
             text-align: center;
-            font-weight: bold;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
         }
 
-        .visitor-counter {
-            background-color: #FFFFFF;
-            color: #000000;
-            border: 2px solid #000000;
-            padding: 10px;
-            margin: 20px 0;
-            font-family: "Arial", sans-serif;
-            font-weight: bold;
+        footer a {
+            color: var(--accent);
+            text-decoration: none;
         }
 
-        .link {
-            color: #00FFFF;
+        footer a:hover {
             text-decoration: underline;
         }
 
-        .link:visited {
-            color: #FF00FF;
-        }
-
-        .link:hover {
-            color: #FFFF00;
-            background-color: #FF0000;
-        }
-
-        .construction {
-            color: #FFFF00;
-            font-size: 20px;
-            margin: 20px 0;
-        }
-
-        .marquee-container {
-            background-color: #FF0000;
-            color: #FFFF00;
-            padding: 10px;
-            margin: 20px 0;
-            border: 2px solid #FFFFFF;
-            overflow: hidden;
-        }
-
-        .marquee {
-            animation: scroll-left 15s linear infinite;
-            white-space: nowrap;
-            font-weight: bold;
-            font-size: 18px;
-        }
-
-        @keyframes scroll-left {
-            0% { transform: translateX(100%); }
-            100% { transform: translateX(-100%); }
-        }
-
-        .gif-placeholder {
-            width: 100px;
-            height: 50px;
-            background: linear-gradient(45deg, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff);
-            background-size: 400% 400%;
-            animation: gradient-shift 1s ease-in-out infinite;
-            display: inline-block;
-            margin: 0 10px;
-            border: 2px solid #ffffff;
-        }
-
-        @keyframes gradient-shift {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        .comet {
-            position: fixed;
-            width: 3px;
-            height: 3px;
-            background: #ffffff;
-            border-radius: 50%;
-            box-shadow: 0 0 6px #ffffff, 0 0 12px #aaaaff;
-            z-index: 1;
-        }
-
-        .comet::after {
-            content: '';
-            position: absolute;
-            width: 80px;
-            height: 2px;
-            background: linear-gradient(90deg, rgba(255,255,255,0.8), transparent);
-            top: 50%;
-            left: -80px;
-            transform: translateY(-50%);
-        }
-
-        .comet1 {
-            animation: comet-fly1 8s linear infinite;
-        }
-
-        .comet2 {
-            animation: comet-fly2 12s linear infinite 4s;
-        }
-
-        @keyframes comet-fly1 {
-            0% { top: 10%; left: -100px; }
-            100% { top: 90%; left: calc(100% + 100px); }
-        }
-
-        @keyframes comet-fly2 {
-            0% { top: 20%; left: calc(100% + 100px); }
-            100% { top: 80%; left: -100px; }
-        }
-
-        .toaster {
-            position: fixed;
-            width: 64px;
-            height: 40px;
-            background: linear-gradient(135deg, #F0F0F0 0%, #D0D0D0 15%, #B8B8B8 35%, #A0A0A0 50%, #B8B8B8 65%, #D0D0D0 85%, #F0F0F0 100%);
-            border: 1px solid #707070;
-            border-radius: 4px 4px 2px 2px;
-            z-index: 1;
-            box-shadow: 
-                1px 1px 3px rgba(0,0,0,0.6),
-                inset 1px 1px 1px rgba(255,255,255,0.9),
-                inset -1px -1px 1px rgba(0,0,0,0.4);
-        }
-
-        .toaster::before {
-            content: '';
-            position: absolute;
-            top: -4px;
-            left: 8px;
-            width: 48px;
-            height: 4px;
-            background: linear-gradient(to bottom, #E8E8E8, #C0C0C0, #A8A8A8);
-            border: 1px solid #808080;
-            border-radius: 1px;
-        }
-
-        .toaster::after {
-            content: '';
-            position: absolute;
-            top: 6px;
-            left: 12px;
-            width: 8px;
-            height: 20px;
-            background: linear-gradient(to right, #505050, #707070, #505050);
-            border-radius: 1px;
-            box-shadow: inset 1px 0 1px rgba(255,255,255,0.2);
-        }
-
-        .toast-slice1, .toast-slice2 {
-            position: absolute;
-            width: 16px;
-            height: 18px;
-            background: 
-                radial-gradient(circle at 30% 40%, #8B4513 1px, transparent 1px),
-                radial-gradient(circle at 70% 60%, #654321 1px, transparent 1px),
-                radial-gradient(circle at 50% 30%, #8B4513 0.5px, transparent 0.5px),
-                linear-gradient(135deg, #DEB887 0%, #D2B48C 25%, #CD853F 50%, #A0522D 75%, #8B4513 100%);
-            background-size: 8px 8px, 6px 6px, 4px 4px, 100% 100%;
-            border: 1px solid #654321;
-            border-radius: 2px;
-            box-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-        }
-
-        .toast-slice1 {
-            top: -20px;
-            left: 8px;
-            animation: toast-pop1 1.2s ease-in-out infinite alternate;
-        }
-
-        .toast-slice2 {
-            top: -18px;
-            left: 40px;
-            animation: toast-pop2 1.0s ease-in-out infinite alternate 0.4s;
-        }
-
-        .toast-slice1::before, .toast-slice2::before {
-            content: '';
-            position: absolute;
-            top: 2px;
-            left: 2px;
-            width: 2px;
-            height: 2px;
-            background: #654321;
-            border-radius: 50%;
-            box-shadow: 
-                8px 1px 0 0.5px #654321,
-                2px 6px 0 0.5px #654321,
-                10px 8px 0 0.5px #654321,
-                5px 3px 0 0.5px #8B4513,
-                1px 10px 0 0.5px #8B4513;
-        }
-
-        @keyframes toast-pop1 {
-            0% { transform: translateY(0px) rotate(-2deg); }
-            100% { transform: translateY(-8px) rotate(2deg); }
-        }
-
-        @keyframes toast-pop2 {
-            0% { transform: translateY(0px) rotate(1deg); }
-            100% { transform: translateY(-6px) rotate(-1deg); }
-        }
-
-        .toaster1 {
-            animation: toaster-fly1 15s linear infinite;
-        }
-
-        .toaster2 {
-            animation: toaster-fly2 18s linear infinite 7s;
-        }
-
-        .toaster3 {
-            animation: toaster-fly3 20s linear infinite 14s;
-        }
-
-        @keyframes toaster-fly1 {
-            0% { top: 15%; left: -80px; transform: rotate(0deg); }
-            50% { top: 45%; left: 50%; transform: rotate(180deg); }
-            100% { top: 75%; left: calc(100% + 80px); transform: rotate(360deg); }
-        }
-
-        @keyframes toaster-fly2 {
-            0% { top: 60%; left: calc(100% + 80px); transform: rotate(0deg); }
-            50% { top: 30%; left: 30%; transform: rotate(-180deg); }
-            100% { top: 85%; left: -80px; transform: rotate(-360deg); }
-        }
-
-        @keyframes toaster-fly3 {
-            0% { top: 25%; left: -80px; transform: rotate(0deg) scale(0.8); }
-            25% { top: 70%; left: 25%; transform: rotate(90deg) scale(1.2); }
-            75% { top: 40%; left: 75%; transform: rotate(270deg) scale(0.9); }
-            100% { top: 65%; left: calc(100% + 80px); transform: rotate(360deg) scale(0.8); }
-        }
-        .github-ribbon {
-            position: fixed;
-            top: 0;
-            right: 0;
-            width: 150px;
-            height: 150px;
-            overflow: hidden;
-            z-index: 9999;
-        }
-
-        .github-ribbon::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            right: 0;
-            width: 200px;
-            height: 200px;
-            background: linear-gradient(45deg, transparent 48%, #FF0000 48%, #FF0000 52%, transparent 52%);
-            transform: rotate(45deg) translate(75px, -75px);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
-        }
-
-        .github-ribbon a {
-            position: absolute;
-            top: 60px;
-            right: -60px;
-            width: 300px;
-            padding: 10px 0;
-            background-color: #FF0000;
-            color: #FFFFFF;
-            text-decoration: none;
-            text-align: center;
-            font-weight: bold;
-            font-size: 14px;
-            line-height: 20px;
-            transform: rotate(45deg);
-            box-shadow: 0 2px 3px rgba(0,0,0,0.3);
-            text-shadow: 0 1px 1px rgba(0,0,0,0.5);
-        }
-
-        .github-ribbon a:hover {
-            background-color: #CC0000;
-            color: #FFFF00;
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .container {
+                padding: 1.5rem 1rem;
+            }
+            
+            .links {
+                flex-direction: column;
+                gap: 1rem;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- Fork me on GitHub ribbon -->
-    <div class="github-ribbon">
-        <a href="https://github.com/mbailey/voice-mcp">Fork me on GitHub</a>
-    </div>
-    <!-- Flying Elements -->
-    <div class="comet comet1"></div>
-    <div class="comet comet2"></div>
-    <div class="toaster toaster1">
-        <div class="toast-slice1"></div>
-        <div class="toast-slice2"></div>
-    </div>
-    <div class="toaster toaster2">
-        <div class="toast-slice1"></div>
-        <div class="toast-slice2"></div>
-    </div>
-    <div class="toaster toaster3">
-        <div class="toast-slice1"></div>
-        <div class="toast-slice2"></div>
-    </div>
-
     <div class="container">
-        <div class="marquee-container">
-            <div class="marquee">🔥 WELCOME TO THE OFFICIAL voice-mcp HOMEPAGE! 🔥 NOW WITH 100% MORE VOICE! 🎤 ⭐ FEATURING FLYING TOASTERS! ⭐</div>
+        <header>
+            <h1>voice-mcp</h1>
+            <p class="tagline">"Voice Mode for Claude Code"</p>
+            <a href="https://github.com/mbailey/voice-mcp" class="github-cta">
+                <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+                </svg>
+                View on GitHub
+            </a>
+        </header>
+
+        <div class="compatibility">
+            <strong>Runs on:</strong> Linux • macOS • Windows (WSL) | <strong>Python:</strong> 3.10+ | <strong>Tested:</strong> Ubuntu 24.04 LTS, Fedora 42
         </div>
 
-        <h1 class="blink">🎙️ voice-mcp 🎙️</h1>
-        <div class="tagline">*** VOICE MODE FOR CLAUDE CODE ***</div>
-        
-        <div class="construction">
-            <div class="gif-placeholder"></div>
-            🚧 UNDER CONSTRUCTION 🚧
-            <div class="gif-placeholder"></div>
-        </div>
-
-        <div class="welcome">
-            <h2>WELCOME TO THE FUTURE OF AI!</h2>
-            <p>You have entered the AMAZING world of voice-controlled artificial intelligence! This site is TOTALLY RADICAL and will blow your mind! 🤯</p>
-        </div>
-
-        <div class="visitor-counter">
-            👁️ VISITOR COUNTER: 000001337 👁️
-            <br>You are visitor #1337! You're so cool! 😎
-        </div>
-
-        <div class="quick-start">
-            <h2>🎮 QUICK START GUIDE!</h2>
-            <p><strong>Setup for Claude Code in THREE SIMPLE COMMANDS:</strong></p>
-            <div class="code-block">claude mcp add --scope user voice-mcp uvx voice-mcp<br>export OPENAI_API_KEY=your-openai-key<br>claude</div>
-            <p>Then try saying: <em>"Can you ask me a question using voice?"</em></p>
-            <p><strong>IT'S THAT EASY!</strong> 🎉</p>
-        </div>
-
-        <div class="features">
-            <h2>🌟 AWESOME FEATURES! 🌟</h2>
-            <ul class="feature-list">
-                <li>🎙️ <strong>VOICE CONVERSATIONS</strong> - Talk to Claude like it's your best friend!</li>
-                <li>🔄 <strong>MULTIPLE TRANSPORTS</strong> - Works with your microphone OR fancy LiveKit rooms!</li>
-                <li>🗣️ <strong>OpenAI COMPATIBLE</strong> - Uses the same API as the big boys! So professional!</li>
-                <li>⚡ <strong>REAL-TIME</strong> - Faster than your dial-up modem! (Not hard!)</li>
-                <li>🔧 <strong>MCP INTEGRATION</strong> - Plugs right into Claude Desktop! Amazing!</li>
-                <li>🚀 <strong>EASY SETUP</strong> - Even your grandma could install this! (Maybe!)</li>
-            </ul>
-        </div>
-
-        <div class="requirements">
-            <h2>🎯 ALL YOU NEED!</h2>
-            <p>🔑 <strong>OpenAI API Key</strong> - For the magic voice stuff!</p>
-            <p>🎤 <strong>Microphone & Speakers</strong> - So you can actually talk! Duh!</p>
-            <p><em>(Or get fancy with a LiveKit server if you're feeling adventurous!)</em></p>
-        </div>
-
-        <div style="text-align: center; margin: 30px 0;">
-            <div class="gif-placeholder"></div>
-            <div class="gif-placeholder"></div>
-            <div class="gif-placeholder"></div>
-        </div>
-
-        <div style="background-color: #FFFF00; color: #000000; padding: 20px; border: 3px solid #FF0000; margin: 30px 0;">
-            <h2>🚀 GET STARTED NOW!</h2>
-            <p><a href="https://github.com/mbailey/voice-mcp" class="link"><strong>🐙 VISIT OUR GITHUB REPOSITORY! 🐙</strong></a></p>
-            <p><strong>⭐ STAR US ON GITHUB! ⭐</strong></p>
-            <p><a href="https://pypi.org/project/voice-mcp/" class="link"><strong>📦 DOWNLOAD FROM PYPI 📦</strong></a></p>
-            <p><a href="https://github.com/mbailey/voice-mcp/issues" class="link"><strong>🐛 REPORT BUGS 🐛</strong></a></p>
-        </div>
-
-        <div style="background-color: #00FF00; color: #000000; padding: 20px; border: 3px solid #0000FF; margin: 30px 0;">
-            <h2>🔗 GITHUB SHORTCUTS!</h2>
-            <p><a href="https://github.com/mbailey/voice-mcp" class="link"><strong>Main Repository</strong></a> | 
-            <a href="https://github.com/mbailey/voice-mcp/network/members" class="link"><strong>View Forks</strong></a> | 
-            <a href="https://github.com/mbailey/voice-mcp/stargazers" class="link"><strong>See Stars</strong></a></p>
-            <p><a href="https://github.com/mbailey/voice-mcp/blob/master/README.md" class="link"><strong>Read the Docs</strong></a> | 
-            <a href="https://github.com/mbailey/voice-mcp/compare" class="link"><strong>Make Pull Request</strong></a></p>
-        </div>
-
-        <div class="footer">
-            <p>MIT Licensed • Made with ❤️ for the MCP ecosystem</p>
-            <p>This page is best viewed in Netscape Navigator 4.0!</p>
+        <section>
+            <h2>Overview</h2>
             <p>
-                <a href="mailto:voice-mcp@failmode.com" class="link">📧 Email the Webmaster!</a> | 
-                <a href="https://github.com/mbailey/voice-mcp" class="link">🐙 GitHub</a> | 
-                <a href="https://github.com/mbailey/voice-mcp/compare" class="link">🔀 Pull Requests</a>
+                A Model Context Protocol (MCP) server that enables voice interactions with Claude and other LLMs. 
+                Built for simplicity and reliability, voice-mcp provides a clean interface for adding voice capabilities 
+                to your AI workflows.
             </p>
-            <p><em>Last updated: Today! (Because we're always updating!)</em></p>
-        </div>
+        </section>
 
-        <div class="enhanced-section">
-            <div class="center-text">ADVANCED VOICE TECHNOLOGY</div>
-            <p>Our cutting-edge voice-mcp system represents the next evolutionary step in human-computer interaction. Through sophisticated neural pathways and artificial intelligence protocols, we bridge the gap between human consciousness and digital entities.</p>
-        </div>
+        <section>
+            <h2>Quick Start<span class="typing-indicator"></span></h2>
+            <div class="code-block">
+                <code><span class="comment"># Install and configure for Claude Code</span><br>
+claude mcp add --scope user voice-mcp uvx voice-mcp<br>
+export OPENAI_API_KEY=your-openai-key<br>
+claude<br><br>
+<span class="comment"># Try it out</span><br>
+"Can you ask me a question using voice?"</code>
+            </div>
+        </section>
 
-        <div class="keywords">
-            <strong>Keywords:</strong> voice-mcp, voice recognition, speech-to-text, text-to-speech, artificial intelligence, machine learning, neural networks, natural language processing, conversational AI, voice interface, microphone input, audio processing, OpenAI compatible, MCP protocol, model context protocol, Claude integration, real-time communication, LiveKit, toasters, digital transformation, voice commands, human like interaction, automated responses, mad max technology, future computing, singularity preparation, API tokens, uvx installation, python package, GitHub actions, continuous integration, voice activation, speech synthesis, audio streaming, low latency, transport protocols, container deployment, docker, podman, cross-platform compatibility, WebRTC, voice chat, interactive systems, cognitive computing, semantic understanding, context awareness, dynamic responses, adaptive interfaces, intelligent automation, digital assistants, voice bots, conversational agents, linguistic processing, phonetic analysis, acoustic modeling, signal processing, audio codecs, streaming protocols, network communication, distributed systems, scalable architecture, microservices, cloud computing, edge computing, real-time analytics, performance optimization, latency reduction, bandwidth efficiency, error handling, fault tolerance, security protocols, encryption, authentication, authorization, privacy protection, data processing, information retrieval, knowledge management, content delivery, user experience, interface design, accessibility features, multi-platform support, integration frameworks, development tools, software libraries, API endpoints, configuration management, environment variables, deployment automation, monitoring systems, logging mechanisms, debugging tools, testing frameworks, quality assurance, documentation generation, version control, collaboration tools, open source, MIT license, community driven, developer friendly, enterprise ready, production stable, high availability, disaster recovery, backup systems, data persistence, cache optimization, memory management, resource allocation, process scheduling, thread safety, concurrency control, parallel processing, asynchronous operations, event driven architecture, message queuing, publish subscribe patterns, webhook integration, notification systems, alert mechanisms, health monitoring, metrics collection, performance profiling, capacity planning, load balancing, horizontal scaling, vertical scaling, auto scaling, container orchestration, kubernetes deployment, helm charts, service mesh, API gateway, reverse proxy, SSL termination, certificate management, domain configuration, DNS routing, CDN integration, geographic distribution, edge locations, global availability, multi region deployment, disaster recovery, business continuity
-        </div>
+        <section>
+            <h2>Features</h2>
+            <div class="features">
+                <div class="feature">
+                    <h3>Voice Conversations</h3>
+                    <p>Natural voice interactions with Claude through your microphone and speakers</p>
+                </div>
+                <div class="feature">
+                    <h3>Multiple Transports</h3>
+                    <p>Local microphone access or LiveKit rooms for distributed voice communication</p>
+                </div>
+                <div class="feature">
+                    <h3>OpenAI Compatible</h3>
+                    <p>Works with OpenAI's API and compatible services for speech processing</p>
+                </div>
+                <div class="feature">
+                    <h3>Simple Integration</h3>
+                    <p>Clean MCP protocol implementation that works seamlessly with Claude Desktop</p>
+                </div>
+            </div>
+        </section>
 
-        <div style="text-align: center; margin-top: 20px; font-size: 12px; color: #666;">
-            <p>This page is a tribute to the golden age of the internet! 🌐</p>
-        </div>
+        <section>
+            <div class="requirements">
+                <h3>Requirements</h3>
+                <ul>
+                    <li>OpenAI API key for speech services</li>
+                    <li>Microphone and speakers for voice I/O</li>
+                    <li>Python 3.8+ (handled by uvx)</li>
+                    <li>Optional: LiveKit server for advanced features</li>
+                </ul>
+            </div>
+        </section>
+
+        <section>
+            <h2>Resources</h2>
+            <div class="links">
+                <a href="https://github.com/mbailey/voice-mcp">
+                    <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
+                        <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+                    </svg>
+                    GitHub Repository
+                </a>
+                <a href="https://pypi.org/project/voice-mcp/">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/>
+                        <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                        <line x1="12" y1="22.08" x2="12" y2="12"/>
+                    </svg>
+                    PyPI Package
+                </a>
+                <a href="https://github.com/mbailey/voice-mcp/issues">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="12"/>
+                        <line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    Report Issues
+                </a>
+            </div>
+        </section>
+
+        <footer>
+            <p>
+                MIT Licensed &middot; Built for the <a href="https://modelcontextprotocol.io">MCP</a> ecosystem &middot; 
+                <a href="https://github.com/mbailey/voice-mcp/actions">CI/CD Status</a>
+            </p>
+            <p style="margin-top: 1rem; font-size: 0.8rem; opacity: 0.7;">
+                // TODO: Add more voice features... or just talk to it instead
+            </p>
+        </footer>
     </div>
 </body>
 </html>
