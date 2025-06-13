@@ -344,6 +344,18 @@
         .highlight-box p {
             margin-bottom: var(--space-3);
         }
+        
+        .highlight-box p a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px dotted var(--accent);
+            transition: all var(--transition-base);
+        }
+        
+        .highlight-box p a:hover {
+            color: var(--accent-hover);
+            border-bottom-style: solid;
+        }
 
         .highlight-box .links {
             display: flex;
@@ -549,12 +561,8 @@ claude<br><br>
             </h3>
             <p>
                 For complete privacy, run speech recognition and text-to-speech locally instead of using OpenAI. 
-                Both whisper.cpp and Kokoro-FastAPI provide OpenAI-compatible APIs for seamless integration.
+                Both <a href="https://github.com/ggerganov/whisper.cpp">whisper.cpp</a> and <a href="https://github.com/remsky/Kokoro-FastAPI">Kokoro-FastAPI</a> provide OpenAI-compatible APIs for seamless integration.
             </p>
-            <div class="links">
-                <a href="https://github.com/ggerganov/whisper.cpp">whisper.cpp</a>
-                <a href="https://github.com/remsky/Kokoro-FastAPI">Kokoro-FastAPI</a>
-            </div>
         </div>
 
         <section>
