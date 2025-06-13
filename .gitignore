@@ -45,5 +45,10 @@ test_output/
 *.pcm
 .aider*
 
+# Build artifacts
+python-package/dist/
+python-package/build/
+*.egg-info/
+
 .claude/settings.local.json
 docs/promote
