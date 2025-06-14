@@ -1,12 +1,49 @@
 # Instructions for Claude
 
-ALWAYS read the following files:
+## Primary Directive
 
-- conventions/ai_entrypoints/CLAUDE.md
-- README.md
-- ai_docs/README.md
-- CONVENTIONS.md
+ALWAYS read the following files at the start of any session:
+- CONVENTIONS.md to understand the engineering conventions for this project
+- README.md to understand the project
+- ai_docs/README.md to understand where to read and write information about external tools, libraries, protocols, etc
 - external/repos.txt # List of 3rd party repos we may use
+
+## Context-Aware Loading
+
+Load specific convention modules based on the current work context:
+
+- **Editing bash scripts**: Load `core/principles.md` + `languages/bash.md` + `interfaces/cli.md`
+- **Python development**: Load `core/principles.md` + `languages/python.md` + `interfaces/cli.md`
+- **Writing documentation**: Load `core/principles.md` + `core/documentation.md` + `languages/markdown.md`
+- **General project work**: Load `CONVENTIONS.md` + `core/project-structure.md`
+
+## Override System
+
+Check for convention overrides in this order:
+1. `conventions/` - Base conventions
+2. `conventions-project/` - Project-specific overrides (if exists)
+3. `conventions-local/` - Local personal overrides (if exists)
+
+Later files override earlier ones for the same convention.
+
+## Voice Duration Guidelines
+
+When using voice tools, ALWAYS set appropriate duration parameters based on expected response length:
+
+### For `ask_voice_question`:
+- Simple yes/no questions: use `duration=10` 
+- Normal conversational responses: use `duration=20` (better than default 15)
+- Open-ended questions: use `duration=30`
+- Questions expecting detailed explanations: use `duration=45`
+- Questions about stories or long explanations: use `duration=60`
+
+### For `listen_for_speech`:
+- Single words/commands: use `duration=5`
+- Normal sentences: use `duration=10`
+- Multiple sentences: use `duration=20`
+- Long dictation: use `duration=30-60`
+
+**IMPORTANT**: Always err on the side of longer duration. It's better to have silence at the end than to cut off the user mid-sentence.
 
 You can get the attention of the USER when he is not responding by using tools from livekit-voice-mcp:ask_voice_question
 
@@ -35,6 +72,12 @@ The voice-mcp project now has a complete local voice processing stack:
 - Both services expose OpenAI-compatible APIs
 - Automatic fallback from local to cloud services
 - Hardware detection for optimal model selection
+
+## Important Notes
+
+- These conventions are personal preferences, not rigid rules
+- Adapt suggestions to fit the specific project context
+- When in doubt, ask for clarification rather than assume
 
 # important-instruction-reminders
 Do what has been asked; nothing more, nothing less.
