@@ -154,8 +154,13 @@ async def text_to_speech(
                     # Add 100ms of silence at the beginning to prevent clipping
                     silence_duration = 0.1  # seconds
                     silence_samples = int(audio.frame_rate * silence_duration)
-                    silence = np.zeros((silence_samples, audio.channels if audio.channels > 1 else 1), dtype=np.float32)
-                    samples_with_buffer = np.vstack([silence, samples])
+                    # Match the shape of the samples array exactly
+                    if samples.ndim == 1:
+                        silence = np.zeros(silence_samples, dtype=np.float32)
+                        samples_with_buffer = np.concatenate([silence, samples])
+                    else:
+                        silence = np.zeros((silence_samples, samples.shape[1]), dtype=np.float32)
+                        samples_with_buffer = np.vstack([silence, samples])
                     
                     sd.play(samples_with_buffer, audio.frame_rate)
                     sd.wait()

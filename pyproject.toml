@@ -29,6 +29,15 @@ classifiers = [
 
 dependencies = [
     "uv>=0.4.0",
+    "fastmcp>=2.0.0",
+    "numpy",
+    "sounddevice",
+    "scipy",
+    "openai>=1.0.0",
+    "python-dotenv",
+    "pydub",
+    "simpleaudio",
+    "httpx",
 ]
 
 [project.optional-dependencies]
