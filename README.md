@@ -33,6 +33,12 @@ claude
 
 Try: *"Let's have a voice conversation"*
 
+## 🎬 Demo
+
+Watch voice-mcp in action:
+
+https://youtu.be/aXRNWvpnwVs
+
 ## Example Usage
 
 Once configured, try these prompts with Claude:
