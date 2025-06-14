@@ -46,8 +46,7 @@ except Exception:
     # If we can't find/override it, continue anyway
     pass
 
-# Load environment variables
-load_dotenv(dotenv_path=".env.local")
+# Environment variables are loaded by the shell/MCP client
 
 # Debug configuration
 DEBUG = os.getenv("VOICE_MCP_DEBUG", "").lower() in ("true", "1", "yes", "on")
