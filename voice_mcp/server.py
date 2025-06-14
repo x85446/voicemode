@@ -16,7 +16,6 @@ import signal
 from datetime import datetime
 from typing import Optional, Literal
 from pathlib import Path
-from dotenv import load_dotenv
 
 import sounddevice as sd
 import numpy as np

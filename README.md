@@ -158,6 +158,15 @@ export LIVEKIT_API_SECRET="your-api-secret"
 export VOICE_MCP_DEBUG="true"
 ```
 
+## Local STT/TTS Services
+
+For privacy-focused or offline usage, voice-mcp supports local speech services:
+
+- **[Whisper.cpp](docs/whisper.cpp.md)** - Local speech-to-text with OpenAI-compatible API
+- **[Kokoro](docs/kokoro.md)** - Local text-to-speech with multiple voice options
+
+These services provide the same API interface as OpenAI, allowing seamless switching between cloud and local processing.
+
 ## Architecture
 
 ```

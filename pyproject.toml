@@ -34,7 +34,6 @@ dependencies = [
     "sounddevice",
     "scipy",
     "openai>=1.0.0",
-    "python-dotenv",
     "pydub",
     "simpleaudio",
     "httpx",
@@ -54,15 +53,6 @@ test = [
     "pytest-asyncio>=0.21.0",
     "pytest-cov>=4.0.0",
     "pytest-mock>=3.10.0",
-    "fastmcp>=2.0.0",
-    "numpy",
-    "sounddevice",
-    "scipy",
-    "openai>=1.0.0",
-    "python-dotenv",
-    "pydub",
-    "simpleaudio",
-    "httpx",
 ]
 
 [project.urls]

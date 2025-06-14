@@ -2,16 +2,16 @@
   "mcpServers": {
     "livekit-admin-mcp": {
       "type": "stdio",
-      "command": "./mcp-servers/livekit-admin-mcp",
+      "command": "./bin/livekit-admin-mcp",
       "args": [],
       "env": {}
     },
     "voice-mcp": {
       "type": "stdio",
-      "command": "./mcp-servers/voice-mcp",
+      "command": "./bin/voice-mcp",
       "args": [],
       "env": {
-        "TTS_BASE_URL": "http://localhost:8880/v1",
+        "TTS_BASE_URL": "http://studio:8880/v1",
         "TTS_VOICE": "af_sky"
       }
     }
