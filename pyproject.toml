@@ -66,5 +66,22 @@ voice-mcp = "voice_mcp.cli:voice_mcp"
 [tool.hatch.build.targets.wheel]
 packages = ["voice_mcp"]
 
+[tool.hatch.build.targets.sdist]
+include = [
+  "/voice_mcp",
+  "/README.md",
+  "/LICENSE",
+  "/pyproject.toml",
+  "/CHANGELOG.md",
+]
+exclude = [
+  "**/__pycache__",
+  "**/*.pyc",
+  "**/*.pyo",
+  "**/*.pyd",
+  "**/.DS_Store",
+  "**/*.log",
+]
+
 [tool.hatch.version]
 path = "voice_mcp/__version__.py"
