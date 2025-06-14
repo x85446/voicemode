@@ -3,7 +3,6 @@
 # dependencies = [
 #   "fastmcp>=2.0.0",
 #   "livekit-api",
-#   "python-dotenv",
 # ]
 # requires-python = ">=3.9"
 # ///
@@ -14,13 +13,9 @@ LiveKit Admin MCP Server - Create and manage LiveKit rooms
 import logging
 import os
 from typing import Optional, List
-from dotenv import load_dotenv
 
 from fastmcp import FastMCP
 from livekit import api
-
-# Load environment variables
-load_dotenv(dotenv_path=".env.local")
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
