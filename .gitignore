@@ -10,6 +10,15 @@ __pycache__/
 .Python
 *.so
 .pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+.tox/
+*.cover
+*.py,cover
 
 # Virtual environments
 venv/
@@ -23,22 +32,30 @@ test-pkg-env/
 .idea/
 *.swp
 *.swo
+*~
 
 # OS
 .DS_Store
 Thumbs.db
+desktop.ini
 
 # Logs
 *.log
+logs/
+*.err
 
 # Temporary files
 tmp/
 temp/
 .tmp/
+*.tmp
 
-# Container volumes
-data/
-models/
+# Build artifacts
+dist/
+build/
+*.egg-info/
+.eggs/
+*.whl
 
 # Test artifacts
 test_output/
@@ -47,10 +64,22 @@ test_output/
 *.pcm
 .aider*
 
-# Build artifacts
-python-package/dist/
-python-package/build/
-*.egg-info/
+# Voice MCP specific
+voice-mcp_recordings/
+debug_recordings/
 
+# Documentation build
+docs/_build/
+docs/promote/
+
+# Local configuration
 .claude/settings.local.json
-docs/promote
+
+# Node modules (for livekit frontend)
+node_modules/
+.npm/
+
+# Misc
+.cache/
+*.bak
+*.orig
