@@ -86,8 +86,8 @@ class TestConfiguration:
     def test_default_values(self):
         """Test default configuration values"""
         # Test default voice
-        default_voice = os.getenv('TTS_VOICE', 'nova')
-        assert default_voice in ['nova', 'alloy', 'echo', 'fable', 'onyx', 'shimmer', 'af_sky']
+        default_voice = os.getenv('TTS_VOICE', 'af_sky')
+        assert default_voice in ['nova', 'alloy', 'echo', 'fable', 'onyx', 'shimmer', 'af_sky', 'af_bella', 'af_nicole', 'af_sarah', 'am_adam', 'am_michael', 'br_gabriel', 'kr_ji-woo', 'af_nova']
         
         # Test default models
         default_tts_model = os.getenv('TTS_MODEL', 'tts-1')

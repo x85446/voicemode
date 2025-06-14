@@ -44,7 +44,14 @@ build-package:
 # Run unit tests
 test:
 	@echo "Running unit tests..."
-	uv run pytest tests/ -v --tb=short
+	@if [ ! -d ".venv" ]; then \
+		echo "Creating virtual environment..."; \
+		uv venv; \
+	fi
+	@echo "Installing test dependencies..."
+	@uv pip install -e ".[test]" -q
+	@echo "Running tests..."
+	@uv run pytest tests/ -v --tb=short
 	@echo "Tests completed!"
 
 # Test package installation
