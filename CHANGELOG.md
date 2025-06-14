@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.14] - 2025-06-14
+
 ### Added
 - Performance timing in voice responses showing TTS, recording, and STT durations
 - Local STT/TTS documentation for Whisper.cpp and Kokoro
