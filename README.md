@@ -37,7 +37,7 @@ Try: *"Let's have a voice conversation"*
 
 Watch voice-mcp in action:
 
-https://youtu.be/aXRNWvpnwVs
+[![voice-mcp Demo](https://img.youtube.com/vi/aXRNWvpnwVs/maxresdefault.jpg)](https://www.youtube.com/watch?v=aXRNWvpnwVs)
 
 ## Example Usage
 
