@@ -646,11 +646,23 @@ def main():
     
     # Register cleanup handler
     def sync_cleanup():
-        asyncio.run(cleanup())
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                loop.create_task(cleanup())
+            else:
+                asyncio.run(cleanup())
+        except Exception as e:
+            logger.error(f"Cleanup error: {e}")
     
     atexit.register(sync_cleanup)
-    signal.signal(signal.SIGTERM, lambda s, f: sys.exit(0))
-    signal.signal(signal.SIGINT, lambda s, f: sys.exit(0))
+    # Don't immediately exit on signals - let FastMCP handle shutdown
+    def signal_handler(sig, frame):
+        logger.info(f"Received signal {sig}, initiating graceful shutdown...")
+        # FastMCP will handle the shutdown process
+    
+    signal.signal(signal.SIGTERM, signal_handler)
+    signal.signal(signal.SIGINT, signal_handler)
     
     mcp.run()
 
