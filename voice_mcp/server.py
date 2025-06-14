@@ -459,9 +459,11 @@ async def converse(
             return await livekit_ask_voice_question(message, room_name, timeout)
         
         elif transport == "local":
-            # Local microphone approach
+            # Local microphone approach with timing
+            timings = {}
             try:
                 # Speak the message
+                tts_start = time.perf_counter()
                 tts_success = await text_to_speech(
                     text=message,
                     openai_clients=openai_clients,
@@ -471,6 +473,8 @@ async def converse(
                     debug=DEBUG,
                     debug_dir=DEBUG_DIR if DEBUG else None
                 )
+                timings['tts'] = time.perf_counter() - tts_start
+                
                 if not tts_success:
                     return "Error: Could not speak message"
                 
@@ -479,20 +483,29 @@ async def converse(
                 
                 # Record response
                 logger.info(f"🎤 Listening for {listen_duration} seconds...")
+                record_start = time.perf_counter()
                 audio_data = await asyncio.get_event_loop().run_in_executor(
                     None, record_audio, listen_duration
                 )
+                timings['record'] = time.perf_counter() - record_start
                 
                 if len(audio_data) == 0:
                     return "Error: Could not record audio"
                 
                 # Convert to text
+                stt_start = time.perf_counter()
                 response_text = await speech_to_text(audio_data)
+                timings['stt'] = time.perf_counter() - stt_start
+                
+                # Calculate total time
+                total_time = sum(timings.values())
+                timing_str = ", ".join([f"{k} {v:.1f}s" for k, v in timings.items()])
+                timing_str += f", total {total_time:.1f}s"
                 
                 if response_text:
-                    return f"Voice response: {response_text}"
+                    return f"Voice response: {response_text} | Timing: {timing_str}"
                 else:
-                    return "No speech detected"
+                    return f"No speech detected | Timing: {timing_str}"
                     
             except Exception as e:
                 logger.error(f"Local voice error: {e}")
