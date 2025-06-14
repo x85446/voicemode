@@ -1,56 +1,18 @@
-#!/usr/bin/env -S uv run --script
-# /// script
-# dependencies = [
-#   "fastmcp>=2.0.0",
-#   "sounddevice",
-#   "numpy",
-#   "scipy",
-#   "openai>=1.0.0",
-#   "python-dotenv",
-#   "livekit-agents>=0.11",
-#   "livekit-plugins-openai",
-#   "livekit-plugins-silero",
-#   "pydub",
-#   "simpleaudio",
-#   "httpx",
-# ]
-# requires-python = "~=3.11.0"
-# ///
 """
-Unified Voice MCP Server
+Voice MCP Server implementation.
 
-A Model Context Protocol server that provides voice interaction capabilities
-through multiple transport methods (local microphone or LiveKit rooms).
-
-Features:
-- Local voice recording and playback
-- LiveKit room-based voice communication
-- Configurable OpenAI-compatible STT/TTS services
-- Automatic transport selection and fallback
-- Privacy-conscious with clear user consent requirements
-
-Environment Variables:
-- STT_BASE_URL: Base URL for speech-to-text service (default: OpenAI)
-- TTS_BASE_URL: Base URL for text-to-speech service (default: OpenAI)
-- TTS_VOICE: Voice to use for TTS (default: nova)
-- TTS_MODEL: TTS model to use (default: tts-1)
-- STT_MODEL: STT model to use (default: whisper-1)
-- OPENAI_API_KEY: API key for OpenAI services
-- LIVEKIT_URL: LiveKit server URL (for LiveKit transport)
-- LIVEKIT_API_KEY: LiveKit API key
-- LIVEKIT_API_SECRET: LiveKit API secret
-- VOICE_MCP_DEBUG: Enable debug mode (saves audio files, verbose logging)
+This module contains the main server logic for the voice-mcp MCP server.
 """
 
 import asyncio
 import logging
 import os
-import tempfile
-import time
-import shutil
 import sys
 import traceback
 import gc
+import time
+import atexit
+import signal
 from datetime import datetime
 from typing import Optional, Literal
 from pathlib import Path
@@ -60,9 +22,16 @@ import sounddevice as sd
 import numpy as np
 from scipy.io.wavfile import write
 from pydub import AudioSegment
-from openai import AsyncOpenAI
 
 from fastmcp import FastMCP
+
+from .core import (
+    get_openai_clients,
+    text_to_speech,
+    cleanup as cleanup_clients,
+    save_debug_file,
+    get_debug_filename
+)
 
 # Workaround for sounddevice stderr redirection issue
 # This prevents sounddevice from redirecting stderr to /dev/null
@@ -156,204 +125,10 @@ LIVEKIT_API_SECRET = os.getenv("LIVEKIT_API_SECRET", "secret")
 if not OPENAI_API_KEY:
     raise ValueError("OPENAI_API_KEY is required")
 
-
-def get_debug_filename(prefix: str, extension: str) -> str:
-    """Generate debug filename with timestamp"""
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")[:-3]  # milliseconds
-    return f"{timestamp}-{prefix}.{extension}"
-
-
-def save_debug_file(data: bytes, prefix: str, extension: str) -> Optional[str]:
-    """Save debug file if debug mode is enabled"""
-    if not DEBUG:
-        return None
-    
-    try:
-        filename = get_debug_filename(prefix, extension)
-        filepath = DEBUG_DIR / filename
-        
-        with open(filepath, 'wb') as f:
-            f.write(data)
-        
-        logger.debug(f"Debug file saved: {filepath}")
-        return str(filepath)
-    except Exception as e:
-        logger.error(f"Failed to save debug file: {e}")
-        return None
-
-
-def get_openai_clients():
-    """Initialize OpenAI clients for STT and TTS with connection pooling"""
-    # Configure timeouts and connection pooling
-    import httpx
-    
-    # Create custom HTTP client with connection pooling and timeouts
-    http_client_config = {
-        'timeout': httpx.Timeout(30.0, connect=5.0),
-        'limits': httpx.Limits(max_keepalive_connections=5, max_connections=10),
-    }
-    
-    return {
-        'stt': AsyncOpenAI(
-            api_key=OPENAI_API_KEY, 
-            base_url=STT_BASE_URL,
-            http_client=httpx.AsyncClient(**http_client_config)
-        ),
-        'tts': AsyncOpenAI(
-            api_key=OPENAI_API_KEY, 
-            base_url=TTS_BASE_URL,
-            http_client=httpx.AsyncClient(**http_client_config)
-        )
-    }
-
-
 logger.info("✓ MP3 support available (Python 3.11 + pydub)")
 
 # Initialize clients
-openai_clients = get_openai_clients()
-
-
-async def text_to_speech(text: str) -> bool:
-    """Convert text to speech and play it"""
-    logger.info(f"TTS: Converting text to speech: '{text[:100]}{'...' if len(text) > 100 else ''}'")
-    if DEBUG:
-        logger.debug(f"TTS full text: {text}")
-        logger.debug(f"TTS config - Model: {TTS_MODEL}, Voice: {TTS_VOICE}, Base URL: {TTS_BASE_URL}")
-    
-    try:
-        # Use MP3 format for bandwidth efficiency
-        audio_format = "mp3"
-        
-        logger.debug("Making TTS API request...")
-        # Use context manager to ensure response is properly closed
-        async with openai_clients['tts'].audio.speech.with_streaming_response.create(
-            model=TTS_MODEL,
-            input=text,
-            voice=TTS_VOICE,
-            response_format=audio_format
-        ) as response:
-            # Read the entire response content
-            response_content = await response.read()
-            
-        logger.debug(f"TTS API response received, content length: {len(response_content)} bytes")
-        
-        # Save debug file if enabled
-        debug_path = save_debug_file(response_content, "tts-output", audio_format)
-        if debug_path:
-            logger.info(f"TTS audio saved to: {debug_path}")
-        
-        # Play audio
-        with tempfile.NamedTemporaryFile(suffix=f'.{audio_format}', delete=False) as tmp_file:
-            tmp_file.write(response_content)
-            tmp_file.flush()
-            
-            logger.debug(f"Audio written to temp file: {tmp_file.name}")
-            
-            try:
-                # Load MP3 and convert to numpy array for playback
-                logger.debug("Loading MP3 audio...")
-                audio = AudioSegment.from_mp3(tmp_file.name)
-                logger.debug(f"Audio loaded - Duration: {len(audio)}ms, Channels: {audio.channels}, Frame rate: {audio.frame_rate}")
-                
-                # Convert to numpy array
-                logger.debug("Converting to numpy array...")
-                samples = np.array(audio.get_array_of_samples())
-                if audio.channels == 2:
-                    samples = samples.reshape((-1, 2))
-                    logger.debug("Reshaped for stereo")
-                
-                # Convert to float32 for sounddevice
-                samples = samples.astype(np.float32) / 32767.0
-                logger.debug(f"Audio converted to float32, shape: {samples.shape}")
-                
-                # Check audio devices
-                if DEBUG:
-                    try:
-                        devices = sd.query_devices()
-                        default_output = sd.default.device[1]
-                        logger.debug(f"Default output device: {default_output} - {devices[default_output]['name'] if default_output is not None else 'None'}")
-                    except Exception as dev_e:
-                        logger.error(f"Error querying audio devices: {dev_e}")
-                
-                logger.debug(f"Playing audio with sounddevice at {audio.frame_rate}Hz...")
-                
-                # Try to ensure sounddevice doesn't interfere with stdout/stderr
-                try:
-                    # Force initialization before playing
-                    sd.default.samplerate = audio.frame_rate
-                    sd.default.channels = audio.channels
-                    
-                    # Add 100ms of silence at the beginning to prevent clipping
-                    silence_duration = 0.1  # seconds
-                    silence_samples = int(audio.frame_rate * silence_duration)
-                    silence = np.zeros((silence_samples, audio.channels if audio.channels > 1 else 1), dtype=np.float32)
-                    samples_with_buffer = np.vstack([silence, samples])
-                    
-                    sd.play(samples_with_buffer, audio.frame_rate)
-                    sd.wait()
-                    
-                    logger.info("✓ TTS played successfully")
-                    os.unlink(tmp_file.name)
-                    return True
-                except Exception as sd_error:
-                    logger.error(f"Sounddevice playback failed: {sd_error}")
-                    
-                    # Fallback to file-based playback methods
-                    logger.info("Attempting alternative playback methods...")
-                    
-                    # Try using PyDub's playback (requires simpleaudio or pyaudio)
-                    try:
-                        from pydub.playback import play as pydub_play
-                        logger.debug("Using PyDub playback...")
-                        pydub_play(audio)
-                        logger.info("✓ TTS played successfully with PyDub")
-                        os.unlink(tmp_file.name)
-                        return True
-                    except Exception as pydub_error:
-                        logger.error(f"PyDub playback failed: {pydub_error}")
-                    
-                    # Last resort: save to user's home directory for manual playback
-                    try:
-                        fallback_path = Path.home() / f"voice-mcp-audio-{datetime.now().strftime('%Y%m%d_%H%M%S')}.mp3"
-                        shutil.copy(tmp_file.name, fallback_path)
-                        logger.warning(f"Audio saved to {fallback_path} for manual playback")
-                        os.unlink(tmp_file.name)
-                        return False
-                    except Exception as save_error:
-                        logger.error(f"Failed to save audio file: {save_error}")
-                        os.unlink(tmp_file.name)
-                        return False
-                
-            except Exception as e:
-                logger.error(f"Error playing audio: {e}")
-                logger.error(f"Audio format - Channels: {audio.channels if 'audio' in locals() else 'unknown'}, Frame rate: {audio.frame_rate if 'audio' in locals() else 'unknown'}")
-                logger.error(f"Samples shape: {samples.shape if 'samples' in locals() else 'unknown'}")
-                
-                # Try alternative playback method in debug mode
-                if DEBUG:
-                    try:
-                        logger.debug("Attempting alternative playback with system command...")
-                        import subprocess
-                        result = subprocess.run(['paplay', tmp_file.name], capture_output=True, timeout=10)
-                        if result.returncode == 0:
-                            logger.info("✓ Alternative playback successful")
-                            os.unlink(tmp_file.name)
-                            return True
-                        else:
-                            logger.error(f"Alternative playback failed: {result.stderr.decode()}")
-                    except Exception as alt_e:
-                        logger.error(f"Alternative playback error: {alt_e}")
-                
-                os.unlink(tmp_file.name)
-                return False
-                        
-    except Exception as e:
-        logger.error(f"TTS failed: {e}")
-        logger.error(f"TTS config when error occurred - Model: {TTS_MODEL}, Voice: {TTS_VOICE}, Base URL: {TTS_BASE_URL}")
-        if hasattr(e, 'response'):
-            logger.error(f"HTTP status: {e.response.status_code if hasattr(e.response, 'status_code') else 'unknown'}")
-            logger.error(f"Response text: {e.response.text if hasattr(e.response, 'text') else 'unknown'}")
-        return False
+openai_clients = get_openai_clients(OPENAI_API_KEY, STT_BASE_URL, TTS_BASE_URL)
 
 
 async def speech_to_text(audio_data: np.ndarray) -> Optional[str]:
@@ -366,6 +141,7 @@ async def speech_to_text(audio_data: np.ndarray) -> Optional[str]:
     wav_file = None
     mp3_file = None
     try:
+        import tempfile
         with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as wav_file_obj:
             wav_file = wav_file_obj.name
             logger.debug(f"Writing audio to WAV file: {wav_file}")
@@ -375,7 +151,7 @@ async def speech_to_text(audio_data: np.ndarray) -> Optional[str]:
             if DEBUG:
                 try:
                     with open(wav_file, 'rb') as f:
-                        debug_path = save_debug_file(f.read(), "stt-input", "wav")
+                        debug_path = save_debug_file(f.read(), "stt-input", "wav", DEBUG_DIR, DEBUG)
                         if debug_path:
                             logger.info(f"Original recording saved to: {debug_path}")
                 except Exception as e:
@@ -397,7 +173,7 @@ async def speech_to_text(audio_data: np.ndarray) -> Optional[str]:
             if DEBUG:
                 try:
                     with open(upload_file, 'rb') as f:
-                        debug_path = save_debug_file(f.read(), "stt-upload", "mp3")
+                        debug_path = save_debug_file(f.read(), "stt-upload", "mp3", DEBUG_DIR, DEBUG)
                         if debug_path:
                             logger.info(f"Upload audio saved to: {debug_path}")
                 except Exception as e:
@@ -650,7 +426,15 @@ async def converse(
         # If not waiting for response, just speak and return
         if not wait_for_response:
             try:
-                success = await text_to_speech(message)
+                success = await text_to_speech(
+                    text=message,
+                    openai_clients=openai_clients,
+                    tts_model=TTS_MODEL,
+                    tts_voice=TTS_VOICE,
+                    tts_base_url=TTS_BASE_URL,
+                    debug=DEBUG,
+                    debug_dir=DEBUG_DIR if DEBUG else None
+                )
                 result = "✓ Message spoken successfully" if success else "✗ Failed to speak message"
                 logger.info(f"Speak-only result: {result}")
                 return result
@@ -678,7 +462,15 @@ async def converse(
             # Local microphone approach
             try:
                 # Speak the message
-                tts_success = await text_to_speech(message)
+                tts_success = await text_to_speech(
+                    text=message,
+                    openai_clients=openai_clients,
+                    tts_model=TTS_MODEL,
+                    tts_voice=TTS_VOICE,
+                    tts_base_url=TTS_BASE_URL,
+                    debug=DEBUG,
+                    debug_dir=DEBUG_DIR if DEBUG else None
+                )
                 if not tts_success:
                     return "Error: Could not speak message"
                 
@@ -723,6 +515,7 @@ async def converse(
         logger.info(f"Converse completed in {elapsed:.2f}s")
         
         if DEBUG:
+            import resource
             end_memory = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
             memory_delta = end_memory - start_memory
             logger.debug(f"Memory delta: {memory_delta} KB (start: {start_memory}, end: {end_memory})")
@@ -730,8 +523,6 @@ async def converse(
             # Force garbage collection
             collected = gc.collect()
             logger.debug(f"Garbage collected {collected} objects")
-
-
 
 
 @mcp.tool()
@@ -833,25 +624,11 @@ async def check_audio_devices() -> str:
 
 async def cleanup():
     """Cleanup function to close HTTP clients and resources"""
-    logger.info("Shutting down Voice MCP Server...")
-    
-    # Close OpenAI HTTP clients
-    try:
-        if 'stt' in openai_clients and hasattr(openai_clients['stt'], '_client'):
-            await openai_clients['stt']._client.aclose()
-            logger.debug("Closed STT HTTP client")
-        if 'tts' in openai_clients and hasattr(openai_clients['tts'], '_client'):
-            await openai_clients['tts']._client.aclose()
-            logger.debug("Closed TTS HTTP client")
-    except Exception as e:
-        logger.error(f"Error closing HTTP clients: {e}")
-    
-    # Final garbage collection
-    gc.collect()
-    logger.info("Cleanup completed")
+    await cleanup_clients(openai_clients)
 
 
-if __name__ == "__main__":
+def main():
+    """Main entry point for the server."""
     try:
         from voice_mcp import __version__
         version_info = f" v{__version__}"
@@ -868,9 +645,6 @@ if __name__ == "__main__":
     logger.info(f"Sample Rate: {SAMPLE_RATE}Hz")
     
     # Register cleanup handler
-    import atexit
-    import signal
-    
     def sync_cleanup():
         asyncio.run(cleanup())
     
@@ -879,3 +653,7 @@ if __name__ == "__main__":
     signal.signal(signal.SIGINT, lambda s, f: sys.exit(0))
     
     mcp.run()
+
+
+if __name__ == "__main__":
+    main()

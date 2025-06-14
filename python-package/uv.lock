@@ -1447,7 +1447,6 @@ wheels = [
 
 [[package]]
 name = "voice-mcp"
-version = "0.1.6"
 source = { editable = "." }
 dependencies = [
     { name = "uv" },
@@ -1464,6 +1463,7 @@ dev = [
 ]
 test = [
     { name = "fastmcp" },
+    { name = "httpx" },
     { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "numpy", version = "2.3.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "openai" },
@@ -1482,6 +1482,7 @@ test = [
 requires-dist = [
     { name = "build", marker = "extra == 'dev'", specifier = ">=1.0.0" },
     { name = "fastmcp", marker = "extra == 'test'", specifier = ">=2.0.0" },
+    { name = "httpx", marker = "extra == 'test'" },
     { name = "numpy", marker = "extra == 'test'" },
     { name = "openai", marker = "extra == 'test'", specifier = ">=1.0.0" },
     { name = "pydub", marker = "extra == 'test'" },

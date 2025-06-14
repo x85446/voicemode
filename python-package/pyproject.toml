@@ -53,6 +53,7 @@ test = [
     "python-dotenv",
     "pydub",
     "simpleaudio",
+    "httpx",
 ]
 
 [project.urls]
