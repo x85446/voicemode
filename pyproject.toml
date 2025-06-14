@@ -65,10 +65,7 @@ Issues = "https://github.com/mbailey/voice-mcp/issues"
 voice-mcp = "voice_mcp.cli:voice_mcp"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/voice_mcp"]
-
-[tool.hatch.build.targets.wheel.force-include]
-"src/voice_mcp/scripts" = "voice_mcp/scripts"
+packages = ["voice_mcp"]
 
 [tool.hatch.version]
-path = "src/voice_mcp/__version__.py"
+path = "voice_mcp/__version__.py"
