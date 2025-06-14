@@ -647,13 +647,19 @@ def main():
     # Register cleanup handler
     def sync_cleanup():
         try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                loop.create_task(cleanup())
-            else:
+            # Don't try to cleanup if we're already shutting down
+            if hasattr(asyncio, '_get_running_loop'):
+                loop = asyncio._get_running_loop()
+                if loop is not None:
+                    return  # Already in an event loop context
+            
+            # Only run cleanup if we can create a new event loop
+            try:
                 asyncio.run(cleanup())
+            except RuntimeError:
+                pass  # Event loop already closed
         except Exception as e:
-            logger.error(f"Cleanup error: {e}")
+            logger.debug(f"Cleanup skipped: {e}")
     
     atexit.register(sync_cleanup)
     # Don't immediately exit on signals - let FastMCP handle shutdown

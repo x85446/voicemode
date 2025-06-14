@@ -1,7 +1,22 @@
-#!/usr/bin/env -S uv run python3
-"""Direct entry point for voice-mcp server."""
-import sys
-from voice_mcp.server import main
+#!/bin/bash
+# Wrapper script for voice-mcp that uses the venv if available
 
-if __name__ == "__main__":
-    sys.exit(main())
+# Resolve symlinks to get the real script location
+SCRIPT_PATH="$0"
+while [ -h "$SCRIPT_PATH" ]; do
+    SCRIPT_DIR="$(cd -P "$(dirname "$SCRIPT_PATH")" && pwd)"
+    SCRIPT_PATH="$(readlink "$SCRIPT_PATH")"
+    [[ $SCRIPT_PATH != /* ]] && SCRIPT_PATH="$SCRIPT_DIR/$SCRIPT_PATH"
+done
+SCRIPT_DIR="$(cd -P "$(dirname "$SCRIPT_PATH")" && pwd)"
+
+# Check if we're in the development environment with venv
+if [ -f "$SCRIPT_DIR/.venv/bin/voice-mcp" ]; then
+    exec "$SCRIPT_DIR/.venv/bin/voice-mcp" "$@"
+elif [ -f "$SCRIPT_DIR/.venv/bin/python" ]; then
+    # Use venv Python directly
+    exec "$SCRIPT_DIR/.venv/bin/python" -m voice_mcp.server "$@"
+else
+    # Fallback to direct Python execution
+    exec python3 -m voice_mcp.server "$@"
+fi
