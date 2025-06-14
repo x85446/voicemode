@@ -12,17 +12,17 @@ ALWAYS read the following files at the start of any session:
 
 Load specific convention modules based on the current work context:
 
-- **Editing bash scripts**: Load `core/principles.md` + `languages/bash.md` + `interfaces/cli.md`
-- **Python development**: Load `core/principles.md` + `languages/python.md` + `interfaces/cli.md`
-- **Writing documentation**: Load `core/principles.md` + `core/documentation.md` + `languages/markdown.md`
-- **General project work**: Load `CONVENTIONS.md` + `core/project-structure.md`
+- **Editing bash scripts**: Load `.conventions/core/principles.md` + `.conventions/languages/bash.md` + `.conventions/interfaces/cli.md`
+- **Python development**: Load `.conventions/core/principles.md` + `.conventions/languages/python.md` + `.conventions/interfaces/cli.md`
+- **Writing documentation**: Load `.conventions/core/principles.md` + `.conventions/core/documentation.md` + `.conventions/languages/markdown.md`
+- **General project work**: Load `CONVENTIONS.md` + `.conventions/core/project-structure.md`
 
 ## Override System
 
 Check for convention overrides in this order:
-1. `conventions/` - Base conventions
-2. `conventions-project/` - Project-specific overrides (if exists)
-3. `conventions-local/` - Local personal overrides (if exists)
+1. `.conventions/` - Base conventions
+2. `.conventions-project/` - Project-specific overrides (if exists)
+3. `.conventions-local/` - Local personal overrides (if exists)
 
 Later files override earlier ones for the same convention.
 
