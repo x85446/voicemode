@@ -104,7 +104,11 @@ release:
 	echo "Updating version to $$version..."; \
 	sed -i.bak 's/^__version__ = .*/__version__ = "'$$version'"/' voice_mcp/__version__.py && \
 	rm voice_mcp/__version__.py.bak; \
-	git add voice_mcp/__version__.py && \
+	echo "Updating CHANGELOG.md..."; \
+	date=$$(date +%Y-%m-%d); \
+	sed -i.bak "s/## \[Unreleased\]/## [Unreleased]\n\n## [$$version] - $$date/" CHANGELOG.md && \
+	rm CHANGELOG.md.bak; \
+	git add voice_mcp/__version__.py CHANGELOG.md && \
 	git commit -m "chore: bump version to $$version" && \
 	git tag -a "v$$version" -m "Release v$$version" && \
 	echo "" && \

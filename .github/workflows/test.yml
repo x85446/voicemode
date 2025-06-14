@@ -39,22 +39,20 @@ jobs:
         echo "$HOME/.cargo/bin" >> $GITHUB_PATH
     
     - name: Install package and dependencies
-      working-directory: ./python-package
       run: |
         uv pip install -e ".[test]" --system
     
     - name: Run tests
-      working-directory: ./python-package
       env:
         OPENAI_API_KEY: test-key
       run: |
-        pytest -v --cov=src/voice_mcp --cov-report=xml
+        pytest -v --cov=voice_mcp --cov-report=xml
     
     - name: Upload coverage reports
       uses: codecov/codecov-action@v3
       if: matrix.python-version == '3.11' && matrix.os == 'ubuntu-latest'
       with:
-        file: ./python-package/coverage.xml
+        file: ./coverage.xml
         flags: unittests
         name: codecov-umbrella
         fail_ci_if_error: false
