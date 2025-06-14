@@ -2,8 +2,6 @@
 
 A Model Context Protocol (MCP) server that enables voice interactions with Claude and other LLMs. Requires only an OpenAI API key and microphone/speakers.
 
-[![Build and Publish Voice MCP Container](https://github.com/mbailey/voice-mcp/actions/workflows/build-container.yml/badge.svg)](https://github.com/mbailey/voice-mcp/actions/workflows/build-container.yml)
-
 ## 🖥️ Compatibility
 
 **Runs on:** Linux • macOS • Windows (WSL) | **Python:** 3.10+ | **Tested:** Ubuntu 24.04 LTS, Fedora 42
@@ -62,31 +60,6 @@ Add to your Claude Desktop configuration file:
     "voice-mcp": {
       "command": "uvx",
       "args": ["voice-mcp"],
-      "env": {
-        "OPENAI_API_KEY": "your-openai-key"
-      }
-    }
-  }
-}
-```
-
-</details>
-
-<details>
-<summary>Using Docker/Podman</summary>
-
-```json
-{
-  "mcpServers": {
-    "voice-mcp": {
-      "command": "docker",
-      "args": [
-        "run", "--rm", "-i",
-        "--device", "/dev/snd",
-        "-e", "PULSE_RUNTIME_PATH=/run/user/1000/pulse",
-        "-v", "/run/user/1000/pulse:/run/user/1000/pulse",
-        "ghcr.io/mbailey/voice-mcp:latest"
-      ],
       "env": {
         "OPENAI_API_KEY": "your-openai-key"
       }
@@ -194,7 +167,6 @@ These services provide the same API interface as OpenAI, allowing seamless switc
 - **UV not found**: Install with `curl -LsSf https://astral.sh/uv/install.sh | sh`
 - **OpenAI API error**: Verify your `OPENAI_API_KEY` is set correctly
 - **No audio output**: Check system audio settings and available devices
-- **Container audio**: May need to adjust device paths for your system
 
 ### Debug Mode
 

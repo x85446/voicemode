@@ -97,8 +97,8 @@ Debug recordings are saved to `~/voice-mcp_recordings/`
 ## Common Development Tasks
 
 - **Update dependencies**: Edit `pyproject.toml` and run `uv pip install -e .`
-- **Test container**: `make test-container`
 - **Build package**: `make build-package`
+- **Run tests**: `make test`
 - **Run linting**: `make lint` (if configured)
 
 ## Questions?
