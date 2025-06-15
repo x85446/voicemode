@@ -135,6 +135,9 @@ export LIVEKIT_API_SECRET="your-api-secret"
 
 # Debug mode
 export VOICE_MCP_DEBUG="true"
+
+# Save all audio (TTS output and STT input)
+export VOICE_MCP_SAVE_AUDIO="true"
 ```
 
 ## Local STT/TTS Services
@@ -183,6 +186,16 @@ export VOICE_MCP_DEBUG=true
 ```
 
 Debug audio files are saved to: `~/voice-mcp_recordings/`
+
+### Audio Saving
+
+To save all audio files (both TTS output and STT input):
+
+```bash
+export VOICE_MCP_SAVE_AUDIO=true
+```
+
+Audio files are saved to: `~/voice-mcp_audio/` with timestamps in the filename.
 
 ## License
 

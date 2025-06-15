@@ -82,8 +82,15 @@ DEBUG = os.getenv("VOICE_MCP_DEBUG", "").lower() in ("true", "1", "yes", "on")
 TRACE_DEBUG = os.getenv("VOICE_MCP_DEBUG", "").lower() == "trace"
 DEBUG_DIR = Path.home() / "voice-mcp_recordings"
 
+# Audio saving configuration
+SAVE_AUDIO = os.getenv("VOICE_MCP_SAVE_AUDIO", "").lower() in ("true", "1", "yes", "on")
+AUDIO_DIR = Path.home() / "voice-mcp_audio"
+
 if DEBUG:
     DEBUG_DIR.mkdir(exist_ok=True)
+
+if SAVE_AUDIO:
+    AUDIO_DIR.mkdir(exist_ok=True)
 
 # Configure logging
 log_level = logging.DEBUG if DEBUG else logging.INFO
@@ -192,7 +199,7 @@ if KOKORO_TTS_BASE_URL != TTS_BASE_URL:
     )
 
 
-def get_tts_config(provider: Optional[str] = None, voice: Optional[str] = None):
+def get_tts_config(provider: Optional[str] = None, voice: Optional[str] = None, model: Optional[str] = None, instructions: Optional[str] = None):
     """Get TTS configuration based on provider selection"""
     # Auto-detect provider based on voice if not specified
     if provider is None and voice:
@@ -210,14 +217,20 @@ def get_tts_config(provider: Optional[str] = None, voice: Optional[str] = None):
         else:
             provider = "openai"
     
+    # Validate instructions usage
+    if instructions and model != "gpt-4o-mini-tts":
+        logger.warning(f"Instructions parameter is only supported with gpt-4o-mini-tts model, ignoring for model: {model}")
+        instructions = None
+    
     if provider == "kokoro":
         # Use kokoro-specific client if available, otherwise use default
         client_key = 'tts_kokoro' if 'tts_kokoro' in openai_clients else 'tts'
         return {
             'client_key': client_key,
             'base_url': KOKORO_TTS_BASE_URL,
-            'model': 'tts-1',  # Kokoro uses OpenAI-compatible model name
-            'voice': voice or 'af_sky'  # Default Kokoro voice
+            'model': model or 'tts-1',  # Kokoro uses OpenAI-compatible model name
+            'voice': voice or 'af_sky',  # Default Kokoro voice
+            'instructions': None  # Kokoro doesn't support instructions
         }
     else:  # openai
         # Use openai-specific client if available, otherwise use default
@@ -225,12 +238,13 @@ def get_tts_config(provider: Optional[str] = None, voice: Optional[str] = None):
         return {
             'client_key': client_key,
             'base_url': OPENAI_TTS_BASE_URL,
-            'model': TTS_MODEL,
-            'voice': voice or TTS_VOICE  # Default OpenAI voice
+            'model': model or TTS_MODEL,  # Use provided model or default
+            'voice': voice or TTS_VOICE,  # Default OpenAI voice
+            'instructions': instructions  # Pass through instructions for OpenAI
         }
 
 
-async def speech_to_text(audio_data: np.ndarray) -> Optional[str]:
+async def speech_to_text(audio_data: np.ndarray, save_audio: bool = False, audio_dir: Optional[Path] = None) -> Optional[str]:
     """Convert audio to text"""
     logger.info(f"STT: Converting speech to text, audio data shape: {audio_data.shape}")
     if DEBUG:
@@ -252,9 +266,19 @@ async def speech_to_text(audio_data: np.ndarray) -> Optional[str]:
                     with open(wav_file, 'rb') as f:
                         debug_path = save_debug_file(f.read(), "stt-input", "wav", DEBUG_DIR, DEBUG)
                         if debug_path:
-                            logger.info(f"Original recording saved to: {debug_path}")
+                            logger.info(f"STT debug recording saved to: {debug_path}")
                 except Exception as e:
                     logger.error(f"Failed to save debug WAV: {e}")
+            
+            # Save audio file if audio saving is enabled
+            if save_audio and audio_dir:
+                try:
+                    with open(wav_file, 'rb') as f:
+                        audio_path = save_debug_file(f.read(), "stt", "wav", audio_dir, True)
+                        if audio_path:
+                            logger.info(f"STT audio saved to: {audio_path}")
+                except Exception as e:
+                    logger.error(f"Failed to save audio WAV: {e}")
         
         try:
             # Convert WAV to MP3 for smaller upload
@@ -499,7 +523,9 @@ async def converse(
     room_name: str = "",
     timeout: float = 60.0,
     voice: Optional[str] = None,
-    tts_provider: Optional[Literal["openai", "kokoro"]] = None
+    tts_provider: Optional[Literal["openai", "kokoro"]] = None,
+    tts_model: Optional[str] = None,
+    tts_instructions: Optional[str] = None
 ) -> str:
     """Have a voice conversation - speak a message and optionally listen for response
     This is the primary function for voice interactions. It combines speaking and listening
@@ -517,7 +543,11 @@ async def converse(
         room_name: LiveKit room name (only for livekit transport, auto-discovered if empty)
         timeout: Maximum wait time for response in seconds (LiveKit only)
         voice: Override TTS voice (e.g., OpenAI: nova, shimmer; Kokoro: af_sky, af_sarah, am_adam, af_nicole, am_michael)
+               IMPORTANT: Never use 'coral' voice. For Kokoro, always default to 'af_sky'
         tts_provider: TTS provider to use - "openai" or "kokoro" (auto-detects based on voice if not specified)
+        tts_model: TTS model to use (e.g., OpenAI: tts-1, tts-1-hd, gpt-4o-mini-tts; Kokoro uses tts-1)
+                   IMPORTANT: gpt-4o-mini-tts is BEST for emotional speech and should be used when expressing emotions
+        tts_instructions: Tone/style instructions for gpt-4o-mini-tts model only (e.g., "Speak in a cheerful tone", "Sound angry", "Be extremely sad")
         If wait_for_response is False: Confirmation that message was spoken
         If wait_for_response is True: The voice response received (or error/timeout message)
     
@@ -525,6 +555,9 @@ async def converse(
         - Ask a question: converse("What's your name?")
         - Make a statement and wait: converse("Tell me more about that")
         - Just speak without waiting: converse("Goodbye!", wait_for_response=False)
+        - Use HD model: converse("High quality speech", tts_model="tts-1-hd")
+        - Express emotions: converse("I'm so excited!", tts_model="gpt-4o-mini-tts", tts_instructions="Sound extremely excited")
+        - Emotional speech: converse("This is terrible", tts_model="gpt-4o-mini-tts", voice="sage", tts_instructions="Sound very sad")
     """
     logger.info(f"Converse: '{message[:50]}{'...' if len(message) > 50 else ''}' (wait_for_response: {wait_for_response})")
     
@@ -540,7 +573,7 @@ async def converse(
         if not wait_for_response:
             try:
                 async with audio_operation_lock:
-                    tts_config = get_tts_config(tts_provider, voice)
+                    tts_config = get_tts_config(tts_provider, voice, tts_model, tts_instructions)
                     success = await text_to_speech(
                         text=message,
                         openai_clients=openai_clients,
@@ -549,7 +582,10 @@ async def converse(
                         tts_voice=tts_config['voice'],
                         debug=DEBUG,
                         debug_dir=DEBUG_DIR if DEBUG else None,
-                        client_key=tts_config['client_key']
+                        save_audio=SAVE_AUDIO,
+                        audio_dir=AUDIO_DIR if SAVE_AUDIO else None,
+                        client_key=tts_config['client_key'],
+                        instructions=tts_config.get('instructions')
                     )
                 result = "✓ Message spoken successfully" if success else "✗ Failed to speak message"
                 logger.info(f"Speak-only result: {result}")
@@ -581,7 +617,7 @@ async def converse(
                 async with audio_operation_lock:
                     # Speak the message
                     tts_start = time.perf_counter()
-                    tts_config = get_tts_config(tts_provider, voice)
+                    tts_config = get_tts_config(tts_provider, voice, tts_model, tts_instructions)
                     tts_success = await text_to_speech(
                         text=message,
                         openai_clients=openai_clients,
@@ -590,7 +626,10 @@ async def converse(
                         tts_voice=tts_config['voice'],
                         debug=DEBUG,
                         debug_dir=DEBUG_DIR if DEBUG else None,
-                        client_key=tts_config['client_key']
+                        save_audio=SAVE_AUDIO,
+                        audio_dir=AUDIO_DIR if SAVE_AUDIO else None,
+                        client_key=tts_config['client_key'],
+                        instructions=tts_config.get('instructions')
                     )
                     timings['tts'] = time.perf_counter() - tts_start
                     
@@ -613,7 +652,7 @@ async def converse(
                     
                     # Convert to text
                     stt_start = time.perf_counter()
-                    response_text = await speech_to_text(audio_data)
+                    response_text = await speech_to_text(audio_data, SAVE_AUDIO, AUDIO_DIR if SAVE_AUDIO else None)
                     timings['stt'] = time.perf_counter() - stt_start
                 
                 # Calculate total time
@@ -681,7 +720,7 @@ async def listen_for_speech(duration: float = 5.0) -> str:
             if len(audio_data) == 0:
                 return "Error: Could not record audio"
             
-            response_text = await speech_to_text(audio_data)
+            response_text = await speech_to_text(audio_data, SAVE_AUDIO, AUDIO_DIR if SAVE_AUDIO else None)
             
             if response_text:
                 return f"Speech detected: {response_text}"

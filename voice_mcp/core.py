@@ -77,7 +77,10 @@ async def text_to_speech(
     tts_base_url: str,
     debug: bool = False,
     debug_dir: Optional[Path] = None,
-    client_key: str = 'tts'
+    save_audio: bool = False,
+    audio_dir: Optional[Path] = None,
+    client_key: str = 'tts',
+    instructions: Optional[str] = None
 ) -> bool:
     """Convert text to speech and play it"""
     logger.info(f"TTS: Converting text to speech: '{text[:100]}{'...' if len(text) > 100 else ''}'")
@@ -90,12 +93,22 @@ async def text_to_speech(
         audio_format = "mp3"
         
         logger.debug("Making TTS API request...")
+        # Build request parameters
+        request_params = {
+            "model": tts_model,
+            "input": text,
+            "voice": tts_voice,
+            "response_format": audio_format
+        }
+        
+        # Add instructions if provided and model supports it
+        if instructions and tts_model == "gpt-4o-mini-tts":
+            request_params["instructions"] = instructions
+            logger.debug(f"TTS instructions: {instructions}")
+        
         # Use context manager to ensure response is properly closed
         async with openai_clients[client_key].audio.speech.with_streaming_response.create(
-            model=tts_model,
-            input=text,
-            voice=tts_voice,
-            response_format=audio_format
+            **request_params
         ) as response:
             # Read the entire response content
             response_content = await response.read()
@@ -106,7 +119,13 @@ async def text_to_speech(
         if debug and debug_dir:
             debug_path = save_debug_file(response_content, "tts-output", audio_format, debug_dir, debug)
             if debug_path:
-                logger.info(f"TTS audio saved to: {debug_path}")
+                logger.info(f"TTS debug audio saved to: {debug_path}")
+        
+        # Save audio file if audio saving is enabled
+        if save_audio and audio_dir:
+            audio_path = save_debug_file(response_content, "tts", audio_format, audio_dir, True)
+            if audio_path:
+                logger.info(f"TTS audio saved to: {audio_path}")
         
         # Play audio
         with tempfile.NamedTemporaryFile(suffix=f'.{audio_format}', delete=False) as tmp_file:
