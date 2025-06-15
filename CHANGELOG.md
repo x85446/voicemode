@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.16] - 2025-06-15
+
 ### Fixed
 - BrokenResourceError when concurrent voice operations interfere with MCP stdio communication
 - Enhanced sounddevice stderr redirection workaround to prevent stdio corruption
