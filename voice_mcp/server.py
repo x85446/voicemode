@@ -148,6 +148,10 @@ TTS_MODEL = os.getenv("TTS_MODEL", "tts-1")
 STT_MODEL = os.getenv("STT_MODEL", "whisper-1")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
+# Provider-specific TTS configuration
+OPENAI_TTS_BASE_URL = os.getenv("OPENAI_TTS_BASE_URL", "https://api.openai.com/v1")
+KOKORO_TTS_BASE_URL = os.getenv("KOKORO_TTS_BASE_URL", os.getenv("TTS_BASE_URL", "http://localhost:8880/v1"))
+
 # LiveKit configuration
 LIVEKIT_URL = os.getenv("LIVEKIT_URL", "ws://localhost:7880")
 LIVEKIT_API_KEY = os.getenv("LIVEKIT_API_KEY", "devkey")
@@ -158,8 +162,72 @@ if not OPENAI_API_KEY:
 
 logger.info("✓ MP3 support available (Python 3.11 + pydub)")
 
-# Initialize clients
+# Initialize clients with provider-specific TTS clients
 openai_clients = get_openai_clients(OPENAI_API_KEY, STT_BASE_URL, TTS_BASE_URL)
+
+# Add provider-specific TTS clients
+from openai import AsyncOpenAI
+import httpx
+
+# Configure timeouts and connection pooling (same as in core.py)
+http_client_config = {
+    'timeout': httpx.Timeout(30.0, connect=5.0),
+    'limits': httpx.Limits(max_keepalive_connections=5, max_connections=10),
+}
+
+# Create OpenAI TTS client if different from default
+if OPENAI_TTS_BASE_URL != TTS_BASE_URL:
+    openai_clients['tts_openai'] = AsyncOpenAI(
+        api_key=OPENAI_API_KEY,
+        base_url=OPENAI_TTS_BASE_URL,
+        http_client=httpx.AsyncClient(**http_client_config)
+    )
+
+# Create Kokoro TTS client if different from default
+if KOKORO_TTS_BASE_URL != TTS_BASE_URL:
+    openai_clients['tts_kokoro'] = AsyncOpenAI(
+        api_key=OPENAI_API_KEY,
+        base_url=KOKORO_TTS_BASE_URL,
+        http_client=httpx.AsyncClient(**http_client_config)
+    )
+
+
+def get_tts_config(provider: Optional[str] = None, voice: Optional[str] = None):
+    """Get TTS configuration based on provider selection"""
+    # Auto-detect provider based on voice if not specified
+    if provider is None and voice:
+        # Kokoro voices start with af_ or am_
+        if voice.startswith(('af_', 'am_')):
+            provider = "kokoro"
+        else:
+            provider = "openai"
+    
+    # Default to environment configuration
+    if provider is None:
+        # If TTS_BASE_URL is set to something other than OpenAI, assume Kokoro
+        if TTS_BASE_URL and "openai.com" not in TTS_BASE_URL:
+            provider = "kokoro"
+        else:
+            provider = "openai"
+    
+    if provider == "kokoro":
+        # Use kokoro-specific client if available, otherwise use default
+        client_key = 'tts_kokoro' if 'tts_kokoro' in openai_clients else 'tts'
+        return {
+            'client_key': client_key,
+            'base_url': KOKORO_TTS_BASE_URL,
+            'model': 'tts-1',  # Kokoro uses OpenAI-compatible model name
+            'voice': voice or 'af_sky'  # Default Kokoro voice
+        }
+    else:  # openai
+        # Use openai-specific client if available, otherwise use default
+        client_key = 'tts_openai' if 'tts_openai' in openai_clients else 'tts'
+        return {
+            'client_key': client_key,
+            'base_url': OPENAI_TTS_BASE_URL,
+            'model': TTS_MODEL,
+            'voice': voice or TTS_VOICE  # Default OpenAI voice
+        }
 
 
 async def speech_to_text(audio_data: np.ndarray) -> Optional[str]:
@@ -430,7 +498,8 @@ async def converse(
     transport: Literal["auto", "local", "livekit"] = "auto",
     room_name: str = "",
     timeout: float = 60.0,
-    voice: Optional[Literal["af_sky", "af_sarah", "am_adam", "af_nicole", "am_michael"]] = None
+    voice: Optional[Literal["af_sky", "af_sarah", "am_adam", "af_nicole", "am_michael"]] = None,
+    tts_provider: Optional[Literal["openai", "kokoro"]] = None
 ) -> str:
     """Have a voice conversation - speak a message and optionally listen for response
     This is the primary function for voice interactions. It combines speaking and listening
@@ -448,6 +517,7 @@ async def converse(
         room_name: LiveKit room name (only for livekit transport, auto-discovered if empty)
         timeout: Maximum wait time for response in seconds (LiveKit only)
         voice: Override TTS voice (Kokoro voices: af_sky, af_sarah, am_adam, af_nicole, am_michael)
+        tts_provider: TTS provider to use - "openai" or "kokoro" (auto-detects based on voice if not specified)
         If wait_for_response is False: Confirmation that message was spoken
         If wait_for_response is True: The voice response received (or error/timeout message)
     
@@ -470,14 +540,16 @@ async def converse(
         if not wait_for_response:
             try:
                 async with audio_operation_lock:
+                    tts_config = get_tts_config(tts_provider, voice)
                     success = await text_to_speech(
                         text=message,
                         openai_clients=openai_clients,
-                        tts_model=TTS_MODEL,
-                        tts_base_url=TTS_BASE_URL,
-                        tts_voice=voice or TTS_VOICE,
+                        tts_model=tts_config['model'],
+                        tts_base_url=tts_config['base_url'],
+                        tts_voice=tts_config['voice'],
                         debug=DEBUG,
-                        debug_dir=DEBUG_DIR if DEBUG else None
+                        debug_dir=DEBUG_DIR if DEBUG else None,
+                        client_key=tts_config['client_key']
                     )
                 result = "✓ Message spoken successfully" if success else "✗ Failed to speak message"
                 logger.info(f"Speak-only result: {result}")
@@ -509,14 +581,16 @@ async def converse(
                 async with audio_operation_lock:
                     # Speak the message
                     tts_start = time.perf_counter()
+                    tts_config = get_tts_config(tts_provider, voice)
                     tts_success = await text_to_speech(
                         text=message,
                         openai_clients=openai_clients,
-                        tts_model=TTS_MODEL,
-                        tts_base_url=TTS_BASE_URL,
-                        tts_voice=voice or TTS_VOICE,
+                        tts_model=tts_config['model'],
+                        tts_base_url=tts_config['base_url'],
+                        tts_voice=tts_config['voice'],
                         debug=DEBUG,
-                        debug_dir=DEBUG_DIR if DEBUG else None
+                        debug_dir=DEBUG_DIR if DEBUG else None,
+                        client_key=tts_config['client_key']
                     )
                     timings['tts'] = time.perf_counter() - tts_start
                     

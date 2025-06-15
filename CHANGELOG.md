@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- TTS provider selection parameter to converse function ("openai" or "kokoro")
+- Auto-detection of TTS provider based on voice selection
+- Support for multiple TTS endpoints with provider-specific clients
+
 ## [0.1.18] - 2025-06-15
 
 ## [0.1.17] - 2025-06-15

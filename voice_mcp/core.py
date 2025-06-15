@@ -76,7 +76,8 @@ async def text_to_speech(
     tts_voice: str,
     tts_base_url: str,
     debug: bool = False,
-    debug_dir: Optional[Path] = None
+    debug_dir: Optional[Path] = None,
+    client_key: str = 'tts'
 ) -> bool:
     """Convert text to speech and play it"""
     logger.info(f"TTS: Converting text to speech: '{text[:100]}{'...' if len(text) > 100 else ''}'")
@@ -90,7 +91,7 @@ async def text_to_speech(
         
         logger.debug("Making TTS API request...")
         # Use context manager to ensure response is properly closed
-        async with openai_clients['tts'].audio.speech.with_streaming_response.create(
+        async with openai_clients[client_key].audio.speech.with_streaming_response.create(
             model=tts_model,
             input=text,
             voice=tts_voice,
@@ -251,12 +252,11 @@ async def cleanup(openai_clients: dict):
     
     # Close OpenAI HTTP clients
     try:
-        if 'stt' in openai_clients and hasattr(openai_clients['stt'], '_client'):
-            await openai_clients['stt']._client.aclose()
-            logger.debug("Closed STT HTTP client")
-        if 'tts' in openai_clients and hasattr(openai_clients['tts'], '_client'):
-            await openai_clients['tts']._client.aclose()
-            logger.debug("Closed TTS HTTP client")
+        # Close all clients (including provider-specific ones)
+        for client_name, client in openai_clients.items():
+            if hasattr(client, '_client'):
+                await client._client.aclose()
+                logger.debug(f"Closed {client_name} HTTP client")
     except Exception as e:
         logger.error(f"Error closing HTTP clients: {e}")
     
