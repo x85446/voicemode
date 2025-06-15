@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.21] - 2025-06-16
+
 ### Added
 - VOICE_MCP_SAVE_AUDIO environment variable to save all TTS/STT audio files
 - Audio files saved to ~/voice-mcp_audio/ with timestamps
