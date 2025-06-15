@@ -87,3 +87,11 @@ exclude = [
 
 [tool.hatch.version]
 path = "voice_mcp/__version__.py"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+# Exclude manual test directory
+addopts = "--ignore=tests/manual"
