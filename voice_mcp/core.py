@@ -146,28 +146,43 @@ async def text_to_speech(
                 # Try to ensure sounddevice doesn't interfere with stdout/stderr
                 try:
                     import sounddevice as sd
+                    import sys
                     
-                    # Force initialization before playing
-                    sd.default.samplerate = audio.frame_rate
-                    sd.default.channels = audio.channels
+                    # Save current stdio state
+                    original_stdin = sys.stdin
+                    original_stdout = sys.stdout
+                    original_stderr = sys.stderr
                     
-                    # Add 100ms of silence at the beginning to prevent clipping
-                    silence_duration = 0.1  # seconds
-                    silence_samples = int(audio.frame_rate * silence_duration)
-                    # Match the shape of the samples array exactly
-                    if samples.ndim == 1:
-                        silence = np.zeros(silence_samples, dtype=np.float32)
-                        samples_with_buffer = np.concatenate([silence, samples])
-                    else:
-                        silence = np.zeros((silence_samples, samples.shape[1]), dtype=np.float32)
-                        samples_with_buffer = np.vstack([silence, samples])
-                    
-                    sd.play(samples_with_buffer, audio.frame_rate)
-                    sd.wait()
-                    
-                    logger.info("✓ TTS played successfully")
-                    os.unlink(tmp_file.name)
-                    return True
+                    try:
+                        # Force initialization before playing
+                        sd.default.samplerate = audio.frame_rate
+                        sd.default.channels = audio.channels
+                        
+                        # Add 100ms of silence at the beginning to prevent clipping
+                        silence_duration = 0.1  # seconds
+                        silence_samples = int(audio.frame_rate * silence_duration)
+                        # Match the shape of the samples array exactly
+                        if samples.ndim == 1:
+                            silence = np.zeros(silence_samples, dtype=np.float32)
+                            samples_with_buffer = np.concatenate([silence, samples])
+                        else:
+                            silence = np.zeros((silence_samples, samples.shape[1]), dtype=np.float32)
+                            samples_with_buffer = np.vstack([silence, samples])
+                        
+                        sd.play(samples_with_buffer, audio.frame_rate)
+                        sd.wait()
+                        
+                        logger.info("✓ TTS played successfully")
+                        os.unlink(tmp_file.name)
+                        return True
+                    finally:
+                        # Restore stdio if it was changed
+                        if sys.stdin != original_stdin:
+                            sys.stdin = original_stdin
+                        if sys.stdout != original_stdout:
+                            sys.stdout = original_stdout
+                        if sys.stderr != original_stderr:
+                            sys.stderr = original_stderr
                 except Exception as sd_error:
                     logger.error(f"Sounddevice playback failed: {sd_error}")
                     

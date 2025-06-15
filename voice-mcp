@@ -1,5 +1,5 @@
 #!/bin/bash
-# Wrapper script for voice-mcp that uses the venv if available
+# Wrapper script for voice-mcp that automatically sets up dev environment if needed
 
 # Resolve symlinks to get the real script location
 SCRIPT_PATH="$0"
@@ -10,13 +10,62 @@ while [ -h "$SCRIPT_PATH" ]; do
 done
 SCRIPT_DIR="$(cd -P "$(dirname "$SCRIPT_PATH")" && pwd)"
 
-# Check if we're in the development environment with venv
-if [ -f "$SCRIPT_DIR/.venv/bin/voice-mcp" ]; then
-    exec "$SCRIPT_DIR/.venv/bin/voice-mcp" "$@"
-elif [ -f "$SCRIPT_DIR/.venv/bin/python" ]; then
-    # Use venv Python directly
-    exec "$SCRIPT_DIR/.venv/bin/python" -m voice_mcp.server "$@"
+# Function to check if we're in a development environment
+is_dev_environment() {
+    [ -f "$SCRIPT_DIR/pyproject.toml" ] && [ -d "$SCRIPT_DIR/voice_mcp" ]
+}
+
+# Function to setup development environment
+setup_dev_environment() {
+    echo "🔧 Setting up development environment for voice-mcp..." >&2
+    
+    # Check if uv is installed
+    if ! command -v uv &> /dev/null; then
+        echo "❌ UV is not installed. Please install it first:" >&2
+        echo "   curl -LsSf https://astral.sh/uv/install.sh | sh" >&2
+        exit 1
+    fi
+    
+    # Create venv if it doesn't exist
+    if [ ! -d "$SCRIPT_DIR/.venv" ]; then
+        echo "📦 Creating virtual environment..." >&2
+        (cd "$SCRIPT_DIR" && uv venv)
+    fi
+    
+    # Install in editable mode
+    echo "📦 Installing voice-mcp in development mode..." >&2
+    (cd "$SCRIPT_DIR" && uv pip install -e .)
+    
+    echo "✅ Development environment ready!" >&2
+}
+
+# Main logic
+if is_dev_environment; then
+    # We're in a development environment
+    if [ -f "$SCRIPT_DIR/.venv/bin/voice-mcp" ]; then
+        # Venv exists and package is installed, use it
+        exec "$SCRIPT_DIR/.venv/bin/voice-mcp" "$@"
+    elif [ -f "$SCRIPT_DIR/.venv/bin/python" ]; then
+        # Venv exists but package might not be installed
+        # Check if voice_mcp module is available
+        if "$SCRIPT_DIR/.venv/bin/python" -c "import voice_mcp.server" 2>/dev/null; then
+            exec "$SCRIPT_DIR/.venv/bin/python" -m voice_mcp.server "$@"
+        else
+            # Package not installed, set it up
+            setup_dev_environment
+            exec "$SCRIPT_DIR/.venv/bin/voice-mcp" "$@"
+        fi
+    else
+        # No venv, create and setup everything
+        setup_dev_environment
+        exec "$SCRIPT_DIR/.venv/bin/voice-mcp" "$@"
+    fi
 else
-    # Fallback to direct Python execution
-    exec python3 -m voice_mcp.server "$@"
+    # Not in development environment, try to run normally
+    if command -v voice-mcp &> /dev/null; then
+        exec voice-mcp "$@"
+    else
+        # Fallback to Python module
+        exec python3 -m voice_mcp.server "$@"
+    fi
 fi

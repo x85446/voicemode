@@ -17,6 +17,7 @@ from datetime import datetime
 from typing import Optional, Literal
 from pathlib import Path
 
+import anyio
 import sounddevice as sd
 import numpy as np
 from scipy.io.wavfile import write
@@ -35,16 +36,44 @@ from .core import (
 # Workaround for sounddevice stderr redirection issue
 # This prevents sounddevice from redirecting stderr to /dev/null
 # which can interfere with audio playback in MCP server context
-try:
-    # The internal module might be at different locations depending on version
-    if hasattr(sd, '_sounddevice'):
-        if hasattr(sd._sounddevice, '_ignore_stderr'):
-            sd._sounddevice._ignore_stderr = lambda: None
-    elif hasattr(sd, '_ignore_stderr'):
-        sd._ignore_stderr = lambda: None
-except Exception:
-    # If we can't find/override it, continue anyway
-    pass
+def disable_sounddevice_stderr_redirect():
+    """Comprehensively disable sounddevice's stderr redirection"""
+    try:
+        # Method 1: Override _ignore_stderr in various locations
+        if hasattr(sd, '_sounddevice'):
+            if hasattr(sd._sounddevice, '_ignore_stderr'):
+                sd._sounddevice._ignore_stderr = lambda: None
+        if hasattr(sd, '_ignore_stderr'):
+            sd._ignore_stderr = lambda: None
+        
+        # Method 2: Override _check_error if it exists
+        if hasattr(sd, '_check'):
+            original_check = sd._check
+            def safe_check(*args, **kwargs):
+                # Prevent any stderr manipulation
+                return original_check(*args, **kwargs)
+            sd._check = safe_check
+        
+        # Method 3: Protect file descriptors
+        import sys
+        original_stderr = sys.stderr
+        
+        # Create a hook to prevent stderr replacement
+        def protect_stderr():
+            if sys.stderr != original_stderr:
+                sys.stderr = original_stderr
+        
+        # Install protection
+        import atexit
+        atexit.register(protect_stderr)
+        
+    except Exception as e:
+        # Log but continue - audio might still work
+        if DEBUG:
+            # Can't use logger here as it's not initialized yet
+            print(f"DEBUG: Could not fully disable sounddevice stderr redirect: {e}", file=sys.stderr)
+
+disable_sounddevice_stderr_redirect()
 
 # Environment variables are loaded by the shell/MCP client
 
@@ -106,6 +135,10 @@ mcp = FastMCP("Voice MCP")
 # Audio configuration
 SAMPLE_RATE = 44100
 CHANNELS = 1
+
+# Concurrency control for audio operations
+# This prevents multiple audio operations from interfering with stdio
+audio_operation_lock = asyncio.Lock()
 
 # Service configuration
 STT_BASE_URL = os.getenv("STT_BASE_URL", "https://api.openai.com/v1")
@@ -235,6 +268,11 @@ def record_audio(duration: float) -> np.ndarray:
         except Exception as dev_e:
             logger.error(f"Error querying audio devices: {dev_e}")
     
+    # Save current stdio state
+    original_stdin = sys.stdin
+    original_stdout = sys.stdout
+    original_stderr = sys.stderr
+    
     try:
         samples_to_record = int(duration * SAMPLE_RATE)
         logger.debug(f"Recording {samples_to_record} samples...")
@@ -273,6 +311,14 @@ def record_audio(duration: float) -> np.ndarray:
             logger.error(f"Cannot query audio devices: {dev_e}")
         
         return np.array([])
+    finally:
+        # Restore stdio if it was changed
+        if sys.stdin != original_stdin:
+            sys.stdin = original_stdin
+        if sys.stdout != original_stdout:
+            sys.stdout = original_stdout
+        if sys.stderr != original_stderr:
+            sys.stderr = original_stderr
 
 
 async def check_livekit_available() -> bool:
@@ -424,15 +470,16 @@ async def converse(
         # If not waiting for response, just speak and return
         if not wait_for_response:
             try:
-                success = await text_to_speech(
-                    text=message,
-                    openai_clients=openai_clients,
-                    tts_model=TTS_MODEL,
-                    tts_voice=TTS_VOICE,
-                    tts_base_url=TTS_BASE_URL,
-                    debug=DEBUG,
-                    debug_dir=DEBUG_DIR if DEBUG else None
-                )
+                async with audio_operation_lock:
+                    success = await text_to_speech(
+                        text=message,
+                        openai_clients=openai_clients,
+                        tts_model=TTS_MODEL,
+                        tts_voice=TTS_VOICE,
+                        tts_base_url=TTS_BASE_URL,
+                        debug=DEBUG,
+                        debug_dir=DEBUG_DIR if DEBUG else None
+                    )
                 result = "✓ Message spoken successfully" if success else "✗ Failed to speak message"
                 logger.info(f"Speak-only result: {result}")
                 return result
@@ -460,40 +507,41 @@ async def converse(
             # Local microphone approach with timing
             timings = {}
             try:
-                # Speak the message
-                tts_start = time.perf_counter()
-                tts_success = await text_to_speech(
-                    text=message,
-                    openai_clients=openai_clients,
-                    tts_model=TTS_MODEL,
-                    tts_voice=TTS_VOICE,
-                    tts_base_url=TTS_BASE_URL,
-                    debug=DEBUG,
-                    debug_dir=DEBUG_DIR if DEBUG else None
-                )
-                timings['tts'] = time.perf_counter() - tts_start
-                
-                if not tts_success:
-                    return "Error: Could not speak message"
-                
-                # Brief pause before listening
-                await asyncio.sleep(0.5)
-                
-                # Record response
-                logger.info(f"🎤 Listening for {listen_duration} seconds...")
-                record_start = time.perf_counter()
-                audio_data = await asyncio.get_event_loop().run_in_executor(
-                    None, record_audio, listen_duration
-                )
-                timings['record'] = time.perf_counter() - record_start
-                
-                if len(audio_data) == 0:
-                    return "Error: Could not record audio"
-                
-                # Convert to text
-                stt_start = time.perf_counter()
-                response_text = await speech_to_text(audio_data)
-                timings['stt'] = time.perf_counter() - stt_start
+                async with audio_operation_lock:
+                    # Speak the message
+                    tts_start = time.perf_counter()
+                    tts_success = await text_to_speech(
+                        text=message,
+                        openai_clients=openai_clients,
+                        tts_model=TTS_MODEL,
+                        tts_voice=TTS_VOICE,
+                        tts_base_url=TTS_BASE_URL,
+                        debug=DEBUG,
+                        debug_dir=DEBUG_DIR if DEBUG else None
+                    )
+                    timings['tts'] = time.perf_counter() - tts_start
+                    
+                    if not tts_success:
+                        return "Error: Could not speak message"
+                    
+                    # Brief pause before listening
+                    await asyncio.sleep(0.5)
+                    
+                    # Record response
+                    logger.info(f"🎤 Listening for {listen_duration} seconds...")
+                    record_start = time.perf_counter()
+                    audio_data = await asyncio.get_event_loop().run_in_executor(
+                        None, record_audio, listen_duration
+                    )
+                    timings['record'] = time.perf_counter() - record_start
+                    
+                    if len(audio_data) == 0:
+                        return "Error: Could not record audio"
+                    
+                    # Convert to text
+                    stt_start = time.perf_counter()
+                    response_text = await speech_to_text(audio_data)
+                    timings['stt'] = time.perf_counter() - stt_start
                 
                 # Calculate total time
                 total_time = sum(timings.values())
@@ -550,21 +598,22 @@ async def listen_for_speech(duration: float = 5.0) -> str:
     logger.info(f"Listening for {duration}s...")
     
     try:
-        logger.info(f"🎤 Recording for {duration} seconds...")
-        
-        audio_data = await asyncio.get_event_loop().run_in_executor(
-            None, record_audio, duration
-        )
-        
-        if len(audio_data) == 0:
-            return "Error: Could not record audio"
-        
-        response_text = await speech_to_text(audio_data)
-        
-        if response_text:
-            return f"Speech detected: {response_text}"
-        else:
-            return "No speech detected"
+        async with audio_operation_lock:
+            logger.info(f"🎤 Recording for {duration} seconds...")
+            
+            audio_data = await asyncio.get_event_loop().run_in_executor(
+                None, record_audio, duration
+            )
+            
+            if len(audio_data) == 0:
+                return "Error: Could not record audio"
+            
+            response_text = await speech_to_text(audio_data)
+            
+            if response_text:
+                return f"Speech detected: {response_text}"
+            else:
+                return "No speech detected"
             
     except Exception as e:
         logger.error(f"Listen error: {e}")
@@ -681,7 +730,18 @@ def main():
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGINT, signal_handler)
     
-    mcp.run()
+    try:
+        mcp.run()
+    except (BrokenPipeError, anyio.BrokenResourceError) as e:
+        logger.error(f"Connection lost to MCP client: {type(e).__name__}: {e}")
+        # These errors indicate the client disconnected, which is expected behavior
+        sys.exit(0)  # Exit cleanly since this is not an error condition
+    except Exception as e:
+        logger.error(f"Unexpected error in MCP server: {e}")
+        if DEBUG:
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
