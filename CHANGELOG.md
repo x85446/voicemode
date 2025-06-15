@@ -9,11 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.16] - 2025-06-15
 
+## [0.1.16] - 2025-06-15
+
+### Added
+- Voice parameter to converse function for dynamic TTS voice selection
+- Support for Kokoro voices: af_sky, af_sarah, am_adam, af_nicole, am_michael
+- Python 3.13 support with conditional audioop-lts dependency
+
 ### Fixed
 - BrokenResourceError when concurrent voice operations interfere with MCP stdio communication
 - Enhanced sounddevice stderr redirection workaround to prevent stdio corruption
 - Added concurrency lock to serialize audio operations and prevent race conditions
 - Protected stdio file descriptors during audio recording and playback operations
+- Added anyio.BrokenResourceError to exception handling for MCP disconnections
+- Configure pytest to exclude manual test scripts from CI builds
 
 ## [0.1.15] - 2025-06-14
 
