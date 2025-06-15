@@ -14,17 +14,6 @@
         "TTS_BASE_URL": "http://studio:8880/v1",
         "TTS_VOICE": "af_sky"
       }
-    },
-    "MCP Neovim Server": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "mcp-neovim-server"
-      ],
-      "env": {
-        "ALLOW_SHELL_COMMANDS": "true",
-        "NVIM_SOCKET_PATH": "/tmp/nvim"
-      }
     }
   }
 }
