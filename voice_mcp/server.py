@@ -498,7 +498,7 @@ async def converse(
     transport: Literal["auto", "local", "livekit"] = "auto",
     room_name: str = "",
     timeout: float = 60.0,
-    voice: Optional[Literal["af_sky", "af_sarah", "am_adam", "af_nicole", "am_michael"]] = None,
+    voice: Optional[str] = None,
     tts_provider: Optional[Literal["openai", "kokoro"]] = None
 ) -> str:
     """Have a voice conversation - speak a message and optionally listen for response
@@ -516,7 +516,7 @@ async def converse(
         transport: Transport method - "auto" (try LiveKit then local), "local" (direct mic), "livekit" (room-based)
         room_name: LiveKit room name (only for livekit transport, auto-discovered if empty)
         timeout: Maximum wait time for response in seconds (LiveKit only)
-        voice: Override TTS voice (Kokoro voices: af_sky, af_sarah, am_adam, af_nicole, am_michael)
+        voice: Override TTS voice (e.g., OpenAI: nova, shimmer; Kokoro: af_sky, af_sarah, am_adam, af_nicole, am_michael)
         tts_provider: TTS provider to use - "openai" or "kokoro" (auto-detects based on voice if not specified)
         If wait_for_response is False: Confirmation that message was spoken
         If wait_for_response is True: The voice response received (or error/timeout message)
