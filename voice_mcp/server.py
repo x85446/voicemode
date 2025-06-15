@@ -429,10 +429,10 @@ async def converse(
     listen_duration: float = 10.0,
     transport: Literal["auto", "local", "livekit"] = "auto",
     room_name: str = "",
-    timeout: float = 60.0
+    timeout: float = 60.0,
+    voice: Optional[Literal["af_sky", "af_sarah", "am_adam", "af_nicole", "am_michael"]] = None
 ) -> str:
     """Have a voice conversation - speak a message and optionally listen for response
-    
     This is the primary function for voice interactions. It combines speaking and listening
     in a natural conversational flow.
     
@@ -447,8 +447,7 @@ async def converse(
         transport: Transport method - "auto" (try LiveKit then local), "local" (direct mic), "livekit" (room-based)
         room_name: LiveKit room name (only for livekit transport, auto-discovered if empty)
         timeout: Maximum wait time for response in seconds (LiveKit only)
-    
-    Returns:
+        voice: Override TTS voice (Kokoro voices: af_sky, af_sarah, am_adam, af_nicole, am_michael)
         If wait_for_response is False: Confirmation that message was spoken
         If wait_for_response is True: The voice response received (or error/timeout message)
     
@@ -475,8 +474,8 @@ async def converse(
                         text=message,
                         openai_clients=openai_clients,
                         tts_model=TTS_MODEL,
-                        tts_voice=TTS_VOICE,
                         tts_base_url=TTS_BASE_URL,
+                        tts_voice=voice or TTS_VOICE,
                         debug=DEBUG,
                         debug_dir=DEBUG_DIR if DEBUG else None
                     )
@@ -514,8 +513,8 @@ async def converse(
                         text=message,
                         openai_clients=openai_clients,
                         tts_model=TTS_MODEL,
-                        tts_voice=TTS_VOICE,
                         tts_base_url=TTS_BASE_URL,
+                        tts_voice=voice or TTS_VOICE,
                         debug=DEBUG,
                         debug_dir=DEBUG_DIR if DEBUG else None
                     )
