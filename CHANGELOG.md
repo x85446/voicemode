@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Local STT/TTS configuration support in .mcp.json
+- Split TTS metrics into generation and playback components for better performance insights
+  - Tracks TTS generation time (API call) separately from playback time
+  - Displays metrics as tts_gen, tts_play, and tts_total
+
+### Changed
+- Modified text_to_speech() to return (success, metrics) tuple
+- Updated all tests to handle new TTS return format
+
 ## [0.1.21] - 2025-06-16
 
 ### Added
