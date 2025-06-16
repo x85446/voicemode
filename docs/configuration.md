@@ -227,7 +227,7 @@ When LiveKit is configured, voice-mcp can automatically select the best transpor
 |----------|-------------|---------|
 | `STT_BASE_URL` | Base URL for STT service | `https://api.openai.com/v1` |
 | `TTS_BASE_URL` | Base URL for TTS service | `https://api.openai.com/v1` |
-| `TTS_VOICE` | Voice for text-to-speech | `nova` |
+| `TTS_VOICE` | Voice for text-to-speech | `alloy` |
 | `TTS_MODEL` | TTS model to use | `tts-1` |
 | `STT_MODEL` | STT model to use | `whisper-1` |
 | `LIVEKIT_URL` | LiveKit server URL | None |
@@ -237,7 +237,8 @@ When LiveKit is configured, voice-mcp can automatically select the best transpor
 
 ### Available TTS Voices
 
-- `nova` (default) - Natural, conversational
+- `alloy` (default) - Natural, conversational
+- `nova` - Warm and friendly
 - `alloy` - Neutral and balanced
 - `echo` - Warm and engaging
 - `fable` - Expressive storyteller

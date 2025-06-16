@@ -44,5 +44,5 @@ For completely offline voice processing, combine Whisper with Kokoro:
 ```bash
 export STT_BASE_URL=http://localhost:2022/v1
 export TTS_BASE_URL=http://localhost:8880/v1
-export TTS_VOICE=af_nova
+export TTS_VOICE=af_sky
 ```

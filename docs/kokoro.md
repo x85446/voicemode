@@ -12,7 +12,7 @@ Kokoro is a local text-to-speech engine that provides an OpenAI-compatible API.
 2. Configure voice-mcp to use Kokoro:
    ```bash
    export TTS_BASE_URL=http://localhost:8880/v1
-   export TTS_VOICE=af_nova  # or af_sky, am_adam, etc.
+   export TTS_VOICE=af_sky  # Default for Kokoro (or af_nova, am_adam, etc.)
    ```
 
 3. Or add to `.mcp.json`:
@@ -20,13 +20,14 @@ Kokoro is a local text-to-speech engine that provides an OpenAI-compatible API.
    "voice-mcp": {
      "env": {
        "TTS_BASE_URL": "http://localhost:8880/v1",
-       "TTS_VOICE": "af_nova"
+       "TTS_VOICE": "af_sky"
      }
    }
    ```
 
 ## Available Voices
 
+- `af_sky` - Female, natural voice (default for Kokoro)
 - `af_nova` - Female, similar to OpenAI's nova
 - `af_sky` - Female, previously removed from OpenAI
 - `af_bella` - Female

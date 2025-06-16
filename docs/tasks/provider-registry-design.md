@@ -184,7 +184,7 @@ PROVIDER_REGISTRY = {
         "cost": {"amount": 0.015, "unit": "per_1k_chars"},
         "privacy": {"level": "cloud_public"},
         "features": {
-            "voices": ["nova", "alloy", "echo", "fable", "onyx", "shimmer"],
+            "voices": ["alloy", "nova", "echo", "fable", "onyx", "shimmer"],
             "emotions": True,  # via gpt-4o-mini-tts
             "models": ["tts-1", "tts-1-hd", "gpt-4o-mini-tts"]
         }

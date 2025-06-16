@@ -128,7 +128,7 @@ export OPENAI_API_KEY="your-key"
 # Custom STT/TTS services (OpenAI-compatible)
 export STT_BASE_URL="http://localhost:2022/v1"  # Local Whisper
 export TTS_BASE_URL="http://localhost:8880/v1"  # Local TTS
-export TTS_VOICE="nova"                         # Voice selection
+export TTS_VOICE="alloy"                        # Voice selection
 
 # LiveKit (for room-based communication)
 # See docs/livekit/ for setup guide

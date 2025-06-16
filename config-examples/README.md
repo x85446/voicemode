@@ -45,7 +45,7 @@ All configurations support these environment variables:
 - `OPENAI_API_KEY` (required): Your OpenAI API key
 - `STT_BASE_URL`: Custom speech-to-text service URL
 - `TTS_BASE_URL`: Custom text-to-speech service URL
-- `TTS_VOICE`: Voice selection (nova, alloy, echo, fable, onyx, shimmer)
+- `TTS_VOICE`: Voice selection (alloy, nova, echo, fable, onyx, shimmer)
 - `LIVEKIT_URL`: LiveKit server URL for room-based communication
 - `VOICE_MCP_DEBUG`: Enable debug mode ("true" or "false")
 

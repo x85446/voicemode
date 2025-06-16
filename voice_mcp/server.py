@@ -1373,7 +1373,8 @@ async def list_tts_voices(provider: Optional[str] = None) -> str:
             'echo': 'Smooth and conversational', 
             'fable': 'British accent, authoritative',
             'onyx': 'Deep and authoritative',
-            'nova': 'Warm and friendly (default)',
+            'alloy': 'Natural and conversational (default)',
+            'nova': 'Warm and friendly',
             'shimmer': 'Expressive and engaging'
         }
         for voice, desc in voice_descriptions.items():

@@ -171,7 +171,7 @@ Our working voice-mcp configuration uses Option 2 (literal values):
       "env": {
         "STT_BASE_URL": "https://api.openai.com/v1",
         "TTS_BASE_URL": "https://api.openai.com/v1", 
-        "TTS_VOICE": "nova",
+        "TTS_VOICE": "alloy",
         "TTS_MODEL": "tts-1",
         "STT_MODEL": "whisper-1",
         "LIVEKIT_URL": "ws://localhost:7880",
