@@ -81,7 +81,7 @@ class TestTTSStability:
             
             # Run multiple cycles
             for i in range(5):
-                result = await text_to_speech(
+                result, metrics = await text_to_speech(
                     text=f"Test message number {i+1}",
                     openai_clients=openai_clients,
                     tts_model="tts-1",
@@ -90,6 +90,9 @@ class TestTTSStability:
                     debug=False
                 )
                 assert result is True
+                assert metrics is not None
+                assert 'generation' in metrics
+                assert 'playback' in metrics
                 
                 # Verify TTS was called
                 assert mock_openai_client.audio.speech.with_streaming_response.create.called
@@ -154,7 +157,7 @@ class TestTTSStability:
         
         with patch('voice_mcp.core.logger') as mock_logger:
             
-            result = await text_to_speech(
+            result, metrics = await text_to_speech(
                 text="Test message",
                 openai_clients=openai_clients,
                 tts_model="tts-1",
@@ -165,6 +168,7 @@ class TestTTSStability:
             
             # Should return False on error
             assert result is False
+            assert metrics is not None  # Should still return metrics dict even on error
             
             # Should log the error
             mock_logger.error.assert_called()
@@ -205,7 +209,7 @@ class TestTTSStability:
             mock_sd.wait = MagicMock()
             
             # Test with debug enabled
-            result = await text_to_speech(
+            result, metrics = await text_to_speech(
                 text="Debug test",
                 openai_clients=openai_clients,
                 tts_model="tts-1",
@@ -216,6 +220,7 @@ class TestTTSStability:
             )
             
             assert result is True
+            assert metrics is not None
     
     @pytest.mark.asyncio
     async def test_trace_logging(self, tmp_path):
@@ -281,7 +286,7 @@ class TestAudioFileHandling:
             mock_sd.play = MagicMock()
             mock_sd.wait = MagicMock()
             
-            await text_to_speech(
+            result, metrics = await text_to_speech(
                 text="Test",
                 openai_clients=openai_clients,
                 tts_model="tts-1",

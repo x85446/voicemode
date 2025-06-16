@@ -574,7 +574,7 @@ async def converse(
             try:
                 async with audio_operation_lock:
                     tts_config = get_tts_config(tts_provider, voice, tts_model, tts_instructions)
-                    success = await text_to_speech(
+                    success, tts_metrics = await text_to_speech(
                         text=message,
                         openai_clients=openai_clients,
                         tts_model=tts_config['model'],
@@ -587,7 +587,13 @@ async def converse(
                         client_key=tts_config['client_key'],
                         instructions=tts_config.get('instructions')
                     )
-                result = "✓ Message spoken successfully" if success else "✗ Failed to speak message"
+                    
+                # Include timing info if available
+                timing_info = ""
+                if success and tts_metrics:
+                    timing_info = f" (gen: {tts_metrics.get('generation', 0):.1f}s, play: {tts_metrics.get('playback', 0):.1f}s)"
+                
+                result = f"✓ Message spoken successfully{timing_info}" if success else "✗ Failed to speak message"
                 logger.info(f"Speak-only result: {result}")
                 return result
             except Exception as e:
@@ -618,7 +624,7 @@ async def converse(
                     # Speak the message
                     tts_start = time.perf_counter()
                     tts_config = get_tts_config(tts_provider, voice, tts_model, tts_instructions)
-                    tts_success = await text_to_speech(
+                    tts_success, tts_metrics = await text_to_speech(
                         text=message,
                         openai_clients=openai_clients,
                         tts_model=tts_config['model'],
@@ -631,7 +637,12 @@ async def converse(
                         client_key=tts_config['client_key'],
                         instructions=tts_config.get('instructions')
                     )
-                    timings['tts'] = time.perf_counter() - tts_start
+                    
+                    # Add TTS sub-metrics
+                    if tts_metrics:
+                        timings['tts_gen'] = tts_metrics.get('generation', 0)
+                        timings['tts_play'] = tts_metrics.get('playback', 0)
+                    timings['tts_total'] = time.perf_counter() - tts_start
                     
                     if not tts_success:
                         return "Error: Could not speak message"
@@ -655,9 +666,24 @@ async def converse(
                     response_text = await speech_to_text(audio_data, SAVE_AUDIO, AUDIO_DIR if SAVE_AUDIO else None)
                     timings['stt'] = time.perf_counter() - stt_start
                 
-                # Calculate total time
-                total_time = sum(timings.values())
-                timing_str = ", ".join([f"{k} {v:.1f}s" for k, v in timings.items()])
+                # Calculate total time (use tts_total instead of sub-metrics)
+                main_timings = {k: v for k, v in timings.items() if k in ['tts_total', 'record', 'stt']}
+                total_time = sum(main_timings.values())
+                
+                # Format timing string with sub-metrics
+                timing_parts = []
+                if 'tts_gen' in timings:
+                    timing_parts.append(f"tts_gen {timings['tts_gen']:.1f}s")
+                if 'tts_play' in timings:
+                    timing_parts.append(f"tts_play {timings['tts_play']:.1f}s")
+                if 'tts_total' in timings:
+                    timing_parts.append(f"tts_total {timings['tts_total']:.1f}s")
+                if 'record' in timings:
+                    timing_parts.append(f"record {timings['record']:.1f}s")
+                if 'stt' in timings:
+                    timing_parts.append(f"stt {timings['stt']:.1f}s")
+                
+                timing_str = ", ".join(timing_parts)
                 timing_str += f", total {total_time:.1f}s"
                 
                 if response_text:

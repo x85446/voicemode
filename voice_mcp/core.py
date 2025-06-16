@@ -81,12 +81,20 @@ async def text_to_speech(
     audio_dir: Optional[Path] = None,
     client_key: str = 'tts',
     instructions: Optional[str] = None
-) -> bool:
-    """Convert text to speech and play it"""
+) -> tuple[bool, Optional[dict]]:
+    """Convert text to speech and play it.
+    
+    Returns:
+        tuple: (success: bool, metrics: dict) where metrics contains 'generation' and 'playback' times
+    """
+    import time
+    
     logger.info(f"TTS: Converting text to speech: '{text[:100]}{'...' if len(text) > 100 else ''}'")
     if debug:
         logger.debug(f"TTS full text: {text}")
         logger.debug(f"TTS config - Model: {tts_model}, Voice: {tts_voice}, Base URL: {tts_base_url}")
+    
+    metrics = {}
     
     try:
         # Use MP3 format for bandwidth efficiency
@@ -106,6 +114,9 @@ async def text_to_speech(
             request_params["instructions"] = instructions
             logger.debug(f"TTS instructions: {instructions}")
         
+        # Track generation time
+        generation_start = time.perf_counter()
+        
         # Use context manager to ensure response is properly closed
         async with openai_clients[client_key].audio.speech.with_streaming_response.create(
             **request_params
@@ -113,6 +124,7 @@ async def text_to_speech(
             # Read the entire response content
             response_content = await response.read()
             
+        metrics['generation'] = time.perf_counter() - generation_start
         logger.debug(f"TTS API response received, content length: {len(response_content)} bytes")
         
         # Save debug file if enabled
@@ -128,6 +140,8 @@ async def text_to_speech(
                 logger.info(f"TTS audio saved to: {audio_path}")
         
         # Play audio
+        playback_start = time.perf_counter()
+        
         with tempfile.NamedTemporaryFile(suffix=f'.{audio_format}', delete=False) as tmp_file:
             tmp_file.write(response_content)
             tmp_file.flush()
@@ -194,7 +208,8 @@ async def text_to_speech(
                         
                         logger.info("✓ TTS played successfully")
                         os.unlink(tmp_file.name)
-                        return True
+                        metrics['playback'] = time.perf_counter() - playback_start
+                        return True, metrics
                     finally:
                         # Restore stdio if it was changed
                         if sys.stdin != original_stdin:
@@ -216,7 +231,8 @@ async def text_to_speech(
                         pydub_play(audio)
                         logger.info("✓ TTS played successfully with PyDub")
                         os.unlink(tmp_file.name)
-                        return True
+                        metrics['playback'] = time.perf_counter() - playback_start
+                        return True, metrics
                     except Exception as pydub_error:
                         logger.error(f"PyDub playback failed: {pydub_error}")
                     
@@ -227,11 +243,13 @@ async def text_to_speech(
                         shutil.copy(tmp_file.name, fallback_path)
                         logger.warning(f"Audio saved to {fallback_path} for manual playback")
                         os.unlink(tmp_file.name)
-                        return False
+                        metrics['playback'] = time.perf_counter() - playback_start
+                        return False, metrics
                     except Exception as save_error:
                         logger.error(f"Failed to save audio file: {save_error}")
                         os.unlink(tmp_file.name)
-                        return False
+                        metrics['playback'] = time.perf_counter() - playback_start
+                        return False, metrics
                 
             except Exception as e:
                 logger.error(f"Error playing audio: {e}")
@@ -247,14 +265,16 @@ async def text_to_speech(
                         if result.returncode == 0:
                             logger.info("✓ Alternative playback successful")
                             os.unlink(tmp_file.name)
-                            return True
+                            metrics['playback'] = time.perf_counter() - playback_start
+                            return True, metrics
                         else:
                             logger.error(f"Alternative playback failed: {result.stderr.decode()}")
                     except Exception as alt_e:
                         logger.error(f"Alternative playback error: {alt_e}")
                 
                 os.unlink(tmp_file.name)
-                return False
+                metrics['playback'] = time.perf_counter() - playback_start
+                return False, metrics
                         
     except Exception as e:
         logger.error(f"TTS failed: {e}")
@@ -262,7 +282,7 @@ async def text_to_speech(
         if hasattr(e, 'response'):
             logger.error(f"HTTP status: {e.response.status_code if hasattr(e.response, 'status_code') else 'unknown'}")
             logger.error(f"Response text: {e.response.text if hasattr(e.response, 'text') else 'unknown'}")
-        return False
+        return False, metrics
 
 
 async def cleanup(openai_clients: dict):
