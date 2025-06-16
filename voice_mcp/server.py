@@ -27,6 +27,14 @@ from pydub import AudioSegment
 
 from fastmcp import FastMCP
 
+from .providers import (
+    PROVIDERS,
+    get_provider_by_voice,
+    get_tts_provider,
+    get_stt_provider,
+    is_provider_available,
+    get_provider_display_status
+)
 from .core import (
     get_openai_clients,
     text_to_speech,
@@ -265,11 +273,9 @@ def get_tts_config(provider: Optional[str] = None, voice: Optional[str] = None, 
     """Get TTS configuration based on provider selection"""
     # Auto-detect provider based on voice if not specified
     if provider is None and voice:
-        # Kokoro voices start with af_ or am_
-        if voice.startswith(('af_', 'am_')):
-            provider = "kokoro"
-        else:
-            provider = "openai"
+        provider_info = get_provider_by_voice(voice)
+        if provider_info:
+            provider = provider_info["id"]
     
     # Default to environment configuration
     if provider is None:
@@ -284,14 +290,21 @@ def get_tts_config(provider: Optional[str] = None, voice: Optional[str] = None, 
         logger.warning(f"Instructions parameter is only supported with gpt-4o-mini-tts model, ignoring for model: {model}")
         instructions = None
     
+    # Get provider info from registry
+    provider_info = PROVIDERS.get(provider)
+    if not provider_info:
+        logger.warning(f"Unknown provider: {provider}, falling back to OpenAI")
+        provider = "openai"
+        provider_info = PROVIDERS["openai"]
+    
     if provider == "kokoro":
         # Use kokoro-specific client if available, otherwise use default
         client_key = 'tts_kokoro' if 'tts_kokoro' in openai_clients else 'tts'
         return {
             'client_key': client_key,
-            'base_url': KOKORO_TTS_BASE_URL,
-            'model': model or 'tts-1',  # Kokoro uses OpenAI-compatible model name
-            'voice': voice or 'af_sky',  # Default Kokoro voice
+            'base_url': provider_info.get("base_url", KOKORO_TTS_BASE_URL),
+            'model': model or provider_info["models"][0],
+            'voice': voice or provider_info["default_voice"],
             'instructions': None  # Kokoro doesn't support instructions
         }
     else:  # openai
@@ -300,9 +313,9 @@ def get_tts_config(provider: Optional[str] = None, voice: Optional[str] = None, 
         logger.debug(f"OpenAI TTS config: client_key={client_key}, available_clients={list(openai_clients.keys())}")
         return {
             'client_key': client_key,
-            'base_url': OPENAI_TTS_BASE_URL,
+            'base_url': provider_info.get("base_url", OPENAI_TTS_BASE_URL),
             'model': model or TTS_MODEL,  # Use provided model or default
-            'voice': voice or TTS_VOICE,  # Default OpenAI voice
+            'voice': voice or provider_info.get("default_voice", TTS_VOICE),
             'instructions': instructions  # Pass through instructions for OpenAI
         }
 
@@ -1260,7 +1273,36 @@ async def voice_status() -> str:
         
         return status
     
+    # Check provider availability
+    async def check_providers():
+        status = {"title": "📦 PROVIDER REGISTRY", "items": []}
+        
+        # Check TTS providers
+        status["items"].append("\nTTS Providers:")
+        for provider_id in ["kokoro", "openai"]:
+            provider = PROVIDERS.get(provider_id)
+            if provider and provider["type"] == "tts":
+                is_available = await is_provider_available(provider_id)
+                display_lines = get_provider_display_status(provider, is_available)
+                for line in display_lines:
+                    status["items"].append(f"  {line}")
+                status["items"].append("")  # Blank line
+        
+        # Check STT providers
+        status["items"].append("STT Providers:")
+        for provider_id in ["whisper-local", "openai-whisper"]:
+            provider = PROVIDERS.get(provider_id)
+            if provider and provider["type"] == "stt":
+                is_available = await is_provider_available(provider_id)
+                display_lines = get_provider_display_status(provider, is_available)
+                for line in display_lines:
+                    status["items"].append(f"  {line}")
+                status["items"].append("")  # Blank line
+        
+        return status
+    
     # Run all checks in parallel
+    providers_task = asyncio.create_task(check_providers())
     stt_task = asyncio.create_task(check_stt())
     tts_task = asyncio.create_task(check_tts())
     livekit_task = asyncio.create_task(check_livekit())
@@ -1268,7 +1310,7 @@ async def voice_status() -> str:
     
     # Wait for all tasks to complete
     statuses = await asyncio.gather(
-        stt_task, tts_task, livekit_task, audio_task,
+        providers_task, stt_task, tts_task, livekit_task, audio_task,
         return_exceptions=True
     )
     
