@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Service management tools for Kokoro TTS:
+  - `start_kokoro` - Start the Kokoro TTS service using uvx
+  - `stop_kokoro` - Stop the running Kokoro service
+  - `kokoro_status` - Check service status with CPU/memory usage
+- Automatic cleanup of services on server shutdown
+- psutil dependency for process monitoring
+- `list_tts_voices` tool to list all available TTS voices by provider
+  - Shows OpenAI standard and enhanced voices with characteristics
+  - Lists Kokoro voices with descriptions
+  - Includes usage examples and emotional speech guidance
+  - Checks API/service availability for each provider
+
 ## [0.1.22] - 2025-06-16
 
 ### Added

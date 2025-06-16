@@ -6,3 +6,4 @@ _:mbailey/awesome-mcp-servers
 _:mbailey/modelcontextprotocol-servers
 _:mbailey/voice-assistant-frontend
 _:mbailey/voice-assistant-swift
+ggml-org/whisper.cpp

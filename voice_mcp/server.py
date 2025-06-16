@@ -152,7 +152,7 @@ audio_operation_lock = asyncio.Lock()
 # Service configuration
 STT_BASE_URL = os.getenv("STT_BASE_URL", "https://api.openai.com/v1")
 TTS_BASE_URL = os.getenv("TTS_BASE_URL", "https://api.openai.com/v1")
-TTS_VOICE = os.getenv("TTS_VOICE", "nova")
+TTS_VOICE = os.getenv("TTS_VOICE", "alloy")
 TTS_MODEL = os.getenv("TTS_MODEL", "tts-1")
 STT_MODEL = os.getenv("STT_MODEL", "whisper-1")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -1320,6 +1320,155 @@ async def voice_status() -> str:
         recommendations.append("• All services configured optimally")
     
     results.extend(recommendations)
+    
+    return "\n".join(results)
+
+
+@mcp.tool()
+async def list_tts_voices(provider: Optional[str] = None) -> str:
+    """
+    List available TTS voices for different providers.
+    
+    Args:
+        provider: Optional provider name ('openai' or 'kokoro'). If not specified, lists all available voices.
+    
+    Returns:
+        A formatted list of available voices by provider.
+    """
+    await startup_initialization()
+    
+    results = []
+    results.append("🔊 AVAILABLE TTS VOICES")
+    results.append("=" * 40)
+    
+    # Determine which providers to check
+    providers_to_check = []
+    if provider:
+        if provider.lower() not in ['openai', 'kokoro']:
+            return f"Error: Unknown provider '{provider}'. Valid options: 'openai', 'kokoro'"
+        providers_to_check = [provider.lower()]
+    else:
+        providers_to_check = ['openai', 'kokoro']
+    
+    # OpenAI voices
+    if 'openai' in providers_to_check:
+        results.append("\n📢 OpenAI Voices")
+        results.append("-" * 40)
+        
+        # Standard voices (work with all models)
+        results.append("\n**Standard Voices** (tts-1, tts-1-hd):")
+        standard_voices = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer']
+        for voice in standard_voices:
+            results.append(f"  • {voice}")
+        
+        # Enhanced voices for gpt-4o-mini-tts
+        results.append("\n**Enhanced Voices** (gpt-4o-mini-tts):")
+        enhanced_voices = ['alloy', 'echo', 'shimmer']
+        for voice in enhanced_voices:
+            results.append(f"  • {voice} - supports emotional expression")
+        
+        results.append("\n**Voice Characteristics**:")
+        voice_descriptions = {
+            'alloy': 'Neutral and balanced',
+            'echo': 'Smooth and conversational', 
+            'fable': 'British accent, authoritative',
+            'onyx': 'Deep and authoritative',
+            'nova': 'Warm and friendly (default)',
+            'shimmer': 'Expressive and engaging'
+        }
+        for voice, desc in voice_descriptions.items():
+            results.append(f"  • {voice}: {desc}")
+        
+        # Check if we can get actual available voices from the API
+        try:
+            import httpx
+            openai_url = OPENAI_TTS_BASE_URL
+            
+            # Note: OpenAI doesn't provide a voices endpoint, but we can verify connectivity
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                test_url = f"{openai_url.rstrip('/')}/models"
+                response = await client.get(
+                    test_url,
+                    headers={"Authorization": f"Bearer {OPENAI_API_KEY}"}
+                )
+                if response.status_code == 200:
+                    results.append("\n✅ OpenAI API is accessible")
+                    
+                    # Check for models that support TTS
+                    data = response.json()
+                    tts_models = [m['id'] for m in data.get('data', []) if 'tts' in m['id']]
+                    if tts_models:
+                        results.append(f"\nAvailable TTS models: {', '.join(sorted(set(tts_models)))}")
+                else:
+                    results.append(f"\n⚠️ OpenAI API returned status {response.status_code}")
+        except Exception as e:
+            results.append(f"\n❌ Could not verify OpenAI API: {str(e)[:50]}")
+    
+    # Kokoro voices
+    if 'kokoro' in providers_to_check:
+        results.append("\n\n🎭 Kokoro Voices")
+        results.append("-" * 40)
+        
+        # Default voice descriptions
+        kokoro_voice_descriptions = {
+            'af_sky': 'Female - Natural and expressive (your favorite!)',
+            'af_sarah': 'Female - Warm and friendly',
+            'am_adam': 'Male - Clear and professional',
+            'af_nicole': 'Female - Energetic and upbeat',
+            'am_michael': 'Male - Deep and authoritative',
+            'bf_emma': 'British Female - Sophisticated accent',
+            'bm_george': 'British Male - Distinguished accent',
+            'af_bella': 'Female - Gentle and soothing',
+            'af_heart': 'Female - Passionate and emotive',
+            'bf_isabella': 'British Female - Refined and elegant',
+            'bm_lewis': 'British Male - Articulate and composed'
+        }
+        
+        # Check Kokoro availability using OpenAI-compatible endpoint
+        kokoro_url = KOKORO_TTS_BASE_URL
+        kokoro_available = False
+        
+        try:
+            import httpx
+            async with httpx.AsyncClient(timeout=3.0) as client:
+                # Only use OpenAI-compatible endpoints
+                test_url = f"{kokoro_url.rstrip('/')}/models"
+                response = await client.get(test_url)
+                if response.status_code == 200:
+                    kokoro_available = True
+        except:
+            pass
+        
+        # Display known voices (hardcoded since we're only using OpenAI-compatible endpoints)
+        results.append("**Known voices:**")
+        for voice_id, description in sorted(kokoro_voice_descriptions.items()):
+            results.append(f"  • {voice_id}: {description}")
+        
+        results.append(f"\nKokoro endpoint: {kokoro_url}")
+        
+        # Check if Kokoro is running
+        if "kokoro" in service_processes:
+            process = service_processes["kokoro"]
+            if process.poll() is None:
+                results.append("✅ Kokoro is running (MCP-managed)")
+            else:
+                results.append("❌ Kokoro is not running (use start_kokoro to start)")
+        elif kokoro_available:
+            results.append("✅ Kokoro is available (externally managed)")
+        else:
+            results.append("❌ Kokoro is not available")
+    
+    # Add usage examples
+    results.append("\n\n💡 USAGE EXAMPLES")
+    results.append("-" * 40)
+    results.append("**Basic usage:**")
+    results.append('  converse("Hello!", voice="shimmer")')
+    results.append('  converse("Hello!", voice="af_sky", tts_provider="kokoro")')
+    
+    if ALLOW_EMOTIONS:
+        results.append("\n**Emotional speech (OpenAI only):**")
+        results.append('  converse("Great job!", tts_model="gpt-4o-mini-tts",')
+        results.append('           tts_instructions="Sound excited and proud")')
     
     return "\n".join(results)
 

@@ -39,6 +39,7 @@ dependencies = [
     "audioop-lts; python_version >= '3.13'",
     "simpleaudio",
     "httpx",
+    "psutil>=5.9.0",
 ]
 
 [project.optional-dependencies]

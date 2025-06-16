@@ -257,6 +257,32 @@ export TTS_BASE_URL="http://localhost:8880/v1"
 export TTS_VOICE="af_sky"
 ```
 
+### API Routing and Proxies
+
+Since voice-mcp uses the OpenAI SDK, you can redirect all API traffic through a custom router using the standard `OPENAI_BASE_URL` environment variable:
+
+```bash
+# Route all OpenAI API calls through your proxy
+export OPENAI_BASE_URL="https://router.example.com/v1"
+export OPENAI_API_KEY="your-key"
+```
+
+The OpenAI SDK automatically uses this base URL for all API calls - no voice-mcp specific configuration needed!
+
+This enables:
+- **Cost optimization** - Route to cheaper providers based on request type
+- **Fallback handling** - Automatically switch to backup services
+- **Load balancing** - Distribute requests across multiple endpoints
+- **Custom logic** - Add authentication, caching, or transformation layers
+
+For provider-specific routing (e.g., different endpoints for STT vs TTS), you can still use:
+```bash
+export STT_BASE_URL="http://localhost:2022/v1"  # Whisper
+export TTS_BASE_URL="http://localhost:8880/v1"  # Kokoro
+```
+
+See [OpenAI API Routing Guide](openai-api-routing.md) for proxy implementation examples.
+
 ## Troubleshooting
 
 ### Common Issues

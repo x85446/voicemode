@@ -102,6 +102,9 @@ Add to your Claude Desktop configuration file:
 | `listen_for_speech` | Listen for speech and convert to text | `duration` (default: 5s) |
 | `check_room_status` | Check LiveKit room status and participants | None |
 | `check_audio_devices` | List available audio input/output devices | None |
+| `start_kokoro` | Start the Kokoro TTS service | `models_dir` (optional, defaults to ~/Models/kokoro) |
+| `stop_kokoro` | Stop the Kokoro TTS service | None |
+| `kokoro_status` | Check the status of Kokoro TTS service | None |
 
 **Note:** The `converse` tool is the primary interface for voice interactions, combining speaking and listening in a natural flow.
 
@@ -148,6 +151,24 @@ For privacy-focused or offline usage, voice-mcp supports local speech services:
 - **[Kokoro](docs/kokoro.md)** - Local text-to-speech with multiple voice options
 
 These services provide the same API interface as OpenAI, allowing seamless switching between cloud and local processing.
+
+### OpenAI API Compatibility Benefits
+
+By strictly adhering to OpenAI's API standard, voice-mcp enables powerful deployment flexibility:
+
+- **🔀 Transparent Routing**: Users can implement their own API proxies or gateways outside of voice-mcp to route requests to different providers based on custom logic (cost, latency, availability, etc.)
+- **🎯 Model Selection**: Deploy routing layers that select optimal models per request without modifying voice-mcp configuration
+- **💰 Cost Optimization**: Build intelligent routers that balance between expensive cloud APIs and free local models
+- **🔧 No Lock-in**: Switch providers by simply changing the `BASE_URL` - no code changes required
+
+Example: Simply set `OPENAI_BASE_URL` to point to your custom router:
+```bash
+export OPENAI_BASE_URL="https://router.example.com/v1"
+export OPENAI_API_KEY="your-key"
+# voice-mcp now uses your router for all OpenAI API calls
+```
+
+The OpenAI SDK handles this automatically - no voice-mcp configuration needed!
 
 ## Architecture
 
