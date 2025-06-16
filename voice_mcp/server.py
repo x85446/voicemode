@@ -169,6 +169,10 @@ LIVEKIT_API_SECRET = os.getenv("LIVEKIT_API_SECRET", "secret")
 # Auto-start configuration
 AUTO_START_KOKORO = os.getenv("VOICE_MCP_AUTO_START_KOKORO", "").lower() in ("true", "1", "yes", "on")
 
+# Emotional TTS configuration
+ALLOW_EMOTIONS = os.getenv("VOICE_ALLOW_EMOTIONS", "false").lower() in ("true", "1", "yes", "on")
+EMOTION_AUTO_UPGRADE = os.getenv("VOICE_EMOTION_AUTO_UPGRADE", "false").lower() in ("true", "1", "yes", "on")
+
 if not OPENAI_API_KEY:
     raise ValueError("OPENAI_API_KEY is required")
 
@@ -301,6 +305,28 @@ def get_tts_config(provider: Optional[str] = None, voice: Optional[str] = None, 
             'voice': voice or TTS_VOICE,  # Default OpenAI voice
             'instructions': instructions  # Pass through instructions for OpenAI
         }
+
+
+def validate_emotion_request(tts_model: Optional[str], tts_instructions: Optional[str], tts_provider: Optional[str]) -> Optional[str]:
+    """
+    Validate if emotional TTS is allowed and appropriate.
+    Returns the instructions if valid, None if emotions should be stripped.
+    """
+    # No emotion instructions provided
+    if not tts_instructions:
+        return tts_instructions
+    
+    # Check if this is an emotion-capable model request
+    if tts_model == "gpt-4o-mini-tts":
+        if not ALLOW_EMOTIONS:
+            logger.warning("Emotional TTS requested but VOICE_ALLOW_EMOTIONS not enabled")
+            return None  # Strip emotion instructions
+        
+        # Log provider switch if needed
+        if tts_provider != "openai":
+            logger.info("Switching to OpenAI for emotional speech support")
+    
+    return tts_instructions
 
 
 async def speech_to_text(audio_data: np.ndarray, save_audio: bool = False, audio_dir: Optional[Path] = None) -> Optional[str]:
@@ -615,8 +641,14 @@ async def converse(
         - Make a statement and wait: converse("Tell me more about that")
         - Just speak without waiting: converse("Goodbye!", wait_for_response=False)
         - Use HD model: converse("High quality speech", tts_model="tts-1-hd")
-        - Express emotions: converse("I'm so excited!", tts_model="gpt-4o-mini-tts", tts_instructions="Sound extremely excited")
-        - Emotional speech: converse("This is terrible", tts_model="gpt-4o-mini-tts", voice="sage", tts_instructions="Sound very sad")
+        
+    Emotional Speech (requires VOICE_ALLOW_EMOTIONS=true and OpenAI API):
+        - Excitement: converse("We did it!", tts_model="gpt-4o-mini-tts", tts_instructions="Sound extremely excited and celebratory")
+        - Sadness: converse("I'm sorry for your loss", tts_model="gpt-4o-mini-tts", tts_instructions="Sound gentle and sympathetic")
+        - Urgency: converse("Watch out!", tts_model="gpt-4o-mini-tts", tts_instructions="Sound urgent and concerned")
+        - Humor: converse("That's hilarious!", tts_model="gpt-4o-mini-tts", tts_instructions="Sound amused and playful")
+        
+    Note: Emotional speech uses OpenAI's gpt-4o-mini-tts model and incurs API costs (~$0.02/minute)
     """
     logger.info(f"Converse: '{message[:50]}{'...' if len(message) > 50 else ''}' (wait_for_response: {wait_for_response})")
     
@@ -635,7 +667,9 @@ async def converse(
         if not wait_for_response:
             try:
                 async with audio_operation_lock:
-                    tts_config = get_tts_config(tts_provider, voice, tts_model, tts_instructions)
+                    # Validate emotion request
+                    validated_instructions = validate_emotion_request(tts_model, tts_instructions, tts_provider)
+                    tts_config = get_tts_config(tts_provider, voice, tts_model, validated_instructions)
                     success, tts_metrics = await text_to_speech(
                         text=message,
                         openai_clients=openai_clients,
@@ -685,7 +719,9 @@ async def converse(
                 async with audio_operation_lock:
                     # Speak the message
                     tts_start = time.perf_counter()
-                    tts_config = get_tts_config(tts_provider, voice, tts_model, tts_instructions)
+                    # Validate emotion request
+                    validated_instructions = validate_emotion_request(tts_model, tts_instructions, tts_provider)
+                    tts_config = get_tts_config(tts_provider, voice, tts_model, validated_instructions)
                     tts_success, tts_metrics = await text_to_speech(
                         text=message,
                         openai_clients=openai_clients,
@@ -1244,6 +1280,21 @@ async def voice_status() -> str:
             results.append(f"\n{status['title']}")
             results.append("-" * 40)
             results.extend(status['items'])
+    
+    # Add emotion configuration status
+    results.append("\n🎭 EMOTIONAL TTS")
+    results.append("-" * 40)
+    if ALLOW_EMOTIONS:
+        results.append("Status: ✅ Enabled")
+        results.append("Model: gpt-4o-mini-tts (OpenAI)")
+        results.append("Cost: ~$0.02/minute when used")
+        if EMOTION_AUTO_UPGRADE:
+            results.append("Auto-upgrade: Yes (will switch to OpenAI when emotions requested)")
+        else:
+            results.append("Auto-upgrade: No (must specify tts_provider='openai')")
+    else:
+        results.append("Status: ❌ Disabled")
+        results.append("Enable with: VOICE_ALLOW_EMOTIONS=true")
     
     # Add recommendations based on status
     results.append("\n💡 RECOMMENDATIONS")
