@@ -191,13 +191,12 @@ http_client_config = {
     'limits': httpx.Limits(max_keepalive_connections=5, max_connections=10),
 }
 
-# Create OpenAI TTS client if different from default
-if OPENAI_TTS_BASE_URL != TTS_BASE_URL:
-    openai_clients['tts_openai'] = AsyncOpenAI(
-        api_key=OPENAI_API_KEY,
-        base_url=OPENAI_TTS_BASE_URL,
-        http_client=httpx.AsyncClient(**http_client_config)
-    )
+# Always create OpenAI TTS client for emotional speech support
+openai_clients['tts_openai'] = AsyncOpenAI(
+    api_key=OPENAI_API_KEY,
+    base_url=OPENAI_TTS_BASE_URL,
+    http_client=httpx.AsyncClient(**http_client_config)
+)
 
 # Create Kokoro TTS client if different from default
 if KOKORO_TTS_BASE_URL != TTS_BASE_URL:
@@ -298,6 +297,7 @@ def get_tts_config(provider: Optional[str] = None, voice: Optional[str] = None, 
     else:  # openai
         # Use openai-specific client if available, otherwise use default
         client_key = 'tts_openai' if 'tts_openai' in openai_clients else 'tts'
+        logger.debug(f"OpenAI TTS config: client_key={client_key}, available_clients={list(openai_clients.keys())}")
         return {
             'client_key': client_key,
             'base_url': OPENAI_TTS_BASE_URL,
