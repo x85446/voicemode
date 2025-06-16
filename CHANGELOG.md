@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.22] - 2025-06-16
+
 ### Added
 - Local STT/TTS configuration support in .mcp.json
 - Split TTS metrics into generation and playback components for better performance insights
