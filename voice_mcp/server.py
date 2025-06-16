@@ -13,8 +13,10 @@ import gc
 import time
 import atexit
 import signal
+import subprocess
+import psutil
 from datetime import datetime
-from typing import Optional, Literal
+from typing import Optional, Literal, Dict
 from pathlib import Path
 
 import anyio
@@ -164,6 +166,9 @@ LIVEKIT_URL = os.getenv("LIVEKIT_URL", "ws://localhost:7880")
 LIVEKIT_API_KEY = os.getenv("LIVEKIT_API_KEY", "devkey")
 LIVEKIT_API_SECRET = os.getenv("LIVEKIT_API_SECRET", "secret")
 
+# Auto-start configuration
+AUTO_START_KOKORO = os.getenv("VOICE_MCP_AUTO_START_KOKORO", "").lower() in ("true", "1", "yes", "on")
+
 if not OPENAI_API_KEY:
     raise ValueError("OPENAI_API_KEY is required")
 
@@ -197,6 +202,60 @@ if KOKORO_TTS_BASE_URL != TTS_BASE_URL:
         base_url=KOKORO_TTS_BASE_URL,
         http_client=httpx.AsyncClient(**http_client_config)
     )
+
+
+async def startup_initialization():
+    """Initialize services on startup based on configuration"""
+    global _startup_initialized
+    
+    if _startup_initialized:
+        return
+    
+    _startup_initialized = True
+    logger.info("Running startup initialization...")
+    
+    # Check if we should auto-start Kokoro
+    if AUTO_START_KOKORO:
+        try:
+            # Check if Kokoro is already running
+            async with httpx.AsyncClient(timeout=3.0) as client:
+                base_url = KOKORO_TTS_BASE_URL.rstrip('/').removesuffix('/v1')
+                health_url = f"{base_url}/health"
+                response = await client.get(health_url)
+                
+                if response.status_code == 200:
+                    logger.info("Kokoro TTS is already running externally")
+                else:
+                    raise Exception("Not running")
+        except:
+            # Kokoro is not running, start it
+            logger.info("Auto-starting Kokoro TTS service...")
+            try:
+                # Import here to avoid circular dependency
+                global service_processes
+                if "kokoro" not in service_processes:
+                    process = subprocess.Popen(
+                        ["uvx", "kokoro-fastapi"],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        text=True,
+                        env={**os.environ}
+                    )
+                    service_processes["kokoro"] = process
+                    
+                    # Wait a moment for it to start
+                    await asyncio.sleep(2.0)
+                    
+                    # Verify it started
+                    if process.poll() is None:
+                        logger.info(f"✓ Kokoro TTS started successfully (PID: {process.pid})")
+                    else:
+                        logger.error("Failed to start Kokoro TTS")
+            except Exception as e:
+                logger.error(f"Error auto-starting Kokoro: {e}")
+    
+    # Log initial status
+    logger.info("Service initialization complete")
 
 
 def get_tts_config(provider: Optional[str] = None, voice: Optional[str] = None, model: Optional[str] = None, instructions: Optional[str] = None):
@@ -561,6 +620,9 @@ async def converse(
     """
     logger.info(f"Converse: '{message[:50]}{'...' if len(message) > 50 else ''}' (wait_for_response: {wait_for_response})")
     
+    # Run startup initialization if needed
+    await startup_initialization()
+    
     # Track execution time and resources
     start_time = time.time()
     if DEBUG:
@@ -788,6 +850,145 @@ async def check_room_status() -> str:
         return f"Error checking room status: {str(e)}"
 
 
+# Global state for service management
+service_processes: Dict[str, subprocess.Popen] = {}
+
+# Flag to track if startup initialization has run
+_startup_initialized = False
+
+
+@mcp.tool()
+async def start_kokoro(models_dir: Optional[str] = None) -> str:
+    """
+    Start the Kokoro TTS service using uvx.
+    
+    Args:
+        models_dir: Optional path to models directory (defaults to ~/Models/kokoro)
+    """
+    global service_processes
+    
+    # Check if already running
+    if "kokoro" in service_processes and service_processes["kokoro"].poll() is None:
+        return "Kokoro is already running"
+    
+    try:
+        # Default models directory
+        if models_dir is None:
+            models_dir = str(Path.home() / "Models" / "kokoro")
+        
+        # Construct the uvx command
+        cmd = [
+            "uvx",
+            "--from", "git+https://github.com/mbailey/Kokoro-FastAPI",
+            "kokoro-start",
+            "--models-dir", models_dir
+        ]
+        
+        logger.info(f"Starting Kokoro with command: {' '.join(cmd)}")
+        
+        # Start the process in the background
+        process = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            start_new_session=True  # Detach from parent process group
+        )
+        
+        # Give it a moment to start
+        await asyncio.sleep(2)
+        
+        # Check if it's still running
+        if process.poll() is not None:
+            stdout, stderr = process.communicate()
+            error_msg = stderr.decode() if stderr else "Unknown error"
+            return f"Failed to start Kokoro: {error_msg}"
+        
+        service_processes["kokoro"] = process
+        return f"Kokoro started successfully (PID: {process.pid})"
+        
+    except Exception as e:
+        logger.error(f"Error starting Kokoro: {e}")
+        return f"Error starting Kokoro: {str(e)}"
+
+
+@mcp.tool()
+async def stop_kokoro() -> str:
+    """Stop the Kokoro TTS service"""
+    global service_processes
+    
+    if "kokoro" not in service_processes:
+        return "Kokoro is not running"
+    
+    process = service_processes["kokoro"]
+    
+    try:
+        # Check if still running
+        if process.poll() is None:
+            # Try graceful termination first
+            process.terminate()
+            
+            # Wait up to 5 seconds for graceful shutdown
+            try:
+                await asyncio.wait_for(
+                    asyncio.create_task(asyncio.to_thread(process.wait)),
+                    timeout=5.0
+                )
+            except asyncio.TimeoutError:
+                # Force kill if graceful shutdown failed
+                process.kill()
+                await asyncio.to_thread(process.wait)
+            
+            del service_processes["kokoro"]
+            return "Kokoro stopped successfully"
+        else:
+            del service_processes["kokoro"]
+            return "Kokoro was already stopped"
+            
+    except Exception as e:
+        logger.error(f"Error stopping Kokoro: {e}")
+        return f"Error stopping Kokoro: {str(e)}"
+
+
+@mcp.tool()
+async def kokoro_status() -> str:
+    """Check the status of the Kokoro TTS service"""
+    global service_processes
+    
+    if "kokoro" not in service_processes:
+        return "Kokoro is not running"
+    
+    process = service_processes["kokoro"]
+    
+    if process.poll() is None:
+        # Get more detailed info using psutil if available
+        try:
+            proc = psutil.Process(process.pid)
+            cpu_percent = proc.cpu_percent(interval=0.1)
+            memory_info = proc.memory_info()
+            memory_mb = memory_info.rss / 1024 / 1024
+            
+            # Check if port 8880 is listening
+            port_status = "unknown"
+            for conn in proc.connections():
+                if conn.laddr.port == 8880 and conn.status == 'LISTEN':
+                    port_status = "listening"
+                    break
+            
+            return (
+                f"Kokoro is running (PID: {process.pid})\n"
+                f"CPU Usage: {cpu_percent:.1f}%\n"
+                f"Memory Usage: {memory_mb:.1f} MB\n"
+                f"Port 8880: {port_status}"
+            )
+        except:
+            # Fallback if psutil fails
+            return f"Kokoro is running (PID: {process.pid})"
+    else:
+        # Process has ended
+        del service_processes["kokoro"]
+        return "Kokoro has stopped"
+
+
 @mcp.tool()
 async def check_audio_devices() -> str:
     """List available audio input and output devices"""
@@ -820,9 +1021,275 @@ async def check_audio_devices() -> str:
         return f"Error listing audio devices: {str(e)}"
 
 
+@mcp.tool()
+async def voice_status() -> str:
+    """
+    Check the status of all voice services including TTS, STT, LiveKit, and audio devices.
+    Provides a unified view of the voice infrastructure configuration and health.
+    """
+    # Run startup initialization if needed
+    await startup_initialization()
+    
+    from openai import AsyncOpenAI
+    import httpx
+    
+    results = []
+    results.append("🎙️ VOICE SERVICES STATUS")
+    results.append("=" * 40)
+    
+    # Prepare all checks to run in parallel
+    tasks = []
+    
+    # 1. Check STT Services
+    async def check_stt():
+        status = {"title": "🗣️ Speech-to-Text (STT)", "items": []}
+        
+        # Check configured STT service
+        stt_url = STT_BASE_URL
+        status["items"].append(f"Configured URL: {stt_url}")
+        status["items"].append(f"Model: {STT_MODEL}")
+        
+        # Test STT connectivity
+        try:
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                # Check if it's local (whisper.cpp uses /health)
+                if "localhost" in stt_url or "127.0.0.1" in stt_url:
+                    # Remove /v1 suffix if present for whisper.cpp health check
+                    base_url = stt_url.rstrip('/').removesuffix('/v1')
+                    test_url = f"{base_url}/health"
+                    response = await client.get(test_url)
+                    if response.status_code == 200:
+                        status["items"].append("Status: ✅ Connected")
+                        status["items"].append("Type: Local (Whisper.cpp)")
+                    else:
+                        status["items"].append(f"Status: ⚠️ HTTP {response.status_code}")
+                else:
+                    # For cloud APIs, check the models endpoint
+                    test_url = f"{stt_url.rstrip('/')}/models"
+                    response = await client.get(
+                        test_url,
+                        headers={"Authorization": f"Bearer {OPENAI_API_KEY}"}
+                    )
+                    if response.status_code == 200:
+                        status["items"].append("Status: ✅ Connected")
+                        status["items"].append("Type: Cloud API")
+                    else:
+                        status["items"].append(f"Status: ⚠️ HTTP {response.status_code}")
+        except Exception as e:
+            status["items"].append(f"Status: ❌ Unreachable ({str(e)[:50]})")
+        
+        return status
+    
+    # 2. Check TTS Services
+    async def check_tts():
+        status = {"title": "🔊 Text-to-Speech (TTS)", "items": []}
+        
+        # Check primary TTS configuration
+        tts_url = TTS_BASE_URL
+        status["items"].append(f"Primary URL: {tts_url}")
+        status["items"].append(f"Default Voice: {TTS_VOICE}")
+        status["items"].append(f"Default Model: {TTS_MODEL}")
+        
+        # Test primary TTS connectivity
+        try:
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                # Check if it's local (Kokoro uses /health without auth)
+                if "localhost" in tts_url or "127.0.0.1" in tts_url:
+                    # Try health endpoint first for local services
+                    base_url = tts_url.rstrip('/').removesuffix('/v1')
+                    test_url = f"{base_url}/health"
+                    response = await client.get(test_url)
+                    if response.status_code == 200:
+                        status["items"].append("Primary Status: ✅ Connected")
+                    else:
+                        # Fall back to models endpoint
+                        test_url = f"{tts_url.rstrip('/')}/models"
+                        response = await client.get(test_url)
+                        if response.status_code == 200:
+                            status["items"].append("Primary Status: ✅ Connected")
+                        else:
+                            status["items"].append(f"Primary Status: ⚠️ HTTP {response.status_code}")
+                else:
+                    # For cloud APIs, use models endpoint with auth
+                    test_url = f"{tts_url.rstrip('/')}/models"
+                    response = await client.get(
+                        test_url,
+                        headers={"Authorization": f"Bearer {OPENAI_API_KEY}"}
+                    )
+                    if response.status_code == 200:
+                        status["items"].append("Primary Status: ✅ Connected")
+                    else:
+                        status["items"].append(f"Primary Status: ⚠️ HTTP {response.status_code}")
+        except Exception as e:
+            status["items"].append(f"Primary Status: ❌ Unreachable")
+        
+        # Check provider-specific configurations
+        status["items"].append("\nProvider-Specific Endpoints:")
+        
+        # OpenAI TTS
+        openai_url = OPENAI_TTS_BASE_URL
+        status["items"].append(f"  OpenAI: {openai_url}")
+        try:
+            test_url = f"{openai_url.rstrip('/')}/models"
+            async with httpx.AsyncClient(timeout=3.0) as client:
+                response = await client.get(
+                    test_url,
+                    headers={"Authorization": f"Bearer {OPENAI_API_KEY}"}
+                )
+                if response.status_code == 200:
+                    status["items"].append("    Status: ✅ Available")
+                else:
+                    status["items"].append(f"    Status: ⚠️ HTTP {response.status_code}")
+        except:
+            status["items"].append("    Status: ❌ Unreachable")
+        
+        # Kokoro TTS
+        kokoro_url = KOKORO_TTS_BASE_URL
+        status["items"].append(f"  Kokoro: {kokoro_url}")
+        
+        # Check if Kokoro is managed by MCP
+        if "kokoro" in service_processes:
+            process = service_processes["kokoro"]
+            if process.poll() is None:
+                status["items"].append("    Status: ✅ MCP-managed (running)")
+            else:
+                status["items"].append("    Status: ❌ MCP-managed (stopped)")
+        else:
+            # Check if externally available
+            try:
+                test_url = f"{kokoro_url.rstrip('/')}/models"
+                async with httpx.AsyncClient(timeout=3.0) as client:
+                    response = await client.get(test_url)
+                    if response.status_code == 200:
+                        status["items"].append("    Status: ✅ External (available)")
+                    else:
+                        status["items"].append(f"    Status: ⚠️ External (HTTP {response.status_code})")
+            except:
+                status["items"].append("    Status: ❌ Not available")
+        
+        return status
+    
+    # 3. Check LiveKit
+    async def check_livekit():
+        status = {"title": "🎥 LiveKit Real-time", "items": []}
+        
+        status["items"].append(f"URL: {LIVEKIT_URL}")
+        
+        try:
+            from livekit import api
+            api_url = LIVEKIT_URL.replace("ws://", "http://").replace("wss://", "https://")
+            lk_api = api.LiveKitAPI(api_url, LIVEKIT_API_KEY, LIVEKIT_API_SECRET)
+            
+            # Try to list rooms as a health check
+            rooms = await lk_api.room.list_rooms(api.ListRoomsRequest())
+            status["items"].append(f"Status: ✅ Connected")
+            status["items"].append(f"Active Rooms: {len(rooms.rooms)}")
+            
+            # Count total participants
+            total_participants = sum(room.num_participants for room in rooms.rooms)
+            if total_participants > 0:
+                status["items"].append(f"Total Participants: {total_participants}")
+                
+        except Exception as e:
+            status["items"].append(f"Status: ❌ Unreachable ({str(e)[:50]})")
+        
+        return status
+    
+    # 4. Check Audio Devices (simplified)
+    async def check_audio():
+        status = {"title": "🎧 Audio Devices", "items": []}
+        
+        try:
+            devices = sd.query_devices()
+            input_count = sum(1 for d in devices if d['max_input_channels'] > 0)
+            output_count = sum(1 for d in devices if d['max_output_channels'] > 0)
+            
+            status["items"].append(f"Input Devices: {input_count}")
+            status["items"].append(f"Output Devices: {output_count}")
+            
+            # Show defaults
+            default_input = sd.default.device[0] if sd.default.device[0] is not None else "None"
+            default_output = sd.default.device[1] if sd.default.device[1] is not None else "None"
+            
+            if isinstance(default_input, int) and default_input < len(devices):
+                default_input = devices[default_input]['name']
+            if isinstance(default_output, int) and default_output < len(devices):
+                default_output = devices[default_output]['name']
+                
+            status["items"].append(f"Default Input: {default_input}")
+            status["items"].append(f"Default Output: {default_output}")
+            
+        except Exception as e:
+            status["items"].append(f"Status: ❌ Error ({str(e)[:50]})")
+        
+        return status
+    
+    # Run all checks in parallel
+    stt_task = asyncio.create_task(check_stt())
+    tts_task = asyncio.create_task(check_tts())
+    livekit_task = asyncio.create_task(check_livekit())
+    audio_task = asyncio.create_task(check_audio())
+    
+    # Wait for all tasks to complete
+    statuses = await asyncio.gather(
+        stt_task, tts_task, livekit_task, audio_task,
+        return_exceptions=True
+    )
+    
+    # Format results
+    for status in statuses:
+        if isinstance(status, Exception):
+            results.append(f"\n❌ Error checking service: {str(status)}")
+        else:
+            results.append(f"\n{status['title']}")
+            results.append("-" * 40)
+            results.extend(status['items'])
+    
+    # Add recommendations based on status
+    results.append("\n💡 RECOMMENDATIONS")
+    results.append("-" * 40)
+    
+    recommendations = []
+    
+    # Check if only cloud services are available
+    if "localhost" not in STT_BASE_URL and "localhost" not in TTS_BASE_URL:
+        recommendations.append("• Consider setting up local Whisper/Kokoro for privacy and cost savings")
+    
+    # Check if Kokoro is available but not being used
+    if "kokoro" not in TTS_BASE_URL.lower() and "✅" in str(statuses[1]):
+        if "Kokoro" in str(statuses[1]) and "✅" in str(statuses[1]):
+            recommendations.append("• Kokoro TTS is available - use tts_provider='kokoro' for local processing")
+    
+    # Check if no services are available
+    all_failed = all("❌" in str(s) for s in statuses[:3] if not isinstance(s, Exception))
+    if all_failed:
+        recommendations.append("• No voice services available - check your configuration and API keys")
+    
+    if not recommendations:
+        recommendations.append("• All services configured optimally")
+    
+    results.extend(recommendations)
+    
+    return "\n".join(results)
+
+
 async def cleanup():
     """Cleanup function to close HTTP clients and resources"""
     await cleanup_clients(openai_clients)
+    
+    # Stop any running services
+    global service_processes
+    for service_name, process in list(service_processes.items()):
+        if process.poll() is None:
+            logger.info(f"Stopping {service_name} service...")
+            try:
+                process.terminate()
+                # Give it a moment to shut down gracefully
+                await asyncio.sleep(0.5)
+                if process.poll() is None:
+                    process.kill()
+            except Exception as e:
+                logger.error(f"Error stopping {service_name}: {e}")
 
 
 def main():
