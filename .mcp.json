@@ -11,6 +11,7 @@
       "command": "./bin/voice-mcp",
       "args": [],
       "env": {
+        "STT_BASE_URL": "http://studio:8080/v1",
         "TTS_BASE_URL": "http://studio:8880/v1",
         "TTS_VOICE": "af_sky"
       }
