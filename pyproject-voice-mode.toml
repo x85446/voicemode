@@ -64,6 +64,7 @@ Issues = "https://github.com/mbailey/voice-mcp/issues"
 
 [project.scripts]
 voice-mode = "voice_mcp.cli:voice_mcp"
+voice-mcp = "voice_mcp.cli:voice_mcp"
 
 [tool.hatch.build.targets.wheel]
 packages = ["voice_mcp"]
