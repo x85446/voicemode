@@ -7,6 +7,9 @@ ALWAYS read the following files at the start of any session:
 - README.md to understand the project
 - ai_docs/README.md to understand where to read and write information about external tools, libraries, protocols, etc
 - external/repos.txt # List of 3rd party repos we may use
+- docs/tasks/README.md # Current task list and recently completed work
+- docs/tasks/implementation-notes.md # Important implementation decisions and fixes
+- docs/tasks/key-insights.md # Key learnings and design principles
 
 ## Context-Aware Loading
 
@@ -48,6 +51,18 @@ When using voice tools, ALWAYS set appropriate duration parameters based on expe
 You can get the attention of the USER when he is not responding by using tools from livekit-voice-mcp:ask_voice_question
 
 On startup, break the ice by asking a questions with your tools
+
+## Task Management
+
+When working on voice-mcp features:
+1. Check `docs/tasks/` directory for current work and plans
+2. Key files in docs/tasks/:
+   - `README.md` - Task list and completed features
+   - `provider-registry-design.md` - Full provider registry architecture
+   - `provider-registry-mvp.md` - MVP implementation plan
+   - `emotional-tts-plan.md` - Emotional TTS feature design
+   - `implementation-notes.md` - Completed work and decisions
+   - `key-insights.md` - Important learnings
 
 ## Voice Stack Overview
 

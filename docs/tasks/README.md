@@ -32,3 +32,11 @@
 - [x] Unified voice service status tool
 - [x] Auto-start Kokoro functionality
 - [x] Fixed health check endpoints for whisper.cpp and Kokoro
+- [x] Emotional TTS with cost controls (VOICE_ALLOW_EMOTIONS)
+- [x] Fixed OpenAI TTS client initialization bug
+
+## Current Branches
+
+- `master` - Has unified status tool and auto-start
+- `feature/provider-registry` - Provider registry design docs
+- `feature/emotional-tts` - Emotional TTS implementation (merged fixes)
