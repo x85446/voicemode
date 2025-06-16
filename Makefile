@@ -1,6 +1,6 @@
 # Voice MCP Makefile
 
-.PHONY: help build-package test test-package publish-test publish release install dev-install clean
+.PHONY: help build-package test test-package publish-test publish release install dev-install clean build-voice-mode publish-voice-mode
 
 # Default target
 help:
@@ -20,6 +20,10 @@ help:
 	@echo ""
 	@echo "Release targets:"
 	@echo "  release       - Create a new release (tags, pushes, triggers GitHub workflow)"
+	@echo ""
+	@echo "Alternative package (voice-mode):"
+	@echo "  build-voice-mode  - Build voice-mode package"
+	@echo "  publish-voice-mode - Publish voice-mode to PyPI"
 	@echo ""
 	@echo "  help          - Show this help message"
 
@@ -125,3 +129,30 @@ release:
 	echo "2. Publish to PyPI" && \
 	echo "" && \
 	echo "Monitor progress at: https://github.com/mbailey/voice-mcp/actions"
+
+# Build voice-mode package
+build-voice-mode:
+	@echo "Building voice-mode package..."
+	@# Temporarily swap pyproject files
+	@mv pyproject.toml pyproject-voice-mcp.toml.tmp
+	@cp pyproject-voice-mode.toml pyproject.toml
+	@# Build the package
+	python -m build
+	@# Restore original pyproject.toml
+	@mv pyproject-voice-mcp.toml.tmp pyproject.toml
+	@echo "voice-mode package built successfully in dist/"
+
+# Publish voice-mode to PyPI
+publish-voice-mode: build-voice-mode
+	@echo "Publishing voice-mode to PyPI..."
+	@echo "Make sure you have configured ~/.pypirc with pypi credentials"
+	@# Find the latest voice-mode wheel and sdist
+	@latest_wheel=$$(ls -t dist/voice_mode-*.whl 2>/dev/null | head -1); \
+	latest_sdist=$$(ls -t dist/voice_mode-*.tar.gz 2>/dev/null | head -1); \
+	if [ -z "$$latest_wheel" ] || [ -z "$$latest_sdist" ]; then \
+		echo "Error: voice-mode distribution files not found. Run 'make build-voice-mode' first."; \
+		exit 1; \
+	fi; \
+	python -m twine upload "$$latest_wheel" "$$latest_sdist"
+	@echo "Published to PyPI. Install with:"
+	@echo "  pip install voice-mode"
