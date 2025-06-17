@@ -1,2 +1,2 @@
-mbailey/ai_docs
-mbailey/conventions
+mbailey/ai_docs .ai_docs
+mbailey/conventions .conventions

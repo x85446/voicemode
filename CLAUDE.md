@@ -3,10 +3,10 @@
 ## Primary Directive
 
 ALWAYS read the following files at the start of any session:
-- CONVENTIONS.md to understand the engineering conventions for this project
 - README.md to understand the project
-- ai_docs/README.md to understand where to read and write information about external tools, libraries, protocols, etc
-- external/repos.txt # List of 3rd party repos we may use
+- .conventions/CONVENTIONS.md to understand the engineering conventions for this project
+- .ai_docs/README.md to understand where to read and write information about external tools, libraries, protocols, etc
+- .repos.txt # List of 3rd party repos we may use
 - docs/tasks/README.md # Current task list and recently completed work
 - docs/tasks/implementation-notes.md # Important implementation decisions and fixes
 - docs/tasks/key-insights.md # Key learnings and design principles

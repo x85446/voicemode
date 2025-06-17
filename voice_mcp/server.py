@@ -1583,7 +1583,7 @@ def converse() -> str:
     return "\n".join(f"- {instruction}" for instruction in instructions)
 
 
-@mcp.prompt
+@mcp.prompt(name="kokoro-start")
 def kokoro_start() -> str:
     """Start the Kokoro TTS service.
     
@@ -1595,7 +1595,7 @@ def kokoro_start() -> str:
     return "Use the kokoro_start tool to start the Kokoro TTS service. After starting, confirm that Kokoro is running and ready for local TTS."
 
 
-@mcp.prompt
+@mcp.prompt(name="kokoro-stop")
 def kokoro_stop() -> str:
     """Stop the Kokoro TTS service.
     
@@ -1607,7 +1607,7 @@ def kokoro_stop() -> str:
     return "Use the kokoro_stop tool to stop the Kokoro TTS service. Confirm that the service has been stopped successfully."
 
 
-@mcp.prompt
+@mcp.prompt(name="kokoro-status")
 def kokoro_status() -> str:
     """Check the status of the Kokoro TTS service.
     
@@ -1619,7 +1619,7 @@ def kokoro_status() -> str:
     return "Use the kokoro_status tool to check if the Kokoro TTS service is running. Report the status including process details, CPU/memory usage if available."
 
 
-@mcp.prompt
+@mcp.prompt(name="voice-status")
 def voice_status() -> str:
     """Check the comprehensive status of all voice services.
     
