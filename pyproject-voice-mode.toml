@@ -1,3 +1,15 @@
+# WARNING: This is a companion to pyproject.toml for the voice-mode package
+# Any changes to dependencies, version, or other settings in pyproject.toml
+# should be synchronized here to ensure voice-mcp and voice-mode packages
+# remain functionally identical.
+#
+# The only intended differences are:
+# - name: "voice-mode" vs "voice-mcp"
+# - description: mentions dual availability
+# - scripts: different command names
+#
+# Consider using 'make sync-tomls' if available, or manually update both files.
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
@@ -64,7 +76,7 @@ Repository = "https://github.com/mbailey/voice-mcp"
 Issues = "https://github.com/mbailey/voice-mcp/issues"
 
 [project.scripts]
-voice-mode = "voice_mcp.cli:voice_mcp"
+voice-mode = "voice_mcp.cli:voice_mode"
 voice-mcp = "voice_mcp.cli:voice_mcp"
 
 [tool.hatch.build.targets.wheel]

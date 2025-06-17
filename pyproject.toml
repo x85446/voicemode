@@ -1,3 +1,10 @@
+# WARNING: This file has a companion pyproject-voice-mode.toml
+# Any changes to dependencies, version, or other settings should be
+# synchronized between both files to ensure voice-mcp and voice-mode
+# packages remain functionally identical.
+#
+# Consider using 'make sync-tomls' if available, or manually update both files.
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

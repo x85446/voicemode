@@ -1,6 +1,6 @@
 # Voice MCP Makefile
 
-.PHONY: help build-package test test-package publish-test publish release install dev-install clean build-voice-mode publish-voice-mode
+.PHONY: help build-package test test-package publish-test publish release install dev-install clean build-voice-mode publish-voice-mode sync-tomls
 
 # Default target
 help:
@@ -24,6 +24,7 @@ help:
 	@echo "Alternative package (voice-mode):"
 	@echo "  build-voice-mode  - Build voice-mode package"
 	@echo "  publish-voice-mode - Publish voice-mode to PyPI"
+	@echo "  sync-tomls        - Sync pyproject.toml changes to pyproject-voice-mode.toml"
 	@echo ""
 	@echo "  help          - Show this help message"
 
@@ -156,3 +157,33 @@ publish-voice-mode: build-voice-mode
 	python -m twine upload "$$latest_wheel" "$$latest_sdist"
 	@echo "Published to PyPI. Install with:"
 	@echo "  pip install voice-mode"
+
+# Sync pyproject.toml files
+sync-tomls:
+	@echo "Syncing pyproject.toml with pyproject-voice-mode.toml..."
+	@# Create a temporary file with the content after the warning comment
+	@tail -n +7 pyproject.toml > pyproject-voice-mode.toml.tmp
+	@# Add the voice-mode specific warning comment
+	@echo '# WARNING: This is a companion to pyproject.toml for the voice-mode package' > pyproject-voice-mode.toml.new
+	@echo '# Any changes to dependencies, version, or other settings in pyproject.toml' >> pyproject-voice-mode.toml.new
+	@echo '# should be synchronized here to ensure voice-mcp and voice-mode packages' >> pyproject-voice-mode.toml.new
+	@echo '# remain functionally identical.' >> pyproject-voice-mode.toml.new
+	@echo '#' >> pyproject-voice-mode.toml.new
+	@echo '# The only intended differences are:' >> pyproject-voice-mode.toml.new
+	@echo '# - name: "voice-mode" vs "voice-mcp"' >> pyproject-voice-mode.toml.new
+	@echo '# - description: mentions dual availability' >> pyproject-voice-mode.toml.new
+	@echo '# - scripts: different command names' >> pyproject-voice-mode.toml.new
+	@echo '#' >> pyproject-voice-mode.toml.new
+	@echo '# Consider using '\''make sync-tomls'\'' if available, or manually update both files.' >> pyproject-voice-mode.toml.new
+	@echo '' >> pyproject-voice-mode.toml.new
+	@cat pyproject-voice-mode.toml.tmp >> pyproject-voice-mode.toml.new
+	@# Update the package name
+	@sed -i 's/name = "voice-mcp"/name = "voice-mode"/' pyproject-voice-mode.toml.new
+	@# Update the description to mention dual availability
+	@sed -i 's/description = "Voice interaction capabilities for Model Context Protocol (MCP) servers"/description = "Voice interaction capabilities for Model Context Protocol (MCP) servers (also available as voice-mcp)"/' pyproject-voice-mode.toml.new
+	@# Update the scripts section
+	@sed -i 's/voice-mcp = "voice_mcp.cli:voice_mcp"/voice-mode = "voice_mcp.cli:voice_mode"\nvoice-mcp = "voice_mcp.cli:voice_mcp"/' pyproject-voice-mode.toml.new
+	@# Clean up temp file and move new file
+	@rm pyproject-voice-mode.toml.tmp
+	@mv pyproject-voice-mode.toml.new pyproject-voice-mode.toml
+	@echo "✅ Files synced successfully!"
