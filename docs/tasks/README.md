@@ -1,9 +1,17 @@
 # Voice-MCP Tasks and Ideas
 
+## Documentation
+
+- [Implementation Notes](./implementation-notes.md) - Completed work and decisions
+- [Key Insights](./key-insights.md) - Important learnings and design principles
+
 ## High Priority
 
 - [ ] Fix voice-mode ImportError - Add missing voice_mode() function to cli.py (v0.1.26)
 - [ ] Provider Registry System - Unified configuration with provider metadata (cost, latency, privacy, features)
+  - [Design Document](./provider-registry-design.md)
+  - [MVP Implementation](./provider-registry-mvp.md)
+  - [Implementation Notes](./provider-registry-implementation.md)
 - [ ] Save Transcriptions - Add text saving alongside audio recordings in voice-mcp/transcriptions/
 - [ ] Enhance provider registry with cost/latency/privacy metadata
 
