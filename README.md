@@ -175,7 +175,7 @@ The OpenAI SDK handles this automatically - no voice-mcp configuration needed!
 ```
 ┌─────────────────────┐     ┌──────────────────┐     ┌─────────────────────┐
 │   Claude/LLM        │     │  LiveKit Server  │     │  Voice Frontend     │
-│   (MCP Client)      │◄────►│  (Optional)      │◄────►│  (Optional)         │
+│   (MCP Client)      │◄────►│  (Optional)     │◄───►│  (Optional)         │
 └─────────────────────┘     └──────────────────┘     └─────────────────────┘
          │                            │
          │                            │
@@ -183,7 +183,7 @@ The OpenAI SDK handles this automatically - no voice-mcp configuration needed!
 ┌─────────────────────┐     ┌──────────────────┐
 │  Voice MCP Server   │     │   Audio Services │
 │  • converse         │     │  • OpenAI APIs   │
-│  • listen_for_speech│◄────►│  • Local Whisper │
+│  • listen_for_speech│◄───►│  • Local Whisper │
 │  • check_room_status│     │  • Local TTS     │
 │  • check_audio_devices    └──────────────────┘
 └─────────────────────┘
