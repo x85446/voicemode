@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Provider registry system MVP for managing TTS/STT providers
+  - Dynamic provider discovery and registration
+  - Automatic availability checking
+  - Feature-based provider filtering
+- Dual package name support (voice-mcp and voice-mode)
+  - Both commands now available in voice-mode package
+  - Maintains backward compatibility
 - Service management tools for Kokoro TTS:
   - `start_kokoro` - Start the Kokoro TTS service using uvx
   - `stop_kokoro` - Stop the running Kokoro service
@@ -19,6 +26,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Lists Kokoro voices with descriptions
   - Includes usage examples and emotional speech guidance
   - Checks API/service availability for each provider
+- Voice-chat slash command improvements for better argument handling
+
+### Changed
+- Default TTS voices updated: alloy for OpenAI, af_sky for Kokoro
 
 ## [0.1.22] - 2025-06-16
 
