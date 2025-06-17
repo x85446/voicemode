@@ -953,7 +953,7 @@ _startup_initialized = False
 
 
 @mcp.tool()
-async def start_kokoro(models_dir: Optional[str] = None) -> str:
+async def kokoro_start(models_dir: Optional[str] = None) -> str:
     """
     Start the Kokoro TTS service using uvx.
     
@@ -1007,7 +1007,7 @@ async def start_kokoro(models_dir: Optional[str] = None) -> str:
 
 
 @mcp.tool()
-async def stop_kokoro() -> str:
+async def kokoro_stop() -> str:
     """Stop the Kokoro TTS service"""
     global service_processes
     
@@ -1584,7 +1584,7 @@ def converse() -> str:
 
 
 @mcp.prompt
-def start_kokoro() -> str:
+def kokoro_start() -> str:
     """Start the Kokoro TTS service.
     
     This prompt instructs the assistant to start the local Kokoro TTS service.
@@ -1592,11 +1592,11 @@ def start_kokoro() -> str:
     Returns:
         Instructions for starting Kokoro
     """
-    return "Use the start_kokoro tool to start the Kokoro TTS service. After starting, confirm that Kokoro is running and ready for local TTS."
+    return "Use the kokoro_start tool to start the Kokoro TTS service. After starting, confirm that Kokoro is running and ready for local TTS."
 
 
 @mcp.prompt
-def stop_kokoro() -> str:
+def kokoro_stop() -> str:
     """Stop the Kokoro TTS service.
     
     This prompt instructs the assistant to stop the local Kokoro TTS service.
@@ -1604,7 +1604,7 @@ def stop_kokoro() -> str:
     Returns:
         Instructions for stopping Kokoro
     """
-    return "Use the stop_kokoro tool to stop the Kokoro TTS service. Confirm that the service has been stopped successfully."
+    return "Use the kokoro_stop tool to stop the Kokoro TTS service. Confirm that the service has been stopped successfully."
 
 
 @mcp.prompt

@@ -105,20 +105,20 @@ NEVER proactively create documentation files (*.md) or README files. Only create
 
 ## Kokoro TTS Management Prompts
 
-### start_kokoro
+### kokoro-start
 When the user asks to "start kokoro", "enable kokoro", "turn on kokoro", "use local TTS", or similar:
-- Use the `mcp__voice-mcp__start_kokoro` tool
+- Use the `mcp__voice-mcp__kokoro_start` tool
 - The tool will start the Kokoro TTS service on port 8880
 - Optional: specify a custom models directory path (defaults to ~/Models/kokoro)
 - After starting, inform the user that Kokoro is now running and ready for local TTS
 
-### stop_kokoro  
+### kokoro-stop  
 When the user asks to "stop kokoro", "disable kokoro", "turn off kokoro", or similar:
-- Use the `mcp__voice-mcp__stop_kokoro` tool
+- Use the `mcp__voice-mcp__kokoro_stop` tool
 - The tool will gracefully terminate the Kokoro TTS service
 - Inform the user that Kokoro has been stopped
 
-### kokoro_status
+### kokoro-status
 When the user asks "is kokoro running?", "kokoro status", "check kokoro", or similar:
 - Use the `mcp__voice-mcp__kokoro_status` tool
 - The tool will check if Kokoro is running and provide process details

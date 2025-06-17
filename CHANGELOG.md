@@ -11,10 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - MCP prompts for Kokoro TTS management:
-  - `start_kokoro` - Start the local Kokoro TTS service
-  - `stop_kokoro` - Stop the local Kokoro TTS service
-  - `kokoro_status` - Check the status of Kokoro service
-  - `voice_status` - Check comprehensive status of all voice services
+  - `kokoro-start` - Start the local Kokoro TTS service
+  - `kokoro-stop` - Stop the local Kokoro TTS service
+  - `kokoro-status` - Check the status of Kokoro service
+  - `voice-status` - Check comprehensive status of all voice services
 - Instructions in CLAUDE.md for AI assistants on when to use Kokoro tools
 
 ## [0.1.27] - 2025-06-17
