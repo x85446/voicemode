@@ -10,8 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Voice chat prompt/command (`/voice-mcp:converse`) for interactive voice conversations
 - Automatic local provider preference with VOICE_MCP_PREFER_LOCAL environment variable
-- Provider registry implementation documentation
-- Markdown links in task README to detailed documentation files
+- Documentation improvements with better organization and cross-linking
 
 ### Changed
 - Renamed voice_chat prompt to converse for clarity
@@ -26,8 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.25] - 2025-06-17
 
 ### Added
-- `make sync-tomls` command to automatically sync pyproject.toml changes to pyproject-voice-mode.toml
-- Warning comments in both pyproject.toml files to prevent dependency sync issues
+- Build tooling improvements for dual package maintenance
 
 ### Fixed
 - Missing psutil dependency in voice-mode package
@@ -60,7 +58,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Lists Kokoro voices with descriptions
   - Includes usage examples and emotional speech guidance
   - Checks API/service availability for each provider
-- Voice-chat slash command improvements for better argument handling
 
 ### Changed
 - Default TTS voices updated: alloy for OpenAI, af_sky for Kokoro
@@ -82,16 +79,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - VOICE_MCP_SAVE_AUDIO environment variable to save all TTS/STT audio files
 - Audio files saved to ~/voice-mcp_audio/ with timestamps
-- Documentation about gpt-4o-mini-tts being best for emotional speech
-- Warning to never use coral voice and default to af_sky for Kokoro
+- Improved voice selection documentation and guidance
 
 ### Changed
 - Voice parameter changed from Literal to str for flexibility in voice selection
 
-## [0.1.20] - 2025-06-15
-
-### Changed
-- Voice parameter changed from Literal to str type for more flexibility
 
 ## [0.1.19] - 2025-06-15
 
