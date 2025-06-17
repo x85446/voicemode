@@ -2,6 +2,7 @@
 
 ## High Priority
 
+- [ ] Fix voice-mode ImportError - Add missing voice_mode() function to cli.py (v0.1.26)
 - [ ] Provider Registry System - Unified configuration with provider metadata (cost, latency, privacy, features)
 - [ ] Save Transcriptions - Add text saving alongside audio recordings in voice-mcp/transcriptions/
 - [ ] Fix existing status tools to use unified backend (kokoro_status, etc.)

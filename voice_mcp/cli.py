@@ -10,3 +10,8 @@ def voice_mcp() -> None:
     voice_mcp_main()
 
 
+def voice_mode() -> None:
+    """Entry point for voice-mode command."""
+    voice_mcp_main()
+
+

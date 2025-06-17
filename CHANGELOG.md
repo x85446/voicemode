@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Added missing voice_mode() function to cli.py for voice-mode command
+
 ## [0.1.25] - 2025-06-17
 
 ### Added
