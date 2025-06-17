@@ -102,3 +102,24 @@ NEVER proactively create documentation files (*.md) or README files. Only create
 
 ## OpenAI API Usage
 - Use OpenAI API whenever possible as self hosted alternatives support it and we can use them by setting OPENAI_BASE_URL
+
+## Kokoro TTS Management Prompts
+
+### start_kokoro
+When the user asks to "start kokoro", "enable kokoro", "turn on kokoro", "use local TTS", or similar:
+- Use the `mcp__voice-mcp__start_kokoro` tool
+- The tool will start the Kokoro TTS service on port 8880
+- Optional: specify a custom models directory path (defaults to ~/Models/kokoro)
+- After starting, inform the user that Kokoro is now running and ready for local TTS
+
+### stop_kokoro  
+When the user asks to "stop kokoro", "disable kokoro", "turn off kokoro", or similar:
+- Use the `mcp__voice-mcp__stop_kokoro` tool
+- The tool will gracefully terminate the Kokoro TTS service
+- Inform the user that Kokoro has been stopped
+
+### kokoro_status
+When the user asks "is kokoro running?", "kokoro status", "check kokoro", or similar:
+- Use the `mcp__voice-mcp__kokoro_status` tool
+- The tool will check if Kokoro is running and provide process details
+- Report the status to the user including CPU/memory usage if available

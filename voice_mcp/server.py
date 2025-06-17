@@ -1583,6 +1583,55 @@ def converse() -> str:
     return "\n".join(f"- {instruction}" for instruction in instructions)
 
 
+@mcp.prompt
+def start_kokoro() -> str:
+    """Start the Kokoro TTS service.
+    
+    This prompt instructs the assistant to start the local Kokoro TTS service.
+    
+    Returns:
+        Instructions for starting Kokoro
+    """
+    return "Use the start_kokoro tool to start the Kokoro TTS service. After starting, confirm that Kokoro is running and ready for local TTS."
+
+
+@mcp.prompt
+def stop_kokoro() -> str:
+    """Stop the Kokoro TTS service.
+    
+    This prompt instructs the assistant to stop the local Kokoro TTS service.
+    
+    Returns:
+        Instructions for stopping Kokoro
+    """
+    return "Use the stop_kokoro tool to stop the Kokoro TTS service. Confirm that the service has been stopped successfully."
+
+
+@mcp.prompt
+def kokoro_status() -> str:
+    """Check the status of the Kokoro TTS service.
+    
+    This prompt instructs the assistant to check if Kokoro is running.
+    
+    Returns:
+        Instructions for checking Kokoro status
+    """
+    return "Use the kokoro_status tool to check if the Kokoro TTS service is running. Report the status including process details, CPU/memory usage if available."
+
+
+@mcp.prompt
+def voice_status() -> str:
+    """Check the comprehensive status of all voice services.
+    
+    This prompt instructs the assistant to check the status of all voice infrastructure
+    including TTS, STT, LiveKit, audio devices, and provider availability.
+    
+    Returns:
+        Instructions for checking comprehensive voice status
+    """
+    return "Use the voice_status tool to check the status of all voice services. This will show TTS/STT providers, LiveKit status, audio devices, and recommendations for optimal configuration."
+
+
 async def cleanup():
     """Cleanup function to close HTTP clients and resources"""
     await cleanup_clients(openai_clients)
