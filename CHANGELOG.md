@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.28] - 2025-06-17
+
 ### Added
 - MCP prompts for Kokoro TTS management:
   - `start_kokoro` - Start the local Kokoro TTS service
