@@ -7,17 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.25] - 2025-06-17
+
 ### Added
 - `make sync-tomls` command to automatically sync pyproject.toml changes to pyproject-voice-mode.toml
 - Warning comments in both pyproject.toml files to prevent dependency sync issues
 
 ### Fixed
 - Missing psutil dependency in voice-mode package
+
+## [0.1.24] - 2025-06-17
+
+### Fixed
 - Improved signal handling for proper Ctrl-C shutdown
   - First Ctrl-C attempts graceful shutdown
   - Second Ctrl-C forces immediate exit
-
-## [0.1.24] - 2025-06-17
 
 ## [0.1.23] - 2025-06-17
 
