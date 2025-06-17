@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.27] - 2025-06-17
+
 ### Added
 - Voice chat prompt/command (`/voice-mcp:converse`) for interactive voice conversations
 - Automatic local provider preference with VOICE_MCP_PREFER_LOCAL environment variable
