@@ -1570,10 +1570,27 @@ def main():
             logger.debug(f"Cleanup skipped: {e}")
     
     atexit.register(sync_cleanup)
-    # Don't immediately exit on signals - let FastMCP handle shutdown
+    # Handle signals for graceful shutdown
+    shutdown_event = asyncio.Event()
+    force_exit = False
+    
     def signal_handler(sig, frame):
+        nonlocal force_exit
+        if force_exit:
+            logger.info("Force exit after second interrupt signal")
+            os._exit(130)  # Immediate exit
+        
         logger.info(f"Received signal {sig}, initiating graceful shutdown...")
-        # FastMCP will handle the shutdown process
+        logger.info("Press Ctrl-C again to force exit")
+        force_exit = True
+        
+        # Try to trigger asyncio shutdown
+        try:
+            loop = asyncio.get_running_loop()
+            loop.call_soon_threadsafe(shutdown_event.set)
+        except RuntimeError:
+            # No event loop running, exit directly
+            sys.exit(0)
     
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGINT, signal_handler)
