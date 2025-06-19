@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Consolidated package structure from three to two pyproject.toml files
+- Removed unpublishable `voicemode` package configuration
+- Made `voice-mode` the primary package (in pyproject.toml)
+- Moved `voice-mcp` to secondary configuration (pyproject-voice-mcp.toml)
+
+### Added
+- Documentation for local development with uvx (`docs/local-development-uvx.md`)
+
 ## [2.0.0] - 2025-06-20
 
 ### 🎉 Major Project Rebrand: VoiceMCP → VoiceMode
