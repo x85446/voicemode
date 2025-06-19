@@ -7,7 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Audio feedback with whispered responses by default
+- Configurable audio feedback style (whisper or shout) via VOICE_MCP_FEEDBACK_STYLE environment variable
+- Support for overriding audio feedback settings per conversation
+
 ## [0.1.29] - 2025-06-17
+
+### Changed
+- Refactored MCP prompt names to use kebab-case convention (kokoro-start, kokoro-stop, kokoro-status, voice-status)
+- Renamed Kokoro tool functions to follow consistent naming pattern (start_kokoro → kokoro_start, stop_kokoro → kokoro_stop)
 
 ## [0.1.28] - 2025-06-17
 
