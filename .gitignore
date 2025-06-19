@@ -72,6 +72,9 @@ debug_recordings/
 docs/_build/
 docs/promote/
 
+# Strategic/Private documents
+docs/voicemode-brand/
+
 # Local configuration
 .claude/settings.local.json
 
