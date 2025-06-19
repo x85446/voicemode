@@ -1,6 +1,8 @@
-# voice-mcp - Voice Mode for Claude Code
+# Voice Mode
 
-A Model Context Protocol (MCP) server that enables voice interactions with Claude and other LLMs. Requires only an OpenAI API key and microphone/speakers.
+> **Also available as:** `voice-mcp` on PyPI | `voicemode` on npm | [getvoicemode.com](https://getvoicemode.com)
+
+Natural voice conversations for AI assistants. Voice Mode brings human-like voice interactions to Claude, ChatGPT, and other LLMs through the Model Context Protocol (MCP).
 
 ## 🖥️ Compatibility
 
@@ -23,9 +25,11 @@ A Model Context Protocol (MCP) server that enables voice interactions with Claud
 
 ## Quick Start
 
-Setup for Claude Code:
-
 ```bash
+# Install Voice Mode
+pip install voice-mcp  # or: npm install voicemode
+
+# Setup for Claude Code
 export OPENAI_API_KEY=your-openai-key
 claude mcp add voice-mcp uvx voice-mcp
 claude
@@ -35,9 +39,9 @@ Try: *"Let's have a voice conversation"*
 
 ## 🎬 Demo
 
-Watch voice-mcp in action:
+Watch Voice Mode in action:
 
-[![voice-mcp Demo](https://img.youtube.com/vi/aXRNWvpnwVs/maxresdefault.jpg)](https://www.youtube.com/watch?v=aXRNWvpnwVs)
+[![Voice Mode Demo](https://img.youtube.com/vi/aXRNWvpnwVs/maxresdefault.jpg)](https://www.youtube.com/watch?v=aXRNWvpnwVs)
 
 ## Example Usage
 
@@ -145,7 +149,7 @@ export VOICE_MCP_SAVE_AUDIO="true"
 
 ## Local STT/TTS Services
 
-For privacy-focused or offline usage, voice-mcp supports local speech services:
+For privacy-focused or offline usage, Voice Mode supports local speech services:
 
 - **[Whisper.cpp](docs/whisper.cpp.md)** - Local speech-to-text with OpenAI-compatible API
 - **[Kokoro](docs/kokoro.md)** - Local text-to-speech with multiple voice options
@@ -154,10 +158,10 @@ These services provide the same API interface as OpenAI, allowing seamless switc
 
 ### OpenAI API Compatibility Benefits
 
-By strictly adhering to OpenAI's API standard, voice-mcp enables powerful deployment flexibility:
+By strictly adhering to OpenAI's API standard, Voice Mode enables powerful deployment flexibility:
 
-- **🔀 Transparent Routing**: Users can implement their own API proxies or gateways outside of voice-mcp to route requests to different providers based on custom logic (cost, latency, availability, etc.)
-- **🎯 Model Selection**: Deploy routing layers that select optimal models per request without modifying voice-mcp configuration
+- **🔀 Transparent Routing**: Users can implement their own API proxies or gateways outside of Voice Mode to route requests to different providers based on custom logic (cost, latency, availability, etc.)
+- **🎯 Model Selection**: Deploy routing layers that select optimal models per request without modifying Voice Mode configuration
 - **💰 Cost Optimization**: Build intelligent routers that balance between expensive cloud APIs and free local models
 - **🔧 No Lock-in**: Switch providers by simply changing the `BASE_URL` - no code changes required
 
@@ -165,10 +169,10 @@ Example: Simply set `OPENAI_BASE_URL` to point to your custom router:
 ```bash
 export OPENAI_BASE_URL="https://router.example.com/v1"
 export OPENAI_API_KEY="your-key"
-# voice-mcp now uses your router for all OpenAI API calls
+# Voice Mode now uses your router for all OpenAI API calls
 ```
 
-The OpenAI SDK handles this automatically - no voice-mcp configuration needed!
+The OpenAI SDK handles this automatically - no Voice Mode configuration needed!
 
 ## Architecture
 
@@ -218,6 +222,13 @@ export VOICE_MCP_SAVE_AUDIO=true
 
 Audio files are saved to: `~/voice-mcp_audio/` with timestamps in the filename.
 
+## Links
+
+- **Website**: [getvoicemode.com](https://getvoicemode.com)
+- **GitHub**: [github.com/mbailey/voicemode](https://github.com/mbailey/voicemode)
+- **PyPI**: [pypi.org/project/voice-mcp](https://pypi.org/project/voice-mcp/)
+- **npm**: [npmjs.com/package/voicemode](https://www.npmjs.com/package/voicemode)
+
 ## License
 
-MIT
+MIT - A [Failmode](https://failmode.com) Project
