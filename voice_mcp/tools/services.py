@@ -21,8 +21,7 @@ service_processes: Dict[str, subprocess.Popen] = {}
 
 @mcp.tool()
 async def kokoro_start(models_dir: Optional[str] = None) -> str:
-    """
-    Start the Kokoro TTS service using uvx.
+    """Start the Kokoro TTS service using uvx.
     
     Args:
         models_dir: Optional path to models directory (defaults to ~/Models/kokoro)

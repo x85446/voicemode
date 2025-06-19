@@ -586,9 +586,7 @@ async def converse(
     audio_feedback: Optional[bool] = None,
     audio_feedback_style: Optional[str] = None
 ) -> str:
-    """Have a voice conversation - speak a message and optionally listen for response
-    This is the primary function for voice interactions. It combines speaking and listening
-    in a natural conversational flow.
+    """Have a voice conversation - speak a message and optionally listen for response.
     
     PRIVACY NOTICE: When wait_for_response is True, this tool will access your microphone
     to record audio for speech-to-text conversion. Audio is processed using the configured
@@ -812,7 +810,7 @@ async def ask_voice_question(
     tts_model: Optional[str] = None,
     tts_instructions: Optional[str] = None
 ) -> str:
-    """Ask a voice question and listen for the answer
+    """Ask a voice question and listen for the answer.
     
     PRIVACY NOTICE: This tool will access your microphone to record audio
     for speech-to-text conversion. Audio is processed using the configured
@@ -850,7 +848,7 @@ async def voice_chat(
     voice: Optional[str] = None,
     tts_provider: Optional[Literal["openai", "kokoro"]] = None
 ) -> str:
-    """Start an interactive voice chat session
+    """Start an interactive voice chat session.
     
     PRIVACY NOTICE: This tool will access your microphone for the duration
     of the chat session. Say "goodbye", "exit", or "end chat" to stop.

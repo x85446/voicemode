@@ -47,10 +47,9 @@ async def check_audio_devices() -> str:
 
 @mcp.tool()
 async def voice_status() -> str:
-    """
-    Get comprehensive voice service status including providers and configuration.
+    """Check the status of all voice services including TTS, STT, LiveKit, and audio devices.
     
-    This shows the current status of all voice-related services and configurations.
+    Provides a unified view of the voice infrastructure configuration and health.
     """
     from voice_mcp.providers import get_provider_display_status, is_provider_available
     
@@ -100,8 +99,7 @@ async def voice_status() -> str:
 
 @mcp.tool()
 async def list_tts_voices(provider: Optional[str] = None) -> str:
-    """
-    List available TTS voices for different providers.
+    """List available TTS voices for different providers.
     
     Args:
         provider: Optional provider name ('openai' or 'kokoro'). If not specified, lists all available voices.
