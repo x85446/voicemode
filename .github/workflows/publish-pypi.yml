@@ -32,31 +32,31 @@ jobs:
         python -m pip install --upgrade pip
         pip install build twine
     
-    - name: Build voice-mcp package
+    - name: Build voice-mode package (primary)
       run: python -m build
     
-    - name: Check voice-mcp package
+    - name: Check voice-mode package
       run: twine check dist/*
     
-    - name: Build voice-mode package
+    - name: Build voice-mcp package (legacy)
       run: |
-        # Clean previous build
-        rm -rf dist/
-        # Swap pyproject files
-        mv pyproject.toml pyproject-voice-mcp.toml.tmp
-        cp pyproject-voice-mode.toml pyproject.toml
-        # Build voice-mode
-        python -m build
-        # Restore original
-        mv pyproject-voice-mcp.toml.tmp pyproject.toml
         # Move voice-mode artifacts to separate directory
         mkdir -p dist-voice-mode
         mv dist/* dist-voice-mode/
-        # Rebuild voice-mcp for publishing
+        
+        # Swap pyproject files to build voice-mcp
+        mv pyproject.toml pyproject.toml.tmp
+        mv pyproject-voice-mcp.toml pyproject.toml
+        
+        # Build voice-mcp
         python -m build
+        
+        # Restore original pyproject.toml
+        mv pyproject.toml pyproject-voice-mcp.toml
+        mv pyproject.toml.tmp pyproject.toml
     
-    - name: Check voice-mode package
-      run: twine check dist-voice-mode/*
+    - name: Check voice-mcp package
+      run: twine check dist/*
     
     - name: Publish voice-mcp to TestPyPI
       if: github.event_name == 'workflow_dispatch' && inputs.target == 'testpypi'
