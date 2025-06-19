@@ -8,13 +8,9 @@
     },
     "voicemode": {
       "type": "stdio",
-      "command": "./bin/voicemode",
+      "command": "bin/voicemode",
       "args": [],
-      "env": {
-        "XSTT_BASE_URL": "http://localhost:2022/v1",
-        "XTTS_BASE_URL": "http://localhost:8880/v1",
-        "XTTS_VOICE": "af_sky"
-      }
+      "env": {}
     }
   }
 }
