@@ -1,6 +1,6 @@
 # Voice Mode
 
-> **Also available as:** `voice-mcp` on PyPI | `voicemode` on npm | [getvoicemode.com](https://getvoicemode.com)
+> **Install via:** `uvx voice-mode` | `pip install voice-mode` | `npx voicemode` | [getvoicemode.com](https://getvoicemode.com)
 
 Natural voice conversations for AI assistants. Voice Mode brings human-like voice interactions to Claude, ChatGPT, and other LLMs through the Model Context Protocol (MCP).
 
@@ -26,13 +26,10 @@ Natural voice conversations for AI assistants. Voice Mode brings human-like voic
 ## Quick Start
 
 ```bash
-# Install Voice Mode
-pip install voice-mcp  # or: npm install voicemode
-
-# Setup for Claude Code
+claude mcp add voicemode uvx voice-mode
 export OPENAI_API_KEY=your-openai-key
-claude mcp add voice-mcp uvx voice-mcp
 claude
+> /converse
 ```
 
 Try: *"Let's have a voice conversation"*
@@ -67,9 +64,9 @@ Add to your Claude Desktop configuration file:
 ```json
 {
   "mcpServers": {
-    "voice-mcp": {
+    "voicemode": {
       "command": "uvx",
-      "args": ["voice-mcp"],
+      "args": ["voice-mode"],
       "env": {
         "OPENAI_API_KEY": "your-openai-key"
       }
@@ -86,8 +83,8 @@ Add to your Claude Desktop configuration file:
 ```json
 {
   "mcpServers": {
-    "voice-mcp": {
-      "command": "voice-mcp",
+    "voicemode": {
+      "command": "voicemode",
       "env": {
         "OPENAI_API_KEY": "your-openai-key"
       }

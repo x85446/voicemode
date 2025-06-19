@@ -1,25 +1,34 @@
-# Dual Package Names
+# Package Names and Commands
 
-This project is available under two names on PyPI for flexibility:
-- `voice-mcp` - Original package name
-- `voice-mode` - Alternative shorter name
+## Recommended Installation
 
-## For Users
-
-You can install using either name:
 ```bash
-pip install voice-mcp
-# or
+# Using uv (recommended)
+uvx voice-mode
+
+# Using pip
 pip install voice-mode
+
+# Using npm
+npx voicemode
 ```
 
-Both packages are:
-- Identical in functionality
-- Built from the same source code
-- Updated simultaneously
-- Fully interchangeable
+The command to run is: `voicemode`
 
-Choose whichever name works best for your project!
+## Legacy Support
+
+The original `voice-mcp` package name and command are still available but deprecated:
+
+```bash
+pip install voice-mcp  # Still works, but shows deprecation warning
+voice-mcp             # Shows deprecation warning, use 'voicemode' instead
+```
+
+## Transition Timeline
+
+- **Current**: Both `voicemode` and `voice-mcp` commands work
+- **Future**: The `voice-mcp` command will be removed
+- **Action Required**: Update your configurations to use `voicemode`
 
 ## For Contributors
 

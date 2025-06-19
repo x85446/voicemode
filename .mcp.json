@@ -6,9 +6,9 @@
       "args": [],
       "env": {}
     },
-    "voice-mcp": {
+    "voicemode": {
       "type": "stdio",
-      "command": "./bin/voice-mcp",
+      "command": "./bin/voicemode",
       "args": [],
       "env": {
         "XSTT_BASE_URL": "http://localhost:2022/v1",

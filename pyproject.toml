@@ -71,9 +71,9 @@ test = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/mbailey/voice-mcp"
-Repository = "https://github.com/mbailey/voice-mcp"
-Issues = "https://github.com/mbailey/voice-mcp/issues"
+Homepage = "https://github.com/mbailey/voicemode"
+Repository = "https://github.com/mbailey/voicemode"
+Issues = "https://github.com/mbailey/voicemode/issues"
 
 [project.scripts]
 voicemode = "voice_mcp.cli:voice_mode"
