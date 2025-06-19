@@ -23,14 +23,23 @@ This change reflects our vision for the project's future. While MCP (Model Conte
 #### What's Changed?
 - Primary command renamed from `voice-mcp` to `voicemode`
 - GitHub repository moved to `mbailey/voicemode`
-- Package name will transition to `voicemode` (maintaining `voice-mcp` for compatibility)
+- Primary PyPI package is now `voice-mode` (hyphenated due to naming restrictions)
+- Legacy `voice-mcp` package maintained for backward compatibility
 - Documentation and branding updated throughout
+- Simplified package structure to dual-package configuration
 
 #### Backward Compatibility
 - The `voice-mcp` command remains available for existing users
-- PyPI package continues to support both names during transition
+- Both `voice-mode` and `voice-mcp` packages available on PyPI
+- All packages provide the `voicemode` command
 
-This rebrand represents a significant milestone and will be reflected in version 2.0.0 upon next release.
+### Changed
+- Consolidated package configuration to two pyproject.toml files
+- Made `voice-mode` the primary package with VoiceMode branding
+- Updated package descriptions to reflect the rebrand
+
+### Added
+- Local development documentation for uvx usage
 
 ## [0.1.30] - 2025-06-19
 
