@@ -18,6 +18,8 @@ on:
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write  # Required for trusted publishing
     
     steps:
     - uses: actions/checkout@v4
@@ -72,16 +74,15 @@ jobs:
         TWINE_PASSWORD: ${{ secrets.TEST_PYPI_API_TOKEN }}
       run: twine upload --repository testpypi dist-voice-mode/*
     
-    - name: Publish voice-mcp to PyPI
+    - name: Publish voice-mcp to PyPI (using API token)
       if: (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) || (github.event_name == 'workflow_dispatch' && inputs.target == 'pypi')
       env:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
       run: twine upload dist/*
     
-    - name: Publish voice-mode to PyPI
+    - name: Publish voice-mode to PyPI (using trusted publisher)
       if: (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) || (github.event_name == 'workflow_dispatch' && inputs.target == 'pypi')
-      env:
-        TWINE_USERNAME: __token__
-        TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-      run: twine upload dist-voice-mode/*
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        packages-dir: dist-voice-mode/
