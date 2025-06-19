@@ -1,11 +1,11 @@
-# WARNING: This is a companion to pyproject.toml for the voicemode package
+# WARNING: This is a companion to pyproject.toml for the voice-mode package
 # Any changes to dependencies, version, or other settings in pyproject.toml
-# should be synchronized here to ensure voice-mcp and voicemode packages
+# should be synchronized here to ensure voice-mcp and voice-mode packages
 # remain functionally identical.
 #
 # The only intended differences are:
-# - name: "voicemode" vs "voice-mcp"
-# - description: mentions triple availability
+# - name: "voice-mode" vs "voice-mcp"
+# - description: mentions dual availability
 # - scripts: different command names
 #
 # Consider using 'make sync-tomls' if available, or manually update both files.
@@ -15,9 +15,9 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "voicemode"
+name = "voice-mode"
 dynamic = ["version"]
-description = "Voice interaction capabilities for Model Context Protocol (MCP) servers (also available as voice-mcp and voice-mode)"
+description = "VoiceMode - Voice interaction capabilities for AI assistants (formerly voice-mcp)"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
@@ -76,6 +76,7 @@ Repository = "https://github.com/mbailey/voicemode"
 Issues = "https://github.com/mbailey/voicemode/issues"
 
 [project.scripts]
+voice-mode = "voice_mcp.cli:voice_mode"
 voicemode = "voice_mcp.cli:voice_mode"
 voice-mcp = "voice_mcp.cli:voice_mcp"
 

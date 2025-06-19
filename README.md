@@ -1,6 +1,6 @@
 # Voice Mode
 
-> **Install via:** `uvx voice-mode` | `pip install voice-mode` | `npx voicemode` | [getvoicemode.com](https://getvoicemode.com)
+> **Install via:** `uvx voice-mode` | `pip install voice-mode` | [getvoicemode.com](https://getvoicemode.com)
 
 Natural voice conversations for AI assistants. Voice Mode brings human-like voice interactions to Claude, ChatGPT, and other LLMs through the Model Context Protocol (MCP).
 
@@ -31,8 +31,6 @@ export OPENAI_API_KEY=your-openai-key
 claude
 > /converse
 ```
-
-Try: *"Let's have a voice conversation"*
 
 ## 🎬 Demo
 
