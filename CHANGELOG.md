@@ -1,11 +1,36 @@
 # Changelog
 
-All notable changes to voice-mcp will be documented in this file.
+All notable changes to VoiceMode (formerly voice-mcp) will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [2.0.0] - 2025-06-20
+
+### 🎉 Major Project Rebrand: VoiceMCP → VoiceMode
+
+We're excited to announce that **voice-mcp** has been rebranded to **VoiceMode**! 
+
+This change reflects our vision for the project's future. While MCP (Model Context Protocol) describes the underlying technology, VoiceMode better captures what this tool actually delivers - a seamless voice interaction mode for AI assistants.
+
+#### Why the Change?
+- **Clarity**: VoiceMode immediately communicates the tool's purpose
+- **Timelessness**: The name isn't tied to a specific protocol that may evolve
+- **Simplicity**: Easier to remember and more intuitive for users
+
+#### What's Changed?
+- Primary command renamed from `voice-mcp` to `voicemode`
+- GitHub repository moved to `mbailey/voicemode`
+- Package name will transition to `voicemode` (maintaining `voice-mcp` for compatibility)
+- Documentation and branding updated throughout
+
+#### Backward Compatibility
+- The `voice-mcp` command remains available for existing users
+- PyPI package continues to support both names during transition
+
+This rebrand represents a significant milestone and will be reflected in version 2.0.0 upon next release.
 
 ## [0.1.30] - 2025-06-19
 
