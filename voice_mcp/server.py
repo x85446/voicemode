@@ -85,6 +85,12 @@ def disable_sounddevice_stderr_redirect():
 
 disable_sounddevice_stderr_redirect()
 
+# Audio feedback configuration
+AUDIO_FEEDBACK_ENABLED = os.getenv("VOICE_MCP_AUDIO_FEEDBACK", "true").lower() in ("true", "1", "yes", "on")
+AUDIO_FEEDBACK_VOICE = os.getenv("VOICE_MCP_FEEDBACK_VOICE", "nova")
+AUDIO_FEEDBACK_MODEL = os.getenv("VOICE_MCP_FEEDBACK_MODEL", "gpt-4o-mini-tts")
+AUDIO_FEEDBACK_STYLE = os.getenv("VOICE_MCP_FEEDBACK_STYLE", "whisper")  # "whisper" or "shout"
+
 # Environment variables are loaded by the shell/MCP client
 
 # Debug configuration
@@ -492,6 +498,47 @@ async def speech_to_text(audio_data: np.ndarray, save_audio: bool = False, audio
                 logger.error(f"Failed to clean up MP3 file: {e}")
 
 
+async def play_audio_feedback(text: str, openai_clients: dict, enabled: Optional[bool] = None, style: str = "whisper") -> None:
+    """Play an audio feedback sound
+    
+    Args:
+        text: Text to speak
+        openai_clients: OpenAI client instances
+        enabled: Override global audio feedback setting
+        style: Audio style - "whisper" (default) or "shout"
+    """
+    # Use parameter override if provided, otherwise use global setting
+    if enabled is False or (enabled is None and not AUDIO_FEEDBACK_ENABLED):
+        return
+    
+    try:
+        # Determine text and instructions based on style
+        if style == "shout":
+            feedback_text = text.upper()  # Convert to uppercase for emphasis
+            instructions = "SHOUT this word loudly and enthusiastically!" if text == "listening" else "SHOUT this word loudly and triumphantly!"
+        else:  # whisper is default
+            feedback_text = text.lower()
+            instructions = "Whisper this word very softly and gently, almost inaudibly"
+        
+        # Use OpenAI's TTS with style-specific instructions
+        await text_to_speech(
+            text=feedback_text,
+            openai_clients=openai_clients,
+            tts_model=AUDIO_FEEDBACK_MODEL,
+            tts_voice=AUDIO_FEEDBACK_VOICE,
+            tts_base_url=TTS_BASE_URL,
+            debug=DEBUG,
+            debug_dir=DEBUG_DIR if DEBUG else None,
+            save_audio=False,  # Don't save feedback sounds
+            audio_dir=None,
+            client_key='tts',
+            instructions=instructions
+        )
+    except Exception as e:
+        logger.debug(f"Audio feedback failed: {e}")
+        # Don't interrupt the main flow if feedback fails
+
+
 def record_audio(duration: float) -> np.ndarray:
     """Record audio from microphone"""
     logger.info(f"🎤 Recording audio for {duration}s...")
@@ -669,7 +716,9 @@ async def converse(
     voice: Optional[str] = None,
     tts_provider: Optional[Literal["openai", "kokoro"]] = None,
     tts_model: Optional[str] = None,
-    tts_instructions: Optional[str] = None
+    tts_instructions: Optional[str] = None,
+    audio_feedback: Optional[bool] = None,
+    audio_feedback_style: Optional[str] = None
 ) -> str:
     """Have a voice conversation - speak a message and optionally listen for response
     This is the primary function for voice interactions. It combines speaking and listening
@@ -692,6 +741,8 @@ async def converse(
         tts_model: TTS model to use (e.g., OpenAI: tts-1, tts-1-hd, gpt-4o-mini-tts; Kokoro uses tts-1)
                    IMPORTANT: gpt-4o-mini-tts is BEST for emotional speech and should be used when expressing emotions
         tts_instructions: Tone/style instructions for gpt-4o-mini-tts model only (e.g., "Speak in a cheerful tone", "Sound angry", "Be extremely sad")
+        audio_feedback: Override global audio feedback setting (default: None uses VOICE_MCP_AUDIO_FEEDBACK env var)
+        audio_feedback_style: Audio feedback style - "whisper" (default) or "shout" (default: None uses VOICE_MCP_FEEDBACK_STYLE env var)
         If wait_for_response is False: Confirmation that message was spoken
         If wait_for_response is True: The voice response received (or error/timeout message)
     
@@ -807,6 +858,9 @@ async def converse(
                     # Brief pause before listening
                     await asyncio.sleep(0.5)
                     
+                    # Play "listening" feedback sound
+                    await play_audio_feedback("listening", openai_clients, audio_feedback, audio_feedback_style or AUDIO_FEEDBACK_STYLE)
+                    
                     # Record response
                     logger.info(f"🎤 Listening for {listen_duration} seconds...")
                     record_start = time.perf_counter()
@@ -814,6 +868,9 @@ async def converse(
                         None, record_audio, listen_duration
                     )
                     timings['record'] = time.perf_counter() - record_start
+                    
+                    # Play "finished" feedback sound
+                    await play_audio_feedback("finished", openai_clients, audio_feedback, audio_feedback_style or AUDIO_FEEDBACK_STYLE)
                     
                     if len(audio_data) == 0:
                         return "Error: Could not record audio"
