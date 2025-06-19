@@ -5,12 +5,6 @@
       "command": "./bin/livekit-admin-mcp",
       "args": [],
       "env": {}
-    },
-    "voicemode": {
-      "type": "stdio",
-      "command": "bin/voicemode",
-      "args": [],
-      "env": {}
     }
   }
 }

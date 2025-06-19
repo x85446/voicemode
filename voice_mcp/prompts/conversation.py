@@ -5,14 +5,7 @@ from voice_mcp.server_new import mcp
 
 @mcp.prompt()
 def converse() -> str:
-    """Start an interactive voice conversation.
-    
-    This prompt provides instructions for having a natural voice conversation
-    using the voice-mcp tools. It's based on the voice-chat command.
-    
-    Returns:
-        Instructions for the LLM to conduct a voice conversation
-    """
+    """Have an ongoing two-way voice conversation with the user."""
     instructions = [
         "Using tools from voice-mcp, have an ongoing two-way conversation",
         "End the chat when the user indicates they want to end it",

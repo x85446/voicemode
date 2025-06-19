@@ -1503,7 +1503,7 @@ wheels = [
 ]
 
 [[package]]
-name = "voicemode"
+name = "voice-mode"
 source = { editable = "." }
 dependencies = [
     { name = "audioop-lts", marker = "python_full_version >= '3.13'" },
