@@ -1619,75 +1619,8 @@ async def list_tts_voices(provider: Optional[str] = None) -> str:
     return "\n".join(results)
 
 
-@mcp.prompt
-def converse() -> str:
-    """Start an interactive voice conversation.
-    
-    This prompt provides instructions for having a natural voice conversation
-    using the voice-mcp tools. It's based on the voice-chat command.
-    
-    Returns:
-        Instructions for the LLM to conduct a voice conversation
-    """
-    instructions = [
-        "Using tools from voice-mcp, have an ongoing two-way conversation",
-        "End the chat when the user indicates they want to end it",
-        "Keep your utterances brief unless a longer response is requested or necessary",
-        "Listen for up to 20 seconds per response",
-        "Prefer Kokoro TTS with voice 'af_sky' if available, otherwise use OpenAI with voice 'alloy'"
-    ]
-    
-    return "\n".join(f"- {instruction}" for instruction in instructions)
-
-
-@mcp.prompt(name="kokoro-start")
-def kokoro_start() -> str:
-    """Start the Kokoro TTS service.
-    
-    This prompt instructs the assistant to start the local Kokoro TTS service.
-    
-    Returns:
-        Instructions for starting Kokoro
-    """
-    return "Use the kokoro_start tool to start the Kokoro TTS service. After starting, confirm that Kokoro is running and ready for local TTS."
-
-
-@mcp.prompt(name="kokoro-stop")
-def kokoro_stop() -> str:
-    """Stop the Kokoro TTS service.
-    
-    This prompt instructs the assistant to stop the local Kokoro TTS service.
-    
-    Returns:
-        Instructions for stopping Kokoro
-    """
-    return "Use the kokoro_stop tool to stop the Kokoro TTS service. Confirm that the service has been stopped successfully."
-
-
-@mcp.prompt(name="kokoro-status")
-def kokoro_status() -> str:
-    """Check the status of the Kokoro TTS service.
-    
-    This prompt instructs the assistant to check if Kokoro is running.
-    
-    Returns:
-        Instructions for checking Kokoro status
-    """
-    return "Use the kokoro_status tool to check if the Kokoro TTS service is running. Report the status including process details, CPU/memory usage if available."
-
-
-@mcp.prompt(name="voice-status")
-def voice_status() -> str:
-    """Check the comprehensive status of all voice services.
-    
-    This prompt instructs the assistant to check the status of all voice infrastructure
-    including TTS, STT, LiveKit, audio devices, and provider availability.
-    
-    Returns:
-        Instructions for checking comprehensive voice status
-    """
-    return "Use the voice_status tool to check the status of all voice services. This will show TTS/STT providers, LiveKit status, audio devices, and recommendations for optimal configuration."
-
+# Prompts have been moved to voice_mcp/prompts/ directory
+# See: conversation.py, kokoro_management.py, status.py
 
 async def cleanup():
     """Cleanup function to close HTTP clients and resources"""

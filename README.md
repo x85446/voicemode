@@ -26,7 +26,7 @@ Natural voice conversations for AI assistants. Voice Mode brings human-like voic
 ## Quick Start
 
 ```bash
-claude mcp add voicemode uvx voice-mode
+claude mcp add --scope user voice-mode uvx voice-mode
 export OPENAI_API_KEY=your-openai-key
 claude
 > /converse

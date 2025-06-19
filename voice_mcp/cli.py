@@ -3,7 +3,7 @@ CLI entry points for voice-mcp package.
 """
 
 import sys
-from .server import main as voice_mcp_main
+from .server_new import main as voice_mcp_main
 
 
 def voice_mcp() -> None:

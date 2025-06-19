@@ -31,13 +31,6 @@ pip install voice-mcp
 claude mcp add voice-mcp voice-mcp
 ```
 
-#### Using Docker/Podman
-
-```bash
-export OPENAI_API_KEY=your-openai-key
-claude mcp add voice-mcp podman run -e OPENAI_API_KEY ghcr.io/mbailey/voice-mcp:latest
-```
-
 ## Claude Desktop
 
 Claude Desktop configuration files are located at:
@@ -105,58 +98,6 @@ If you've installed via pip and prefer module execution:
 ```
 
 [Download config](../config-examples/claude-desktop/python-m.json)
-
-#### Using Docker
-
-For containerized execution:
-
-```json
-{
-  "mcpServers": {
-    "voice-mcp": {
-      "command": "docker",
-      "args": [
-        "run", "--rm", "-i",
-        "--device", "/dev/snd",
-        "-e", "PULSE_RUNTIME_PATH=/run/user/1000/pulse",
-        "-v", "/run/user/1000/pulse:/run/user/1000/pulse",
-        "ghcr.io/mbailey/voice-mcp:latest"
-      ],
-      "env": {
-        "OPENAI_API_KEY": "your-openai-key"
-      }
-    }
-  }
-}
-```
-
-[Download config](../config-examples/claude-desktop/docker.json)
-
-#### Using Podman
-
-For rootless container execution:
-
-```json
-{
-  "mcpServers": {
-    "voice-mcp": {
-      "command": "podman",
-      "args": [
-        "run", "--rm", "-i",
-        "--device", "/dev/snd",
-        "-e", "PULSE_RUNTIME_PATH=/run/user/1000/pulse",
-        "-v", "/run/user/1000/pulse:/run/user/1000/pulse",
-        "ghcr.io/mbailey/voice-mcp:latest"
-      ],
-      "env": {
-        "OPENAI_API_KEY": "your-openai-key"
-      }
-    }
-  }
-}
-```
-
-[Download config](../config-examples/claude-desktop/podman.json)
 
 #### With LiveKit Support
 
