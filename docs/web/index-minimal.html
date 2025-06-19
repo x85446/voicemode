@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Mode</title>
+    <meta name="description" content="Voice conversations for AI assistants.">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+            background: #fff;
+            color: #111;
+            line-height: 1.6;
+            font-size: 18px;
+        }
+
+        main {
+            max-width: 650px;
+            margin: 0 auto;
+            padding: 4rem 1.5rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 400;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .tagline {
+            color: #666;
+            font-size: 1.25rem;
+            margin-bottom: 3rem;
+        }
+
+        .install {
+            background: #f7f7f7;
+            padding: 1.5rem;
+            border-radius: 6px;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 0.9rem;
+            margin: 2rem 0;
+            border: 1px solid #e5e5e5;
+        }
+
+        .install code {
+            display: block;
+            margin: 0.5rem 0;
+        }
+
+        .comment {
+            color: #999;
+            font-style: italic;
+        }
+
+        section {
+            margin: 3rem 0;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            font-weight: 500;
+            margin-bottom: 1rem;
+            margin-top: 3rem;
+        }
+
+        p {
+            margin-bottom: 1.5rem;
+        }
+
+        ul {
+            list-style: none;
+            margin: 1.5rem 0;
+        }
+
+        li {
+            margin: 0.75rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+
+        li::before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #666;
+        }
+
+        .links {
+            margin-top: 3rem;
+            padding-top: 3rem;
+            border-top: 1px solid #e5e5e5;
+        }
+
+        .links a {
+            color: #0066cc;
+            text-decoration: none;
+            margin-right: 2rem;
+            display: inline-block;
+            margin-bottom: 0.5rem;
+        }
+
+        .links a:hover {
+            text-decoration: underline;
+        }
+
+        footer {
+            margin-top: 6rem;
+            padding-top: 3rem;
+            border-top: 1px solid #e5e5e5;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        footer a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+
+        .demo-link {
+            display: inline-block;
+            background: #0066cc;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            text-decoration: none;
+            margin: 1rem 0;
+        }
+
+        .demo-link:hover {
+            background: #0052a3;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                font-size: 16px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            main {
+                padding: 2rem 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <header>
+            <h1>Voice Mode</h1>
+            <p class="tagline">Voice conversations for AI assistants.</p>
+        </header>
+
+        <section>
+            <p>
+                Voice Mode enables natural voice interactions with Claude, ChatGPT, and other AI assistants. 
+                Built on the Model Context Protocol (MCP) for reliability and simplicity.
+            </p>
+
+            <a href="https://www.youtube.com/watch?v=aXRNWvpnwVs" class="demo-link">Watch Demo →</a>
+        </section>
+
+        <div class="install">
+            <code><span class="comment"># Install</span></code>
+            <code>pip install voice-mcp</code>
+            <code>npm install voicemode</code>
+            <code></code>
+            <code><span class="comment"># Use with Claude</span></code>
+            <code>claude mcp add voice-mcp uvx voice-mcp</code>
+        </div>
+
+        <section>
+            <h2>Features</h2>
+            <ul>
+                <li>Natural voice conversations with AI</li>
+                <li>Works with OpenAI API and compatible services</li>
+                <li>Local or cloud speech processing</li>
+                <li>LiveKit integration for production use</li>
+                <li>Simple setup, powerful capabilities</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Requirements</h2>
+            <ul>
+                <li>OpenAI API key (or self-hosted alternative)</li>
+                <li>Microphone and speakers</li>
+                <li>Python 3.8+</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Why Voice Mode?</h2>
+            <p>
+                We built Voice Mode to make voice AI accessible. No complex setup, no vendor lock-in, 
+                just clean code that works. Whether you're building a personal assistant or deploying 
+                to thousands of users, Voice Mode scales with you.
+            </p>
+            <p>
+                Join developers from companies worldwide who trust Voice Mode for their voice AI needs.
+            </p>
+        </section>
+
+        <div class="links">
+            <a href="https://github.com/voicemode/voicemode">GitHub</a>
+            <a href="https://pypi.org/project/voice-mcp/">PyPI</a>
+            <a href="https://npmjs.com/package/voicemode">npm</a>
+            <a href="https://github.com/voicemode/voicemode/issues">Support</a>
+        </div>
+
+        <footer>
+            <p>
+                Voice Mode is a <a href="https://failmode.com">Failmode</a> project. 
+                MIT Licensed. 
+                <a href="https://getvoicemode.com">getvoicemode.com</a>
+            </p>
+        </footer>
+    </main>
+</body>
+</html>
