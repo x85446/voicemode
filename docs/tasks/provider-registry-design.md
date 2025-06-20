@@ -1,6 +1,6 @@
 # Voice Provider Registry Design
 
-Based on OpenRouter's model and our requirements, here's a proposed design for the voice-mcp provider registry system.
+Based on OpenRouter's model and our requirements, here's a proposed design for the voice-mode provider registry system.
 
 ## Provider Properties
 

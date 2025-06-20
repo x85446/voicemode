@@ -38,8 +38,8 @@
 - Automatic fallback chains for reliability
 
 ### Audio Recording Feature
-- Saves to `~/voice-mcp_audio/` when `VOICE_MCP_SAVE_AUDIO=true`
-- Future: Add transcription saving to `~/voice-mcp/transcriptions/`
+- Saves to `~/voice-mode_audio/` when `VOICE_MCP_SAVE_AUDIO=true`
+- Future: Add transcription saving to `~/voice-mode/transcriptions/`
 - Keep audio and text in separate directories for organization
 
 ## Bugs Fixed

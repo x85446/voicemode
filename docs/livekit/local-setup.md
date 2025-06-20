@@ -13,7 +13,7 @@ This guide will cover:
 
 ## Development Setup
 
-- Running LiveKit alongside voice-mcp development
+- Running LiveKit alongside voice-mode development
 - Debug configurations
 - Testing with local services
 

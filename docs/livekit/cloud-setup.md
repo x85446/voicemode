@@ -21,7 +21,7 @@ Get Claude talking through your browser or iPhone in under 10 minutes using Live
 
 1. After logging in, click **"Projects"** in the left sidebar
 2. Click **"Create Project"**
-3. Name it something like "voice-mcp" or "claude-voice"
+3. Name it something like "voice-mode" or "claude-voice"
 4. Select your preferred region (closest to you)
 5. Click **"Create"**
 
@@ -32,7 +32,7 @@ This creates a permanent project that won't expire like sandboxes do.
 1. In your new project, click **"Settings"** in the left sidebar
 2. Go to **"API Keys"**
 3. Click **"Add API Key"** to create your first key
-4. Give it a name (e.g., "voice-mcp-key")
+4. Give it a name (e.g., "voice-mode-key")
 5. Copy these three values:
    - **URL**: Your project URL (like `wss://your-project.livekit.cloud`)
    - **API Key**: Starts with `API`
@@ -56,9 +56,9 @@ LIVEKIT_API_KEY=your-api-key
 LIVEKIT_API_SECRET=your-api-secret
 ```
 
-Then restart voice-mcp:
+Then restart voice-mode:
 ```bash
-claude mcp restart voice-mcp
+claude mcp restart voice-mode
 ```
 
 ## Step 5: Test Voice MCP Connection
@@ -129,7 +129,7 @@ To verify everything works:
 
 **"Connection failed" in Claude**
 - Make sure URL starts with `wss://` not `https://`
-- Run `claude mcp restart voice-mcp`
+- Run `claude mcp restart voice-mode`
 
 **Can't connect on iPhone**
 - Double-check all three credentials
@@ -162,5 +162,5 @@ See [pricing guide](./pricing.md) for detailed calculations.
 
 - [LiveKit Cloud Dashboard](https://cloud.livekit.io)
 - [LiveKit Cloud Docs](https://docs.livekit.io/home/cloud/)
-- [Voice MCP Issues](https://github.com/mbailey/voice-mcp/issues)
+- [Voice MCP Issues](https://github.com/mbailey/voice-mode/issues)
 - [LiveKit Pricing](https://livekit.io/pricing)

@@ -1,6 +1,6 @@
 # OpenAI-Compatible API Endpoints
 
-For voice-mcp, we exclusively use OpenAI-compatible API endpoints to ensure consistency and compatibility across different TTS/STT providers.
+For voice-mode, we exclusively use OpenAI-compatible API endpoints to ensure consistency and compatibility across different TTS/STT providers.
 
 ## Documentation Endpoints
 
@@ -34,7 +34,7 @@ For voice-mcp, we exclusively use OpenAI-compatible API endpoints to ensure cons
 - `/v1` - Version-specific root
 - `/api/v1` - Combined API version root
 
-## OpenAI-Compatible Endpoints (Used by voice-mcp)
+## OpenAI-Compatible Endpoints (Used by voice-mode)
 
 These are the standard OpenAI API endpoints we use:
 

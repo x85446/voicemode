@@ -1,6 +1,6 @@
 # LiveKit Pricing Guide
 
-Understanding LiveKit costs for voice-mcp usage.
+Understanding LiveKit costs for voice-mode usage.
 
 ## LiveKit Cloud Free Tier
 
@@ -114,7 +114,7 @@ A: Dashboard → Usage → Current Period
 
 ## Recommended Approach
 
-For most voice-mcp users:
+For most voice-mode users:
 
 1. **Development**: Use local setup (`make dev`)
 2. **Remote Access**: Create one LiveKit Cloud project

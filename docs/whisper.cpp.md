@@ -9,14 +9,14 @@ Whisper.cpp is a local speech-to-text engine that provides an OpenAI-compatible 
    make whisper-start
    ```
 
-2. Configure voice-mcp to use local Whisper:
+2. Configure voice-mode to use local Whisper:
    ```bash
    export STT_BASE_URL=http://localhost:2022/v1
    ```
 
 3. Or add to `.mcp.json`:
    ```json
-   "voice-mcp": {
+   "voice-mode": {
      "env": {
        "STT_BASE_URL": "http://localhost:2022/v1"
      }

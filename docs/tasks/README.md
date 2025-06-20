@@ -12,7 +12,7 @@
   - [Design Document](./provider-registry-design.md)
   - [MVP Implementation](./provider-registry-mvp.md)
   - [Implementation Notes](./provider-registry-implementation.md)
-- [ ] Save Transcriptions - Add text saving alongside audio recordings in voice-mcp/transcriptions/
+- [ ] Save Transcriptions - Add text saving alongside audio recordings in voice-mode/transcriptions/
 - [ ] Enhance provider registry with cost/latency/privacy metadata
 
 ## Medium Priority

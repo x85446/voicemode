@@ -1,13 +1,13 @@
-# Configuring VS Code to Use voice-mcp
+# Configuring VS Code to Use voice-mode
 
-This guide explains how to configure Visual Studio Code to use voice-mcp as an MCP (Model Context Protocol) server with GitHub Copilot Chat.
+This guide explains how to configure Visual Studio Code to use voice-mode as an MCP (Model Context Protocol) server with GitHub Copilot Chat.
 
 For more information about MCP servers in VS Code, see the [official documentation](https://code.visualstudio.com/docs/copilot/chat/mcp-servers).
 
 ## Prerequisites
 
 - VS Code with GitHub Copilot Chat extension
-- voice-mcp installed and running locally
+- voice-mode installed and running locally
 - MCP support enabled in VS Code settings
 
 ## Configuration Steps
@@ -19,10 +19,10 @@ Create a `.vscode/mcp.json` file in your workspace root:
 ```json
 {
   "servers": {
-    "voice-mcp": {
+    "voice-mode": {
       "type": "stdio",
       "command": "uvx",
-      "args": ["voice-mcp"],
+      "args": ["voice-mode"],
       "env": {
         "LIVEKIT_HOST": "localhost:7880",
         "LIVEKIT_API_KEY": "devkey",
@@ -49,10 +49,10 @@ If you have environment variables already set in your system, you can reference 
 ```json
 {
   "servers": {
-    "voice-mcp": {
+    "voice-mode": {
       "type": "stdio",
       "command": "uvx",
-      "args": ["voice-mcp"],
+      "args": ["voice-mode"],
       "envFile": "${workspaceFolder}/.env"
     }
   }
@@ -64,10 +64,10 @@ Or reference specific system environment variables:
 ```json
 {
   "servers": {
-    "voice-mcp": {
+    "voice-mode": {
       "type": "stdio",
       "command": "uvx",
-      "args": ["voice-mcp"],
+      "args": ["voice-mode"],
       "env": {
         "LIVEKIT_HOST": "${env:LIVEKIT_HOST}",
         "LIVEKIT_API_KEY": "${env:LIVEKIT_API_KEY}",
@@ -83,15 +83,15 @@ Note: Based on the VS Code documentation, environment variables must be explicit
 
 ### 3. Alternative: Using Local Services Only
 
-If you're running the complete local voice stack, you can configure voice-mcp to use only local services:
+If you're running the complete local voice stack, you can configure voice-mode to use only local services:
 
 ```json
 {
   "servers": {
-    "voice-mcp": {
+    "voice-mode": {
       "type": "stdio",
       "command": "uvx",
-      "args": ["voice-mcp"],
+      "args": ["voice-mode"],
       "env": {
         "LIVEKIT_HOST": "localhost:7880",
         "LIVEKIT_API_KEY": "devkey",
@@ -118,7 +118,7 @@ Ensure MCP support is enabled in VS Code settings:
 
 ### 5. Start Required Services
 
-Before using voice-mcp in VS Code, ensure the required services are running:
+Before using voice-mode in VS Code, ensure the required services are running:
 
 ```bash
 # Start all services (LiveKit, Whisper, Kokoro)
@@ -132,16 +132,16 @@ make kokoro-start
 
 ## Usage in VS Code
 
-Once configured, you can use voice-mcp features in GitHub Copilot Chat:
+Once configured, you can use voice-mode features in GitHub Copilot Chat:
 
 1. Open the Copilot Chat panel
 2. Type `@` to see available MCP servers
-3. Select `@voice-mcp` to access voice functions
+3. Select `@voice-mode` to access voice functions
 4. Available commands:
-   - `@voice-mcp converse "Hello"` - Speak and listen for response
-   - `@voice-mcp listen_for_speech` - Listen for speech input
-   - `@voice-mcp check_room_status` - Check LiveKit room status
-   - `@voice-mcp check_audio_devices` - List audio devices
+   - `@voice-mode converse "Hello"` - Speak and listen for response
+   - `@voice-mode listen_for_speech` - Listen for speech input
+   - `@voice-mode check_room_status` - Check LiveKit room status
+   - `@voice-mode check_audio_devices` - List audio devices
 
 ## Troubleshooting
 
@@ -156,7 +156,7 @@ Once configured, you can use voice-mcp features in GitHub Copilot Chat:
 - Ensure ports are not in use: 7880 (LiveKit), 2022 (Whisper), 8880 (Kokoro)
 
 ### Audio Issues
-- Run `@voice-mcp check_audio_devices` to verify devices are detected
+- Run `@voice-mode check_audio_devices` to verify devices are detected
 - Check system audio permissions for VS Code
 - Ensure no other applications are using the microphone
 

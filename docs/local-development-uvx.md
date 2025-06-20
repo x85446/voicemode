@@ -46,8 +46,8 @@ uvx --from dist/voice_mode-*.whl voicemode
 # Test voice-mode package (default)
 uvx --from . voicemode
 
-# Test voice-mcp package (legacy)
-UV_PROJECT_FILE=pyproject-voice-mcp.toml uvx --from . voice-mcp
+# Test voice-mode package (legacy)
+UV_PROJECT_FILE=pyproject-voice-mode.toml uvx --from . voice-mode
 ```
 
 ## Common use cases

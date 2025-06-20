@@ -1,6 +1,6 @@
 # Voice MCP Configuration Guide
 
-This guide covers how to configure voice-mcp for various MCP hosts and installation methods.
+This guide covers how to configure voice-mode for various MCP hosts and installation methods.
 
 ## Table of Contents
 
@@ -20,15 +20,15 @@ Claude Code uses the `claude mcp add` command to configure MCP servers.
 
 ```bash
 export OPENAI_API_KEY=your-openai-key
-claude mcp add voice-mcp uvx voice-mcp
+claude mcp add voice-mode uvx voice-mode
 ```
 
 #### Using pip install
 
 ```bash
 export OPENAI_API_KEY=your-openai-key
-pip install voice-mcp
-claude mcp add voice-mcp voice-mcp
+pip install voice-mode
+claude mcp add voice-mode voice-mode
 ```
 
 ## Claude Desktop
@@ -47,9 +47,9 @@ No installation required - runs directly:
 ```json
 {
   "mcpServers": {
-    "voice-mcp": {
+    "voice-mode": {
       "command": "uvx",
-      "args": ["voice-mcp"],
+      "args": ["voice-mode"],
       "env": {
         "OPENAI_API_KEY": "your-openai-key"
       }
@@ -62,13 +62,13 @@ No installation required - runs directly:
 
 #### Using pip install
 
-If you've installed voice-mcp globally:
+If you've installed voice-mode globally:
 
 ```json
 {
   "mcpServers": {
-    "voice-mcp": {
-      "command": "voice-mcp",
+    "voice-mode": {
+      "command": "voice-mode",
       "env": {
         "OPENAI_API_KEY": "your-openai-key"
       }
@@ -86,7 +86,7 @@ If you've installed via pip and prefer module execution:
 ```json
 {
   "mcpServers": {
-    "voice-mcp": {
+    "voice-mode": {
       "command": "python",
       "args": ["-m", "voice_mcp"],
       "env": {
@@ -106,9 +106,9 @@ Add LiveKit configuration to any of the above:
 ```json
 {
   "mcpServers": {
-    "voice-mcp": {
+    "voice-mode": {
       "command": "uvx",
-      "args": ["voice-mcp"],
+      "args": ["voice-mode"],
       "env": {
         "OPENAI_API_KEY": "your-openai-key",
         "LIVEKIT_URL": "wss://your-app.livekit.cloud",
@@ -124,7 +124,7 @@ Add LiveKit configuration to any of the above:
 
 ## LiveKit Configuration
 
-LiveKit enables room-based voice communication instead of using the local microphone. This is perfect for accessing voice-mcp from your phone, tablet, or any remote device.
+LiveKit enables room-based voice communication instead of using the local microphone. This is perfect for accessing voice-mode from your phone, tablet, or any remote device.
 
 **📖 For detailed setup instructions, see the [LiveKit Integration Guide](livekit/README.md)**
 
@@ -148,7 +148,7 @@ export LIVEKIT_API_SECRET="secret"
 
 ### Transport Selection
 
-When LiveKit is configured, voice-mcp can automatically select the best transport:
+When LiveKit is configured, voice-mode can automatically select the best transport:
 
 - **`transport: "auto"`** (default) - Try LiveKit first, fall back to local microphone
 - **`transport: "livekit"`** - Force LiveKit transport
@@ -202,17 +202,17 @@ export TTS_VOICE="af_sky"
 
 ### Automatic Provider Selection
 
-When `VOICE_MCP_PREFER_LOCAL=true` (default), voice-mcp automatically uses local services when available:
+When `VOICE_MCP_PREFER_LOCAL=true` (default), voice-mode automatically uses local services when available:
 
 - **Kokoro TTS** at `localhost:8880` - Used automatically if running
 - **Whisper.cpp** at `localhost:2022` - Used automatically if running
 - Falls back to OpenAI services if local providers are not available
 
-This means you can simply start Kokoro or Whisper.cpp and voice-mcp will use them without any configuration changes!
+This means you can simply start Kokoro or Whisper.cpp and voice-mode will use them without any configuration changes!
 
 ### API Routing and Proxies
 
-Since voice-mcp uses the OpenAI SDK, you can redirect all API traffic through a custom router using the standard `OPENAI_BASE_URL` environment variable:
+Since voice-mode uses the OpenAI SDK, you can redirect all API traffic through a custom router using the standard `OPENAI_BASE_URL` environment variable:
 
 ```bash
 # Route all OpenAI API calls through your proxy
@@ -220,7 +220,7 @@ export OPENAI_BASE_URL="https://router.example.com/v1"
 export OPENAI_API_KEY="your-key"
 ```
 
-The OpenAI SDK automatically uses this base URL for all API calls - no voice-mcp specific configuration needed!
+The OpenAI SDK automatically uses this base URL for all API calls - no voice-mode specific configuration needed!
 
 This enables:
 - **Cost optimization** - Route to cheaper providers based on request type
@@ -252,4 +252,4 @@ Enable verbose logging and audio file saving:
 export VOICE_MCP_DEBUG=true
 ```
 
-Audio files are saved to: `~/voice-mcp_recordings/`
+Audio files are saved to: `~/voice-mode_recordings/`

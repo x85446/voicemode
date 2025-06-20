@@ -1,14 +1,14 @@
 # OpenAI API Routing and Proxy Patterns
 
-voice-mcp uses the OpenAI SDK, which means you can redirect all API traffic through a custom router using the standard `OPENAI_BASE_URL` environment variable - no voice-mcp specific code or configuration needed.
+voice-mode uses the OpenAI SDK, which means you can redirect all API traffic through a custom router using the standard `OPENAI_BASE_URL` environment variable - no voice-mode specific code or configuration needed.
 
 ## Why OpenAI API Compatibility Matters
 
-By using only standard OpenAI endpoints, voice-mcp becomes a simple API client that can work with any OpenAI-compatible service. This design enables:
+By using only standard OpenAI endpoints, voice-mode becomes a simple API client that can work with any OpenAI-compatible service. This design enables:
 
 1. **Service Agnostic**: Works with OpenAI, Azure OpenAI, local services, or any compatible API
 2. **Simple Configuration**: Just change the `BASE_URL` environment variable
-3. **External Control**: All routing logic lives outside voice-mcp
+3. **External Control**: All routing logic lives outside voice-mode
 4. **Future Proof**: New providers can be added without code changes
 
 ## Routing Patterns
@@ -132,11 +132,11 @@ export OPENAI_API_KEY="your-key"
 
 That's it! The OpenAI SDK automatically uses this base URL for all API calls.
 
-**Note**: If `STT_BASE_URL` or `TTS_BASE_URL` are not explicitly set, voice-mcp defaults to using the OpenAI API. When `OPENAI_BASE_URL` is set, the OpenAI SDK will use it automatically for these default cases.
+**Note**: If `STT_BASE_URL` or `TTS_BASE_URL` are not explicitly set, voice-mode defaults to using the OpenAI API. When `OPENAI_BASE_URL` is set, the OpenAI SDK will use it automatically for these default cases.
 
 ### Provider-Specific Routing
 
-For more granular control, voice-mcp also supports provider-specific endpoints:
+For more granular control, voice-mode also supports provider-specific endpoints:
 
 ```bash
 # Use different endpoints for STT and TTS
@@ -154,9 +154,9 @@ Your router receives all requests and can then:
 
 ## Benefits
 
-1. **Zero Code Changes**: voice-mcp doesn't need to know about routing logic
+1. **Zero Code Changes**: voice-mode doesn't need to know about routing logic
 2. **Centralized Control**: Manage all API routing in one place
-3. **Dynamic Switching**: Change routing rules without restarting voice-mcp
+3. **Dynamic Switching**: Change routing rules without restarting voice-mode
 4. **Multi-Service**: One router can handle STT, TTS, and other OpenAI APIs
 5. **Monitoring**: Add metrics, logging, and observability at the proxy layer
 
@@ -184,9 +184,9 @@ EOF
 # Start proxy
 litellm --config litellm_config.yaml --port 9000
 
-# Configure voice-mcp
+# Configure voice-mode
 export TTS_BASE_URL="http://localhost:9000"
 export STT_BASE_URL="http://localhost:9000"
 ```
 
-This architecture ensures voice-mcp remains simple while enabling sophisticated deployment patterns through external routing layers.
+This architecture ensures voice-mode remains simple while enabling sophisticated deployment patterns through external routing layers.

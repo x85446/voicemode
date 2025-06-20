@@ -58,8 +58,8 @@ Let the MCP server read from the global environment:
 ```json
 {
   "mcpServers": {
-    "voice-mcp": {
-      "command": "./mcp-servers/voice-mcp",
+    "voice-mode": {
+      "command": "./mcp-servers/voice-mode",
       "env": {
         "VOICE_MCP_DEBUG": "true"  // Only MCP-specific vars
       }
@@ -83,8 +83,10 @@ Let the MCP server read from the global environment:
 ```json
 {
   "mcpServers": {
-    "voice-mcp": {
-      "command": "./mcp-servers/voice-mcp",
+    "voice-mode": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["voice-mode"],
       "env": {
         "OPENAI_API_KEY": "sk-proj-actual-key-here",
         "VOICE_MCP_DEBUG": "true",
@@ -159,14 +161,14 @@ The MCP community has active requests for environment variable substitution:
 
 ## Example: Voice MCP Configuration
 
-Our working voice-mcp configuration uses Option 2 (literal values):
+Our working voice-mode configuration uses Option 2 (literal values):
 
 ```json
 {
   "mcpServers": {
-    "voice-mcp": {
+    "voice-mode": {
       "type": "stdio",
-      "command": "./mcp-servers/voice-mcp",
+      "command": "./mcp-servers/voice-mode",
       "args": [],
       "env": {
         "STT_BASE_URL": "https://api.openai.com/v1",

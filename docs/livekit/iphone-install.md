@@ -12,7 +12,7 @@ Since the TestFlight beta has expired, you'll need to build and install the Voic
 ## Step 1: Clone the Voice Assistant Swift Repository
 
 ```bash
-# From your voice-mcp directory
+# From your voice-mode directory
 cd .external
 git clone https://github.com/livekit-examples/voice-assistant-swift.git
 cd voice-assistant-swift
@@ -81,7 +81,7 @@ cd voice-assistant-swift
 
 **Can't connect to LiveKit**
 - Verify your LiveKit credentials are correct
-- Check that voice-mcp is running with proper .env.local configuration
+- Check that voice-mode is running with proper .env.local configuration
 - Ensure your iPhone has internet connectivity
 
 **No audio**

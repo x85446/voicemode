@@ -25,7 +25,7 @@
 - Default to free/local options when possible
 
 ### User Control
-- Let LLMs make emotion decisions (don't analyze in voice-mcp)
+- Let LLMs make emotion decisions (don't analyze in voice-mode)
 - Provide clear documentation for LLM guidance
 - Users should understand what's happening and why
 

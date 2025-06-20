@@ -2,7 +2,7 @@
 
 ## Overview
 
-LiveKit is a powerful real-time voice and video infrastructure that enables voice-mcp to work beyond your local computer. With LiveKit, you can have voice conversations with Claude from anywhere - your phone, tablet, or any device with a web browser.
+LiveKit is a powerful real-time voice and video infrastructure that enables voice-mode to work beyond your local computer. With LiveKit, you can have voice conversations with Claude from anywhere - your phone, tablet, or any device with a web browser.
 
 ## Why LiveKit for Voice MCP?
 
@@ -19,7 +19,7 @@ LiveKit is a powerful real-time voice and video infrastructure that enables voic
 ### 🔧 Simple for Developers
 - Use LiveKit Cloud's free sandbox to get started in minutes
 - No servers to manage or configure
-- Same voice-mcp experience, now accessible remotely
+- Same voice-mode experience, now accessible remotely
 
 ## Quick Start Options
 
@@ -31,7 +31,7 @@ LiveKit is a powerful real-time voice and video infrastructure that enables voic
 This guide will walk you through:
 1. Creating a free LiveKit Cloud account
 2. Setting up a sandbox project
-3. Configuring voice-mcp to connect
+3. Configuring voice-mode to connect
 4. Using a web frontend to talk to Claude from any device
 
 **Time required:** ~15 minutes
@@ -64,7 +64,7 @@ Your Device          LiveKit Cloud         Voice MCP
 
 By the end of tonight, you'll be able to:
 - ✅ Talk to Claude from your iPhone using voice-assistant-swift
-- ✅ Access voice-mcp from any web browser
+- ✅ Access voice-mode from any web browser
 - ✅ Have natural voice conversations without being at your computer
 
 Ready? [**Let's set up LiveKit Cloud →**](cloud-setup.md)
