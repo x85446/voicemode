@@ -25,7 +25,23 @@ SAVE_AUDIO = os.getenv("VOICE_MCP_SAVE_AUDIO", "").lower() in ("true", "1", "yes
 AUDIO_DIR = Path.home() / "voice-mcp_audio"
 
 # Audio feedback configuration
-AUDIO_FEEDBACK_ENABLED = os.getenv("VOICE_MCP_AUDIO_FEEDBACK", "true").lower() in ("true", "1", "yes", "on")
+audio_feedback_raw = os.getenv("VOICE_MCP_AUDIO_FEEDBACK", "chime").lower()
+
+# Backward compatibility: treat "true" as "chime", "false" as "none"
+if audio_feedback_raw in ("true", "1", "yes", "on"):
+    AUDIO_FEEDBACK_TYPE = "chime"
+elif audio_feedback_raw in ("false", "0", "no", "off"):
+    AUDIO_FEEDBACK_TYPE = "none"
+elif audio_feedback_raw in ("chime", "voice", "both", "none"):
+    AUDIO_FEEDBACK_TYPE = audio_feedback_raw
+else:
+    # Invalid value, default to chime
+    AUDIO_FEEDBACK_TYPE = "chime"
+
+# Derived boolean for compatibility
+AUDIO_FEEDBACK_ENABLED = AUDIO_FEEDBACK_TYPE != "none"
+
+# Voice feedback specific settings (used when type is "voice" or "both")
 AUDIO_FEEDBACK_VOICE = os.getenv("VOICE_MCP_FEEDBACK_VOICE", "nova")
 AUDIO_FEEDBACK_MODEL = os.getenv("VOICE_MCP_FEEDBACK_MODEL", "gpt-4o-mini-tts")
 AUDIO_FEEDBACK_STYLE = os.getenv("VOICE_MCP_FEEDBACK_STYLE", "whisper")  # "whisper" or "shout"

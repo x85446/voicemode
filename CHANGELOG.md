@@ -15,11 +15,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed `voice_status` tool error where `get_provider_display_status` was called with incorrect arguments
 - Updated `.mcp.json` to use local package installation with `--refresh` flag
 
+### Added
+- Audio feedback chimes for recording start/stop (inspired by PR #1 from @jtuffin)
+- New `VOICE_MCP_AUDIO_FEEDBACK` configuration with options: `chime` (default), `voice`, `both`, `none`
+- Backward compatibility for boolean audio feedback values
+
 ### Changed
 - Replaced all references from `voice-mcp` to `voice-mode` throughout documentation
 - Updated MCP configuration examples to use `uvx` instead of outdated `./mcp-servers/` directory
 - Removed hardcoded version from `server_new.py`
 - Changed default listen duration to 15 seconds (from 10s/20s) in all voice conversation functions for better balance
+- Audio feedback now defaults to chimes instead of voice for faster, less intrusive feedback
 
 ## [2.1.0] - 2025-06-20
 

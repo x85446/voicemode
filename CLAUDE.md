@@ -123,3 +123,6 @@ When the user asks "is kokoro running?", "kokoro status", "check kokoro", or sim
 - Use the `mcp__voice-mcp__kokoro_status` tool
 - The tool will check if Kokoro is running and provide process details
 - Report the status to the user including CPU/memory usage if available
+
+## Git Workflow Reminders
+- Review and update CHANGELOG before each git commit

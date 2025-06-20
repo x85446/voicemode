@@ -176,6 +176,18 @@ When LiveKit is configured, voice-mode can automatically select the best transpo
 | `LIVEKIT_API_KEY` | LiveKit API key | None |
 | `LIVEKIT_API_SECRET` | LiveKit API secret | None |
 | `VOICE_MCP_DEBUG` | Enable debug mode | `false` |
+| `VOICE_MCP_AUDIO_FEEDBACK` | Audio feedback type: `chime`, `voice`, `both`, `none` | `chime` |
+
+### Audio Feedback Options
+
+VoiceMode provides audio feedback to indicate when recording starts and stops. Configure with `VOICE_MCP_AUDIO_FEEDBACK`:
+
+- `chime` (default) - Quick beep sounds (800Hz→1000Hz for start, 1000Hz→800Hz for end)
+- `voice` - Spoken feedback ("listening"/"finished")
+- `both` - Both chime and voice feedback
+- `none` - No audio feedback
+
+For backward compatibility, `true` is treated as `chime` and `false` as `none`.
 
 ### Available TTS Voices
 

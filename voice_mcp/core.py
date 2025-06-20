@@ -285,6 +285,79 @@ async def text_to_speech(
         return False, metrics
 
 
+def generate_chime(frequencies: list, duration: float = 0.1, sample_rate: int = 44100) -> np.ndarray:
+    """Generate a chime sound with given frequencies.
+    
+    Args:
+        frequencies: List of frequencies to play in sequence
+        duration: Duration of each tone in seconds
+        sample_rate: Sample rate for audio generation
+        
+    Returns:
+        Numpy array of audio samples
+    """
+    samples_per_tone = int(sample_rate * duration)
+    fade_samples = int(sample_rate * 0.01)  # 10ms fade
+    
+    all_samples = []
+    
+    for freq in frequencies:
+        # Generate sine wave
+        t = np.linspace(0, duration, samples_per_tone, False)
+        tone = 0.3 * np.sin(2 * np.pi * freq * t)  # 0.3 amplitude for comfortable volume
+        
+        # Apply fade in/out to prevent clicks
+        fade_in = np.linspace(0, 1, fade_samples)
+        fade_out = np.linspace(1, 0, fade_samples)
+        
+        tone[:fade_samples] *= fade_in
+        tone[-fade_samples:] *= fade_out
+        
+        all_samples.append(tone)
+    
+    # Concatenate all tones
+    chime = np.concatenate(all_samples)
+    
+    # Convert to 16-bit integer
+    chime_int16 = (chime * 32767).astype(np.int16)
+    
+    return chime_int16
+
+
+async def play_chime_start(sample_rate: int = 44100) -> bool:
+    """Play the recording start chime (ascending tones).
+    
+    Returns:
+        True if chime played successfully, False otherwise
+    """
+    try:
+        import sounddevice as sd
+        chime = generate_chime([800, 1000], duration=0.1, sample_rate=sample_rate)
+        sd.play(chime, sample_rate)
+        sd.wait()
+        return True
+    except Exception as e:
+        logger.debug(f"Could not play start chime: {e}")
+        return False
+
+
+async def play_chime_end(sample_rate: int = 44100) -> bool:
+    """Play the recording end chime (descending tones).
+    
+    Returns:
+        True if chime played successfully, False otherwise
+    """
+    try:
+        import sounddevice as sd
+        chime = generate_chime([1000, 800], duration=0.1, sample_rate=sample_rate)
+        sd.play(chime, sample_rate)
+        sd.wait()
+        return True
+    except Exception as e:
+        logger.debug(f"Could not play end chime: {e}")
+        return False
+
+
 async def cleanup(openai_clients: dict):
     """Cleanup function to close HTTP clients and resources"""
     logger.info("Shutting down Voice MCP Server...")

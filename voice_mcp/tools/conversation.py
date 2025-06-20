@@ -39,6 +39,7 @@ from voice_mcp.config import (
     ALLOW_EMOTIONS,
     EMOTION_AUTO_UPGRADE,
     AUDIO_FEEDBACK_ENABLED,
+    AUDIO_FEEDBACK_TYPE,
     AUDIO_FEEDBACK_VOICE,
     AUDIO_FEEDBACK_MODEL,
     AUDIO_FEEDBACK_STYLE,
@@ -59,7 +60,9 @@ from voice_mcp.core import (
     text_to_speech,
     cleanup as cleanup_clients,
     save_debug_file,
-    get_debug_filename
+    get_debug_filename,
+    play_chime_start,
+    play_chime_end
 )
 
 logger = logging.getLogger("voice-mcp")
@@ -363,42 +366,58 @@ async def speech_to_text(audio_data: np.ndarray, save_audio: bool = False, audio
                 logger.error(f"Failed to clean up MP3 file: {e}")
 
 
-async def play_audio_feedback(text: str, openai_clients: dict, enabled: Optional[bool] = None, style: str = "whisper") -> None:
+async def play_audio_feedback(text: str, openai_clients: dict, enabled: Optional[bool] = None, style: str = "whisper", feedback_type: Optional[str] = None) -> None:
     """Play an audio feedback sound
     
     Args:
-        text: Text to speak
+        text: Text to speak (either "listening" or "finished")
         openai_clients: OpenAI client instances
         enabled: Override global audio feedback setting
         style: Audio style - "whisper" (default) or "shout"
+        feedback_type: Override global feedback type ("chime", "voice", "both", "none")
     """
     # Use parameter override if provided, otherwise use global setting
     if enabled is False or (enabled is None and not AUDIO_FEEDBACK_ENABLED):
         return
     
+    # Determine feedback type to use
+    feedback_type = feedback_type or AUDIO_FEEDBACK_TYPE
+    
+    if feedback_type == "none":
+        return
+    
     try:
-        # Determine text and instructions based on style
-        if style == "shout":
-            feedback_text = text.upper()  # Convert to uppercase for emphasis
-            instructions = "SHOUT this word loudly and enthusiastically!" if text == "listening" else "SHOUT this word loudly and triumphantly!"
-        else:  # whisper is default
-            feedback_text = text.lower()
-            instructions = "Whisper this word very softly and gently, almost inaudibly"
+        # Play chime if requested
+        if feedback_type in ("chime", "both"):
+            if text == "listening":
+                await play_chime_start()
+            elif text == "finished":
+                await play_chime_end()
         
-        # Use OpenAI's TTS with style-specific instructions
-        await text_to_speech(
-            text=feedback_text,
-            openai_clients=openai_clients,
-            tts_model=AUDIO_FEEDBACK_MODEL,
-            tts_voice=AUDIO_FEEDBACK_VOICE,
-            tts_base_url=TTS_BASE_URL,
-            debug=DEBUG,
-            debug_dir=DEBUG_DIR if DEBUG else None,
-            save_audio=False,  # Don't save feedback sounds
-            audio_dir=None,
-            client_key='tts',
-            instructions=instructions
-        )
+        # Play voice if requested
+        if feedback_type in ("voice", "both"):
+            # Determine text and instructions based on style
+            if style == "shout":
+                feedback_text = text.upper()  # Convert to uppercase for emphasis
+                instructions = "SHOUT this word loudly and enthusiastically!" if text == "listening" else "SHOUT this word loudly and triumphantly!"
+            else:  # whisper is default
+                feedback_text = text.lower()
+                instructions = "Whisper this word very softly and gently, almost inaudibly"
+            
+            # Use OpenAI's TTS with style-specific instructions
+            await text_to_speech(
+                text=feedback_text,
+                openai_clients=openai_clients,
+                tts_model=AUDIO_FEEDBACK_MODEL,
+                tts_voice=AUDIO_FEEDBACK_VOICE,
+                tts_base_url=TTS_BASE_URL,
+                debug=DEBUG,
+                debug_dir=DEBUG_DIR if DEBUG else None,
+                save_audio=False,  # Don't save feedback sounds
+                audio_dir=None,
+                client_key='tts',
+                instructions=instructions
+            )
     except Exception as e:
         logger.debug(f"Audio feedback failed: {e}")
         # Don't interrupt the main flow if feedback fails
