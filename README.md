@@ -49,20 +49,50 @@ Once configured, try these prompts with Claude:
 
 The new `converse` function makes voice interactions more natural - it automatically waits for your response by default.
 
-## Claude Desktop Setup
+## Installation
 
-Add to your Claude Desktop configuration file:
+### Prerequisites
+- Python >= 3.10
+- OpenAI API Key (or compatible service)
 
-**macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
-**Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+### Quick Install
+
+```bash
+# Using Claude Code (recommended)
+claude mcp add --scope user voice-mode uvx voice-mode
+
+# Using UV
+uvx voice-mode
+
+# Using pip
+pip install voice-mode
+```
+
+### Manual Configuration for Different Clients
 
 <details>
-<summary>Using uvx (recommended)</summary>
+<summary><strong>Claude Code (CLI)</strong></summary>
+
+```bash
+claude mcp add voice-mode -- uvx voice-mode
+```
+
+Or with environment variables:
+```bash
+claude mcp add voice-mode --env OPENAI_API_KEY=your-openai-key -- uvx voice-mode
+```
+</details>
+
+<details>
+<summary><strong>Claude Desktop</strong></summary>
+
+**macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`  
+**Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
 
 ```json
 {
   "mcpServers": {
-    "voicemode": {
+    "voice-mode": {
       "command": "uvx",
       "args": ["voice-mode"],
       "env": {
@@ -72,17 +102,18 @@ Add to your Claude Desktop configuration file:
   }
 }
 ```
-
 </details>
 
 <details>
-<summary>Using pip install</summary>
+<summary><strong>Cursor</strong></summary>
 
+Add to `~/.cursor/mcp.json`:
 ```json
 {
   "mcpServers": {
-    "voicemode": {
-      "command": "voicemode",
+    "voice-mode": {
+      "command": "uvx",
+      "args": ["voice-mode"],
       "env": {
         "OPENAI_API_KEY": "your-openai-key"
       }
@@ -90,7 +121,97 @@ Add to your Claude Desktop configuration file:
   }
 }
 ```
+</details>
 
+<details>
+<summary><strong>VS Code</strong></summary>
+
+Add to your VS Code MCP config:
+```json
+{
+  "mcpServers": {
+    "voice-mode": {
+      "command": "uvx",
+      "args": ["voice-mode"],
+      "env": {
+        "OPENAI_API_KEY": "your-openai-key"
+      }
+    }
+  }
+}
+```
+</details>
+
+<details>
+<summary><strong>Windsurf</strong></summary>
+
+```json
+{
+  "mcpServers": {
+    "voice-mode": {
+      "command": "uvx",
+      "args": ["voice-mode"],
+      "env": {
+        "OPENAI_API_KEY": "your-openai-key"
+      }
+    }
+  }
+}
+```
+</details>
+
+<details>
+<summary><strong>Zed</strong></summary>
+
+Add to your Zed settings.json:
+```json
+{
+  "context_servers": {
+    "voice-mode": {
+      "command": {
+        "path": "uvx",
+        "args": ["voice-mode"],
+        "env": {
+          "OPENAI_API_KEY": "your-openai-key"
+        }
+      }
+    }
+  }
+}
+```
+</details>
+
+### Alternative Installation Options
+
+<details>
+<summary><strong>Using Docker</strong></summary>
+
+```bash
+docker run -it --rm \
+  -e OPENAI_API_KEY=your-openai-key \
+  --device /dev/snd \
+  -v /tmp/.X11-unix:/tmp/.X11-unix \
+  -e DISPLAY=$DISPLAY \
+  ghcr.io/mbailey/voicemode:latest
+```
+</details>
+
+<details>
+<summary><strong>Using pipx</strong></summary>
+
+```bash
+pipx install voice-mode
+```
+</details>
+
+<details>
+<summary><strong>From source</strong></summary>
+
+```bash
+git clone https://github.com/mbailey/voicemode.git
+cd voicemode
+pip install -e .
+```
 </details>
 
 ## Tools
@@ -223,6 +344,12 @@ Audio files are saved to: `~/voice-mcp_audio/` with timestamps in the filename.
 - **GitHub**: [github.com/mbailey/voicemode](https://github.com/mbailey/voicemode)
 - **PyPI**: [pypi.org/project/voice-mcp](https://pypi.org/project/voice-mcp/)
 - **npm**: [npmjs.com/package/voicemode](https://www.npmjs.com/package/voicemode)
+
+### Community
+
+- **Discord**: [Join our community](https://discord.gg/gVHPPK5U)
+- **Twitter/X**: [@getvoicemode](https://twitter.com/getvoicemode)
+- **YouTube**: [@getvoicemode](https://youtube.com/@getvoicemode)
 
 ## License
 
