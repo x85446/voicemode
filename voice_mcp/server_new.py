@@ -4,7 +4,7 @@
 from fastmcp import FastMCP
 
 # Create FastMCP instance
-mcp = FastMCP("voicemode", version="2.0.3")
+mcp = FastMCP("voicemode")
 
 # Import shared configuration and utilities
 from . import config

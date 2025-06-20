@@ -58,10 +58,15 @@ async def voice_status() -> str:
         status_lines.append("=" * 50)
         
         # Provider status
+        from voice_mcp.providers import PROVIDERS
         status_lines.append("\nProvider Status:")
         for provider_id in ["openai", "kokoro"]:
-            status = await get_provider_display_status(provider_id)
-            status_lines.append(f"  {status}")
+            provider = PROVIDERS.get(provider_id)
+            if provider:
+                available = await is_provider_available(provider_id)
+                status = get_provider_display_status(provider, available)
+                for line in status:
+                    status_lines.append(f"  {line}")
         
         # Configuration
         from voice_mcp.shared import (

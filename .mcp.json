@@ -10,7 +10,8 @@
       "type": "stdio",
       "command": "uvx",
       "args": [
-        "voice-mode"
+        "--refresh",
+        "."
       ],
       "env": {}
     }
