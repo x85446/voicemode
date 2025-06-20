@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.1] - 2025-06-20
+
+### Fixed
+- Fixed `voice_status` tool error where `get_provider_display_status` was called with incorrect arguments
+- Updated `.mcp.json` to use local package installation with `--refresh` flag
+
+### Changed
+- Replaced all references from `voice-mcp` to `voice-mode` throughout documentation
+- Updated MCP configuration examples to use `uvx` instead of outdated `./mcp-servers/` directory
+- Removed hardcoded version from `server_new.py`
+
 ## [2.1.0] - 2025-06-20
 
 ## [2.0.3] - 2025-06-20
