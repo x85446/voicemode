@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Replaced all references from `voice-mcp` to `voice-mode` throughout documentation
 - Updated MCP configuration examples to use `uvx` instead of outdated `./mcp-servers/` directory
 - Removed hardcoded version from `server_new.py`
+- Changed default listen duration to 15 seconds (from 10s/20s) in all voice conversation functions for better balance
 
 ## [2.1.0] - 2025-06-20
 
