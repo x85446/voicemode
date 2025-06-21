@@ -53,7 +53,8 @@ from voice_mcp.providers import (
     get_tts_provider,
     get_stt_provider,
     is_provider_available,
-    get_provider_display_status
+    get_provider_display_status,
+    select_best_voice
 )
 from voice_mcp.core import (
     get_openai_clients,
@@ -64,6 +65,7 @@ from voice_mcp.core import (
     play_chime_start,
     play_chime_end
 )
+from voice_mcp.tools.statistics import track_voice_interaction
 
 logger = logging.getLogger("voice-mcp")
 
@@ -186,22 +188,26 @@ async def get_tts_config(provider: Optional[str] = None, voice: Optional[str] = 
     if provider == "kokoro":
         # Use kokoro-specific client if available, otherwise use default
         client_key = 'tts_kokoro' if 'tts_kokoro' in openai_clients else 'tts'
+        # Select best voice if not specified
+        selected_voice = voice or select_best_voice(provider)
         return {
             'client_key': client_key,
             'base_url': provider_info.get("base_url", KOKORO_TTS_BASE_URL),
             'model': model or provider_info["models"][0],
-            'voice': voice or provider_info["default_voice"],
+            'voice': selected_voice or provider_info["default_voice"],
             'instructions': None  # Kokoro doesn't support instructions
         }
     else:  # openai
         # Use openai-specific client if available, otherwise use default
         client_key = 'tts_openai' if 'tts_openai' in openai_clients else 'tts'
         logger.debug(f"OpenAI TTS config: client_key={client_key}, available_clients={list(openai_clients.keys())}")
+        # Select best voice if not specified
+        selected_voice = voice or select_best_voice(provider)
         return {
             'client_key': client_key,
             'base_url': provider_info.get("base_url", OPENAI_TTS_BASE_URL),
             'model': model or TTS_MODEL,  # Use provided model or default
-            'voice': voice or provider_info.get("default_voice", TTS_VOICE),
+            'voice': selected_voice or provider_info.get("default_voice", TTS_VOICE),
             'instructions': instructions  # Pass through instructions for OpenAI
         }
 
@@ -698,15 +704,53 @@ async def converse(
                     
                 # Include timing info if available
                 timing_info = ""
+                timing_str = ""
                 if success and tts_metrics:
                     timing_info = f" (gen: {tts_metrics.get('generation', 0):.1f}s, play: {tts_metrics.get('playback', 0):.1f}s)"
+                    # Create timing string for statistics
+                    timing_parts = []
+                    if 'ttfa' in tts_metrics:
+                        timing_parts.append(f"ttfa {tts_metrics['ttfa']:.1f}s")
+                    if 'generation' in tts_metrics:
+                        timing_parts.append(f"tts_gen {tts_metrics['generation']:.1f}s")
+                    if 'playback' in tts_metrics:
+                        timing_parts.append(f"tts_play {tts_metrics['playback']:.1f}s")
+                    timing_str = ", ".join(timing_parts)
                 
                 result = f"✓ Message spoken successfully{timing_info}" if success else "✗ Failed to speak message"
+                
+                # Track statistics for speak-only interaction
+                track_voice_interaction(
+                    message=message,
+                    response="[speak-only]",
+                    timing_str=timing_str if success else None,
+                    transport="speak-only",
+                    voice_provider=tts_provider,
+                    voice_name=voice,
+                    model=tts_model,
+                    success=success,
+                    error_message=None if success else "TTS failed"
+                )
+                
                 logger.info(f"Speak-only result: {result}")
                 return result
             except Exception as e:
                 logger.error(f"Speak error: {e}")
                 error_msg = f"Error: {str(e)}"
+                
+                # Track failed speak-only interaction
+                track_voice_interaction(
+                    message=message,
+                    response="[error]",
+                    timing_str=None,
+                    transport="speak-only",
+                    voice_provider=tts_provider,
+                    voice_name=voice,
+                    model=tts_model,
+                    success=False,
+                    error_message=str(e)
+                )
+                
                 logger.error(f"Returning error: {error_msg}")
                 return error_msg
         
@@ -722,7 +766,23 @@ async def converse(
         
         if transport == "livekit":
             # For LiveKit, use the existing function but with the message parameter
-            return await livekit_ask_voice_question(message, room_name, timeout)
+            livekit_result = await livekit_ask_voice_question(message, room_name, timeout)
+            
+            # Track LiveKit interaction (simplified since we don't have detailed timing)
+            success = not livekit_result.startswith("Error:") and not livekit_result.startswith("No ")
+            track_voice_interaction(
+                message=message,
+                response=livekit_result,
+                timing_str=None,  # LiveKit doesn't provide detailed timing
+                transport="livekit",
+                voice_provider="livekit",  # LiveKit manages its own providers
+                voice_name=voice,
+                model=tts_model,
+                success=success,
+                error_message=livekit_result if not success else None
+            )
+            
+            return livekit_result
         
         elif transport == "local":
             # Local microphone approach with timing
@@ -806,6 +866,20 @@ async def converse(
                 timing_str = ", ".join(timing_parts)
                 timing_str += f", total {total_time:.1f}s"
                 
+                # Track statistics for full conversation interaction
+                actual_response = response_text or "[no speech detected]"
+                track_voice_interaction(
+                    message=message,
+                    response=actual_response,
+                    timing_str=timing_str,
+                    transport=transport,
+                    voice_provider=tts_provider,
+                    voice_name=voice,
+                    model=tts_model,
+                    success=bool(response_text),  # Success if we got a response
+                    error_message=None if response_text else "No speech detected"
+                )
+                
                 if response_text:
                     return f"Voice response: {response_text} | Timing: {timing_str}"
                 else:
@@ -815,6 +889,20 @@ async def converse(
                 logger.error(f"Local voice error: {e}")
                 if DEBUG:
                     logger.error(f"Traceback: {traceback.format_exc()}")
+                
+                # Track failed conversation interaction
+                track_voice_interaction(
+                    message=message,
+                    response="[error]",
+                    timing_str=None,
+                    transport=transport,
+                    voice_provider=tts_provider,
+                    voice_name=voice,
+                    model=tts_model,
+                    success=False,
+                    error_message=str(e)
+                )
+                
                 return f"Error: {str(e)}"
             
         else:

@@ -264,8 +264,7 @@ async def stream_pcm_audio(
         )
         stream.start()
         
-        # Add stream=true for Kokoro (OpenAI ignores it)
-        request_params['stream'] = True
+        # Don't add stream parameter - Kokoro defaults to true, OpenAI doesn't support it
         
         logger.info("Starting true HTTP streaming with iter_bytes()")
         
@@ -393,8 +392,7 @@ async def stream_with_buffering(
         )
         stream.start()
         
-        # Add stream=true for Kokoro
-        request_params['stream'] = True
+        # Don't add stream parameter - Kokoro defaults to true, OpenAI doesn't support it
         
         # Use the streaming response API for true HTTP streaming
         async with openai_client.audio.speech.with_streaming_response.create(
@@ -416,27 +414,27 @@ async def stream_with_buffering(
                     
                     # Try to decode when we have enough data (e.g., 32KB)
                     if buffer.tell() > 32768 and not audio_started:
-                buffer.seek(0)
-                try:
-                    # Attempt to decode what we have
-                    audio = AudioSegment.from_file(buffer, format=format)
-                    samples = np.array(audio.get_array_of_samples()).astype(np.float32) / 32768.0
-                    
-                    # Start playback
-                    metrics.ttfa = time.perf_counter() - start_time
-                    audio_started = True
-                    logger.info(f"Buffered streaming started - TTFA: {metrics.ttfa:.3f}s")
-                    
-                    # Play audio
-                    stream.write(samples)
-                    metrics.chunks_played += len(samples) // 1024
-                    
-                    # Reset buffer for next batch
-                    buffer = io.BytesIO()
-                    
-                except Exception as e:
-                    # Not enough valid data yet
-                    buffer.seek(0, io.SEEK_END)
+                        buffer.seek(0)
+                        try:
+                            # Attempt to decode what we have
+                            audio = AudioSegment.from_file(buffer, format=format)
+                            samples = np.array(audio.get_array_of_samples()).astype(np.float32) / 32768.0
+                            
+                            # Start playback
+                            metrics.ttfa = time.perf_counter() - start_time
+                            audio_started = True
+                            logger.info(f"Buffered streaming started - TTFA: {metrics.ttfa:.3f}s")
+                            
+                            # Play audio
+                            stream.write(samples)
+                            metrics.chunks_played += len(samples) // 1024
+                            
+                            # Reset buffer for next batch
+                            buffer = io.BytesIO()
+                            
+                        except Exception as e:
+                            # Not enough valid data yet
+                            buffer.seek(0, io.SEEK_END)
         
         # Process any remaining data
         if buffer.tell() > 0:

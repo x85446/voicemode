@@ -6,8 +6,8 @@ from typing import Optional
 from voice_mcp.server_new import mcp
 from voice_mcp.config import SAVE_AUDIO, AUDIO_DIR, logger
 
-@mcp.resource("audio://files")
-async def list_audio_files(uri: str) -> Optional[str]:
+@mcp.resource("audio://files/{directory}")
+async def list_audio_files(directory: str = "all") -> Optional[str]:
     """List saved audio files if audio saving is enabled.
     
     Returns a list of audio files in the audio directory with their
@@ -31,24 +31,17 @@ async def list_audio_files(uri: str) -> Optional[str]:
     return f"Saved audio files in {AUDIO_DIR}:\n" + "\n".join(audio_files)
 
 @mcp.resource("audio://file/{filename}")
-async def get_audio_file(uri: str) -> Optional[str]:
+async def get_audio_file(filename: str) -> Optional[str]:
     """Get metadata about a specific audio file.
     
     Args:
-        uri: Resource URI in format audio://file/{filename}
+        filename: Name of the audio file to get metadata for
         
     Returns:
         File metadata including size and creation time.
     """
     if not SAVE_AUDIO:
         return "Audio saving is not enabled. Set VOICE_MCP_SAVE_AUDIO=1 to enable."
-    
-    # Extract filename from URI
-    parts = uri.split("/")
-    if len(parts) < 4:
-        return "Invalid URI format. Expected: audio://file/{filename}"
-    
-    filename = parts[3]
     file_path = os.path.join(AUDIO_DIR, filename)
     
     if not os.path.exists(file_path):

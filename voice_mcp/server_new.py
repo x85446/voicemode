@@ -13,8 +13,7 @@ from . import config
 # The __init__.py files in each directory handle the imports
 from . import tools
 from . import prompts 
-# TODO: Add resources support when FastMCP supports it
-# from . import resources
+from . import resources
 
 # Main entry point
 def main():

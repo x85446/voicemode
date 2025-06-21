@@ -28,6 +28,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `VOICEMODE_STREAM_MAX_BUFFER` (default: 2.0)
 - TTFA (Time To First Audio) metric in timing output
 - Per-request audio format override via `audio_format` parameter in conversation tools
+- **Live Statistics Dashboard**: Comprehensive conversation performance tracking
+  - Real-time performance metrics (TTFA, TTS generation, STT processing, total turnaround)
+  - Session statistics (interaction counts, success rates, provider usage)
+  - MCP tools: `voice_statistics`, `voice_statistics_summary`, `voice_statistics_recent`, `voice_statistics_reset`, `voice_statistics_export`
+  - MCP resources: `voice://statistics/{type}`, `voice://statistics/summary/{format}`, `voice://statistics/export/{timestamp}`
+  - Automatic integration with conversation tools - no manual tracking required
+  - Thread-safe statistics collection across concurrent operations
+  - Memory-efficient storage (maintains last 1000 interactions)
 
 ### Changed
 - **BREAKING**: All `VOICE_MCP_` environment variables renamed to `VOICEMODE_`

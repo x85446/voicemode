@@ -70,6 +70,7 @@ STT_MODEL = os.getenv("STT_MODEL", "whisper-1")
 # TTS (Text-to-Speech) configuration
 TTS_BASE_URL = os.getenv("TTS_BASE_URL", "https://api.openai.com/v1")
 TTS_VOICE = os.getenv("TTS_VOICE", "alloy")
+VOICEMODE_VOICES = os.getenv("VOICEMODE_VOICES", "af_sky,nova").split(",")
 TTS_MODEL = os.getenv("TTS_MODEL", "tts-1")
 
 # Provider-specific TTS configuration

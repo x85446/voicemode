@@ -12,6 +12,9 @@ import asyncio
 
 logger = logging.getLogger("voice-mcp")
 
+# Import config for voice preferences
+from .config import VOICEMODE_VOICES
+
 
 # Provider Registry with basic metadata
 PROVIDERS = {
@@ -193,6 +196,43 @@ def get_provider_by_voice(voice: str) -> Optional[Dict[str, Any]]:
     
     # Default to OpenAI for standard voices
     return PROVIDERS.get("openai")
+
+
+def select_best_voice(provider: str, available_voices: Optional[List[str]] = None) -> Optional[str]:
+    """Select the best available voice based on VOICEMODE_VOICES preference order.
+    
+    Args:
+        provider: The provider ID (e.g., 'kokoro', 'openai')
+        available_voices: Optional list of available voices. If not provided, uses provider registry.
+    
+    Returns:
+        The best available voice or None if no match found
+    """
+    # Get available voices from provider or use provided list
+    if available_voices is None:
+        provider_info = PROVIDERS.get(provider)
+        if not provider_info:
+            logger.warning(f"Unknown provider: {provider}")
+            return None
+        available_voices = provider_info.get("voices", [])
+    
+    # Strip whitespace from voice preferences
+    preferred_voices = [v.strip() for v in VOICEMODE_VOICES]
+    
+    # Find first preferred voice that's available
+    for voice in preferred_voices:
+        if voice in available_voices:
+            logger.info(f"Selected voice '{voice}' from preferences for {provider}")
+            return voice
+    
+    # If no preferred voice is available, return provider's default
+    provider_info = PROVIDERS.get(provider)
+    if provider_info:
+        default = provider_info.get("default_voice")
+        logger.info(f"No preferred voice available, using {provider} default: {default}")
+        return default
+    
+    return None
 
 
 def get_provider_display_status(provider: Dict[str, Any], is_available: bool) -> List[str]:
