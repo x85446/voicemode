@@ -42,156 +42,46 @@ from .core import (
     save_debug_file,
     get_debug_filename
 )
+from .config import (
+    # Debug configuration
+    DEBUG, TRACE_DEBUG, DEBUG_DIR,
+    # Audio saving configuration
+    SAVE_AUDIO, AUDIO_DIR,
+    # Audio feedback configuration
+    AUDIO_FEEDBACK_ENABLED, AUDIO_FEEDBACK_TYPE,
+    AUDIO_FEEDBACK_VOICE, AUDIO_FEEDBACK_MODEL, AUDIO_FEEDBACK_STYLE,
+    # Provider preferences
+    PREFER_LOCAL, AUTO_START_KOKORO,
+    # Emotional TTS
+    ALLOW_EMOTIONS, EMOTION_AUTO_UPGRADE,
+    # Service configuration
+    OPENAI_API_KEY, STT_BASE_URL, TTS_BASE_URL,
+    TTS_VOICE, TTS_MODEL, STT_MODEL,
+    OPENAI_TTS_BASE_URL, KOKORO_TTS_BASE_URL,
+    # LiveKit configuration
+    LIVEKIT_URL, LIVEKIT_API_KEY, LIVEKIT_API_SECRET,
+    # Audio configuration
+    SAMPLE_RATE, CHANNELS,
+    # Global state
+    audio_operation_lock, service_processes,
+    # Logger
+    logger
+)
 
-# Workaround for sounddevice stderr redirection issue
-# This prevents sounddevice from redirecting stderr to /dev/null
-# which can interfere with audio playback in MCP server context
-def disable_sounddevice_stderr_redirect():
-    """Comprehensively disable sounddevice's stderr redirection"""
-    try:
-        # Method 1: Override _ignore_stderr in various locations
-        if hasattr(sd, '_sounddevice'):
-            if hasattr(sd._sounddevice, '_ignore_stderr'):
-                sd._sounddevice._ignore_stderr = lambda: None
-        if hasattr(sd, '_ignore_stderr'):
-            sd._ignore_stderr = lambda: None
-        
-        # Method 2: Override _check_error if it exists
-        if hasattr(sd, '_check'):
-            original_check = sd._check
-            def safe_check(*args, **kwargs):
-                # Prevent any stderr manipulation
-                return original_check(*args, **kwargs)
-            sd._check = safe_check
-        
-        # Method 3: Protect file descriptors
-        import sys
-        original_stderr = sys.stderr
-        
-        # Create a hook to prevent stderr replacement
-        def protect_stderr():
-            if sys.stderr != original_stderr:
-                sys.stderr = original_stderr
-        
-        # Install protection
-        import atexit
-        atexit.register(protect_stderr)
-        
-    except Exception as e:
-        # Log but continue - audio might still work
-        if DEBUG:
-            # Can't use logger here as it's not initialized yet
-            print(f"DEBUG: Could not fully disable sounddevice stderr redirect: {e}", file=sys.stderr)
+# Sounddevice workaround is already applied in config.py
 
-disable_sounddevice_stderr_redirect()
-
-# Audio feedback configuration
-AUDIO_FEEDBACK_ENABLED = os.getenv("VOICE_MCP_AUDIO_FEEDBACK", "true").lower() in ("true", "1", "yes", "on")
-AUDIO_FEEDBACK_VOICE = os.getenv("VOICE_MCP_FEEDBACK_VOICE", "nova")
-AUDIO_FEEDBACK_MODEL = os.getenv("VOICE_MCP_FEEDBACK_MODEL", "gpt-4o-mini-tts")
-AUDIO_FEEDBACK_STYLE = os.getenv("VOICE_MCP_FEEDBACK_STYLE", "whisper")  # "whisper" or "shout"
+# Configuration is imported from config.py
 
 # Environment variables are loaded by the shell/MCP client
 
-# Debug configuration
-DEBUG = os.getenv("VOICE_MCP_DEBUG", "").lower() in ("true", "1", "yes", "on")
-TRACE_DEBUG = os.getenv("VOICE_MCP_DEBUG", "").lower() == "trace"
-DEBUG_DIR = Path.home() / "voice-mcp_recordings"
+# Debug and logging configuration imported from config.py
 
-# Audio saving configuration
-SAVE_AUDIO = os.getenv("VOICE_MCP_SAVE_AUDIO", "").lower() in ("true", "1", "yes", "on")
-AUDIO_DIR = Path.home() / "voice-mcp_audio"
-
-if DEBUG:
-    DEBUG_DIR.mkdir(exist_ok=True)
-
-if SAVE_AUDIO:
-    AUDIO_DIR.mkdir(exist_ok=True)
-
-# Configure logging
-log_level = logging.DEBUG if DEBUG else logging.INFO
-logging.basicConfig(
-    level=log_level,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger("voice-mcp")
-
-# Trace logging setup
-if TRACE_DEBUG:
-    trace_file = Path.home() / "voice_mcp_trace.log"
-    trace_logger = logging.getLogger("voice-mcp-trace")
-    trace_handler = logging.FileHandler(trace_file, mode='a')
-    trace_handler.setFormatter(logging.Formatter('%(asctime)s - %(message)s'))
-    trace_logger.addHandler(trace_handler)
-    trace_logger.setLevel(logging.DEBUG)
-    
-    def trace_calls(frame, event, arg):
-        if event == 'call':
-            code = frame.f_code
-            if 'voice-mcp' in code.co_filename or 'voice_mcp' in code.co_filename:
-                trace_logger.debug(f"Called {code.co_filename}:{frame.f_lineno} {code.co_name}")
-        elif event == 'exception':
-            trace_logger.debug(f"Exception: {arg}")
-        return trace_calls
-    
-    sys.settrace(trace_calls)
-    logger.info(f"Trace debugging enabled, writing to: {trace_file}")
-
-# Also log to file in debug mode
-if DEBUG:
-    debug_log_file = Path.home() / "voice_mcp_debug.log"
-    file_handler = logging.FileHandler(debug_log_file, mode='a')
-    file_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
-    logger.addHandler(file_handler)
-    logger.info(f"Debug logging to file: {debug_log_file}")
-
-# Suppress verbose binary data in HTTP logs
-if DEBUG:
-    # Keep our debug logs but reduce HTTP client verbosity
-    logging.getLogger("openai._base_client").setLevel(logging.INFO)
-    logging.getLogger("httpcore").setLevel(logging.INFO)
-    logging.getLogger("httpx").setLevel(logging.INFO)
+# Trace logging setup handled by config.py
 
 # Create MCP server
 mcp = FastMCP("Voice MCP")
 
-# Audio configuration
-SAMPLE_RATE = 44100
-CHANNELS = 1
-
-# Concurrency control for audio operations
-# This prevents multiple audio operations from interfering with stdio
-audio_operation_lock = asyncio.Lock()
-
-# Service configuration
-STT_BASE_URL = os.getenv("STT_BASE_URL", "https://api.openai.com/v1")
-TTS_BASE_URL = os.getenv("TTS_BASE_URL", "https://api.openai.com/v1")
-TTS_VOICE = os.getenv("TTS_VOICE", "alloy")
-TTS_MODEL = os.getenv("TTS_MODEL", "tts-1")
-STT_MODEL = os.getenv("STT_MODEL", "whisper-1")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-
-# Provider-specific TTS configuration
-OPENAI_TTS_BASE_URL = os.getenv("OPENAI_TTS_BASE_URL", "https://api.openai.com/v1")
-KOKORO_TTS_BASE_URL = os.getenv("KOKORO_TTS_BASE_URL", os.getenv("TTS_BASE_URL", "http://localhost:8880/v1"))
-
-# LiveKit configuration
-LIVEKIT_URL = os.getenv("LIVEKIT_URL", "ws://localhost:7880")
-LIVEKIT_API_KEY = os.getenv("LIVEKIT_API_KEY", "devkey")
-LIVEKIT_API_SECRET = os.getenv("LIVEKIT_API_SECRET", "secret")
-
-# Auto-start configuration
-AUTO_START_KOKORO = os.getenv("VOICE_MCP_AUTO_START_KOKORO", "").lower() in ("true", "1", "yes", "on")
-
-# Emotional TTS configuration
-ALLOW_EMOTIONS = os.getenv("VOICE_ALLOW_EMOTIONS", "false").lower() in ("true", "1", "yes", "on")
-EMOTION_AUTO_UPGRADE = os.getenv("VOICE_EMOTION_AUTO_UPGRADE", "false").lower() in ("true", "1", "yes", "on")
-
-# Local provider preference configuration
-PREFER_LOCAL = os.getenv("VOICE_MCP_PREFER_LOCAL", "true").lower() in ("true", "1", "yes", "on")
-
-if not OPENAI_API_KEY:
-    raise ValueError("OPENAI_API_KEY is required")
+# All service configuration imported from config.py
 
 logger.info("✓ MP3 support available (Python 3.11 + pydub)")
 

@@ -19,7 +19,7 @@ from pydub import AudioSegment
 from openai import AsyncOpenAI
 import httpx
 
-logger = logging.getLogger("voice-mcp")
+logger = logging.getLogger("voicemode")
 
 
 def get_debug_filename(prefix: str, extension: str) -> str:
@@ -97,8 +97,17 @@ async def text_to_speech(
     metrics = {}
     
     try:
-        # Use MP3 format for bandwidth efficiency
-        audio_format = "mp3"
+        # Import config for audio format
+        from .config import TTS_AUDIO_FORMAT, validate_audio_format, get_audio_loader_for_format
+        
+        # Determine provider from base URL (simple heuristic)
+        provider = "openai"
+        if "localhost" in tts_base_url or "127.0.0.1" in tts_base_url:
+            if "8880" in tts_base_url:
+                provider = "kokoro"
+        
+        # Validate format for provider
+        audio_format = validate_audio_format(TTS_AUDIO_FORMAT, provider, "tts")
         
         logger.debug("Making TTS API request...")
         # Build request parameters
@@ -149,9 +158,28 @@ async def text_to_speech(
             logger.debug(f"Audio written to temp file: {tmp_file.name}")
             
             try:
-                # Load MP3 and convert to numpy array for playback
-                logger.debug("Loading MP3 audio...")
-                audio = AudioSegment.from_mp3(tmp_file.name)
+                # Load audio file based on format
+                logger.debug(f"Loading {audio_format.upper()} audio...")
+                
+                # Get appropriate loader for format
+                loader = get_audio_loader_for_format(audio_format)
+                if not loader:
+                    logger.error(f"No loader available for format: {audio_format}")
+                    # Fallback to generic loader
+                    audio = AudioSegment.from_file(tmp_file.name, format=audio_format)
+                else:
+                    # Special handling for PCM which needs parameters
+                    if audio_format == "pcm":
+                        # Assume 16-bit PCM at standard rate
+                        audio = loader(
+                            tmp_file.name,
+                            sample_width=2,  # 16-bit
+                            frame_rate=44100,
+                            channels=1
+                        )
+                    else:
+                        audio = loader(tmp_file.name)
+                
                 logger.debug(f"Audio loaded - Duration: {len(audio)}ms, Channels: {audio.channels}, Frame rate: {audio.frame_rate}")
                 
                 # Convert to numpy array
@@ -238,7 +266,7 @@ async def text_to_speech(
                     
                     # Last resort: save to user's home directory for manual playback
                     try:
-                        fallback_path = Path.home() / f"voice-mcp-audio-{datetime.now().strftime('%Y%m%d_%H%M%S')}.mp3"
+                        fallback_path = Path.home() / f"voice-mcp-audio-{datetime.now().strftime('%Y%m%d_%H%M%S')}.{audio_format}"
                         import shutil
                         shutil.copy(tmp_file.name, fallback_path)
                         logger.warning(f"Audio saved to {fallback_path} for manual playback")

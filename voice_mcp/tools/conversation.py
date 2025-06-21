@@ -270,7 +270,8 @@ async def speech_to_text(audio_data: np.ndarray, save_audio: bool = False, audio
         logger.debug(f"Audio stats - Min: {audio_data.min()}, Max: {audio_data.max()}, Mean: {audio_data.mean():.2f}")
     
     wav_file = None
-    mp3_file = None
+    export_file = None
+    export_format = None
     try:
         import tempfile
         with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as wav_file_obj:
@@ -299,26 +300,41 @@ async def speech_to_text(audio_data: np.ndarray, save_audio: bool = False, audio
                     logger.error(f"Failed to save audio WAV: {e}")
         
         try:
-            # Convert WAV to MP3 for smaller upload
-            logger.debug("Converting WAV to MP3 for upload...")
+            # Import config for audio format
+            from ..config import STT_AUDIO_FORMAT, validate_audio_format, get_format_export_params
+            
+            # Determine provider from base URL (simple heuristic)
+            provider = "openai-whisper"
+            if "localhost" in STT_BASE_URL or "127.0.0.1" in STT_BASE_URL:
+                if "2022" in STT_BASE_URL:
+                    provider = "whisper-local"
+            
+            # Validate format for provider
+            export_format = validate_audio_format(STT_AUDIO_FORMAT, provider, "stt")
+            
+            # Convert WAV to target format for upload
+            logger.debug(f"Converting WAV to {export_format.upper()} for upload...")
             audio = AudioSegment.from_wav(wav_file)
             logger.debug(f"Audio loaded - Duration: {len(audio)}ms, Channels: {audio.channels}, Frame rate: {audio.frame_rate}")
             
-            with tempfile.NamedTemporaryFile(suffix='.mp3', delete=False) as mp3_file_obj:
-                mp3_file = mp3_file_obj.name
-                audio.export(mp3_file, format="mp3", bitrate="64k")
-                upload_file = mp3_file
-                logger.debug(f"MP3 created for STT upload: {upload_file}")
+            # Get export parameters for the format
+            export_params = get_format_export_params(export_format)
+            
+            with tempfile.NamedTemporaryFile(suffix=f'.{export_format}', delete=False) as export_file_obj:
+                export_file = export_file_obj.name
+                audio.export(export_file, **export_params)
+                upload_file = export_file
+                logger.debug(f"{export_format.upper()} created for STT upload: {upload_file}")
             
             # Save debug file for upload version
             if DEBUG:
                 try:
                     with open(upload_file, 'rb') as f:
-                        debug_path = save_debug_file(f.read(), "stt-upload", "mp3", DEBUG_DIR, DEBUG)
+                        debug_path = save_debug_file(f.read(), "stt-upload", export_format, DEBUG_DIR, DEBUG)
                         if debug_path:
                             logger.info(f"Upload audio saved to: {debug_path}")
                 except Exception as e:
-                    logger.error(f"Failed to save debug MP3: {e}")
+                    logger.error(f"Failed to save debug {export_format.upper()}: {e}")
             
             # Get file size for logging
             file_size = os.path.getsize(upload_file)
@@ -358,12 +374,12 @@ async def speech_to_text(audio_data: np.ndarray, save_audio: bool = False, audio
             except Exception as e:
                 logger.error(f"Failed to clean up WAV file: {e}")
         
-        if mp3_file and os.path.exists(mp3_file):
+        if 'export_file' in locals() and export_file and os.path.exists(export_file):
             try:
-                os.unlink(mp3_file)
-                logger.debug(f"Cleaned up MP3 file: {mp3_file}")
+                os.unlink(export_file)
+                logger.debug(f"Cleaned up {export_format.upper()} file: {export_file}")
             except Exception as e:
-                logger.error(f"Failed to clean up MP3 file: {e}")
+                logger.error(f"Failed to clean up {export_format.upper()} file: {e}")
 
 
 async def play_audio_feedback(text: str, openai_clients: dict, enabled: Optional[bool] = None, style: str = "whisper", feedback_type: Optional[str] = None) -> None:

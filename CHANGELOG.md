@@ -7,6 +7,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Configurable audio format support with Opus as the new default
+- Environment variables for audio format configuration:
+  - `VOICEMODE_AUDIO_FORMAT` - Primary format (default: opus)
+  - `VOICEMODE_TTS_AUDIO_FORMAT` - TTS-specific override
+  - `VOICEMODE_STT_AUDIO_FORMAT` - STT-specific override
+- Support for multiple audio formats: opus, mp3, wav, flac, aac, pcm
+- Format-specific quality settings:
+  - `VOICEMODE_OPUS_BITRATE` (default: 32000)
+  - `VOICEMODE_MP3_BITRATE` (default: 64k)
+  - `VOICEMODE_AAC_BITRATE` (default: 64k)
+- Automatic format validation based on provider capabilities
+- Provider-aware format fallback logic
+- Test suite for audio format configuration
+
+### Changed
+- **BREAKING**: All `VOICE_MCP_` environment variables renamed to `VOICEMODE_`
+  - `VOICE_MCP_DEBUG` → `VOICEMODE_DEBUG`
+  - `VOICE_MCP_SAVE_AUDIO` → `VOICEMODE_SAVE_AUDIO`
+  - `VOICE_MCP_AUDIO_FEEDBACK` → `VOICEMODE_AUDIO_FEEDBACK`
+  - `VOICE_MCP_FEEDBACK_VOICE` → `VOICEMODE_FEEDBACK_VOICE`
+  - `VOICE_MCP_FEEDBACK_MODEL` → `VOICEMODE_FEEDBACK_MODEL`
+  - `VOICE_MCP_FEEDBACK_STYLE` → `VOICEMODE_FEEDBACK_STYLE`
+  - `VOICE_MCP_PREFER_LOCAL` → `VOICEMODE_PREFER_LOCAL`
+  - `VOICE_MCP_AUTO_START_KOKORO` → `VOICEMODE_AUTO_START_KOKORO`
+- Also renamed non-prefixed variables to use `VOICEMODE_` prefix:
+  - `VOICE_ALLOW_EMOTIONS` → `VOICEMODE_ALLOW_EMOTIONS`
+  - `VOICE_EMOTION_AUTO_UPGRADE` → `VOICEMODE_EMOTION_AUTO_UPGRADE`
+- Default audio format changed from MP3 to Opus for better compression and lower latency
+- Audio format is now validated against provider capabilities before use
+- Dynamic audio loading based on format instead of hardcoded MP3
+- Centralized all configuration in `voice_mcp/config.py` to eliminate duplication
+- Logger names updated from "voice-mcp" to "voicemode"
+- Debug directory paths updated:
+  - `~/voice-mcp_recordings/` → `~/voicemode_recordings/`
+  - `~/voice-mcp_audio/` → `~/voicemode_audio/`
+
+### Benefits
+- 50-80% smaller audio files with Opus format
+- Lower latency for real-time communication
+- Better optimization for voice (vs music-focused MP3)
+- Maintains backward compatibility with MP3
+- Cleaner, consistent environment variable naming
+
 ## [2.1.3] - 2025-06-20
 
 ## [2.1.2] - 2025-06-20

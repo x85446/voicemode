@@ -1,8 +1,8 @@
 """
-Configuration and shared utilities for Voice MCP Server.
+Configuration and shared utilities for Voicemode Server.
 
 This module contains all configuration constants, global state, initialization functions,
-and shared utilities used across the voice-mcp server.
+and shared utilities used across the voicemode server.
 """
 
 import os
@@ -16,16 +16,16 @@ from datetime import datetime
 # ==================== ENVIRONMENT CONFIGURATION ====================
 
 # Debug configuration
-DEBUG = os.getenv("VOICE_MCP_DEBUG", "").lower() in ("true", "1", "yes", "on")
-TRACE_DEBUG = os.getenv("VOICE_MCP_DEBUG", "").lower() == "trace"
-DEBUG_DIR = Path.home() / "voice-mcp_recordings"
+DEBUG = os.getenv("VOICEMODE_DEBUG", "").lower() in ("true", "1", "yes", "on")
+TRACE_DEBUG = os.getenv("VOICEMODE_DEBUG", "").lower() == "trace"
+DEBUG_DIR = Path.home() / "voicemode_recordings"
 
 # Audio saving configuration
-SAVE_AUDIO = os.getenv("VOICE_MCP_SAVE_AUDIO", "").lower() in ("true", "1", "yes", "on")
-AUDIO_DIR = Path.home() / "voice-mcp_audio"
+SAVE_AUDIO = os.getenv("VOICEMODE_SAVE_AUDIO", "").lower() in ("true", "1", "yes", "on")
+AUDIO_DIR = Path.home() / "voicemode_audio"
 
 # Audio feedback configuration
-audio_feedback_raw = os.getenv("VOICE_MCP_AUDIO_FEEDBACK", "chime").lower()
+audio_feedback_raw = os.getenv("VOICEMODE_AUDIO_FEEDBACK", "chime").lower()
 
 # Backward compatibility: treat "true" as "chime", "false" as "none"
 if audio_feedback_raw in ("true", "1", "yes", "on"):
@@ -42,19 +42,19 @@ else:
 AUDIO_FEEDBACK_ENABLED = AUDIO_FEEDBACK_TYPE != "none"
 
 # Voice feedback specific settings (used when type is "voice" or "both")
-AUDIO_FEEDBACK_VOICE = os.getenv("VOICE_MCP_FEEDBACK_VOICE", "nova")
-AUDIO_FEEDBACK_MODEL = os.getenv("VOICE_MCP_FEEDBACK_MODEL", "gpt-4o-mini-tts")
-AUDIO_FEEDBACK_STYLE = os.getenv("VOICE_MCP_FEEDBACK_STYLE", "whisper")  # "whisper" or "shout"
+AUDIO_FEEDBACK_VOICE = os.getenv("VOICEMODE_FEEDBACK_VOICE", "nova")
+AUDIO_FEEDBACK_MODEL = os.getenv("VOICEMODE_FEEDBACK_MODEL", "gpt-4o-mini-tts")
+AUDIO_FEEDBACK_STYLE = os.getenv("VOICEMODE_FEEDBACK_STYLE", "whisper")  # "whisper" or "shout"
 
 # Local provider preference configuration
-PREFER_LOCAL = os.getenv("VOICE_MCP_PREFER_LOCAL", "true").lower() in ("true", "1", "yes", "on")
+PREFER_LOCAL = os.getenv("VOICEMODE_PREFER_LOCAL", "true").lower() in ("true", "1", "yes", "on")
 
 # Auto-start configuration
-AUTO_START_KOKORO = os.getenv("VOICE_MCP_AUTO_START_KOKORO", "").lower() in ("true", "1", "yes", "on")
+AUTO_START_KOKORO = os.getenv("VOICEMODE_AUTO_START_KOKORO", "").lower() in ("true", "1", "yes", "on")
 
 # Emotional TTS configuration
-ALLOW_EMOTIONS = os.getenv("VOICE_ALLOW_EMOTIONS", "false").lower() in ("true", "1", "yes", "on")
-EMOTION_AUTO_UPGRADE = os.getenv("VOICE_EMOTION_AUTO_UPGRADE", "false").lower() in ("true", "1", "yes", "on")
+ALLOW_EMOTIONS = os.getenv("VOICEMODE_ALLOW_EMOTIONS", "false").lower() in ("true", "1", "yes", "on")
+EMOTION_AUTO_UPGRADE = os.getenv("VOICEMODE_EMOTION_AUTO_UPGRADE", "false").lower() in ("true", "1", "yes", "on")
 
 # ==================== SERVICE CONFIGURATION ====================
 
@@ -87,6 +87,32 @@ LIVEKIT_API_SECRET = os.getenv("LIVEKIT_API_SECRET", "secret")
 SAMPLE_RATE = 44100
 CHANNELS = 1
 
+# Audio format configuration
+AUDIO_FORMAT = os.getenv("VOICEMODE_AUDIO_FORMAT", "opus").lower()
+TTS_AUDIO_FORMAT = os.getenv("VOICEMODE_TTS_AUDIO_FORMAT", AUDIO_FORMAT).lower()
+STT_AUDIO_FORMAT = os.getenv("VOICEMODE_STT_AUDIO_FORMAT", AUDIO_FORMAT).lower()
+
+# Supported audio formats
+SUPPORTED_AUDIO_FORMATS = ["opus", "mp3", "wav", "flac", "aac", "pcm"]
+
+# Validate formats (validation messages will be logged after logger is initialized)
+if AUDIO_FORMAT not in SUPPORTED_AUDIO_FORMATS:
+    _invalid_audio_format = AUDIO_FORMAT
+    AUDIO_FORMAT = "opus"
+
+if TTS_AUDIO_FORMAT not in SUPPORTED_AUDIO_FORMATS:
+    _invalid_tts_format = TTS_AUDIO_FORMAT
+    TTS_AUDIO_FORMAT = AUDIO_FORMAT
+
+if STT_AUDIO_FORMAT not in SUPPORTED_AUDIO_FORMATS:
+    _invalid_stt_format = STT_AUDIO_FORMAT
+    STT_AUDIO_FORMAT = AUDIO_FORMAT
+
+# Format-specific quality settings
+OPUS_BITRATE = int(os.getenv("VOICEMODE_OPUS_BITRATE", "32000"))  # Default 32kbps for voice
+MP3_BITRATE = os.getenv("VOICEMODE_MP3_BITRATE", "64k")  # Default 64kbps
+AAC_BITRATE = os.getenv("VOICEMODE_AAC_BITRATE", "64k")  # Default 64kbps
+
 # ==================== GLOBAL STATE ====================
 
 # Service management
@@ -112,13 +138,13 @@ def setup_logging() -> logging.Logger:
         level=log_level,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     )
-    logger = logging.getLogger("voice-mcp")
+    logger = logging.getLogger("voicemode")
     
     # Trace logging setup
     if TRACE_DEBUG:
         import sys
-        trace_file = Path.home() / "voice_mcp_trace.log"
-        trace_logger = logging.getLogger("voice-mcp-trace")
+        trace_file = Path.home() / "voicemode_trace.log"
+        trace_logger = logging.getLogger("voicemode-trace")
         trace_handler = logging.FileHandler(trace_file, mode='a')
         trace_handler.setFormatter(logging.Formatter('%(asctime)s - %(message)s'))
         trace_logger.addHandler(trace_handler)
@@ -127,7 +153,7 @@ def setup_logging() -> logging.Logger:
         def trace_calls(frame, event, arg):
             if event == 'call':
                 code = frame.f_code
-                if 'voice-mcp' in code.co_filename or 'voice_mcp' in code.co_filename:
+                if 'voicemode' in code.co_filename or 'voice_mcp' in code.co_filename:
                     trace_logger.debug(f"Called {code.co_filename}:{frame.f_lineno} {code.co_name}")
             elif event == 'exception':
                 trace_logger.debug(f"Exception: {arg}")
@@ -138,7 +164,7 @@ def setup_logging() -> logging.Logger:
     
     # Also log to file in debug mode
     if DEBUG:
-        debug_log_file = Path.home() / "voice_mcp_debug.log"
+        debug_log_file = Path.home() / "voicemode_debug.log"
         file_handler = logging.FileHandler(debug_log_file, mode='a')
         file_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
         logger.addHandler(file_handler)
@@ -247,3 +273,141 @@ disable_sounddevice_stderr_redirect()
 
 # Set up logger
 logger = setup_logging()
+
+# Log any format validation warnings
+if 'AUDIO_FORMAT' in locals() and '_invalid_audio_format' in locals():
+    logger.warning(f"Unsupported audio format '{_invalid_audio_format}', falling back to 'opus'")
+
+if 'TTS_AUDIO_FORMAT' in locals() and '_invalid_tts_format' in locals():
+    logger.warning(f"Unsupported TTS audio format '{_invalid_tts_format}', falling back to '{AUDIO_FORMAT}'")
+
+if 'STT_AUDIO_FORMAT' in locals() and '_invalid_stt_format' in locals():
+    logger.warning(f"Unsupported STT audio format '{_invalid_stt_format}', falling back to '{AUDIO_FORMAT}'")
+
+# ==================== AUDIO FORMAT UTILITIES ====================
+
+def get_provider_supported_formats(provider: str, operation: str = "tts") -> list:
+    """Get list of audio formats supported by a provider.
+    
+    Args:
+        provider: Provider name (e.g., 'openai', 'kokoro', 'whisper-local')
+        operation: 'tts' or 'stt'
+    
+    Returns:
+        List of supported format strings
+    """
+    # Provider format capabilities
+    # Based on API documentation and testing
+    provider_formats = {
+        # TTS providers
+        "openai": {
+            "tts": ["opus", "mp3", "aac", "flac", "wav", "pcm"],
+            "stt": ["mp3", "opus", "wav", "flac", "m4a", "webm"]
+        },
+        "kokoro": {
+            "tts": ["mp3", "wav"],  # May support more, needs verification
+            "stt": []  # Kokoro is TTS only
+        },
+        # STT providers
+        "whisper-local": {
+            "tts": [],  # Whisper is STT only
+            "stt": ["wav", "mp3", "opus", "flac", "m4a"]
+        },
+        "openai-whisper": {
+            "tts": [],  # Whisper is STT only
+            "stt": ["mp3", "opus", "wav", "flac", "m4a", "webm"]
+        }
+    }
+    
+    provider_info = provider_formats.get(provider, {})
+    return provider_info.get(operation, [])
+
+
+def validate_audio_format(format: str, provider: str, operation: str = "tts") -> str:
+    """Validate and potentially adjust audio format based on provider capabilities.
+    
+    Args:
+        format: Requested audio format
+        provider: Provider name
+        operation: 'tts' or 'stt'
+    
+    Returns:
+        Valid format for the provider (may differ from requested)
+    """
+    supported = get_provider_supported_formats(provider, operation)
+    
+    if not supported:
+        logger.warning(f"Provider '{provider}' does not support {operation} operation")
+        return format
+    
+    if format in supported:
+        return format
+    
+    # Fallback logic - prefer common formats
+    fallback_order = ["opus", "mp3", "wav"]
+    for fallback in fallback_order:
+        if fallback in supported:
+            logger.info(f"Format '{format}' not supported by {provider}, using '{fallback}' instead")
+            return fallback
+    
+    # Last resort - use first supported format
+    first_supported = supported[0]
+    logger.warning(f"Using {provider}'s first supported format: {first_supported}")
+    return first_supported
+
+
+def get_audio_loader_for_format(format: str):
+    """Get the appropriate AudioSegment loader for a format.
+    
+    Args:
+        format: Audio format string
+    
+    Returns:
+        AudioSegment method reference or None
+    """
+    from pydub import AudioSegment
+    
+    format_loaders = {
+        "mp3": AudioSegment.from_mp3,
+        "wav": AudioSegment.from_wav,
+        "opus": AudioSegment.from_ogg,  # Opus uses OGG container
+        "flac": AudioSegment.from_file if not hasattr(AudioSegment, 'from_flac') else AudioSegment.from_flac,
+        "aac": AudioSegment.from_file,  # Generic loader for AAC
+        "m4a": AudioSegment.from_file,  # Generic loader for M4A
+        "webm": AudioSegment.from_file,  # Generic loader for WebM
+        "ogg": AudioSegment.from_ogg,
+        "pcm": AudioSegment.from_raw  # Requires additional parameters
+    }
+    
+    return format_loaders.get(format)
+
+
+def get_format_export_params(format: str) -> dict:
+    """Get export parameters for a specific audio format.
+    
+    Args:
+        format: Audio format string
+    
+    Returns:
+        Dict with export parameters for pydub
+    """
+    params = {
+        "format": format
+    }
+    
+    if format == "mp3":
+        params["bitrate"] = MP3_BITRATE
+    elif format == "opus":
+        # Opus in OGG container
+        params["format"] = "opus"  # pydub uses 'opus' for OGG/Opus
+        params["parameters"] = ["-b:a", str(OPUS_BITRATE)]
+    elif format == "aac":
+        params["bitrate"] = AAC_BITRATE
+    elif format == "flac":
+        # FLAC is lossless, no bitrate setting
+        pass
+    elif format == "wav":
+        # WAV is uncompressed, no bitrate setting
+        pass
+    
+    return params

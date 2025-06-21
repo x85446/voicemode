@@ -336,11 +336,32 @@ export LIVEKIT_API_KEY="your-api-key"
 export LIVEKIT_API_SECRET="your-api-secret"
 
 # Debug mode
-export VOICE_MCP_DEBUG="true"
+export VOICEMODE_DEBUG="true"
 
 # Save all audio (TTS output and STT input)
-export VOICE_MCP_SAVE_AUDIO="true"
+export VOICEMODE_SAVE_AUDIO="true"
+
+# Audio format configuration (default: opus)
+export VOICEMODE_AUDIO_FORMAT="opus"        # Options: opus, mp3, wav, flac, aac
+export VOICEMODE_TTS_AUDIO_FORMAT="opus"    # Override for TTS only
+export VOICEMODE_STT_AUDIO_FORMAT="mp3"     # Override for STT upload
+
+# Format-specific quality settings
+export VOICEMODE_OPUS_BITRATE="32000"       # Opus bitrate (default: 32kbps)
+export VOICEMODE_MP3_BITRATE="64k"          # MP3 bitrate (default: 64k)
 ```
+
+### Audio Format Configuration
+
+Voice Mode uses **Opus** audio format by default for optimal performance:
+
+- **Opus** (default): Best for voice, 50-80% smaller files than MP3, low latency
+- **MP3**: Wide compatibility, use if Opus causes issues  
+- **WAV**: Highest quality, largest files
+- **FLAC**: Lossless compression, good for archival
+- **AAC**: Good compression, Apple ecosystem
+
+The audio format is automatically validated against provider capabilities and will fallback to a supported format if needed.
 
 ## Local STT/TTS Services
 
@@ -402,20 +423,20 @@ The OpenAI SDK handles this automatically - no Voice Mode configuration needed!
 Enable detailed logging and audio file saving:
 
 ```bash
-export VOICE_MCP_DEBUG=true
+export VOICEMODE_DEBUG=true
 ```
 
-Debug audio files are saved to: `~/voice-mcp_recordings/`
+Debug audio files are saved to: `~/voicemode_recordings/`
 
 ### Audio Saving
 
 To save all audio files (both TTS output and STT input):
 
 ```bash
-export VOICE_MCP_SAVE_AUDIO=true
+export VOICEMODE_SAVE_AUDIO=true
 ```
 
-Audio files are saved to: `~/voice-mcp_audio/` with timestamps in the filename.
+Audio files are saved to: `~/voicemode_audio/` with timestamps in the filename.
 
 ## Links
 
