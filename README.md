@@ -105,6 +105,66 @@ claude mcp add voice-mode --env OPENAI_API_KEY=your-openai-key -- uvx voice-mode
 </details>
 
 <details>
+<summary><strong>Cline</strong></summary>
+
+Add to your Cline MCP settings:
+
+**Windows**:
+```json
+{
+  "mcpServers": {
+    "voice-mode": {
+      "command": "cmd",
+      "args": ["/c", "uvx", "voice-mode"],
+      "env": {
+        "OPENAI_API_KEY": "your-openai-key"
+      }
+    }
+  }
+}
+```
+
+**macOS/Linux**:
+```json
+{
+  "mcpServers": {
+    "voice-mode": {
+      "command": "uvx",
+      "args": ["voice-mode"],
+      "env": {
+        "OPENAI_API_KEY": "your-openai-key"
+      }
+    }
+  }
+}
+```
+</details>
+
+<details>
+<summary><strong>Continue</strong></summary>
+
+Add to your `.continue/config.json`:
+```json
+{
+  "experimental": {
+    "modelContextProtocolServers": [
+      {
+        "transport": {
+          "type": "stdio",
+          "command": "uvx",
+          "args": ["voice-mode"],
+          "env": {
+            "OPENAI_API_KEY": "your-openai-key"
+          }
+        }
+      }
+    ]
+  }
+}
+```
+</details>
+
+<details>
 <summary><strong>Cursor</strong></summary>
 
 Add to `~/.cursor/mcp.json`:
@@ -174,6 +234,25 @@ Add to your Zed settings.json:
         "env": {
           "OPENAI_API_KEY": "your-openai-key"
         }
+      }
+    }
+  }
+}
+```
+</details>
+
+<details>
+<summary><strong>Roo Code</strong></summary>
+
+Add to your Roo Code MCP configuration:
+```json
+{
+  "mcpServers": {
+    "voice-mode": {
+      "command": "uvx",
+      "args": ["voice-mode"],
+      "env": {
+        "OPENAI_API_KEY": "your-openai-key"
       }
     }
   }
