@@ -98,7 +98,10 @@ async def text_to_speech(
     
     try:
         # Import config for audio format
-        from .config import TTS_AUDIO_FORMAT, validate_audio_format, get_audio_loader_for_format
+        from .config import (
+            TTS_AUDIO_FORMAT, validate_audio_format, get_audio_loader_for_format,
+            STREAMING_ENABLED, STREAM_CHUNK_SIZE
+        )
         
         # Determine provider from base URL (simple heuristic)
         provider = "openai"
@@ -126,6 +129,38 @@ async def text_to_speech(
         # Track generation time
         generation_start = time.perf_counter()
         
+        # Check if streaming is enabled and format is supported
+        use_streaming = STREAMING_ENABLED and audio_format in ["opus", "mp3", "pcm"]
+        
+        if use_streaming:
+            # Use streaming playback
+            logger.info(f"Using streaming playback for {audio_format}")
+            from .streaming import stream_tts_audio
+            
+            # Pass the client directly
+            success, stream_metrics = await stream_tts_audio(
+                text=text,
+                openai_client=openai_clients[client_key],
+                request_params=request_params,
+                debug=debug
+            )
+            
+            if success:
+                metrics['ttfa'] = stream_metrics.ttfa
+                metrics['generation'] = stream_metrics.generation_time
+                metrics['playback'] = stream_metrics.playback_time - stream_metrics.generation_time
+                
+                logger.info(f"✓ TTS streamed successfully - TTFA: {metrics['ttfa']:.3f}s")
+                
+                # Save debug files if needed (we'd need to capture the full audio)
+                # For now, skip debug saving in streaming mode
+                
+                return True, metrics
+            else:
+                logger.warning("Streaming failed, falling back to buffered playback")
+                # Continue with regular buffered playback
+        
+        # Original buffered playback
         # Use context manager to ensure response is properly closed
         async with openai_clients[client_key].audio.speech.with_streaming_response.create(
             **request_params
