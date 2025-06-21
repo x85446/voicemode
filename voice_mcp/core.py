@@ -150,6 +150,9 @@ async def text_to_speech(
         
         # Play audio
         playback_start = time.perf_counter()
+        # TTFA (Time To First Audio) - currently same as playback_start since we buffer the whole file
+        # When streaming is implemented, this will be when first audio chunk starts playing
+        metrics['ttfa'] = playback_start - generation_start
         
         with tempfile.NamedTemporaryFile(suffix=f'.{audio_format}', delete=False) as tmp_file:
             tmp_file.write(response_content)

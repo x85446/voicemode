@@ -747,6 +747,7 @@ async def converse(
                     
                     # Add TTS sub-metrics
                     if tts_metrics:
+                        timings['ttfa'] = tts_metrics.get('ttfa', 0)
                         timings['tts_gen'] = tts_metrics.get('generation', 0)
                         timings['tts_play'] = tts_metrics.get('playback', 0)
                     timings['tts_total'] = time.perf_counter() - tts_start
@@ -785,6 +786,8 @@ async def converse(
                 
                 # Format timing string with sub-metrics
                 timing_parts = []
+                if 'ttfa' in timings:
+                    timing_parts.append(f"ttfa {timings['ttfa']:.1f}s")
                 if 'tts_gen' in timings:
                     timing_parts.append(f"tts_gen {timings['tts_gen']:.1f}s")
                 if 'tts_play' in timings:
