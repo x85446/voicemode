@@ -21,6 +21,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Automatic format validation based on provider capabilities
 - Provider-aware format fallback logic
 - Test suite for audio format configuration
+- Streaming audio playback infrastructure:
+  - `VOICEMODE_STREAMING_ENABLED` (default: true)
+  - `VOICEMODE_STREAM_CHUNK_SIZE` (default: 4096)
+  - `VOICEMODE_STREAM_BUFFER_MS` (default: 150)
+  - `VOICEMODE_STREAM_MAX_BUFFER` (default: 2.0)
+- TTFA (Time To First Audio) metric in timing output
+- Per-request audio format override via `audio_format` parameter in conversation tools
 
 ### Changed
 - **BREAKING**: All `VOICE_MCP_` environment variables renamed to `VOICEMODE_`
