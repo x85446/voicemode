@@ -80,7 +80,8 @@ async def text_to_speech(
     save_audio: bool = False,
     audio_dir: Optional[Path] = None,
     client_key: str = 'tts',
-    instructions: Optional[str] = None
+    instructions: Optional[str] = None,
+    audio_format: Optional[str] = None
 ) -> tuple[bool, Optional[dict]]:
     """Convert text to speech and play it.
     
@@ -110,7 +111,9 @@ async def text_to_speech(
                 provider = "kokoro"
         
         # Validate format for provider
-        audio_format = validate_audio_format(TTS_AUDIO_FORMAT, provider, "tts")
+        # Use provided format or fall back to configured default
+        format_to_use = audio_format if audio_format else TTS_AUDIO_FORMAT
+        validated_format = validate_audio_format(format_to_use, provider, "tts")
         
         logger.debug("Making TTS API request...")
         # Build request parameters
@@ -118,7 +121,7 @@ async def text_to_speech(
             "model": tts_model,
             "input": text,
             "voice": tts_voice,
-            "response_format": audio_format
+            "response_format": validated_format
         }
         
         # Add instructions if provided and model supports it
@@ -130,11 +133,11 @@ async def text_to_speech(
         generation_start = time.perf_counter()
         
         # Check if streaming is enabled and format is supported
-        use_streaming = STREAMING_ENABLED and audio_format in ["opus", "mp3", "pcm"]
+        use_streaming = STREAMING_ENABLED and validated_format in ["opus", "mp3", "pcm"]
         
         if use_streaming:
             # Use streaming playback
-            logger.info(f"Using streaming playback for {audio_format}")
+            logger.info(f"Using streaming playback for {validated_format}")
             from .streaming import stream_tts_audio
             
             # Pass the client directly
@@ -173,13 +176,13 @@ async def text_to_speech(
         
         # Save debug file if enabled
         if debug and debug_dir:
-            debug_path = save_debug_file(response_content, "tts-output", audio_format, debug_dir, debug)
+            debug_path = save_debug_file(response_content, "tts-output", validated_format, debug_dir, debug)
             if debug_path:
                 logger.info(f"TTS debug audio saved to: {debug_path}")
         
         # Save audio file if audio saving is enabled
         if save_audio and audio_dir:
-            audio_path = save_debug_file(response_content, "tts", audio_format, audio_dir, True)
+            audio_path = save_debug_file(response_content, "tts", validated_format, audio_dir, True)
             if audio_path:
                 logger.info(f"TTS audio saved to: {audio_path}")
         
@@ -189,7 +192,7 @@ async def text_to_speech(
         # When streaming is implemented, this will be when first audio chunk starts playing
         metrics['ttfa'] = playback_start - generation_start
         
-        with tempfile.NamedTemporaryFile(suffix=f'.{audio_format}', delete=False) as tmp_file:
+        with tempfile.NamedTemporaryFile(suffix=f'.{validated_format}', delete=False) as tmp_file:
             tmp_file.write(response_content)
             tmp_file.flush()
             
@@ -197,17 +200,17 @@ async def text_to_speech(
             
             try:
                 # Load audio file based on format
-                logger.debug(f"Loading {audio_format.upper()} audio...")
+                logger.debug(f"Loading {validated_format.upper()} audio...")
                 
                 # Get appropriate loader for format
-                loader = get_audio_loader_for_format(audio_format)
+                loader = get_audio_loader_for_format(validated_format)
                 if not loader:
-                    logger.error(f"No loader available for format: {audio_format}")
+                    logger.error(f"No loader available for format: {validated_format}")
                     # Fallback to generic loader
-                    audio = AudioSegment.from_file(tmp_file.name, format=audio_format)
+                    audio = AudioSegment.from_file(tmp_file.name, format=validated_format)
                 else:
                     # Special handling for PCM which needs parameters
-                    if audio_format == "pcm":
+                    if validated_format == "pcm":
                         # Assume 16-bit PCM at standard rate
                         audio = loader(
                             tmp_file.name,
@@ -304,7 +307,7 @@ async def text_to_speech(
                     
                     # Last resort: save to user's home directory for manual playback
                     try:
-                        fallback_path = Path.home() / f"voice-mcp-audio-{datetime.now().strftime('%Y%m%d_%H%M%S')}.{audio_format}"
+                        fallback_path = Path.home() / f"voice-mcp-audio-{datetime.now().strftime('%Y%m%d_%H%M%S')}.{validated_format}"
                         import shutil
                         shutil.copy(tmp_file.name, fallback_path)
                         logger.warning(f"Audio saved to {fallback_path} for manual playback")

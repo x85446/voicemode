@@ -619,7 +619,8 @@ async def converse(
     tts_model: Optional[str] = None,
     tts_instructions: Optional[str] = None,
     audio_feedback: Optional[bool] = None,
-    audio_feedback_style: Optional[str] = None
+    audio_feedback_style: Optional[str] = None,
+    audio_format: Optional[str] = None
 ) -> str:
     """Have a voice conversation - speak a message and optionally listen for response.
     
@@ -642,6 +643,7 @@ async def converse(
         tts_instructions: Tone/style instructions for gpt-4o-mini-tts model only (e.g., "Speak in a cheerful tone", "Sound angry", "Be extremely sad")
         audio_feedback: Override global audio feedback setting (default: None uses VOICE_MCP_AUDIO_FEEDBACK env var)
         audio_feedback_style: Audio feedback style - "whisper" (default) or "shout" (default: None uses VOICE_MCP_FEEDBACK_STYLE env var)
+        audio_format: Override audio format (opus, mp3, wav, flac, aac, pcm) - defaults to VOICEMODE_TTS_AUDIO_FORMAT env var
         If wait_for_response is False: Confirmation that message was spoken
         If wait_for_response is True: The voice response received (or error/timeout message)
     
@@ -690,7 +692,8 @@ async def converse(
                         save_audio=SAVE_AUDIO,
                         audio_dir=AUDIO_DIR if SAVE_AUDIO else None,
                         client_key=tts_config['client_key'],
-                        instructions=tts_config.get('instructions')
+                        instructions=tts_config.get('instructions'),
+                        audio_format=audio_format
                     )
                     
                 # Include timing info if available
@@ -742,7 +745,8 @@ async def converse(
                         save_audio=SAVE_AUDIO,
                         audio_dir=AUDIO_DIR if SAVE_AUDIO else None,
                         client_key=tts_config['client_key'],
-                        instructions=tts_config.get('instructions')
+                        instructions=tts_config.get('instructions'),
+                        audio_format=audio_format
                     )
                     
                     # Add TTS sub-metrics
@@ -846,7 +850,8 @@ async def ask_voice_question(
     voice: Optional[str] = None,
     tts_provider: Optional[Literal["openai", "kokoro"]] = None,
     tts_model: Optional[str] = None,
-    tts_instructions: Optional[str] = None
+    tts_instructions: Optional[str] = None,
+    audio_format: Optional[str] = None
 ) -> str:
     """Ask a voice question and listen for the answer.
     
@@ -861,6 +866,7 @@ async def ask_voice_question(
         tts_provider: TTS provider to use - "openai" or "kokoro"
         tts_model: TTS model to use (e.g., tts-1, tts-1-hd, gpt-4o-mini-tts)
         tts_instructions: Tone/style instructions for gpt-4o-mini-tts model only
+        audio_format: Override audio format (opus, mp3, wav, flac, aac, pcm)
     
     Returns:
         The voice response received
@@ -874,7 +880,8 @@ async def ask_voice_question(
         voice=voice,
         tts_provider=tts_provider,
         tts_model=tts_model,
-        tts_instructions=tts_instructions
+        tts_instructions=tts_instructions,
+        audio_format=audio_format
     )
 
 
