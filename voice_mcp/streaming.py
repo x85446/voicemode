@@ -239,6 +239,89 @@ class AudioStreamPlayer:
         logger.debug("Audio stream stopped")
 
 
+async def stream_pcm_audio(
+    text: str,
+    openai_client,
+    request_params: dict,
+    debug: bool = False
+) -> Tuple[bool, StreamMetrics]:
+    """Stream PCM audio with true HTTP streaming for minimal latency.
+    
+    Uses the OpenAI SDK's streaming response with iter_bytes() for real-time playback.
+    """
+    metrics = StreamMetrics()
+    start_time = time.perf_counter()
+    stream = None
+    first_chunk_time = None
+    
+    try:
+        # Setup sounddevice stream for PCM playback
+        # PCM parameters: 16-bit, mono, 24kHz (standard for TTS)
+        stream = sd.OutputStream(
+            samplerate=24000,  # Standard TTS sample rate
+            channels=1,
+            dtype='int16'  # PCM is 16-bit integers
+        )
+        stream.start()
+        
+        # Add stream=true for Kokoro (OpenAI ignores it)
+        request_params['stream'] = True
+        
+        logger.info("Starting true HTTP streaming with iter_bytes()")
+        
+        # Use the streaming response API
+        async with openai_client.audio.speech.with_streaming_response.create(
+            **request_params
+        ) as response:
+            chunk_count = 0
+            bytes_received = 0
+            
+            # Stream chunks as they arrive
+            async for chunk in response.iter_bytes(chunk_size=STREAM_CHUNK_SIZE):
+                if chunk:
+                    # Track first chunk for TTFA
+                    if first_chunk_time is None:
+                        first_chunk_time = time.perf_counter()
+                        metrics.ttfa = first_chunk_time - start_time
+                        logger.info(f"First audio chunk received - TTFA: {metrics.ttfa:.3f}s")
+                    
+                    # Convert bytes to numpy array for sounddevice
+                    # PCM data is already in the right format
+                    audio_array = np.frombuffer(chunk, dtype=np.int16)
+                    
+                    # Play the chunk immediately
+                    stream.write(audio_array)
+                    
+                    chunk_count += 1
+                    bytes_received += len(chunk)
+                    metrics.chunks_received = chunk_count
+                    metrics.chunks_played = chunk_count
+                    
+                    if debug and chunk_count % 10 == 0:
+                        logger.debug(f"Streamed {chunk_count} chunks, {bytes_received} bytes")
+        
+        # Wait for playback to finish
+        stream.stop()
+        
+        end_time = time.perf_counter()
+        metrics.generation_time = first_chunk_time - start_time if first_chunk_time else 0
+        metrics.playback_time = end_time - start_time
+        
+        logger.info(f"Streaming complete - TTFA: {metrics.ttfa:.3f}s, "
+                   f"Total: {metrics.playback_time:.3f}s, "
+                   f"Chunks: {metrics.chunks_received}")
+        
+        return True, metrics
+        
+    except Exception as e:
+        logger.error(f"PCM streaming failed: {e}")
+        return False, metrics
+        
+    finally:
+        if stream:
+            stream.close()
+
+
 async def stream_tts_audio(
     text: str,
     openai_client,
@@ -259,14 +342,23 @@ async def stream_tts_audio(
     format = request_params.get('response_format', 'opus')
     logger.info(f"Starting streaming TTS with format: {format}")
     
-    # Use the buffered streaming approach for now
-    # True streaming requires direct HTTP response handling
-    return await stream_with_buffering(
-        text=text,
-        openai_client=openai_client,
-        request_params=request_params,
-        debug=debug
-    )
+    # PCM is best for streaming (no decoding needed)
+    # For other formats, we may need buffering
+    if format == 'pcm':
+        return await stream_pcm_audio(
+            text=text,
+            openai_client=openai_client,
+            request_params=request_params,
+            debug=debug
+        )
+    else:
+        # Use buffered streaming for formats that need decoding
+        return await stream_with_buffering(
+            text=text,
+            openai_client=openai_client,
+            request_params=request_params,
+            debug=debug
+        )
 
 
 # Fallback for complex formats - buffer and decode complete file
@@ -301,37 +393,29 @@ async def stream_with_buffering(
         )
         stream.start()
         
-        # Get the response with streaming
-        response = await openai_client.audio.speech.create(
+        # Add stream=true for Kokoro
+        request_params['stream'] = True
+        
+        # Use the streaming response API for true HTTP streaming
+        async with openai_client.audio.speech.with_streaming_response.create(
             **request_params
-        )
-        
-        # For now, we'll simulate streaming by processing the response in chunks
-        # True HTTP streaming would require lower-level httpx access
-        
-        # Get the full audio data
-        if hasattr(response, 'content'):
-            audio_data = response.content
-        elif hasattr(response, 'read'):
-            audio_data = await response.read()
-        else:
-            # Response is likely already bytes
-            audio_data = bytes(response)
-        
-        # Simulate streaming by processing in chunks
-        total_size = len(audio_data)
-        bytes_processed = 0
-        
-        while bytes_processed < total_size:
-            chunk_end = min(bytes_processed + STREAM_CHUNK_SIZE, total_size)
-            chunk = audio_data[bytes_processed:chunk_end]
-            bytes_processed = chunk_end
+        ) as response:
+            first_chunk_time = None
             
-            buffer.write(chunk)
-            metrics.chunks_received += 1
-            
-            # Try to decode when we have enough data (e.g., 32KB)
-            if buffer.tell() > 32768 and not audio_started:
+            # Stream chunks as they arrive
+            async for chunk in response.iter_bytes(chunk_size=STREAM_CHUNK_SIZE):
+                if chunk:
+                    # Track first chunk for TTFA
+                    if first_chunk_time is None:
+                        first_chunk_time = time.perf_counter()
+                        metrics.ttfa = first_chunk_time - start_time
+                        logger.info(f"First chunk received - TTFA: {metrics.ttfa:.3f}s")
+                    
+                    buffer.write(chunk)
+                    metrics.chunks_received += 1
+                    
+                    # Try to decode when we have enough data (e.g., 32KB)
+                    if buffer.tell() > 32768 and not audio_started:
                 buffer.seek(0)
                 try:
                     # Attempt to decode what we have

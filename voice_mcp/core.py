@@ -133,7 +133,13 @@ async def text_to_speech(
         generation_start = time.perf_counter()
         
         # Check if streaming is enabled and format is supported
-        use_streaming = STREAMING_ENABLED and validated_format in ["opus", "mp3", "pcm"]
+        use_streaming = STREAMING_ENABLED and validated_format in ["opus", "mp3", "pcm", "wav"]
+        
+        # For best streaming performance, use PCM format
+        if use_streaming and validated_format != "pcm":
+            logger.info(f"Switching from {validated_format} to PCM for optimal streaming")
+            validated_format = "pcm"
+            request_params["response_format"] = "pcm"
         
         if use_streaming:
             # Use streaming playback
