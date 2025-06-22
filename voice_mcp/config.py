@@ -71,7 +71,7 @@ TTS_AUDIO_FORMAT = os.getenv("VOICEMODE_TTS_AUDIO_FORMAT", "pcm").lower()  # Def
 STT_AUDIO_FORMAT = os.getenv("VOICEMODE_STT_AUDIO_FORMAT", AUDIO_FORMAT).lower()
 
 # Supported audio formats
-SUPPORTED_AUDIO_FORMATS = ["opus", "mp3", "wav", "flac", "aac", "pcm"]
+SUPPORTED_AUDIO_FORMATS = ["pcm", "opus", "mp3", "wav", "flac", "aac"]
 
 # Validate formats (validation messages will be logged after logger is initialized)
 if AUDIO_FORMAT not in SUPPORTED_AUDIO_FORMATS:
@@ -262,7 +262,7 @@ logger = setup_logging()
 
 # Log any format validation warnings
 if 'AUDIO_FORMAT' in locals() and '_invalid_audio_format' in locals():
-    logger.warning(f"Unsupported audio format '{_invalid_audio_format}', falling back to 'opus'")
+    logger.warning(f"Unsupported audio format '{_invalid_audio_format}', falling back to 'pcm'")
 
 if 'TTS_AUDIO_FORMAT' in locals() and '_invalid_tts_format' in locals():
     logger.warning(f"Unsupported TTS audio format '{_invalid_tts_format}', falling back to '{AUDIO_FORMAT}'")

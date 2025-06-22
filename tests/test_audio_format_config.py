@@ -15,13 +15,13 @@ class TestAudioFormatConfiguration:
     """Test audio format configuration and validation"""
     
     def test_default_audio_format(self):
-        """Test that default audio format is opus"""
+        """Test that default audio format is pcm"""
         # Import after setting env vars
         from voice_mcp.config import AUDIO_FORMAT, TTS_AUDIO_FORMAT, STT_AUDIO_FORMAT
         
-        assert AUDIO_FORMAT == "opus"
+        assert AUDIO_FORMAT == "pcm"
         assert TTS_AUDIO_FORMAT == "pcm"  # Default changed to PCM for optimal streaming
-        assert STT_AUDIO_FORMAT == "opus"
+        assert STT_AUDIO_FORMAT == "pcm"  # Inherits from AUDIO_FORMAT
     
     @patch.dict(os.environ, {
         'VOICEMODE_AUDIO_FORMAT': 'mp3',
@@ -126,7 +126,7 @@ class TestAudioFormatConfiguration:
     
     @patch.dict(os.environ, {'VOICEMODE_AUDIO_FORMAT': 'invalid_format'})
     def test_invalid_format_fallback(self):
-        """Test that invalid formats fall back to opus"""
+        """Test that invalid formats fall back to pcm"""
         # Need to reload the module to pick up new env vars
         import importlib
         import voice_mcp.config
@@ -134,8 +134,8 @@ class TestAudioFormatConfiguration:
         
         from voice_mcp.config import AUDIO_FORMAT
         
-        # Should fallback to opus
-        assert AUDIO_FORMAT == "opus"
+        # Should fallback to pcm
+        assert AUDIO_FORMAT == "pcm"
     
     def test_format_specific_bitrate_settings(self):
         """Test format-specific quality settings"""
