@@ -1,3 +1,6 @@
+.external/
+!.external/repos.txt
+
 # Environment configuration
 .env.local
 .env
