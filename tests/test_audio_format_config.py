@@ -48,14 +48,17 @@ class TestAudioFormatConfiguration:
         # OpenAI supports opus
         assert validate_audio_format("opus", "openai", "tts") == "opus"
         
-        # Kokoro doesn't support opus, should fallback
-        assert validate_audio_format("opus", "kokoro", "tts") in ["mp3", "wav"]
+        # Kokoro now supports opus
+        assert validate_audio_format("opus", "kokoro", "tts") == "opus"
         
         # Whisper supports wav
         assert validate_audio_format("wav", "whisper-local", "stt") == "wav"
         
-        # Invalid format for provider should fallback
-        assert validate_audio_format("pcm", "kokoro", "tts") in ["mp3", "wav"]
+        # Kokoro now supports pcm
+        assert validate_audio_format("pcm", "kokoro", "tts") == "pcm"
+        
+        # Invalid format (aac) for Kokoro should fallback
+        assert validate_audio_format("aac", "kokoro", "tts") in ["mp3", "opus", "flac", "wav", "pcm"]
     
     def test_get_provider_supported_formats(self):
         """Test getting supported formats for providers"""
