@@ -18,43 +18,20 @@ from datetime import datetime
 # Debug configuration
 DEBUG = os.getenv("VOICEMODE_DEBUG", "").lower() in ("true", "1", "yes", "on")
 TRACE_DEBUG = os.getenv("VOICEMODE_DEBUG", "").lower() == "trace"
-DEBUG_DIR = Path.home() / "voicemode_recordings"
+DEBUG_DIR = Path.home() / "voicemode_debug"
 
 # Audio saving configuration
 SAVE_AUDIO = os.getenv("VOICEMODE_SAVE_AUDIO", "").lower() in ("true", "1", "yes", "on")
 AUDIO_DIR = Path.home() / "voicemode_audio"
 
 # Audio feedback configuration
-audio_feedback_raw = os.getenv("VOICEMODE_AUDIO_FEEDBACK", "chime").lower()
-
-# Backward compatibility: treat "true" as "chime", "false" as "none"
-if audio_feedback_raw in ("true", "1", "yes", "on"):
-    AUDIO_FEEDBACK_TYPE = "chime"
-elif audio_feedback_raw in ("false", "0", "no", "off"):
-    AUDIO_FEEDBACK_TYPE = "none"
-elif audio_feedback_raw in ("chime", "voice", "both", "none"):
-    AUDIO_FEEDBACK_TYPE = audio_feedback_raw
-else:
-    # Invalid value, default to chime
-    AUDIO_FEEDBACK_TYPE = "chime"
-
-# Derived boolean for compatibility
-AUDIO_FEEDBACK_ENABLED = AUDIO_FEEDBACK_TYPE != "none"
-
-# Voice feedback specific settings (used when type is "voice" or "both")
-AUDIO_FEEDBACK_VOICE = os.getenv("VOICEMODE_FEEDBACK_VOICE", "nova")
-AUDIO_FEEDBACK_MODEL = os.getenv("VOICEMODE_FEEDBACK_MODEL", "gpt-4o-mini-tts")
-AUDIO_FEEDBACK_STYLE = os.getenv("VOICEMODE_FEEDBACK_STYLE", "whisper")  # "whisper" or "shout"
+AUDIO_FEEDBACK_ENABLED = os.getenv("VOICEMODE_AUDIO_FEEDBACK", "true").lower() in ("true", "1", "yes", "on")
 
 # Local provider preference configuration
 PREFER_LOCAL = os.getenv("VOICEMODE_PREFER_LOCAL", "true").lower() in ("true", "1", "yes", "on")
 
 # Auto-start configuration
 AUTO_START_KOKORO = os.getenv("VOICEMODE_AUTO_START_KOKORO", "").lower() in ("true", "1", "yes", "on")
-
-# Emotional TTS configuration
-ALLOW_EMOTIONS = os.getenv("VOICEMODE_ALLOW_EMOTIONS", "false").lower() in ("true", "1", "yes", "on")
-EMOTION_AUTO_UPGRADE = os.getenv("VOICEMODE_EMOTION_AUTO_UPGRADE", "false").lower() in ("true", "1", "yes", "on")
 
 # ==================== SERVICE CONFIGURATION ====================
 
@@ -90,7 +67,7 @@ CHANNELS = 1
 
 # Audio format configuration
 AUDIO_FORMAT = os.getenv("VOICEMODE_AUDIO_FORMAT", "opus").lower()
-TTS_AUDIO_FORMAT = os.getenv("VOICEMODE_TTS_AUDIO_FORMAT", AUDIO_FORMAT).lower()
+TTS_AUDIO_FORMAT = os.getenv("VOICEMODE_TTS_AUDIO_FORMAT", "pcm").lower()  # Default to PCM for optimal streaming
 STT_AUDIO_FORMAT = os.getenv("VOICEMODE_STT_AUDIO_FORMAT", AUDIO_FORMAT).lower()
 
 # Supported audio formats
@@ -314,7 +291,7 @@ def get_provider_supported_formats(provider: str, operation: str = "tts") -> lis
             "stt": ["mp3", "opus", "wav", "flac", "m4a", "webm"]
         },
         "kokoro": {
-            "tts": ["mp3", "wav"],  # May support more, needs verification
+            "tts": ["mp3", "opus", "flac", "wav", "pcm"],  # AAC is not currently supported
             "stt": []  # Kokoro is TTS only
         },
         # STT providers

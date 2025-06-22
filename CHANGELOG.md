@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Simplified audio feedback configuration to boolean AUDIO_FEEDBACK_ENABLED
+- Removed voice feedback functionality, keeping only chime feedback
+- Updated provider base URL specification to use comma-separated lists
+- PCM remains the default format for TTS streaming (best performance)
+
 ## [2.2.0] - 2025-06-22
 
 ### Added

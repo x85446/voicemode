@@ -48,12 +48,9 @@ from .config import (
     # Audio saving configuration
     SAVE_AUDIO, AUDIO_DIR,
     # Audio feedback configuration
-    AUDIO_FEEDBACK_ENABLED, AUDIO_FEEDBACK_TYPE,
-    AUDIO_FEEDBACK_VOICE, AUDIO_FEEDBACK_MODEL, AUDIO_FEEDBACK_STYLE,
+    AUDIO_FEEDBACK_ENABLED,
     # Provider preferences
     PREFER_LOCAL, AUTO_START_KOKORO,
-    # Emotional TTS
-    ALLOW_EMOTIONS, EMOTION_AUTO_UPGRADE,
     # Service configuration
     OPENAI_API_KEY, STT_BASE_URL, TTS_BASE_URL,
     TTS_VOICE, TTS_MODEL, STT_MODEL,
@@ -77,6 +74,10 @@ from .config import (
 # Debug and logging configuration imported from config.py
 
 # Trace logging setup handled by config.py
+
+# Emotional TTS configuration
+ALLOW_EMOTIONS = os.getenv("VOICE_ALLOW_EMOTIONS", "").lower() in ("true", "1", "yes", "on")
+EMOTION_AUTO_UPGRADE = os.getenv("VOICE_EMOTION_AUTO_UPGRADE", "true").lower() in ("true", "1", "yes", "on")
 
 # Create MCP server
 mcp = FastMCP("Voice MCP")
@@ -264,8 +265,8 @@ async def get_stt_config(provider: Optional[str] = None):
 
 def validate_emotion_request(tts_model: Optional[str], tts_instructions: Optional[str], tts_provider: Optional[str]) -> Optional[str]:
     """
-    Validate if emotional TTS is allowed and appropriate.
-    Returns the instructions if valid, None if emotions should be stripped.
+    Validate if emotional TTS is appropriate for the model.
+    Returns the instructions if valid, unchanged.
     """
     # No emotion instructions provided
     if not tts_instructions:
@@ -273,10 +274,6 @@ def validate_emotion_request(tts_model: Optional[str], tts_instructions: Optiona
     
     # Check if this is an emotion-capable model request
     if tts_model == "gpt-4o-mini-tts":
-        if not ALLOW_EMOTIONS:
-            logger.warning("Emotional TTS requested but VOICE_ALLOW_EMOTIONS not enabled")
-            return None  # Strip emotion instructions
-        
         # Log provider switch if needed
         if tts_provider != "openai":
             logger.info("Switching to OpenAI for emotional speech support")
@@ -388,42 +385,40 @@ async def speech_to_text(audio_data: np.ndarray, save_audio: bool = False, audio
                 logger.error(f"Failed to clean up MP3 file: {e}")
 
 
-async def play_audio_feedback(text: str, openai_clients: dict, enabled: Optional[bool] = None, style: str = "whisper") -> None:
-    """Play an audio feedback sound
+async def play_audio_feedback(
+    text: str, 
+    openai_clients: dict, 
+    enabled: Optional[bool] = None, 
+    style: str = "whisper",
+    feedback_type: Optional[str] = None,
+    voice: str = "nova",
+    model: str = "gpt-4o-mini-tts"
+) -> None:
+    """Play an audio feedback chime
     
     Args:
-        text: Text to speak
-        openai_clients: OpenAI client instances
+        text: Which chime to play (either "listening" or "finished")
+        openai_clients: OpenAI client instances (kept for compatibility, not used)
         enabled: Override global audio feedback setting
-        style: Audio style - "whisper" (default) or "shout"
+        style: Kept for compatibility, not used
+        feedback_type: Kept for compatibility, not used
+        voice: Kept for compatibility, not used
+        model: Kept for compatibility, not used
     """
     # Use parameter override if provided, otherwise use global setting
-    if enabled is False or (enabled is None and not AUDIO_FEEDBACK_ENABLED):
+    if enabled is False:
+        return
+    
+    # If enabled is None, check global setting
+    if enabled is None and not AUDIO_FEEDBACK_ENABLED:
         return
     
     try:
-        # Determine text and instructions based on style
-        if style == "shout":
-            feedback_text = text.upper()  # Convert to uppercase for emphasis
-            instructions = "SHOUT this word loudly and enthusiastically!" if text == "listening" else "SHOUT this word loudly and triumphantly!"
-        else:  # whisper is default
-            feedback_text = text.lower()
-            instructions = "Whisper this word very softly and gently, almost inaudibly"
-        
-        # Use OpenAI's TTS with style-specific instructions
-        await text_to_speech(
-            text=feedback_text,
-            openai_clients=openai_clients,
-            tts_model=AUDIO_FEEDBACK_MODEL,
-            tts_voice=AUDIO_FEEDBACK_VOICE,
-            tts_base_url=TTS_BASE_URL,
-            debug=DEBUG,
-            debug_dir=DEBUG_DIR if DEBUG else None,
-            save_audio=False,  # Don't save feedback sounds
-            audio_dir=None,
-            client_key='tts',
-            instructions=instructions
-        )
+        # Play appropriate chime
+        if text == "listening":
+            await play_chime_start()
+        elif text == "finished":
+            await play_chime_end()
     except Exception as e:
         logger.debug(f"Audio feedback failed: {e}")
         # Don't interrupt the main flow if feedback fails
@@ -749,7 +744,7 @@ async def converse(
                     await asyncio.sleep(0.5)
                     
                     # Play "listening" feedback sound
-                    await play_audio_feedback("listening", openai_clients, audio_feedback, audio_feedback_style or AUDIO_FEEDBACK_STYLE)
+                    await play_audio_feedback("listening", openai_clients, audio_feedback, audio_feedback_style or "whisper")
                     
                     # Record response
                     logger.info(f"🎤 Listening for {listen_duration} seconds...")
@@ -760,7 +755,7 @@ async def converse(
                     timings['record'] = time.perf_counter() - record_start
                     
                     # Play "finished" feedback sound
-                    await play_audio_feedback("finished", openai_clients, audio_feedback, audio_feedback_style or AUDIO_FEEDBACK_STYLE)
+                    await play_audio_feedback("finished", openai_clients, audio_feedback, audio_feedback_style or "whisper")
                     
                     if len(audio_data) == 0:
                         return "Error: Could not record audio"

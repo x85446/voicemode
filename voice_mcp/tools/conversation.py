@@ -36,13 +36,7 @@ from voice_mcp.config import (
     LIVEKIT_API_KEY,
     LIVEKIT_API_SECRET,
     PREFER_LOCAL,
-    ALLOW_EMOTIONS,
-    EMOTION_AUTO_UPGRADE,
     AUDIO_FEEDBACK_ENABLED,
-    AUDIO_FEEDBACK_TYPE,
-    AUDIO_FEEDBACK_VOICE,
-    AUDIO_FEEDBACK_MODEL,
-    AUDIO_FEEDBACK_STYLE,
     service_processes,
     HTTP_CLIENT_CONFIG
 )
@@ -257,10 +251,7 @@ def validate_emotion_request(tts_model: Optional[str], tts_instructions: Optiona
     
     # Check if this is an emotion-capable model request
     if tts_model == "gpt-4o-mini-tts":
-        if not ALLOW_EMOTIONS:
-            logger.warning("Emotional TTS requested but VOICE_ALLOW_EMOTIONS not enabled")
-            return None  # Strip emotion instructions
-        
+        # Emotional TTS is allowed for gpt-4o-mini-tts model
         # Log provider switch if needed
         if tts_provider != "openai":
             logger.info("Switching to OpenAI for emotional speech support")
@@ -388,58 +379,40 @@ async def speech_to_text(audio_data: np.ndarray, save_audio: bool = False, audio
                 logger.error(f"Failed to clean up {export_format.upper()} file: {e}")
 
 
-async def play_audio_feedback(text: str, openai_clients: dict, enabled: Optional[bool] = None, style: str = "whisper", feedback_type: Optional[str] = None) -> None:
-    """Play an audio feedback sound
+async def play_audio_feedback(
+    text: str, 
+    openai_clients: dict, 
+    enabled: Optional[bool] = None, 
+    style: str = "whisper", 
+    feedback_type: Optional[str] = None,
+    voice: str = "nova",
+    model: str = "gpt-4o-mini-tts"
+) -> None:
+    """Play an audio feedback chime
     
     Args:
-        text: Text to speak (either "listening" or "finished")
-        openai_clients: OpenAI client instances
+        text: Which chime to play (either "listening" or "finished")
+        openai_clients: OpenAI client instances (kept for compatibility, not used)
         enabled: Override global audio feedback setting
-        style: Audio style - "whisper" (default) or "shout"
-        feedback_type: Override global feedback type ("chime", "voice", "both", "none")
+        style: Kept for compatibility, not used
+        feedback_type: Kept for compatibility, not used
+        voice: Kept for compatibility, not used
+        model: Kept for compatibility, not used
     """
     # Use parameter override if provided, otherwise use global setting
-    if enabled is False or (enabled is None and not AUDIO_FEEDBACK_ENABLED):
+    if enabled is False:
         return
     
-    # Determine feedback type to use
-    feedback_type = feedback_type or AUDIO_FEEDBACK_TYPE
-    
-    if feedback_type == "none":
+    # If enabled is None, check global setting
+    if enabled is None and not AUDIO_FEEDBACK_ENABLED:
         return
     
     try:
-        # Play chime if requested
-        if feedback_type in ("chime", "both"):
-            if text == "listening":
-                await play_chime_start()
-            elif text == "finished":
-                await play_chime_end()
-        
-        # Play voice if requested
-        if feedback_type in ("voice", "both"):
-            # Determine text and instructions based on style
-            if style == "shout":
-                feedback_text = text.upper()  # Convert to uppercase for emphasis
-                instructions = "SHOUT this word loudly and enthusiastically!" if text == "listening" else "SHOUT this word loudly and triumphantly!"
-            else:  # whisper is default
-                feedback_text = text.lower()
-                instructions = "Whisper this word very softly and gently, almost inaudibly"
-            
-            # Use OpenAI's TTS with style-specific instructions
-            await text_to_speech(
-                text=feedback_text,
-                openai_clients=openai_clients,
-                tts_model=AUDIO_FEEDBACK_MODEL,
-                tts_voice=AUDIO_FEEDBACK_VOICE,
-                tts_base_url=TTS_BASE_URL,
-                debug=DEBUG,
-                debug_dir=DEBUG_DIR if DEBUG else None,
-                save_audio=False,  # Don't save feedback sounds
-                audio_dir=None,
-                client_key='tts',
-                instructions=instructions
-            )
+        # Play appropriate chime
+        if text == "listening":
+            await play_chime_start()
+        elif text == "finished":
+            await play_chime_end()
     except Exception as e:
         logger.debug(f"Audio feedback failed: {e}")
         # Don't interrupt the main flow if feedback fails
@@ -632,7 +605,7 @@ async def converse(
     
     PRIVACY NOTICE: When wait_for_response is True, this tool will access your microphone
     to record audio for speech-to-text conversion. Audio is processed using the configured
-    STT service and is not permanently stored.
+    STT service and is not permanently stored. Do not use upper case except for acronyms as the TTS will spell these out.
     
     Args:
         message: The message to speak
@@ -823,7 +796,7 @@ async def converse(
                     await asyncio.sleep(0.5)
                     
                     # Play "listening" feedback sound
-                    await play_audio_feedback("listening", openai_clients, audio_feedback, audio_feedback_style or AUDIO_FEEDBACK_STYLE)
+                    await play_audio_feedback("listening", openai_clients, audio_feedback, audio_feedback_style or "whisper")
                     
                     # Record response
                     logger.info(f"🎤 Listening for {listen_duration} seconds...")
@@ -834,7 +807,7 @@ async def converse(
                     timings['record'] = time.perf_counter() - record_start
                     
                     # Play "finished" feedback sound
-                    await play_audio_feedback("finished", openai_clients, audio_feedback, audio_feedback_style or AUDIO_FEEDBACK_STYLE)
+                    await play_audio_feedback("finished", openai_clients, audio_feedback, audio_feedback_style or "whisper")
                     
                     if len(audio_data) == 0:
                         return "Error: Could not record audio"
