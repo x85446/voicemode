@@ -365,12 +365,13 @@ async def stream_with_buffering(
     text: str,
     openai_client,
     request_params: dict,
-    sample_rate: int = SAMPLE_RATE,
+    sample_rate: int = 24000,  # TTS standard sample rate
     debug: bool = False
 ) -> Tuple[bool, StreamMetrics]:
     """Fallback streaming that buffers enough data to decode reliably.
     
-    This is used for formats like MP3 where frame boundaries are critical.
+    This is used for formats like MP3, Opus, etc where frame boundaries are critical.
+    For Opus, we download the complete audio before playing.
     """
     format = request_params.get('response_format', 'opus')
     logger.info(f"Using buffered streaming for format: {format}")

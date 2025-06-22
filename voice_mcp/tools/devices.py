@@ -71,7 +71,7 @@ async def voice_status() -> str:
         # Configuration
         from voice_mcp.shared import (
             TTS_VOICE, TTS_MODEL, STT_MODEL, 
-            PREFER_LOCAL, ALLOW_EMOTIONS, AUTO_START_KOKORO,
+            PREFER_LOCAL, AUTO_START_KOKORO,
             AUDIO_FEEDBACK_ENABLED, LIVEKIT_URL
         )
         
@@ -80,9 +80,8 @@ async def voice_status() -> str:
         status_lines.append(f"  TTS Model: {TTS_MODEL}")
         status_lines.append(f"  STT Model: {STT_MODEL}")
         status_lines.append(f"  Prefer Local: {PREFER_LOCAL}")
-        status_lines.append(f"  Allow Emotions: {ALLOW_EMOTIONS}")
         status_lines.append(f"  Auto-start Kokoro: {AUTO_START_KOKORO}")
-        status_lines.append(f"  Audio Feedback: {AUDIO_FEEDBACK_ENABLED}")
+        status_lines.append(f"  Audio Feedback: {'Enabled' if AUDIO_FEEDBACK_ENABLED else 'Disabled'}")
         status_lines.append(f"  LiveKit URL: {LIVEKIT_URL}")
         
         # Audio devices
