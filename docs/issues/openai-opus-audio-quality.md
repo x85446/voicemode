@@ -1,14 +1,22 @@
-# OpenAI + Opus Audio Quality Issue
+# OpenAI + Opus Audio Quality Issue [RESOLVED]
 
 ## Problem Description
 
-When using OpenAI TTS with Opus audio format, the audio quality is "absolutely terrible" and "a total mess" according to testing.
+~~When using OpenAI TTS with Opus audio format, the audio quality is "absolutely terrible" and "a total mess" according to testing.~~
+
+**UPDATE (2025-06-22)**: This issue has been resolved. Testing confirms that OpenAI now produces good quality audio with Opus format.
 
 ## Test Results
 
+### Original Issue (Before Fix)
 - **Kokoro + Opus**: Good audio quality ✅
 - **OpenAI + Opus**: Terrible audio quality ❌
-- **OpenAI + MP3**: Good audio quality (presumed) ✅
+- **OpenAI + MP3**: Good audio quality ✅
+
+### Current Status (After Fix)
+- **Kokoro + Opus**: Good audio quality ✅
+- **OpenAI + Opus**: Good audio quality ✅
+- **OpenAI + MP3**: Good audio quality ✅
 
 ## Environment
 

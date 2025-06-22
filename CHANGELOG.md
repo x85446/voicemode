@@ -66,9 +66,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Maintains backward compatibility with MP3
 - Cleaner, consistent environment variable naming
 
-### Known Issues
-- OpenAI TTS with Opus format produces poor audio quality
-  - Workaround: Use `audio_format="mp3"` parameter or set `VOICEMODE_TTS_AUDIO_FORMAT=mp3`
+### Fixed Issues
+- ~~OpenAI TTS with Opus format produces poor audio quality~~ - **RESOLVED** (2025-06-22)
+  - OpenAI now produces good quality audio with Opus format
   - See `docs/issues/openai-opus-audio-quality.md` for details
 
 ## [2.1.3] - 2025-06-20
