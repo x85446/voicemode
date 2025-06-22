@@ -809,6 +809,10 @@ async def converse(
                     # Play "finished" feedback sound
                     await play_audio_feedback("finished", openai_clients, audio_feedback, audio_feedback_style or "whisper")
                     
+                    # Mark the end of recording - this is when user expects response to start
+                    user_done_time = time.perf_counter()
+                    logger.info(f"Recording finished at {user_done_time - tts_start:.1f}s from start")
+                    
                     if len(audio_data) == 0:
                         return "Error: Could not record audio"
                     
@@ -817,12 +821,23 @@ async def converse(
                     response_text = await speech_to_text(audio_data, SAVE_AUDIO, AUDIO_DIR if SAVE_AUDIO else None)
                     timings['stt'] = time.perf_counter() - stt_start
                 
+                # Calculate response time from user's perspective
+                # This is the time from when recording ends to when TTS starts
+                response_time = tts_start - user_done_time
+                timings['response_time'] = response_time
+                logger.info(f"Response time calculation: {response_time:.1f}s (from end of recording to TTS start)")
+                
                 # Calculate total time (use tts_total instead of sub-metrics)
                 main_timings = {k: v for k, v in timings.items() if k in ['tts_total', 'record', 'stt']}
                 total_time = sum(main_timings.values())
                 
-                # Format timing string with sub-metrics
+                # Format timing string with response time first (most important metric)
                 timing_parts = []
+                
+                # User-perceived response time
+                timing_parts.append(f"response_time {response_time:.1f}s")
+                
+                # Detailed breakdown
                 if 'ttfa' in timings:
                     timing_parts.append(f"ttfa {timings['ttfa']:.1f}s")
                 if 'tts_gen' in timings:

@@ -257,10 +257,21 @@ async def stream_pcm_audio(
     try:
         # Setup sounddevice stream for PCM playback
         # PCM parameters: 16-bit, mono, 24kHz (standard for TTS)
+        audio_started = False
+        audio_start_time = None
+        
+        def audio_callback(outdata, frames, time_info, status):
+            """Callback to track when audio actually starts playing."""
+            nonlocal audio_started, audio_start_time
+            if not audio_started and frames > 0:
+                audio_started = True
+                audio_start_time = time.perf_counter()
+        
         stream = sd.OutputStream(
             samplerate=24000,  # Standard TTS sample rate
             channels=1,
-            dtype='int16'  # PCM is 16-bit integers
+            dtype='int16',  # PCM is 16-bit integers
+            callback=audio_callback if debug else None
         )
         stream.start()
         
@@ -278,11 +289,11 @@ async def stream_pcm_audio(
             # Stream chunks as they arrive
             async for chunk in response.iter_bytes(chunk_size=STREAM_CHUNK_SIZE):
                 if chunk:
-                    # Track first chunk for TTFA
+                    # Track first chunk received
                     if first_chunk_time is None:
                         first_chunk_time = time.perf_counter()
-                        metrics.ttfa = first_chunk_time - start_time
-                        logger.info(f"First audio chunk received - TTFA: {metrics.ttfa:.3f}s")
+                        chunk_receive_time = first_chunk_time - start_time
+                        logger.info(f"First audio chunk received after {chunk_receive_time:.3f}s")
                     
                     # Convert bytes to numpy array for sounddevice
                     # PCM data is already in the right format
@@ -305,6 +316,16 @@ async def stream_pcm_audio(
         end_time = time.perf_counter()
         metrics.generation_time = first_chunk_time - start_time if first_chunk_time else 0
         metrics.playback_time = end_time - start_time
+        
+        # Calculate true TTFA based on actual audio playback or chunk receipt
+        if debug and audio_start_time:
+            # Use actual playback start time when available
+            metrics.ttfa = audio_start_time - start_time
+            logger.info(f"True TTFA (audio started): {metrics.ttfa:.3f}s")
+        elif first_chunk_time:
+            # Fall back to first chunk time
+            metrics.ttfa = first_chunk_time - start_time
+            logger.info(f"TTFA (first chunk): {metrics.ttfa:.3f}s")
         
         logger.info(f"Streaming complete - TTFA: {metrics.ttfa:.3f}s, "
                    f"Total: {metrics.playback_time:.3f}s, "

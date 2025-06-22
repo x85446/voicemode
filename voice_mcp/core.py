@@ -194,8 +194,9 @@ async def text_to_speech(
         
         # Play audio
         playback_start = time.perf_counter()
-        # TTFA (Time To First Audio) - currently same as playback_start since we buffer the whole file
-        # When streaming is implemented, this will be when first audio chunk starts playing
+        # For buffered playback, TTFA includes both API response time and audio initialization
+        # This is the time from API call to when audio actually starts playing
+        # Note: In voice-chat flows, there's additional latency from LLM processing that's not captured here
         metrics['ttfa'] = playback_start - generation_start
         
         with tempfile.NamedTemporaryFile(suffix=f'.{validated_format}', delete=False) as tmp_file:
