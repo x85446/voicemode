@@ -30,9 +30,9 @@ These variables previously had no prefix but now use `VOICEMODE_`:
 
 ### New Audio Format Variables
 
-New variables for configuring audio formats (defaulting to Opus):
+New variables for configuring audio formats (defaulting to PCM):
 
-- `VOICEMODE_AUDIO_FORMAT` - Primary audio format (default: opus)
+- `VOICEMODE_AUDIO_FORMAT` - Primary audio format (default: pcm)
 - `VOICEMODE_TTS_AUDIO_FORMAT` - TTS-specific override
 - `VOICEMODE_STT_AUDIO_FORMAT` - STT-specific override
 - `VOICEMODE_OPUS_BITRATE` - Opus bitrate (default: 32000)
@@ -107,11 +107,12 @@ Debug and audio directories have also been renamed:
 
 ## Audio Format Migration
 
-The default audio format has changed from MP3 to Opus for better performance:
+The default audio format has changed from MP3 to PCM for optimal streaming performance:
 
-- **To keep using MP3**: Set `VOICEMODE_AUDIO_FORMAT=mp3`
-- **To use the new default (Opus)**: No action required
-- **Benefits of Opus**: 50-80% smaller files, lower latency, optimized for voice
+- **To keep using MP3**: Set `VOICEMODE_TTS_AUDIO_FORMAT=mp3`
+- **To use the new default (PCM)**: No action required
+- **Benefits of PCM**: Zero latency, best real-time performance, no encoding overhead
+- **Note**: Opus is NOT recommended for TTS streaming due to quality issues
 
 ## Example Configuration
 
@@ -123,8 +124,8 @@ export OPENAI_API_KEY="your-openai-key"
 export VOICEMODE_DEBUG=true
 export VOICEMODE_SAVE_AUDIO=true
 
-# Optional - Audio format (defaults to opus)
-export VOICEMODE_AUDIO_FORMAT=opus
+# Optional - Audio format (defaults to pcm)
+export VOICEMODE_AUDIO_FORMAT=pcm
 export VOICEMODE_OPUS_BITRATE=32000
 
 # Optional - Provider preferences

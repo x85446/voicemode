@@ -21,12 +21,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.2.0] - 2025-06-22
 
 ### Added
-- Configurable audio format support with Opus as the new default
+- Configurable audio format support with PCM as the default for TTS streaming
 - Environment variables for audio format configuration:
-  - `VOICEMODE_AUDIO_FORMAT` - Primary format (default: opus)
-  - `VOICEMODE_TTS_AUDIO_FORMAT` - TTS-specific override
+  - `VOICEMODE_AUDIO_FORMAT` - Primary format (default: pcm)
+  - `VOICEMODE_TTS_AUDIO_FORMAT` - TTS-specific override (default: pcm)
   - `VOICEMODE_STT_AUDIO_FORMAT` - STT-specific override
-- Support for multiple audio formats: opus, mp3, wav, flac, aac, pcm
+- Support for multiple audio formats: pcm, mp3, wav, flac, aac, opus
 - Format-specific quality settings:
   - `VOICEMODE_OPUS_BITRATE` (default: 32000)
   - `VOICEMODE_MP3_BITRATE` (default: 64k)
@@ -63,7 +63,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Also renamed non-prefixed variables to use `VOICEMODE_` prefix:
   - `VOICE_ALLOW_EMOTIONS` → `VOICEMODE_ALLOW_EMOTIONS`
   - `VOICE_EMOTION_AUTO_UPGRADE` → `VOICEMODE_EMOTION_AUTO_UPGRADE`
-- Default audio format changed from MP3 to Opus for better compression and lower latency
+- Default audio format changed from MP3 to PCM for zero-latency TTS streaming
 - Audio format is now validated against provider capabilities before use
 - Dynamic audio loading based on format instead of hardcoded MP3
 - Centralized all configuration in `voice_mcp/config.py` to eliminate duplication
@@ -73,16 +73,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `~/voice-mcp_audio/` → `~/voicemode_audio/`
 
 ### Benefits
-- 50-80% smaller audio files with Opus format
-- Lower latency for real-time communication
-- Better optimization for voice (vs music-focused MP3)
-- Maintains backward compatibility with MP3
+- Zero-latency TTS streaming with PCM format
+- Best real-time performance for voice conversations
+- Universal compatibility with all audio systems
+- Maintains backward compatibility with compressed formats
 - Cleaner, consistent environment variable naming
 
-### Fixed Issues
-- ~~OpenAI TTS with Opus format produces poor audio quality~~ - **RESOLVED** (2025-06-22)
-  - OpenAI now produces good quality audio with Opus format
-  - See `docs/issues/openai-opus-audio-quality.md` for details
+### Known Issues
+- OpenAI TTS with Opus format produces poor audio quality - NOT recommended for streaming
+  - Use PCM (default) or MP3 for TTS instead
+  - Opus still works well for STT uploads and file storage
 
 ## [2.1.3] - 2025-06-20
 
