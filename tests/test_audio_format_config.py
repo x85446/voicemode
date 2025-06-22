@@ -20,7 +20,7 @@ class TestAudioFormatConfiguration:
         from voice_mcp.config import AUDIO_FORMAT, TTS_AUDIO_FORMAT, STT_AUDIO_FORMAT
         
         assert AUDIO_FORMAT == "opus"
-        assert TTS_AUDIO_FORMAT == "opus"
+        assert TTS_AUDIO_FORMAT == "pcm"  # Default changed to PCM for optimal streaming
         assert STT_AUDIO_FORMAT == "opus"
     
     @patch.dict(os.environ, {
