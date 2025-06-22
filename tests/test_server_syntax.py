@@ -68,21 +68,40 @@ class TestServerSyntax:
         
         lines = content.split('\n')
         
-        # Find logger initialization
+        # Find logger initialization or import
         logger_init_line = None
+        logger_import_line = None
         logger_first_use = None
+        
+        # Check if we're in a multi-line import
+        in_config_import = False
+        config_import_start = None
         
         for i, line in enumerate(lines):
             if 'logger = logging.getLogger' in line:
                 logger_init_line = i
-            elif logger_init_line is None and 'logger.' in line and not line.strip().startswith('#'):
+            elif 'from .config import' in line:
+                in_config_import = True
+                config_import_start = i
+                if 'logger' in line:
+                    logger_import_line = i
+            elif in_config_import:
+                if ')' in line:
+                    in_config_import = False
+                elif 'logger' in line and not line.strip().startswith('#'):
+                    logger_import_line = config_import_start
+            elif logger_init_line is None and logger_import_line is None and 'logger.' in line and not line.strip().startswith('#'):
                 logger_first_use = i
         
-        # Logger should be initialized before first use
+        # Logger should be initialized or imported before first use
         if logger_first_use is not None:
-            assert logger_init_line is not None, "Logger used before initialization"
-            assert logger_init_line < logger_first_use, \
-                f"Logger initialized at line {logger_init_line} but used at line {logger_first_use}"
+            assert logger_init_line is not None or logger_import_line is not None, "Logger used before initialization or import"
+            if logger_init_line is not None:
+                assert logger_init_line < logger_first_use, \
+                    f"Logger initialized at line {logger_init_line} but used at line {logger_first_use}"
+            if logger_import_line is not None:
+                assert logger_import_line < logger_first_use, \
+                    f"Logger imported at line {logger_import_line} but used at line {logger_first_use}"
     
     def test_indentation_errors(self, server_path):
         """Test for common indentation errors"""

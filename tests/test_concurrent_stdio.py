@@ -19,12 +19,14 @@ import numpy as np
 # Set required environment variables before imports
 os.environ['OPENAI_API_KEY'] = os.environ.get('OPENAI_API_KEY', 'test-key')
 
-# Import from the server module
+# Import from the appropriate modules
 from voice_mcp.server import (
     audio_operation_lock,
-    disable_sounddevice_stderr_redirect,
     record_audio,
     speech_to_text
+)
+from voice_mcp.shared import (
+    disable_sounddevice_stderr_redirect,
 )
 
 
