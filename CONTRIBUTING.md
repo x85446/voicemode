@@ -7,9 +7,10 @@ Thank you for your interest in contributing to voice-mcp! This guide will help y
 ### Prerequisites
 
 - Python 3.10 or higher
-- UV package manager
+- [Astral UV](https://github.com/astral-sh/uv) - Package manager (install with `curl -LsSf https://astral.sh/uv/install.sh | sh`)
 - Git
 - A working microphone and speakers (for testing)
+- System dependencies (see README.md for OS-specific instructions)
 
 ### Getting Started
 

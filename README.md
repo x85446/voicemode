@@ -53,7 +53,44 @@ The new `converse` function makes voice interactions more natural - it automatic
 
 ### Prerequisites
 - Python >= 3.10
+- [Astral UV](https://github.com/astral-sh/uv) - Package manager (install with `curl -LsSf https://astral.sh/uv/install.sh | sh`)
 - OpenAI API Key (or compatible service)
+
+#### System Dependencies
+
+<details>
+<summary><strong>Ubuntu/Debian</strong></summary>
+
+```bash
+sudo apt install python3-dev libasound2-dev libportaudio2 portaudio19-dev ffmpeg
+```
+</details>
+
+<details>
+<summary><strong>Fedora/RHEL</strong></summary>
+
+```bash
+sudo dnf install python3-devel alsa-lib-devel portaudio-devel ffmpeg
+```
+</details>
+
+<details>
+<summary><strong>macOS</strong></summary>
+
+```bash
+# Install Homebrew if not already installed
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# Install dependencies
+brew install portaudio ffmpeg
+```
+</details>
+
+<details>
+<summary><strong>Windows (WSL)</strong></summary>
+
+Follow the Ubuntu/Debian instructions above within WSL.
+</details>
 
 ### Quick Install
 
@@ -341,9 +378,9 @@ export VOICEMODE_DEBUG="true"
 # Save all audio (TTS output and STT input)
 export VOICEMODE_SAVE_AUDIO="true"
 
-# Audio format configuration (default: opus)
-export VOICEMODE_AUDIO_FORMAT="opus"        # Options: opus, mp3, wav, flac, aac
-export VOICEMODE_TTS_AUDIO_FORMAT="opus"    # Override for TTS only
+# Audio format configuration (default: pcm)
+export VOICEMODE_AUDIO_FORMAT="pcm"         # Options: pcm, mp3, wav, flac, aac, opus
+export VOICEMODE_TTS_AUDIO_FORMAT="pcm"     # Override for TTS only (default: pcm)
 export VOICEMODE_STT_AUDIO_FORMAT="mp3"     # Override for STT upload
 
 # Format-specific quality settings
@@ -353,13 +390,14 @@ export VOICEMODE_MP3_BITRATE="64k"          # MP3 bitrate (default: 64k)
 
 ### Audio Format Configuration
 
-Voice Mode uses **Opus** audio format by default for optimal performance:
+Voice Mode uses **PCM** audio format by default for TTS streaming for optimal real-time performance:
 
-- **Opus** (default): Best for voice, 50-80% smaller files than MP3, low latency
-- **MP3**: Wide compatibility, use if Opus causes issues  
-- **WAV**: Highest quality, largest files
+- **PCM** (default for TTS): Zero latency, best streaming performance, uncompressed
+- **MP3**: Wide compatibility, good compression for uploads
+- **WAV**: Uncompressed, good for local processing
 - **FLAC**: Lossless compression, good for archival
 - **AAC**: Good compression, Apple ecosystem
+- **Opus**: Small files but NOT recommended for streaming (quality issues)
 
 The audio format is automatically validated against provider capabilities and will fallback to a supported format if needed.
 
