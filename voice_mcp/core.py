@@ -19,6 +19,8 @@ from pydub import AudioSegment
 from openai import AsyncOpenAI
 import httpx
 
+from .config import SAMPLE_RATE
+
 logger = logging.getLogger("voicemode")
 
 
@@ -101,7 +103,7 @@ async def text_to_speech(
         # Import config for audio format
         from .config import (
             TTS_AUDIO_FORMAT, validate_audio_format, get_audio_loader_for_format,
-            STREAMING_ENABLED, STREAM_CHUNK_SIZE
+            STREAMING_ENABLED, STREAM_CHUNK_SIZE, SAMPLE_RATE
         )
         
         # Determine provider from base URL (simple heuristic)
@@ -222,7 +224,7 @@ async def text_to_speech(
                         audio = loader(
                             tmp_file.name,
                             sample_width=2,  # 16-bit
-                            frame_rate=44100,
+                            frame_rate=SAMPLE_RATE,
                             channels=1
                         )
                     else:
@@ -361,7 +363,7 @@ async def text_to_speech(
         return False, metrics
 
 
-def generate_chime(frequencies: list, duration: float = 0.1, sample_rate: int = 44100) -> np.ndarray:
+def generate_chime(frequencies: list, duration: float = 0.1, sample_rate: int = SAMPLE_RATE) -> np.ndarray:
     """Generate a chime sound with given frequencies.
     
     Args:
@@ -400,7 +402,7 @@ def generate_chime(frequencies: list, duration: float = 0.1, sample_rate: int = 
     return chime_int16
 
 
-async def play_chime_start(sample_rate: int = 44100) -> bool:
+async def play_chime_start(sample_rate: int = SAMPLE_RATE) -> bool:
     """Play the recording start chime (ascending tones).
     
     Returns:
@@ -417,7 +419,7 @@ async def play_chime_start(sample_rate: int = 44100) -> bool:
         return False
 
 
-async def play_chime_end(sample_rate: int = 44100) -> bool:
+async def play_chime_end(sample_rate: int = SAMPLE_RATE) -> bool:
     """Play the recording end chime (descending tones).
     
     Returns:

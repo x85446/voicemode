@@ -62,11 +62,11 @@ LIVEKIT_API_SECRET = os.getenv("LIVEKIT_API_SECRET", "secret")
 # ==================== AUDIO CONFIGURATION ====================
 
 # Audio parameters
-SAMPLE_RATE = 44100
+SAMPLE_RATE = 24000  # Standard TTS sample rate for both OpenAI and Kokoro
 CHANNELS = 1
 
 # Audio format configuration
-AUDIO_FORMAT = os.getenv("VOICEMODE_AUDIO_FORMAT", "opus").lower()
+AUDIO_FORMAT = os.getenv("VOICEMODE_AUDIO_FORMAT", "pcm").lower()
 TTS_AUDIO_FORMAT = os.getenv("VOICEMODE_TTS_AUDIO_FORMAT", "pcm").lower()  # Default to PCM for optimal streaming
 STT_AUDIO_FORMAT = os.getenv("VOICEMODE_STT_AUDIO_FORMAT", AUDIO_FORMAT).lower()
 
@@ -76,7 +76,7 @@ SUPPORTED_AUDIO_FORMATS = ["opus", "mp3", "wav", "flac", "aac", "pcm"]
 # Validate formats (validation messages will be logged after logger is initialized)
 if AUDIO_FORMAT not in SUPPORTED_AUDIO_FORMATS:
     _invalid_audio_format = AUDIO_FORMAT
-    AUDIO_FORMAT = "opus"
+    AUDIO_FORMAT = "pcm"
 
 if TTS_AUDIO_FORMAT not in SUPPORTED_AUDIO_FORMATS:
     _invalid_tts_format = TTS_AUDIO_FORMAT

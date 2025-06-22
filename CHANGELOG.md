@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed voice feedback functionality, keeping only chime feedback
 - Updated provider base URL specification to use comma-separated lists
 - PCM remains the default format for TTS streaming (best performance)
+- Standardized audio sample rate to 24kHz across codebase (was 44.1kHz)
+  - Updated SAMPLE_RATE configuration constant
+  - Replaced all hardcoded sample rate values with config constant
+  - Aligned test mocks with new standard rate
+  - Ensures consistency between OpenAI and Kokoro TTS providers
 
 ## [2.2.0] - 2025-06-22
 

@@ -71,7 +71,7 @@ class TestTTSStability:
             # Mock audio processing
             mock_audio_instance = MagicMock()
             mock_audio_instance.channels = 1
-            mock_audio_instance.frame_rate = 44100
+            mock_audio_instance.frame_rate = 24000
             mock_audio_instance.get_array_of_samples.return_value = [0] * 1000
             mock_audio.from_mp3.return_value = mock_audio_instance
             
@@ -200,7 +200,7 @@ class TestTTSStability:
             # Mock audio processing
             mock_audio_instance = MagicMock()
             mock_audio_instance.channels = 1
-            mock_audio_instance.frame_rate = 44100
+            mock_audio_instance.frame_rate = 24000
             mock_audio_instance.get_array_of_samples.return_value = [0] * 1000
             mock_audio.from_mp3.return_value = mock_audio_instance
             
@@ -278,7 +278,7 @@ class TestAudioFileHandling:
             # Mock audio processing
             mock_audio_instance = MagicMock()
             mock_audio_instance.channels = 1
-            mock_audio_instance.frame_rate = 44100
+            mock_audio_instance.frame_rate = 24000
             mock_audio_instance.get_array_of_samples.return_value = [0] * 1000
             mock_audio.from_mp3.return_value = mock_audio_instance
             
