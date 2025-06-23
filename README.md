@@ -487,6 +487,23 @@ export VOICEMODE_SAVE_AUDIO=true
 
 Audio files are saved to: `~/voicemode_audio/` with timestamps in the filename.
 
+## Documentation
+
+- **[Configuration Guide](docs/configuration.md)** - Complete setup instructions for all MCP hosts
+- **[Using uv/uvx](docs/uv.md)** - Package management with uv and uvx
+- **[Local Development](docs/local-development-uvx.md)** - Development setup guide
+- **[Audio Formats](docs/audio-format-migration.md)** - Audio format configuration and migration
+- **[Statistics Dashboard](docs/statistics-dashboard.md)** - Performance monitoring and metrics
+
+### Service Guides
+- **[Whisper.cpp Setup](docs/whisper.cpp.md)** - Local speech-to-text configuration
+- **[Kokoro Setup](docs/kokoro.md)** - Local text-to-speech configuration
+- **[LiveKit Integration](docs/livekit/README.md)** - Real-time voice communication
+
+### Troubleshooting
+- **[WSL2 Microphone Access](docs/troubleshooting/wsl2-microphone-access.md)** - WSL2 audio setup
+- **[Migration Guide](docs/migration-guide.md)** - Upgrading from older versions
+
 ## Links
 
 - **Website**: [getvoicemode.com](https://getvoicemode.com)
