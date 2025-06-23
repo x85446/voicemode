@@ -1,267 +1,183 @@
-# Voice MCP Configuration Guide
+# Voice-MCP Configuration
 
-This guide covers how to configure voice-mode for various MCP hosts and installation methods.
+> For integration-specific setup instructions, see the [setup guide](setup/).
 
-## Table of Contents
+This document provides a comprehensive reference for all environment variables used by voice-mcp.
 
-- [Claude Code](#claude-code)
-- [Claude Desktop](#claude-desktop)
-- [LiveKit Configuration](#livekit-configuration)
-- [Configuration Options](#configuration-options)
-- [Environment Variables](#environment-variables)
+## MCP Environment Variable Precedence
 
-## Claude Code
+When using voice-mcp with MCP hosts (Claude Desktop, VS Code, etc.), it's important to understand how environment variables are handled:
 
-Claude Code uses the `claude mcp add` command to configure MCP servers.
+### Key Points
 
-### Installation Methods
+1. **Explicit Declaration Required**: If you include an `env` section in your MCP configuration, ONLY those variables are passed to the server
+2. **No Variable Substitution**: MCP does not support `${VARIABLE}` syntax - only literal values work
+3. **Inheritance Behavior**: If you omit the `env` section entirely, the server inherits the parent process environment
 
-#### Using uvx (Recommended)
+### Configuration Precedence
 
-```bash
-export OPENAI_API_KEY=your-openai-key
-claude mcp add voice-mode uvx voice-mode
-```
+- Variables in MCP config `env` section override shell environment variables
+- To use shell environment variables, either:
+  - Omit the `env` section completely (inherits all)
+  - Hardcode values in the `env` section (not recommended for secrets)
 
-#### Using pip install
-
-```bash
-export OPENAI_API_KEY=your-openai-key
-pip install voice-mode
-claude mcp add voice-mode voice-mode
-```
-
-## Claude Desktop
-
-Claude Desktop configuration files are located at:
-- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
-- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
-- **Linux**: `~/.config/Claude/claude_desktop_config.json`
-
-### Installation Methods
-
-#### Using uvx (Recommended)
-
-No installation required - runs directly:
+### Example Scenarios
 
 ```json
+// ❌ This does NOT work - no variable substitution
+{
+  "mcpServers": {
+    "voice-mode": {
+      "env": {
+        "OPENAI_API_KEY": "${OPENAI_API_KEY}"  // Won't expand
+      }
+    }
+  }
+}
+
+// ✅ Option 1: Omit env to inherit from shell
 {
   "mcpServers": {
     "voice-mode": {
       "command": "uvx",
-      "args": ["voice-mode"],
-      "env": {
-        "OPENAI_API_KEY": "your-openai-key"
-      }
+      "args": ["voice-mode"]
+      // No env section - inherits OPENAI_API_KEY from shell
     }
   }
 }
-```
 
-[Download config](../config-examples/claude-desktop/uvx.json)
-
-#### Using pip install
-
-If you've installed voice-mode globally:
-
-```json
+// ✅ Option 2: Explicit values (avoid for secrets)
 {
   "mcpServers": {
     "voice-mode": {
-      "command": "voice-mode",
       "env": {
-        "OPENAI_API_KEY": "your-openai-key"
+        "VOICEMODE_DEBUG": "true",
+        "VOICEMODE_TTS_VOICE": "af_sky"
       }
     }
   }
 }
 ```
 
-[Download config](../config-examples/claude-desktop/pip-install.json)
+### References
 
-#### Using python -m
+- [MCP Configuration Documentation](mcp-config-json.md) - Detailed MCP configuration behavior
+- [Model Context Protocol Specification](https://modelcontextprotocol.io/docs/specification) - Official MCP specification
+- [Known Limitations](https://github.com/microsoft/vscode/issues/245237) - Feature request for variable substitution
 
-If you've installed via pip and prefer module execution:
+## Required Configuration
 
-```json
-{
-  "mcpServers": {
-    "voice-mode": {
-      "command": "python",
-      "args": ["-m", "voice_mcp"],
-      "env": {
-        "OPENAI_API_KEY": "your-openai-key"
-      }
-    }
-  }
-}
-```
+| Variable | Description |
+|----------|-------------|
+| `OPENAI_API_KEY` | Your OpenAI API key (required for cloud STT/TTS services) |
 
-[Download config](../config-examples/claude-desktop/python-m.json)
+## TTS (Text-to-Speech) Configuration
 
-#### With LiveKit Support
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `VOICEMODE_TTS_BASE_URL` | `https://api.openai.com/v1` | Base URL for TTS service |
+| `VOICEMODE_TTS_VOICE` | `alloy` | Default voice to use |
+| `VOICEMODE_TTS_MODEL` | `tts-1` | TTS model (`tts-1`, `tts-1-hd`, `gpt-4o-mini-tts`) |
+| `VOICEMODE_VOICES` | `af_sky,nova` | Comma-separated list of preferred voices in order |
+| `VOICEMODE_OPENAI_TTS_BASE_URL` | `https://api.openai.com/v1` | OpenAI-specific TTS endpoint |
+| `VOICEMODE_KOKORO_TTS_BASE_URL` | `http://localhost:8880/v1` | Kokoro-specific TTS endpoint |
 
-Add LiveKit configuration to any of the above:
+### Available Voices
 
-```json
-{
-  "mcpServers": {
-    "voice-mode": {
-      "command": "uvx",
-      "args": ["voice-mode"],
-      "env": {
-        "OPENAI_API_KEY": "your-openai-key",
-        "LIVEKIT_URL": "wss://your-app.livekit.cloud",
-        "LIVEKIT_API_KEY": "your-api-key",
-        "LIVEKIT_API_SECRET": "your-api-secret"
-      }
-    }
-  }
-}
-```
+- **OpenAI**: `alloy`, `nova`, `echo`, `fable`, `onyx`, `shimmer`
+- **Kokoro**: `af_sky`, `af_sarah`, `am_adam`, `af_nicole`, `am_michael`
 
-[Download config](../config-examples/claude-desktop/livekit.json)
+## STT (Speech-to-Text) Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `VOICEMODE_STT_BASE_URL` | `https://api.openai.com/v1` | Base URL for STT service |
+| `VOICEMODE_STT_MODEL` | `whisper-1` | STT model to use |
+
+## Audio Format Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `VOICEMODE_AUDIO_FORMAT` | `pcm` | Primary audio format (`pcm`, `opus`, `mp3`, `wav`, `flac`, `aac`) |
+| `VOICEMODE_TTS_AUDIO_FORMAT` | `pcm` | Override format for TTS (defaults to primary) |
+| `VOICEMODE_STT_AUDIO_FORMAT` | `mp3`* | Override format for STT (*auto-selects `mp3` if primary is `pcm`) |
+| `VOICEMODE_OPUS_BITRATE` | `32000` | Opus bitrate in bps |
+| `VOICEMODE_MP3_BITRATE` | `64k` | MP3 bitrate |
+| `VOICEMODE_AAC_BITRATE` | `64k` | AAC bitrate |
+
+## Provider Selection
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `VOICEMODE_PREFER_LOCAL` | `true` | Prefer local providers (Kokoro/Whisper) when available |
+| `VOICEMODE_AUTO_START_KOKORO` | `false` | Automatically start Kokoro TTS on startup |
 
 ## LiveKit Configuration
 
-LiveKit enables room-based voice communication instead of using the local microphone. This is perfect for accessing voice-mode from your phone, tablet, or any remote device.
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `LIVEKIT_URL` | `ws://localhost:7880` | LiveKit server WebSocket URL |
+| `LIVEKIT_API_KEY` | `devkey` | LiveKit API key |
+| `LIVEKIT_API_SECRET` | `secret` | LiveKit API secret |
 
-**📖 For detailed setup instructions, see the [LiveKit Integration Guide](livekit/README.md)**
+## Audio Feedback & Interaction
 
-### Quick Configuration
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `VOICEMODE_AUDIO_FEEDBACK` | `true` | Play audio feedback when recording starts/stops |
 
-For [LiveKit Cloud](livekit/cloud-setup.md) (recommended):
+## Streaming Configuration
 
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `VOICEMODE_STREAMING_ENABLED` | `true` | Enable streaming audio playback |
+| `VOICEMODE_STREAM_CHUNK_SIZE` | `4096` | Download chunk size in bytes |
+| `VOICEMODE_STREAM_BUFFER_MS` | `150` | Initial buffer before playback (milliseconds) |
+| `VOICEMODE_STREAM_MAX_BUFFER` | `2.0` | Maximum buffer size in seconds |
+
+## Debug & Logging
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `VOICEMODE_DEBUG` | `false` | Enable debug logging (`true`, `trace` for verbose) |
+| `VOICEMODE_SAVE_AUDIO` | `false` | Save audio recordings to `~/voicemode_audio/` |
+| `VOICEMODE_EVENT_LOG_ENABLED` | `true` | Enable structured event logging |
+| `VOICEMODE_EVENT_LOG_DIR` | `~/voicemode_logs` | Directory for event log files |
+| `VOICEMODE_EVENT_LOG_ROTATION` | `daily` | Log rotation frequency |
+
+## Configuration Examples
+
+### Use Local Kokoro TTS
 ```bash
-export LIVEKIT_URL="wss://your-project.livekit.cloud"
-export LIVEKIT_API_KEY="your-api-key"
-export LIVEKIT_API_SECRET="your-api-secret"
+export VOICEMODE_TTS_BASE_URL="http://localhost:8880/v1"
+export VOICEMODE_TTS_VOICE="af_sky"
 ```
 
-For [self-hosted LiveKit](livekit/local-setup.md):
-
+### Use OpenAI with HD Voice
 ```bash
-export LIVEKIT_URL="ws://localhost:7880"
-export LIVEKIT_API_KEY="devkey"
-export LIVEKIT_API_SECRET="secret"
+export VOICEMODE_TTS_MODEL="tts-1-hd"
+export VOICEMODE_TTS_VOICE="nova"
 ```
 
-### Transport Selection
-
-When LiveKit is configured, voice-mode can automatically select the best transport:
-
-- **`transport: "auto"`** (default) - Try LiveKit first, fall back to local microphone
-- **`transport: "livekit"`** - Force LiveKit transport
-- **`transport: "local"`** - Force local microphone
-
-## Configuration Options
-
-### Required Environment Variables
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `OPENAI_API_KEY` | OpenAI API key for STT/TTS | Required |
-
-### Optional Environment Variables
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `STT_BASE_URL` | Base URL for STT service | `https://api.openai.com/v1` |
-| `TTS_BASE_URL` | Base URL for TTS service | `https://api.openai.com/v1` |
-| `TTS_VOICE` | Voice for text-to-speech | `alloy` |
-| `TTS_MODEL` | TTS model to use | `tts-1` |
-| `STT_MODEL` | STT model to use | `whisper-1` |
-| `VOICE_MCP_PREFER_LOCAL` | Prefer local providers when available | `true` |
-| `LIVEKIT_URL` | LiveKit server URL | None |
-| `LIVEKIT_API_KEY` | LiveKit API key | None |
-| `LIVEKIT_API_SECRET` | LiveKit API secret | None |
-| `VOICE_MCP_DEBUG` | Enable debug mode | `false` |
-| `VOICE_MCP_AUDIO_FEEDBACK` | Audio feedback type: `chime`, `voice`, `both`, `none` | `chime` |
-
-### Audio Feedback Options
-
-VoiceMode provides audio feedback to indicate when recording starts and stops. Configure with `VOICE_MCP_AUDIO_FEEDBACK`:
-
-- `chime` (default) - Quick beep sounds (800Hz→1000Hz for start, 1000Hz→800Hz for end)
-- `voice` - Spoken feedback ("listening"/"finished")
-- `both` - Both chime and voice feedback
-- `none` - No audio feedback
-
-For backward compatibility, `true` is treated as `chime` and `false` as `none`.
-
-### Available TTS Voices
-
-- `alloy` (default) - Natural, conversational
-- `nova` - Warm and friendly
-- `alloy` - Neutral and balanced
-- `echo` - Warm and engaging
-- `fable` - Expressive storyteller
-- `onyx` - Deep and authoritative
-- `shimmer` - Clear and energetic
-
-### Local Service Configuration
-
-For self-hosted STT/TTS services:
-
+### Debug Mode with Audio Saving
 ```bash
-# Local Whisper STT
-export STT_BASE_URL="http://localhost:2022/v1"
-
-# Local Kokoro TTS
-export TTS_BASE_URL="http://localhost:8880/v1"
-export TTS_VOICE="af_sky"
+export VOICEMODE_DEBUG="true"
+export VOICEMODE_SAVE_AUDIO="true"
 ```
 
-### Automatic Provider Selection
-
-When `VOICE_MCP_PREFER_LOCAL=true` (default), voice-mode automatically uses local services when available:
-
-- **Kokoro TTS** at `localhost:8880` - Used automatically if running
-- **Whisper.cpp** at `localhost:2022` - Used automatically if running
-- Falls back to OpenAI services if local providers are not available
-
-This means you can simply start Kokoro or Whisper.cpp and voice-mode will use them without any configuration changes!
-
-### API Routing and Proxies
-
-Since voice-mode uses the OpenAI SDK, you can redirect all API traffic through a custom router using the standard `OPENAI_BASE_URL` environment variable:
-
+### Custom Whisper STT Endpoint
 ```bash
-# Route all OpenAI API calls through your proxy
-export OPENAI_BASE_URL="https://router.example.com/v1"
-export OPENAI_API_KEY="your-key"
+export VOICEMODE_STT_BASE_URL="http://localhost:2022/v1"
 ```
 
-The OpenAI SDK automatically uses this base URL for all API calls - no voice-mode specific configuration needed!
+## Backward Compatibility
 
-This enables:
-- **Cost optimization** - Route to cheaper providers based on request type
-- **Fallback handling** - Automatically switch to backup services
-- **Load balancing** - Distribute requests across multiple endpoints
-- **Custom logic** - Add authentication, caching, or transformation layers
+For backward compatibility, the following environment variables are also supported (but the `VOICEMODE_` prefixed versions take precedence):
 
-For provider-specific routing (e.g., different endpoints for STT vs TTS), you can still use:
-```bash
-export STT_BASE_URL="http://localhost:2022/v1"  # Whisper
-export TTS_BASE_URL="http://localhost:8880/v1"  # Kokoro
-```
-
-See [OpenAI API Routing Guide](openai-api-routing.md) for proxy implementation examples.
-
-## Troubleshooting
-
-### Common Issues
-
-1. **No microphone access**: Ensure your terminal/application has microphone permissions
-2. **Container audio issues**: May need to adjust device paths for your system
-3. **LiveKit connection failed**: Verify URL and credentials
-
-### Debug Mode
-
-Enable verbose logging and audio file saving:
-
-```bash
-export VOICE_MCP_DEBUG=true
-```
-
-Audio files are saved to: `~/voice-mode_recordings/`
+- `TTS_BASE_URL` → `VOICEMODE_TTS_BASE_URL`
+- `TTS_VOICE` → `VOICEMODE_TTS_VOICE`
+- `TTS_MODEL` → `VOICEMODE_TTS_MODEL`
+- `STT_BASE_URL` → `VOICEMODE_STT_BASE_URL`
+- `STT_MODEL` → `VOICEMODE_STT_MODEL`
+- `OPENAI_TTS_BASE_URL` → `VOICEMODE_OPENAI_TTS_BASE_URL`
+- `KOKORO_TTS_BASE_URL` → `VOICEMODE_KOKORO_TTS_BASE_URL`

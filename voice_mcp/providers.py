@@ -12,8 +12,8 @@ import asyncio
 
 logger = logging.getLogger("voice-mcp")
 
-# Import config for voice preferences
-from .config import VOICEMODE_VOICES
+# Import config for voice preferences and URLs
+from .config import VOICEMODE_VOICES, KOKORO_TTS_BASE_URL, OPENAI_TTS_BASE_URL, STT_BASE_URL
 
 
 # Provider Registry with basic metadata
@@ -22,7 +22,7 @@ PROVIDERS = {
         "id": "kokoro",
         "name": "Kokoro TTS", 
         "type": "tts",
-        "base_url": "http://localhost:8880/v1",
+        "base_url": KOKORO_TTS_BASE_URL,
         "local": True,
         "auto_start": True,
         "features": ["local", "free", "fast"],
@@ -34,7 +34,7 @@ PROVIDERS = {
         "id": "openai",
         "name": "OpenAI TTS",
         "type": "tts", 
-        "base_url": "https://api.openai.com/v1",
+        "base_url": OPENAI_TTS_BASE_URL,
         "local": False,
         "features": ["cloud", "emotions", "multi-model"],
         "default_voice": "alloy",
@@ -45,7 +45,7 @@ PROVIDERS = {
         "id": "whisper-local",
         "name": "Whisper.cpp",
         "type": "stt",
-        "base_url": "http://localhost:2022/v1", 
+        "base_url": STT_BASE_URL if "localhost" in STT_BASE_URL else "http://localhost:2022/v1", 
         "local": True,
         "features": ["local", "free", "accurate"],
         "models": ["whisper-1"],  # OpenAI-compatible model name
@@ -54,7 +54,7 @@ PROVIDERS = {
         "id": "openai-whisper",
         "name": "OpenAI Whisper",
         "type": "stt",
-        "base_url": "https://api.openai.com/v1",
+        "base_url": STT_BASE_URL if "openai.com" in STT_BASE_URL else "https://api.openai.com/v1",
         "local": False,
         "features": ["cloud", "fast", "reliable"],
         "models": ["whisper-1"],

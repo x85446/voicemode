@@ -80,10 +80,11 @@ def calculate_session_metrics(session_events: List[Dict[str, Any]]) -> Dict[str,
     if tts_start and tts_first_audio:
         metrics['ttfa'] = (tts_first_audio - tts_start).total_seconds()
     
-    # TTS Generation: TTS_START to TTS_PLAYBACK_START
+    # TTS Generation: TTS_START to TTS_PLAYBACK_END (total time to generate all audio)
     tts_playback_start = get_first_ts('TTS_PLAYBACK_START')
-    if tts_start and tts_playback_start:
-        metrics['tts_generation'] = (tts_playback_start - tts_start).total_seconds()
+    tts_playback_end = get_first_ts('TTS_PLAYBACK_END')
+    if tts_start and tts_playback_end:
+        metrics['tts_generation'] = (tts_playback_end - tts_start).total_seconds()
     
     # TTS Playback: TTS_PLAYBACK_START to TTS_PLAYBACK_END
     tts_playback_end = get_first_ts('TTS_PLAYBACK_END')
@@ -118,7 +119,7 @@ def calculate_session_metrics(session_events: List[Dict[str, Any]]) -> Dict[str,
         last_ts = parse_timestamp(session_events[-1]['timestamp'])
         metrics['total_duration'] = (last_ts - first_ts).total_seconds()
     
-    # Claude thinking time (between tool requests)
+    # AI thinking time (between tool requests)
     tool_ends = get_all_events('TOOL_REQUEST_END')
     tool_starts = get_all_events('TOOL_REQUEST_START')
     
@@ -136,10 +137,10 @@ def calculate_session_metrics(session_events: List[Dict[str, Any]]) -> Dict[str,
                     break
         
         if thinking_times:
-            metrics['claude_thinking_times'] = thinking_times
-            metrics['claude_thinking_avg'] = sum(thinking_times) / len(thinking_times)
-            metrics['claude_thinking_min'] = min(thinking_times)
-            metrics['claude_thinking_max'] = max(thinking_times)
+            metrics['ai_thinking_times'] = thinking_times
+            metrics['ai_thinking_avg'] = sum(thinking_times) / len(thinking_times)
+            metrics['ai_thinking_min'] = min(thinking_times)
+            metrics['ai_thinking_max'] = max(thinking_times)
     
     return metrics
 
@@ -164,6 +165,12 @@ def print_session_summary(session_id: str, events: List[Dict[str, Any]]):
     print(f"Duration: {format_duration(duration)}")
     print(f"Events: {len(events)}")
     
+    # Check for time since last session event
+    for event in events:
+        if event['event_type'] == 'TIME_SINCE_LAST_SESSION':
+            time_since = event['data'].get('seconds', 0)
+            print(f"Time since last session: {format_duration(time_since)} (AI thinking time)")
+    
     # Calculate metrics
     metrics = calculate_session_metrics(events)
     
@@ -176,14 +183,14 @@ def print_session_summary(session_id: str, events: List[Dict[str, Any]]):
         print(f"  STT Processing: {format_duration(metrics.get('stt_processing', 0))}")
         print(f"  Response Time: {format_duration(metrics.get('response_time', 0))}")
         
-        # Claude thinking time
-        if 'claude_thinking_avg' in metrics:
-            print(f"\nClaude Thinking Time:")
-            print(f"  Average: {format_duration(metrics['claude_thinking_avg'])}")
-            print(f"  Min: {format_duration(metrics['claude_thinking_min'])}")
-            print(f"  Max: {format_duration(metrics['claude_thinking_max'])}")
-            if len(metrics['claude_thinking_times']) > 1:
-                print(f"  Samples: {len(metrics['claude_thinking_times'])}")
+        # AI thinking time
+        if 'ai_thinking_avg' in metrics:
+            print(f"\nAI Thinking Time:")
+            print(f"  Average: {format_duration(metrics['ai_thinking_avg'])}")
+            print(f"  Min: {format_duration(metrics['ai_thinking_min'])}")
+            print(f"  Max: {format_duration(metrics['ai_thinking_max'])}")
+            if len(metrics['ai_thinking_times']) > 1:
+                print(f"  Samples: {len(metrics['ai_thinking_times'])}")
     
     # Show conversation content
     for event in events:
@@ -235,8 +242,8 @@ def print_timeline(events: List[Dict[str, Any]]):
         print(f"{elapsed:>7.3f}s {event['event_type']:25} {details}")
 
 
-def calculate_claude_thinking_times(all_events: List[Dict[str, Any]]) -> List[float]:
-    """Calculate Claude thinking times from all events chronologically."""
+def calculate_ai_thinking_times(all_events: List[Dict[str, Any]]) -> List[float]:
+    """Calculate AI thinking times from all events chronologically."""
     thinking_times = []
     
     # Sort all events by timestamp
@@ -277,7 +284,7 @@ def print_statistics(all_sessions: Dict[str, List[Dict[str, Any]]]):
     print(f"{'='*60}")
     
     # Calculate aggregates for each metric
-    metric_names = ['ttfa', 'tts_generation', 'tts_playback', 'recording', 'stt_processing', 'response_time', 'claude_thinking_avg']
+    metric_names = ['ttfa', 'tts_generation', 'tts_playback', 'recording', 'stt_processing', 'response_time', 'ai_thinking_avg']
     
     for metric_name in metric_names:
         values = [m.get(metric_name, 0) for m in all_metrics if metric_name in m]
@@ -296,10 +303,10 @@ def print_statistics(all_sessions: Dict[str, List[Dict[str, Any]]]):
                 median = statistics.median(values)
                 print(f"  Median: {format_duration(median)}")
     
-    # Calculate Claude thinking times from all events
-    thinking_times = calculate_claude_thinking_times(all_events)
+    # Calculate AI thinking times from all events
+    thinking_times = calculate_ai_thinking_times(all_events)
     if thinking_times:
-        print(f"\nClaude Thinking Time (from all events):")
+        print(f"\nAI Thinking Time (from all events):")
         print(f"  Average: {format_duration(statistics.mean(thinking_times))}")
         print(f"  Min: {format_duration(min(thinking_times))}")
         print(f"  Max: {format_duration(max(thinking_times))}")

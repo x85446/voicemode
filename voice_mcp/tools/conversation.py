@@ -72,6 +72,9 @@ from voice_mcp.utils import (
 
 logger = logging.getLogger("voice-mcp")
 
+# Track last session end time for measuring AI thinking time
+last_session_end_time = None
+
 # Initialize OpenAI clients with provider-specific TTS clients
 openai_clients = get_openai_clients(OPENAI_API_KEY, STT_BASE_URL, TTS_BASE_URL)
 
@@ -658,9 +661,22 @@ async def converse(
     event_logger = get_event_logger()
     session_id = None
     
+    # Check time since last session for AI thinking time
+    global last_session_end_time
+    current_time = time.time()
+    
+    if last_session_end_time and wait_for_response:
+        time_since_last = current_time - last_session_end_time
+        logger.info(f"Time since last session: {time_since_last:.1f}s (AI thinking time)")
+    
     # For conversations with responses, create a session
     if event_logger and wait_for_response:
         session_id = event_logger.start_session()
+        # Log the time since last session as an event
+        if last_session_end_time:
+            event_logger.log_event("TIME_SINCE_LAST_SESSION", {
+                "seconds": time_since_last
+            })
     
     # Log tool request start (after session is created)
     if event_logger:
@@ -878,26 +894,12 @@ async def converse(
                         else:
                             event_logger.log_event(event_logger.STT_NO_SPEECH)
                 
-                # Calculate response time from user's perspective
-                # This is the time from when recording ends to when TTS starts
-                # BUG FIX: This should be user_done_time - tts_start (positive value)
-                # The user finishes speaking at user_done_time, and TTS started earlier at tts_start
-                # So the response time is how long after TTS started until the user finished
-                # Actually, this doesn't make sense - we need to track when the NEXT TTS starts
-                # For now, we'll use the time from recording end to current time
-                response_time = time.perf_counter() - user_done_time
-                timings['response_time'] = response_time
-                logger.info(f"Response time calculation: {response_time:.1f}s (from end of recording to now)")
-                
                 # Calculate total time (use tts_total instead of sub-metrics)
                 main_timings = {k: v for k, v in timings.items() if k in ['tts_total', 'record', 'stt']}
                 total_time = sum(main_timings.values())
                 
-                # Format timing string with response time first (most important metric)
+                # Format timing string
                 timing_parts = []
-                
-                # User-perceived response time
-                timing_parts.append(f"response_time {response_time:.1f}s")
                 
                 # Detailed breakdown
                 if 'ttfa' in timings:
@@ -930,16 +932,9 @@ async def converse(
                     error_message=None if response_text else "No speech detected"
                 )
                 
-                # End event logging session and get metrics
+                # End event logging session
                 if event_logger and session_id:
-                    event_metrics = event_logger.end_session()
-                    if event_metrics and 'response_time' in event_metrics:
-                        # Use event-based response time if available
-                        timings['response_time'] = event_metrics['response_time']
-                        response_time = event_metrics['response_time']
-                        # Update the timing string
-                        timing_parts[0] = f"response_time {response_time:.1f}s"
-                        timing_str = ", ".join(timing_parts) + f", total {total_time:.1f}s"
+                    event_logger.end_session()
                 
                 if response_text:
                     result = f"Voice response: {response_text} | Timing: {timing_str}"
@@ -985,6 +980,10 @@ async def converse(
         # Log tool request end
         if event_logger:
             log_tool_request_end("converse", success=success)
+        
+        # Update last session end time for tracking AI thinking time
+        if wait_for_response:
+            last_session_end_time = time.time()
         
         # Log execution metrics
         elapsed = time.time() - start_time
