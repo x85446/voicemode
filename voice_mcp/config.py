@@ -40,17 +40,26 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 if not OPENAI_API_KEY:
     raise ValueError("OPENAI_API_KEY is required")
 
-# STT (Speech-to-Text) configuration
-STT_BASE_URL = os.getenv("VOICEMODE_STT_BASE_URL", os.getenv("STT_BASE_URL", "https://api.openai.com/v1"))
+# Helper function to parse comma-separated lists
+def parse_comma_list(env_var: str, fallback: str) -> list:
+    """Parse comma-separated list from environment variable."""
+    value = os.getenv(env_var, fallback)
+    return [item.strip() for item in value.split(",") if item.strip()]
+
+# New provider endpoint lists configuration
+TTS_BASE_URLS = parse_comma_list("VOICEMODE_TTS_BASE_URLS", "https://api.openai.com/v1")
+STT_BASE_URLS = parse_comma_list("VOICEMODE_STT_BASE_URLS", "https://api.openai.com/v1")
+TTS_VOICES = parse_comma_list("VOICEMODE_TTS_VOICES", "nova,alloy")
+TTS_MODELS = parse_comma_list("VOICEMODE_TTS_MODELS", "tts-1")
+
+# Legacy configuration (kept temporarily for backward compatibility)
+# TODO: Remove these after migration
+STT_BASE_URL = os.getenv("VOICEMODE_STT_BASE_URL", os.getenv("STT_BASE_URL", TTS_BASE_URLS[0] if TTS_BASE_URLS else "https://api.openai.com/v1"))
 STT_MODEL = os.getenv("VOICEMODE_STT_MODEL", os.getenv("STT_MODEL", "whisper-1"))
-
-# TTS (Text-to-Speech) configuration
-TTS_BASE_URL = os.getenv("VOICEMODE_TTS_BASE_URL", os.getenv("TTS_BASE_URL", "https://api.openai.com/v1"))
-TTS_VOICE = os.getenv("VOICEMODE_TTS_VOICE", os.getenv("TTS_VOICE", "alloy"))
-VOICEMODE_VOICES = os.getenv("VOICEMODE_VOICES", "af_sky,nova").split(",")
-TTS_MODEL = os.getenv("VOICEMODE_TTS_MODEL", os.getenv("TTS_MODEL", "tts-1"))
-
-# Provider-specific TTS configuration
+TTS_BASE_URL = os.getenv("VOICEMODE_TTS_BASE_URL", os.getenv("TTS_BASE_URL", TTS_BASE_URLS[0] if TTS_BASE_URLS else "https://api.openai.com/v1"))
+TTS_VOICE = os.getenv("VOICEMODE_TTS_VOICE", os.getenv("TTS_VOICE", TTS_VOICES[0] if TTS_VOICES else "alloy"))
+VOICEMODE_VOICES = TTS_VOICES  # Alias for compatibility
+TTS_MODEL = os.getenv("VOICEMODE_TTS_MODEL", os.getenv("TTS_MODEL", TTS_MODELS[0] if TTS_MODELS else "tts-1"))
 OPENAI_TTS_BASE_URL = os.getenv("VOICEMODE_OPENAI_TTS_BASE_URL", os.getenv("OPENAI_TTS_BASE_URL", "https://api.openai.com/v1"))
 KOKORO_TTS_BASE_URL = os.getenv("VOICEMODE_KOKORO_TTS_BASE_URL", os.getenv("KOKORO_TTS_BASE_URL", os.getenv("TTS_BASE_URL", "http://localhost:8880/v1")))
 

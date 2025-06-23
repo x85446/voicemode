@@ -42,14 +42,13 @@ from voice_mcp.config import (
 )
 import voice_mcp.config
 from voice_mcp.providers import (
-    PROVIDERS,
-    get_provider_by_voice,
-    get_tts_provider,
-    get_stt_provider,
+    get_tts_client_and_voice,
+    get_stt_client,
     is_provider_available,
-    get_provider_display_status,
+    get_provider_by_voice,
     select_best_voice
 )
+from voice_mcp.provider_discovery import provider_registry
 from voice_mcp.core import (
     get_openai_clients,
     text_to_speech,
@@ -109,6 +108,10 @@ async def startup_initialization():
     voice_mcp.config._startup_initialized = True
     logger.info("Running startup initialization...")
     
+    # Initialize provider registry
+    logger.info("Initializing provider registry...")
+    await provider_registry.initialize()
+    
     # Check if we should auto-start Kokoro
     auto_start_kokoro = os.getenv("VOICE_MCP_AUTO_START_KOKORO", "").lower() in ("true", "1", "yes", "on")
     if auto_start_kokoro:
@@ -156,100 +159,64 @@ async def startup_initialization():
 
 async def get_tts_config(provider: Optional[str] = None, voice: Optional[str] = None, model: Optional[str] = None, instructions: Optional[str] = None):
     """Get TTS configuration based on provider selection"""
-    # Auto-detect provider based on voice if not specified
-    if provider is None and voice:
-        provider_info = get_provider_by_voice(voice)
-        if provider_info:
-            provider = provider_info["id"]
-    
-    # If no provider specified and PREFER_LOCAL is true, try local first
-    if provider is None and PREFER_LOCAL:
-        # Check if Kokoro is available
-        if await is_provider_available("kokoro"):
-            provider = "kokoro"
-            logger.info("Auto-selected Kokoro (local) as TTS provider")
-        else:
-            provider = "openai"
-    
-    # Default to environment configuration
-    if provider is None:
-        # If TTS_BASE_URL is set to something other than OpenAI, assume Kokoro
-        if TTS_BASE_URL and "openai.com" not in TTS_BASE_URL:
-            provider = "kokoro"
-        else:
-            provider = "openai"
-    
     # Validate instructions usage
     if instructions and model != "gpt-4o-mini-tts":
         logger.warning(f"Instructions parameter is only supported with gpt-4o-mini-tts model, ignoring for model: {model}")
         instructions = None
     
-    # Get provider info from registry
-    provider_info = PROVIDERS.get(provider)
-    if not provider_info:
-        logger.warning(f"Unknown provider: {provider}, falling back to OpenAI")
-        provider = "openai"
-        provider_info = PROVIDERS["openai"]
-    
-    if provider == "kokoro":
-        # Use kokoro-specific client if available, otherwise use default
-        client_key = 'tts_kokoro' if 'tts_kokoro' in openai_clients else 'tts'
-        # Select best voice if not specified
-        selected_voice = voice or select_best_voice(provider)
+    # Use new provider selection logic
+    try:
+        client, selected_voice, selected_model, endpoint_info = await get_tts_client_and_voice(
+            voice=voice,
+            model=model,
+            base_url=provider  # Allow provider to be a base URL
+        )
+        
+        # Return configuration compatible with existing code
         return {
-            'client_key': client_key,
-            'base_url': provider_info.get("base_url", KOKORO_TTS_BASE_URL),
-            'model': model or provider_info["models"][0],
-            'voice': selected_voice or provider_info["default_voice"],
-            'instructions': None  # Kokoro doesn't support instructions
+            'client': client,
+            'base_url': endpoint_info.url,
+            'model': selected_model,
+            'voice': selected_voice,
+            'instructions': instructions,
+            'provider': endpoint_info.url  # For logging
         }
-    else:  # openai
-        # Use openai-specific client if available, otherwise use default
-        client_key = 'tts_openai' if 'tts_openai' in openai_clients else 'tts'
-        logger.debug(f"OpenAI TTS config: client_key={client_key}, available_clients={list(openai_clients.keys())}")
-        # Select best voice if not specified
-        selected_voice = voice or select_best_voice(provider)
+    except Exception as e:
+        logger.error(f"Failed to get TTS client: {e}")
+        # Fallback to legacy behavior
         return {
-            'client_key': client_key,
-            'base_url': provider_info.get("base_url", OPENAI_TTS_BASE_URL),
-            'model': model or TTS_MODEL,  # Use provided model or default
-            'voice': selected_voice or provider_info.get("default_voice", TTS_VOICE),
-            'instructions': instructions  # Pass through instructions for OpenAI
+            'client_key': 'tts',
+            'base_url': TTS_BASE_URL,
+            'model': model or TTS_MODEL,
+            'voice': voice or TTS_VOICE,
+            'instructions': instructions
         }
 
 
 async def get_stt_config(provider: Optional[str] = None):
     """Get STT configuration based on provider selection"""
-    # If no provider specified and PREFER_LOCAL is true, try local first
-    if provider is None and PREFER_LOCAL:
-        # Check if Whisper is available
-        if await is_provider_available("whisper-local"):
-            provider = "whisper-local"
-            logger.info("Auto-selected Whisper.cpp (local) as STT provider")
-        else:
-            provider = "openai-whisper"
-    
-    # Default to environment configuration
-    if provider is None:
-        # If STT_BASE_URL is set to something other than OpenAI, assume local
-        if STT_BASE_URL and "openai.com" not in STT_BASE_URL:
-            provider = "whisper-local"
-        else:
-            provider = "openai-whisper"
-    
-    # Get provider info from registry
-    provider_info = PROVIDERS.get(provider)
-    if not provider_info:
-        logger.warning(f"Unknown STT provider: {provider}, falling back to OpenAI")
-        provider = "openai-whisper"
-        provider_info = PROVIDERS["openai-whisper"]
-    
-    return {
-        'client_key': 'stt',
-        'base_url': provider_info.get("base_url", STT_BASE_URL),
-        'model': STT_MODEL,  # All providers use whisper-1 compatible model
-        'provider': provider
-    }
+    try:
+        # Use new provider selection logic
+        client, selected_model, endpoint_info = await get_stt_client(
+            model=None,  # Let system select
+            base_url=provider  # Allow provider to be a base URL
+        )
+        
+        return {
+            'client': client,
+            'base_url': endpoint_info.url,
+            'model': selected_model,
+            'provider': endpoint_info.url  # For logging
+        }
+    except Exception as e:
+        logger.error(f"Failed to get STT client: {e}")
+        # Fallback to legacy behavior
+        return {
+            'client_key': 'stt',
+            'base_url': STT_BASE_URL,
+            'model': STT_MODEL,
+            'provider': 'openai-whisper'
+        }
 
 
 def validate_emotion_request(tts_model: Optional[str], tts_instructions: Optional[str], tts_provider: Optional[str]) -> Optional[str]:
@@ -704,6 +671,14 @@ async def converse(
                     # Validate emotion request
                     validated_instructions = validate_emotion_request(tts_model, tts_instructions, tts_provider)
                     tts_config = await get_tts_config(tts_provider, voice, tts_model, validated_instructions)
+                    # Handle both new client object and legacy client_key
+                    if 'client' in tts_config:
+                        # Store client temporarily in openai_clients
+                        openai_clients['_temp_tts'] = tts_config['client']
+                        client_key = '_temp_tts'
+                    else:
+                        client_key = tts_config.get('client_key', 'tts')
+                    
                     success, tts_metrics = await text_to_speech(
                         text=message,
                         openai_clients=openai_clients,
@@ -714,10 +689,14 @@ async def converse(
                         debug_dir=DEBUG_DIR if DEBUG else None,
                         save_audio=SAVE_AUDIO,
                         audio_dir=AUDIO_DIR if SAVE_AUDIO else None,
-                        client_key=tts_config['client_key'],
+                        client_key=client_key,
                         instructions=tts_config.get('instructions'),
                         audio_format=audio_format
                     )
+                    
+                    # Clean up temporary client
+                    if '_temp_tts' in openai_clients:
+                        del openai_clients['_temp_tts']
                     
                 # Include timing info if available
                 timing_info = ""
@@ -815,6 +794,15 @@ async def converse(
                     # Validate emotion request
                     validated_instructions = validate_emotion_request(tts_model, tts_instructions, tts_provider)
                     tts_config = await get_tts_config(tts_provider, voice, tts_model, validated_instructions)
+                    
+                    # Handle both new client object and legacy client_key
+                    if 'client' in tts_config:
+                        # Store client temporarily in openai_clients
+                        openai_clients['_temp_tts'] = tts_config['client']
+                        client_key = '_temp_tts'
+                    else:
+                        client_key = tts_config.get('client_key', 'tts')
+                    
                     tts_success, tts_metrics = await text_to_speech(
                         text=message,
                         openai_clients=openai_clients,
@@ -825,10 +813,14 @@ async def converse(
                         debug_dir=DEBUG_DIR if DEBUG else None,
                         save_audio=SAVE_AUDIO,
                         audio_dir=AUDIO_DIR if SAVE_AUDIO else None,
-                        client_key=tts_config['client_key'],
+                        client_key=client_key,
                         instructions=tts_config.get('instructions'),
                         audio_format=audio_format
                     )
+                    
+                    # Clean up temporary client
+                    if '_temp_tts' in openai_clients:
+                        del openai_clients['_temp_tts']
                     
                     # Add TTS sub-metrics
                     if tts_metrics:
@@ -1044,6 +1036,67 @@ async def ask_voice_question(
 
 
 @mcp.tool()
+async def voice_registry() -> str:
+    """Get the current voice provider registry showing all discovered endpoints.
+    
+    Returns a formatted view of all TTS and STT endpoints with their:
+    - Health status
+    - Available models
+    - Available voices (TTS only)
+    - Response times
+    - Last health check time
+    
+    This allows the LLM to see what voice services are currently available.
+    """
+    # Ensure registry is initialized
+    await provider_registry.initialize()
+    
+    # Get registry data
+    registry_data = provider_registry.get_registry_for_llm()
+    
+    # Format the output
+    lines = ["Voice Provider Registry", "=" * 50, ""]
+    
+    # TTS Endpoints
+    lines.append("TTS Endpoints:")
+    lines.append("-" * 30)
+    
+    for url, info in registry_data["tts"].items():
+        status = "✅" if info["healthy"] else "❌"
+        lines.append(f"\n{status} {url}")
+        
+        if info["healthy"]:
+            lines.append(f"   Models: {', '.join(info['models']) if info['models'] else 'none detected'}")
+            lines.append(f"   Voices: {', '.join(info['voices']) if info['voices'] else 'none detected'}")
+            if info["response_time_ms"]:
+                lines.append(f"   Response Time: {info['response_time_ms']:.0f}ms")
+        else:
+            if info.get("error"):
+                lines.append(f"   Error: {info['error']}")
+        
+        lines.append(f"   Last Check: {info['last_check']}")
+    
+    # STT Endpoints
+    lines.append("\n\nSTT Endpoints:")
+    lines.append("-" * 30)
+    
+    for url, info in registry_data["stt"].items():
+        status = "✅" if info["healthy"] else "❌"
+        lines.append(f"\n{status} {url}")
+        
+        if info["healthy"]:
+            lines.append(f"   Models: {', '.join(info['models']) if info['models'] else 'none detected'}")
+            if info["response_time_ms"]:
+                lines.append(f"   Response Time: {info['response_time_ms']:.0f}ms")
+        else:
+            if info.get("error"):
+                lines.append(f"   Error: {info['error']}")
+        
+        lines.append(f"   Last Check: {info['last_check']}")
+    
+    return "\n".join(lines)
+
+
 async def voice_chat(
     initial_message: Optional[str] = None,
     max_turns: int = 10,

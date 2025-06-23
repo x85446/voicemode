@@ -51,34 +51,47 @@ async def voice_status() -> str:
     
     Provides a unified view of the voice infrastructure configuration and health.
     """
-    from voice_mcp.providers import get_provider_display_status, is_provider_available
+    from voice_mcp.provider_discovery import provider_registry
+    from voice_mcp.config import TTS_BASE_URLS, STT_BASE_URLS
     
     try:
+        # Ensure registry is initialized
+        await provider_registry.initialize()
+        
         status_lines = ["Voice Service Status:"]
         status_lines.append("=" * 50)
         
-        # Provider status
-        from voice_mcp.providers import PROVIDERS
-        status_lines.append("\nProvider Status:")
-        for provider_id in ["openai", "kokoro"]:
-            provider = PROVIDERS.get(provider_id)
-            if provider:
-                available = await is_provider_available(provider_id)
-                status = get_provider_display_status(provider, available)
-                for line in status:
-                    status_lines.append(f"  {line}")
+        # TTS Endpoints
+        status_lines.append("\nTTS Endpoints:")
+        for url in TTS_BASE_URLS:
+            endpoint_info = provider_registry.registry["tts"].get(url)
+            if endpoint_info:
+                emoji = "✅" if endpoint_info.healthy else "❌"
+                status_lines.append(f"  {emoji} {url}")
+                if endpoint_info.healthy:
+                    status_lines.append(f"     Models: {', '.join(endpoint_info.models[:3]) if endpoint_info.models else 'none'}")
+                    status_lines.append(f"     Voices: {len(endpoint_info.voices)} available")
+        
+        # STT Endpoints
+        status_lines.append("\nSTT Endpoints:")
+        for url in STT_BASE_URLS:
+            endpoint_info = provider_registry.registry["stt"].get(url)
+            if endpoint_info:
+                emoji = "✅" if endpoint_info.healthy else "❌"
+                status_lines.append(f"  {emoji} {url}")
+                if endpoint_info.healthy:
+                    status_lines.append(f"     Models: {', '.join(endpoint_info.models) if endpoint_info.models else 'none'}")
         
         # Configuration
-        from voice_mcp.shared import (
-            TTS_VOICE, TTS_MODEL, STT_MODEL, 
+        from voice_mcp.config import (
+            TTS_VOICES, TTS_MODELS, 
             PREFER_LOCAL, AUTO_START_KOKORO,
             AUDIO_FEEDBACK_ENABLED, LIVEKIT_URL
         )
         
         status_lines.append("\nConfiguration:")
-        status_lines.append(f"  TTS Voice: {TTS_VOICE}")
-        status_lines.append(f"  TTS Model: {TTS_MODEL}")
-        status_lines.append(f"  STT Model: {STT_MODEL}")
+        status_lines.append(f"  Preferred Voices: {', '.join(TTS_VOICES[:3])}{'...' if len(TTS_VOICES) > 3 else ''}")
+        status_lines.append(f"  Preferred Models: {', '.join(TTS_MODELS)}")
         status_lines.append(f"  Prefer Local: {PREFER_LOCAL}")
         status_lines.append(f"  Auto-start Kokoro: {AUTO_START_KOKORO}")
         status_lines.append(f"  Audio Feedback: {'Enabled' if AUDIO_FEEDBACK_ENABLED else 'Disabled'}")

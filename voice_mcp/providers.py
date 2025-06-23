@@ -1,255 +1,245 @@
 """
-Provider registry for voice-mcp.
+Provider selection and management for voice-mcp.
 
-This module manages the configuration and selection of voice service providers,
-supporting both cloud and local STT/TTS services with transparent fallback.
+This module provides compatibility layer and selection logic for voice providers,
+working with the dynamic provider discovery system.
 """
 
 import logging
-from typing import Dict, Optional, List, Any
-import httpx
-import asyncio
+from typing import Dict, Optional, List, Any, Tuple
+from openai import AsyncOpenAI
+
+from .config import TTS_VOICES, TTS_MODELS, OPENAI_API_KEY
+from .provider_discovery import provider_registry, EndpointInfo
 
 logger = logging.getLogger("voice-mcp")
 
-# Import config for voice preferences and URLs
-from .config import VOICEMODE_VOICES, KOKORO_TTS_BASE_URL, OPENAI_TTS_BASE_URL, STT_BASE_URL
+
+async def get_tts_client_and_voice(
+    voice: Optional[str] = None,
+    model: Optional[str] = None,
+    base_url: Optional[str] = None
+) -> Tuple[AsyncOpenAI, str, str, EndpointInfo]:
+    """
+    Get TTS client with automatic selection based on preferences.
+    
+    Args:
+        voice: Specific voice to use (optional)
+        model: Specific model to use (optional)
+        base_url: Specific base URL to use (optional)
+    
+    Returns:
+        Tuple of (client, selected_voice, selected_model, endpoint_info)
+    
+    Raises:
+        ValueError: If no suitable endpoint is found
+    """
+    # Ensure registry is initialized
+    await provider_registry.initialize()
+    
+    # If specific base_url is requested, use it directly
+    if base_url:
+        endpoint_info = provider_registry.registry["tts"].get(base_url)
+        if not endpoint_info or not endpoint_info.healthy:
+            raise ValueError(f"Requested base URL {base_url} is not available")
+        
+        selected_voice = voice or _select_voice_for_endpoint(endpoint_info)
+        selected_model = model or _select_model_for_endpoint(endpoint_info)
+        
+        client = AsyncOpenAI(
+            api_key=OPENAI_API_KEY,
+            base_url=base_url
+        )
+        
+        return client, selected_voice, selected_model, endpoint_info
+    
+    # If specific voice is requested, find endpoint that supports it
+    if voice:
+        endpoint_info = provider_registry.find_endpoint_with_voice(voice)
+        if not endpoint_info:
+            raise ValueError(f"No available endpoint supports voice '{voice}'")
+        
+        selected_model = model or _select_model_for_endpoint(endpoint_info)
+        
+        client = AsyncOpenAI(
+            api_key=OPENAI_API_KEY,
+            base_url=endpoint_info.url
+        )
+        
+        return client, voice, selected_model, endpoint_info
+    
+    # Otherwise, find first endpoint with a preferred voice
+    for preferred_voice in TTS_VOICES:
+        endpoint_info = provider_registry.find_endpoint_with_voice(preferred_voice)
+        if endpoint_info:
+            selected_model = model or _select_model_for_endpoint(endpoint_info)
+            
+            client = AsyncOpenAI(
+                api_key=OPENAI_API_KEY,
+                base_url=endpoint_info.url
+            )
+            
+            return client, preferred_voice, selected_model, endpoint_info
+    
+    # Last resort: use any available endpoint
+    healthy_endpoints = provider_registry.get_healthy_endpoints("tts")
+    if not healthy_endpoints:
+        raise ValueError("No healthy TTS endpoints available")
+    
+    endpoint_info = healthy_endpoints[0]
+    selected_voice = _select_voice_for_endpoint(endpoint_info)
+    selected_model = model or _select_model_for_endpoint(endpoint_info)
+    
+    client = AsyncOpenAI(
+        api_key=OPENAI_API_KEY,
+        base_url=endpoint_info.url
+    )
+    
+    return client, selected_voice, selected_model, endpoint_info
 
 
-# Provider Registry with basic metadata
-PROVIDERS = {
-    "kokoro": {
-        "id": "kokoro",
-        "name": "Kokoro TTS", 
-        "type": "tts",
-        "base_url": KOKORO_TTS_BASE_URL,
-        "local": True,
-        "auto_start": True,
-        "features": ["local", "free", "fast"],
-        "default_voice": "af_sky",
-        "voices": ["af_sky", "af_sarah", "am_adam", "af_nicole", "am_michael"],
-        "models": ["tts-1"],  # OpenAI-compatible model name
-    },
-    "openai": {
-        "id": "openai",
-        "name": "OpenAI TTS",
-        "type": "tts", 
-        "base_url": OPENAI_TTS_BASE_URL,
-        "local": False,
-        "features": ["cloud", "emotions", "multi-model"],
-        "default_voice": "alloy",
-        "voices": ["alloy", "nova", "echo", "fable", "onyx", "shimmer"],
-        "models": ["tts-1", "tts-1-hd", "gpt-4o-mini-tts"],
-    },
-    "whisper-local": {
-        "id": "whisper-local",
-        "name": "Whisper.cpp",
-        "type": "stt",
-        "base_url": STT_BASE_URL if "localhost" in STT_BASE_URL else "http://localhost:2022/v1", 
-        "local": True,
-        "features": ["local", "free", "accurate"],
-        "models": ["whisper-1"],  # OpenAI-compatible model name
-    },
-    "openai-whisper": {
-        "id": "openai-whisper",
-        "name": "OpenAI Whisper",
-        "type": "stt",
-        "base_url": STT_BASE_URL if "openai.com" in STT_BASE_URL else "https://api.openai.com/v1",
-        "local": False,
-        "features": ["cloud", "fast", "reliable"],
-        "models": ["whisper-1"],
-    }
-}
+async def get_stt_client(
+    model: Optional[str] = None,
+    base_url: Optional[str] = None
+) -> Tuple[AsyncOpenAI, str, EndpointInfo]:
+    """
+    Get STT client with automatic selection.
+    
+    Args:
+        model: Specific model to use (optional)
+        base_url: Specific base URL to use (optional)
+    
+    Returns:
+        Tuple of (client, selected_model, endpoint_info)
+    
+    Raises:
+        ValueError: If no suitable endpoint is found
+    """
+    # Ensure registry is initialized
+    await provider_registry.initialize()
+    
+    # If specific base_url is requested, use it directly
+    if base_url:
+        endpoint_info = provider_registry.registry["stt"].get(base_url)
+        if not endpoint_info or not endpoint_info.healthy:
+            raise ValueError(f"Requested base URL {base_url} is not available")
+        
+        selected_model = model or "whisper-1"  # Default STT model
+        
+        client = AsyncOpenAI(
+            api_key=OPENAI_API_KEY,
+            base_url=base_url
+        )
+        
+        return client, selected_model, endpoint_info
+    
+    # Get any healthy STT endpoint
+    healthy_endpoints = provider_registry.get_healthy_endpoints("stt")
+    if not healthy_endpoints:
+        raise ValueError("No healthy STT endpoints available")
+    
+    endpoint_info = healthy_endpoints[0]
+    selected_model = model or "whisper-1"
+    
+    client = AsyncOpenAI(
+        api_key=OPENAI_API_KEY,
+        base_url=endpoint_info.url
+    )
+    
+    return client, selected_model, endpoint_info
 
+
+def _select_voice_for_endpoint(endpoint_info: EndpointInfo) -> str:
+    """Select the best available voice for an endpoint."""
+    # Try to find a preferred voice
+    for voice in TTS_VOICES:
+        if voice in endpoint_info.voices:
+            return voice
+    
+    # Otherwise use first available voice
+    if endpoint_info.voices:
+        return endpoint_info.voices[0]
+    
+    # Fallback
+    return "alloy"
+
+
+def _select_model_for_endpoint(endpoint_info: EndpointInfo) -> str:
+    """Select the best available model for an endpoint."""
+    # Try to find a preferred model
+    for model in TTS_MODELS:
+        if model in endpoint_info.models:
+            return model
+    
+    # Otherwise use first available model
+    if endpoint_info.models:
+        return endpoint_info.models[0]
+    
+    # Fallback
+    return "tts-1"
+
+
+# Compatibility functions for existing code
 
 async def is_provider_available(provider_id: str, timeout: float = 2.0) -> bool:
-    """Check if a provider is reachable via health check or basic connectivity."""
-    provider = PROVIDERS.get(provider_id)
-    if not provider:
+    """Check if a provider is available (compatibility function)."""
+    # This is now handled by the provider registry
+    await provider_registry.initialize()
+    
+    # Map old provider IDs to base URLs
+    provider_map = {
+        "kokoro": "http://localhost:8880/v1",
+        "openai": "https://api.openai.com/v1",
+        "whisper-local": "http://localhost:2022/v1",
+        "openai-whisper": "https://api.openai.com/v1"
+    }
+    
+    base_url = provider_map.get(provider_id)
+    if not base_url:
         return False
     
-    base_url = provider["base_url"]
+    # Check in appropriate registry
+    service_type = "tts" if provider_id in ["kokoro", "openai"] else "stt"
+    endpoint_info = provider_registry.registry[service_type].get(base_url)
     
-    # Skip health check for cloud providers
-    if not provider.get("local", False):
-        # For cloud providers, we assume they're available
-        # Real availability will be checked during actual API calls
-        return True
-    
-    try:
-        async with httpx.AsyncClient(timeout=timeout) as client:
-            # Try OpenAI-compatible models endpoint first
-            try:
-                response = await client.get(f"{base_url}/models")
-                if response.status_code == 200:
-                    logger.debug(f"Provider {provider_id} is available (models endpoint)")
-                    return True
-            except:
-                pass
-            
-            # Try health endpoint as fallback
-            try:
-                response = await client.get(f"{base_url}/health")
-                if response.status_code == 200:
-                    logger.debug(f"Provider {provider_id} is available (health endpoint)")
-                    return True
-            except:
-                pass
-            
-            # Try base URL
-            try:
-                response = await client.get(base_url)
-                if response.status_code < 500:  # Any non-server-error response
-                    logger.debug(f"Provider {provider_id} is available (base URL)")
-                    return True
-            except:
-                pass
-                
-    except Exception as e:
-        logger.debug(f"Provider {provider_id} not available: {e}")
-    
-    return False
-
-
-async def get_available_providers(provider_type: Optional[str] = None) -> List[Dict[str, Any]]:
-    """Get all available providers of a specific type."""
-    providers = []
-    
-    for provider_id, provider in PROVIDERS.items():
-        # Filter by type if specified
-        if provider_type and provider["type"] != provider_type:
-            continue
-            
-        # Check availability
-        if await is_provider_available(provider_id):
-            providers.append(provider)
-    
-    return providers
-
-
-async def get_tts_provider(prefer_local: bool = True, require_emotions: bool = False) -> Optional[Dict[str, Any]]:
-    """
-    Get the best available TTS provider based on requirements.
-    
-    Args:
-        prefer_local: Prefer local providers over cloud
-        require_emotions: Require emotion support (forces OpenAI)
-        
-    Returns:
-        Provider configuration dict or None if no suitable provider found
-    """
-    # If emotions are required, only OpenAI will work
-    if require_emotions:
-        if await is_provider_available("openai"):
-            return PROVIDERS["openai"]
-        return None
-    
-    # Get available TTS providers
-    available = await get_available_providers("tts")
-    
-    if not available:
-        return None
-    
-    # Sort by preference
-    if prefer_local:
-        # Prefer local providers
-        available.sort(key=lambda p: (not p.get("local", False), p["id"]))
-    else:
-        # Prefer cloud providers
-        available.sort(key=lambda p: (p.get("local", False), p["id"]))
-    
-    return available[0]
-
-
-async def get_stt_provider(prefer_local: bool = True) -> Optional[Dict[str, Any]]:
-    """
-    Get the best available STT provider.
-    
-    Args:
-        prefer_local: Prefer local providers over cloud
-        
-    Returns:
-        Provider configuration dict or None if no suitable provider found
-    """
-    # Get available STT providers
-    available = await get_available_providers("stt")
-    
-    if not available:
-        return None
-    
-    # Sort by preference
-    if prefer_local:
-        # Prefer local providers
-        available.sort(key=lambda p: (not p.get("local", False), p["id"]))
-    else:
-        # Prefer cloud providers
-        available.sort(key=lambda p: (p.get("local", False), p["id"]))
-    
-    return available[0]
+    return endpoint_info.healthy if endpoint_info else False
 
 
 def get_provider_by_voice(voice: str) -> Optional[Dict[str, Any]]:
-    """Get provider based on voice selection."""
-    # Kokoro voices start with af_ or am_
+    """Get provider info by voice (compatibility function)."""
+    # Kokoro voices
     if voice.startswith(('af_', 'am_', 'bf_', 'bm_')):
-        return PROVIDERS.get("kokoro")
+        return {
+            "id": "kokoro",
+            "name": "Kokoro TTS",
+            "type": "tts",
+            "base_url": "http://localhost:8880/v1",
+            "voices": ["af_sky", "af_sarah", "am_adam", "af_nicole", "am_michael"]
+        }
     
-    # Default to OpenAI for standard voices
-    return PROVIDERS.get("openai")
+    # OpenAI voices
+    return {
+        "id": "openai",
+        "name": "OpenAI TTS",
+        "type": "tts",
+        "base_url": "https://api.openai.com/v1",
+        "voices": ["alloy", "nova", "echo", "fable", "onyx", "shimmer"]
+    }
 
 
 def select_best_voice(provider: str, available_voices: Optional[List[str]] = None) -> Optional[str]:
-    """Select the best available voice based on VOICEMODE_VOICES preference order.
-    
-    Args:
-        provider: The provider ID (e.g., 'kokoro', 'openai')
-        available_voices: Optional list of available voices. If not provided, uses provider registry.
-    
-    Returns:
-        The best available voice or None if no match found
-    """
-    # Get available voices from provider or use provided list
+    """Select the best available voice (compatibility function)."""
     if available_voices is None:
-        provider_info = PROVIDERS.get(provider)
-        if not provider_info:
-            logger.warning(f"Unknown provider: {provider}")
-            return None
-        available_voices = provider_info.get("voices", [])
-    
-    # Strip whitespace from voice preferences
-    preferred_voices = [v.strip() for v in VOICEMODE_VOICES]
+        # Get from registry if possible
+        if provider == "kokoro":
+            available_voices = ["af_sky", "af_sarah", "am_adam", "af_nicole", "am_michael"]
+        else:
+            available_voices = ["alloy", "nova", "echo", "fable", "onyx", "shimmer"]
     
     # Find first preferred voice that's available
-    for voice in preferred_voices:
+    for voice in TTS_VOICES:
         if voice in available_voices:
-            logger.info(f"Selected voice '{voice}' from preferences for {provider}")
             return voice
     
-    # If no preferred voice is available, return provider's default
-    provider_info = PROVIDERS.get(provider)
-    if provider_info:
-        default = provider_info.get("default_voice")
-        logger.info(f"No preferred voice available, using {provider} default: {default}")
-        return default
-    
-    return None
-
-
-def get_provider_display_status(provider: Dict[str, Any], is_available: bool) -> List[str]:
-    """Get formatted status display for a provider."""
-    status_lines = []
-    
-    emoji = "✅" if is_available else "❌"
-    status = "Available" if is_available else "Unavailable"
-    
-    status_lines.append(f"{emoji} {provider['name']} ({status})")
-    status_lines.append(f"   Type: {provider['type'].upper()}")
-    status_lines.append(f"   Local: {'Yes' if provider.get('local') else 'No'}")
-    
-    if provider['type'] == 'tts' and 'voices' in provider:
-        status_lines.append(f"   Voices: {len(provider['voices'])}")
-    
-    if 'features' in provider:
-        status_lines.append(f"   Features: {', '.join(provider['features'])}")
-    
-    return status_lines
+    # Return first available
+    return available_voices[0] if available_voices else None
