@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- STT audio format now defaults to MP3 when base format is PCM, fixing OpenAI Whisper compatibility
+  - OpenAI Whisper API doesn't support PCM format for uploads
+  - Automatic fallback ensures STT continues to work with default configuration
+
 ### Changed
 - Simplified audio feedback configuration to boolean AUDIO_FEEDBACK_ENABLED
 - Removed voice feedback functionality, keeping only chime feedback

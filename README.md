@@ -452,6 +452,7 @@ The OpenAI SDK handles this automatically - no Voice Mode configuration needed!
 ### Common Issues
 
 - **No microphone access**: Check system permissions for terminal/application
+  - **WSL2 Users**: See [WSL2 Microphone Access Guide](docs/troubleshooting/wsl2-microphone-access.md)
 - **UV not found**: Install with `curl -LsSf https://astral.sh/uv/install.sh | sh`
 - **OpenAI API error**: Verify your `OPENAI_API_KEY` is set correctly
 - **No audio output**: Check system audio settings and available devices
@@ -465,6 +466,16 @@ export VOICEMODE_DEBUG=true
 ```
 
 Debug audio files are saved to: `~/voicemode_recordings/`
+
+### Audio Diagnostics
+
+Run the diagnostic script to check your audio setup:
+
+```bash
+python scripts/diagnose-wsl-audio.py
+```
+
+This will check for required packages, audio services, and provide specific recommendations.
 
 ### Audio Saving
 

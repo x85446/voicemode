@@ -68,7 +68,8 @@ CHANNELS = 1
 # Audio format configuration
 AUDIO_FORMAT = os.getenv("VOICEMODE_AUDIO_FORMAT", "pcm").lower()
 TTS_AUDIO_FORMAT = os.getenv("VOICEMODE_TTS_AUDIO_FORMAT", "pcm").lower()  # Default to PCM for optimal streaming
-STT_AUDIO_FORMAT = os.getenv("VOICEMODE_STT_AUDIO_FORMAT", AUDIO_FORMAT).lower()
+# STT requires a format supported by the STT provider - PCM is not supported by OpenAI Whisper
+STT_AUDIO_FORMAT = os.getenv("VOICEMODE_STT_AUDIO_FORMAT", "mp3" if AUDIO_FORMAT == "pcm" else AUDIO_FORMAT).lower()
 
 # Supported audio formats
 SUPPORTED_AUDIO_FORMATS = ["pcm", "opus", "mp3", "wav", "flac", "aac"]
