@@ -25,6 +25,7 @@ from .config import (
     SAMPLE_RATE,
     logger
 )
+from .utils import get_event_logger
 
 # Opus decoder support (optional)
 try:
@@ -275,6 +276,11 @@ async def stream_pcm_audio(
         )
         stream.start()
         
+        # Log TTS playback start when we start the stream
+        event_logger = get_event_logger()
+        if event_logger:
+            event_logger.log_event(event_logger.TTS_PLAYBACK_START)
+        
         # Don't add stream parameter - Kokoro defaults to true, OpenAI doesn't support it
         
         logger.info("Starting true HTTP streaming with iter_bytes()")
@@ -294,6 +300,11 @@ async def stream_pcm_audio(
                         first_chunk_time = time.perf_counter()
                         chunk_receive_time = first_chunk_time - start_time
                         logger.info(f"First audio chunk received after {chunk_receive_time:.3f}s")
+                        
+                        # Log TTS first audio event
+                        event_logger = get_event_logger()
+                        if event_logger:
+                            event_logger.log_event(event_logger.TTS_FIRST_AUDIO)
                     
                     # Convert bytes to numpy array for sounddevice
                     # PCM data is already in the right format
@@ -312,6 +323,10 @@ async def stream_pcm_audio(
         
         # Wait for playback to finish
         stream.stop()
+        
+        # Log TTS playback end
+        if event_logger:
+            event_logger.log_event(event_logger.TTS_PLAYBACK_END)
         
         end_time = time.perf_counter()
         metrics.generation_time = first_chunk_time - start_time if first_chunk_time else 0
