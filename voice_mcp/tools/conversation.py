@@ -651,21 +651,24 @@ async def converse(
     """
     logger.info(f"Converse: '{message[:50]}{'...' if len(message) > 50 else ''}' (wait_for_response: {wait_for_response})")
     
-    # Log tool request start
+    # Run startup initialization if needed
+    await startup_initialization()
+    
+    # Get event logger and start session
     event_logger = get_event_logger()
+    session_id = None
+    
+    # For conversations with responses, create a session
+    if event_logger and wait_for_response:
+        session_id = event_logger.start_session()
+    
+    # Log tool request start (after session is created)
     if event_logger:
+        # If we have a session, the event will be associated with it
         log_tool_request_start("converse", {
             "wait_for_response": wait_for_response,
             "listen_duration": listen_duration if wait_for_response else None
         })
-    
-    # Run startup initialization if needed
-    await startup_initialization()
-    
-    # Start event logging session if we're listening for a response
-    session_id = None
-    if event_logger and wait_for_response:
-        session_id = event_logger.start_session()
     
     # Track execution time and resources
     start_time = time.time()

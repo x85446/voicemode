@@ -270,8 +270,8 @@ async def stream_pcm_audio(
         stream = sd.OutputStream(
             samplerate=SAMPLE_RATE,  # Standard TTS sample rate (24kHz)
             channels=1,
-            dtype='int16',  # PCM is 16-bit integers
-            callback=audio_callback if debug else None
+            dtype='int16'  # PCM is 16-bit integers
+            # Note: Can't use callback and write() together
         )
         stream.start()
         

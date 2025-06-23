@@ -235,11 +235,34 @@ def print_timeline(events: List[Dict[str, Any]]):
         print(f"{elapsed:>7.3f}s {event['event_type']:25} {details}")
 
 
+def calculate_claude_thinking_times(all_events: List[Dict[str, Any]]) -> List[float]:
+    """Calculate Claude thinking times from all events chronologically."""
+    thinking_times = []
+    
+    # Sort all events by timestamp
+    sorted_events = sorted(all_events, key=lambda e: parse_timestamp(e['timestamp']))
+    
+    # Find tool request end -> next tool request start pairs
+    last_tool_end = None
+    for event in sorted_events:
+        if event['event_type'] == 'TOOL_REQUEST_END':
+            last_tool_end = parse_timestamp(event['timestamp'])
+        elif event['event_type'] == 'TOOL_REQUEST_START' and last_tool_end:
+            tool_start = parse_timestamp(event['timestamp'])
+            thinking_time = (tool_start - last_tool_end).total_seconds()
+            thinking_times.append(thinking_time)
+            # Don't reset last_tool_end, as we want to track all gaps
+    
+    return thinking_times
+
+
 def print_statistics(all_sessions: Dict[str, List[Dict[str, Any]]]):
     """Print aggregate statistics across all sessions."""
     all_metrics = []
+    all_events = []
     
     for session_id, events in all_sessions.items():
+        all_events.extend(events)
         if session_id != 'no_session':
             metrics = calculate_session_metrics(events)
             if metrics:
@@ -272,6 +295,17 @@ def print_statistics(all_sessions: Dict[str, List[Dict[str, Any]]]):
             if len(values) > 1:
                 median = statistics.median(values)
                 print(f"  Median: {format_duration(median)}")
+    
+    # Calculate Claude thinking times from all events
+    thinking_times = calculate_claude_thinking_times(all_events)
+    if thinking_times:
+        print(f"\nClaude Thinking Time (from all events):")
+        print(f"  Average: {format_duration(statistics.mean(thinking_times))}")
+        print(f"  Min: {format_duration(min(thinking_times))}")
+        print(f"  Max: {format_duration(max(thinking_times))}")
+        if len(thinking_times) > 1:
+            print(f"  Median: {format_duration(statistics.median(thinking_times))}")
+        print(f"  Samples: {len(thinking_times)}")
 
 
 def main():
