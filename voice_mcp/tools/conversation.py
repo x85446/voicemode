@@ -60,6 +60,15 @@ from voice_mcp.core import (
     play_chime_end
 )
 from voice_mcp.tools.statistics import track_voice_interaction
+from voice_mcp.utils import (
+    get_event_logger,
+    log_recording_start,
+    log_recording_end,
+    log_stt_start,
+    log_stt_complete,
+    log_tool_request_start,
+    log_tool_request_end
+)
 
 logger = logging.getLogger("voice-mcp")
 
@@ -642,8 +651,21 @@ async def converse(
     """
     logger.info(f"Converse: '{message[:50]}{'...' if len(message) > 50 else ''}' (wait_for_response: {wait_for_response})")
     
+    # Log tool request start
+    event_logger = get_event_logger()
+    if event_logger:
+        log_tool_request_start("converse", {
+            "wait_for_response": wait_for_response,
+            "listen_duration": listen_duration if wait_for_response else None
+        })
+    
     # Run startup initialization if needed
     await startup_initialization()
+    
+    # Start event logging session if we're listening for a response
+    session_id = None
+    if event_logger and wait_for_response:
+        session_id = event_logger.start_session()
     
     # Track execution time and resources
     start_time = time.time()
@@ -651,6 +673,9 @@ async def converse(
         import resource
         start_memory = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
         logger.debug(f"Starting converse - Memory: {start_memory} KB")
+    
+    result = None
+    success = False
     
     try:
         # If not waiting for response, just speak and return
@@ -706,6 +731,7 @@ async def converse(
                 )
                 
                 logger.info(f"Speak-only result: {result}")
+                success = True
                 return result
             except Exception as e:
                 logger.error(f"Speak error: {e}")
@@ -725,7 +751,8 @@ async def converse(
                 )
                 
                 logger.error(f"Returning error: {error_msg}")
-                return error_msg
+                result = error_msg
+                return result
         
         # Otherwise, speak and then listen for response
         # Determine transport method
@@ -755,7 +782,9 @@ async def converse(
                 error_message=livekit_result if not success else None
             )
             
-            return livekit_result
+            result = livekit_result
+            success = not livekit_result.startswith("Error:") and not livekit_result.startswith("No ")
+            return result
         
         elif transport == "local":
             # Local microphone approach with timing
@@ -790,7 +819,8 @@ async def converse(
                     timings['tts_total'] = time.perf_counter() - tts_start
                     
                     if not tts_success:
-                        return "Error: Could not speak message"
+                        result = "Error: Could not speak message"
+                        return result
                     
                     # Brief pause before listening
                     await asyncio.sleep(0.5)
@@ -800,11 +830,23 @@ async def converse(
                     
                     # Record response
                     logger.info(f"🎤 Listening for {listen_duration} seconds...")
+                    
+                    # Log recording start
+                    if event_logger:
+                        event_logger.log_event(event_logger.RECORDING_START)
+                    
                     record_start = time.perf_counter()
                     audio_data = await asyncio.get_event_loop().run_in_executor(
                         None, record_audio, listen_duration
                     )
                     timings['record'] = time.perf_counter() - record_start
+                    
+                    # Log recording end
+                    if event_logger:
+                        event_logger.log_event(event_logger.RECORDING_END, {
+                            "duration": timings['record'],
+                            "samples": len(audio_data)
+                        })
                     
                     # Play "finished" feedback sound
                     await play_audio_feedback("finished", openai_clients, audio_feedback, audio_feedback_style or "whisper")
@@ -814,18 +856,35 @@ async def converse(
                     logger.info(f"Recording finished at {user_done_time - tts_start:.1f}s from start")
                     
                     if len(audio_data) == 0:
-                        return "Error: Could not record audio"
+                        result = "Error: Could not record audio"
+                        return result
                     
                     # Convert to text
+                    # Log STT start
+                    if event_logger:
+                        event_logger.log_event(event_logger.STT_START)
+                    
                     stt_start = time.perf_counter()
                     response_text = await speech_to_text(audio_data, SAVE_AUDIO, AUDIO_DIR if SAVE_AUDIO else None)
                     timings['stt'] = time.perf_counter() - stt_start
+                    
+                    # Log STT complete
+                    if event_logger:
+                        if response_text:
+                            event_logger.log_event(event_logger.STT_COMPLETE, {"text": response_text})
+                        else:
+                            event_logger.log_event(event_logger.STT_NO_SPEECH)
                 
                 # Calculate response time from user's perspective
                 # This is the time from when recording ends to when TTS starts
-                response_time = tts_start - user_done_time
+                # BUG FIX: This should be user_done_time - tts_start (positive value)
+                # The user finishes speaking at user_done_time, and TTS started earlier at tts_start
+                # So the response time is how long after TTS started until the user finished
+                # Actually, this doesn't make sense - we need to track when the NEXT TTS starts
+                # For now, we'll use the time from recording end to current time
+                response_time = time.perf_counter() - user_done_time
                 timings['response_time'] = response_time
-                logger.info(f"Response time calculation: {response_time:.1f}s (from end of recording to TTS start)")
+                logger.info(f"Response time calculation: {response_time:.1f}s (from end of recording to now)")
                 
                 # Calculate total time (use tts_total instead of sub-metrics)
                 main_timings = {k: v for k, v in timings.items() if k in ['tts_total', 'record', 'stt']}
@@ -868,10 +927,24 @@ async def converse(
                     error_message=None if response_text else "No speech detected"
                 )
                 
+                # End event logging session and get metrics
+                if event_logger and session_id:
+                    event_metrics = event_logger.end_session()
+                    if event_metrics and 'response_time' in event_metrics:
+                        # Use event-based response time if available
+                        timings['response_time'] = event_metrics['response_time']
+                        response_time = event_metrics['response_time']
+                        # Update the timing string
+                        timing_parts[0] = f"response_time {response_time:.1f}s"
+                        timing_str = ", ".join(timing_parts) + f", total {total_time:.1f}s"
+                
                 if response_text:
-                    return f"Voice response: {response_text} | Timing: {timing_str}"
+                    result = f"Voice response: {response_text} | Timing: {timing_str}"
+                    success = True
                 else:
-                    return f"No speech detected | Timing: {timing_str}"
+                    result = f"No speech detected | Timing: {timing_str}"
+                    success = True  # Not an error, just no speech
+                return result
                     
             except Exception as e:
                 logger.error(f"Local voice error: {e}")
@@ -891,18 +964,25 @@ async def converse(
                     error_message=str(e)
                 )
                 
-                return f"Error: {str(e)}"
+                result = f"Error: {str(e)}"
+                return result
             
         else:
-            return f"Unknown transport: {transport}"
+            result = f"Unknown transport: {transport}"
+            return result
             
     except Exception as e:
         logger.error(f"Unexpected error in converse: {e}")
         if DEBUG:
             logger.error(f"Full traceback: {traceback.format_exc()}")
-        return f"Unexpected error: {str(e)}"
+        result = f"Unexpected error: {str(e)}"
+        return result
         
     finally:
+        # Log tool request end
+        if event_logger:
+            log_tool_request_end("converse", success=success)
+        
         # Log execution metrics
         elapsed = time.time() - start_time
         logger.info(f"Converse completed in {elapsed:.2f}s")

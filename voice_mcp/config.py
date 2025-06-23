@@ -100,6 +100,13 @@ STREAM_CHUNK_SIZE = int(os.getenv("VOICEMODE_STREAM_CHUNK_SIZE", "4096"))  # Dow
 STREAM_BUFFER_MS = int(os.getenv("VOICEMODE_STREAM_BUFFER_MS", "150"))  # Initial buffer before playback
 STREAM_MAX_BUFFER = float(os.getenv("VOICEMODE_STREAM_MAX_BUFFER", "2.0"))  # Max buffer in seconds
 
+# ==================== EVENT LOGGING CONFIGURATION ====================
+
+# Event logging configuration
+EVENT_LOG_ENABLED = os.getenv("VOICEMODE_EVENT_LOG_ENABLED", "true").lower() in ("true", "1", "yes", "on")
+EVENT_LOG_DIR = os.getenv("VOICEMODE_EVENT_LOG_DIR", str(Path.home() / "voicemode_logs"))
+EVENT_LOG_ROTATION = os.getenv("VOICEMODE_EVENT_LOG_ROTATION", "daily")  # Currently only daily is supported
+
 # ==================== GLOBAL STATE ====================
 
 # Service management

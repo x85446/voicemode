@@ -10,6 +10,7 @@ import logging
 import os
 import tempfile
 import gc
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -20,6 +21,11 @@ from openai import AsyncOpenAI
 import httpx
 
 from .config import SAMPLE_RATE
+from .utils import (
+    get_event_logger,
+    log_tts_start,
+    log_tts_first_audio
+)
 
 logger = logging.getLogger("voicemode")
 
@@ -98,6 +104,15 @@ async def text_to_speech(
         logger.debug(f"TTS config - Model: {tts_model}, Voice: {tts_voice}, Base URL: {tts_base_url}")
     
     metrics = {}
+    
+    # Log TTS start event
+    event_logger = get_event_logger()
+    if event_logger:
+        event_logger.log_event(event_logger.TTS_START, {
+            "message": text[:200],  # Truncate for log
+            "voice": tts_voice,
+            "model": tts_model
+        })
     
     try:
         # Import config for audio format
@@ -181,6 +196,10 @@ async def text_to_speech(
             
         metrics['generation'] = time.perf_counter() - generation_start
         logger.debug(f"TTS API response received, content length: {len(response_content)} bytes")
+        
+        # Log TTS first audio event
+        if event_logger:
+            event_logger.log_event(event_logger.TTS_FIRST_AUDIO)
         
         # Save debug file if enabled
         if debug and debug_dir:
@@ -270,6 +289,10 @@ async def text_to_speech(
                         sd.default.samplerate = audio.frame_rate
                         sd.default.channels = audio.channels
                         
+                        # Log TTS playback start event
+                        if event_logger:
+                            event_logger.log_event(event_logger.TTS_PLAYBACK_START)
+                        
                         # Add 100ms of silence at the beginning to prevent clipping
                         silence_duration = 0.1  # seconds
                         silence_samples = int(audio.frame_rate * silence_duration)
@@ -283,6 +306,10 @@ async def text_to_speech(
                         
                         sd.play(samples_with_buffer, audio.frame_rate)
                         sd.wait()
+                        
+                        # Log TTS playback end event
+                        if event_logger:
+                            event_logger.log_event(event_logger.TTS_PLAYBACK_END)
                         
                         logger.info("✓ TTS played successfully")
                         os.unlink(tmp_file.name)

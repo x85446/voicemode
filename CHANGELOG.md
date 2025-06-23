@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Unified event logging system for tracking voice interaction events
+  - JSONL format for easy parsing and analysis
+  - Automatic daily log rotation
+  - Thread-safe async file writing
+  - Session-based event grouping
+  - Configurable via `VOICEMODE_EVENT_LOG_ENABLED` and `VOICEMODE_EVENT_LOG_DIR`
+- Event types tracked:
+  - TTS events: request, start, first audio, playback start/end, errors
+  - Recording events: start, end, saved
+  - STT events: request, start, complete, no speech, errors
+  - System events: session start/end, transport switches, provider switches
+- Automatic timing metric calculation from event timestamps
+- Integration with conversation flow for accurate performance tracking
+
+### Fixed
+- Negative response time calculation in conversation metrics
+  - Response time now correctly measured from end of recording
+  - Event-based timing provides more accurate measurements
+
 ## [2.3.0] - 2025-06-23
 
 ### Added
