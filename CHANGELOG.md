@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.0] - 2025-06-23
+
 ### Fixed
 - STT audio format now defaults to MP3 when base format is PCM, fixing OpenAI Whisper compatibility
   - OpenAI Whisper API doesn't support PCM format for uploads
