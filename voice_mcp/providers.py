@@ -39,6 +39,7 @@ async def get_tts_client_and_voice(
     
     # If specific base_url is requested, use it directly
     if base_url:
+        logger.info(f"TTS Provider Selection: Using specific base URL: {base_url}")
         endpoint_info = provider_registry.registry["tts"].get(base_url)
         if not endpoint_info or not endpoint_info.healthy:
             raise ValueError(f"Requested base URL {base_url} is not available")
@@ -51,10 +52,15 @@ async def get_tts_client_and_voice(
             base_url=base_url
         )
         
+        logger.info(f"  • Selected endpoint: {base_url}")
+        logger.info(f"  • Selected voice: {selected_voice}")
+        logger.info(f"  • Selected model: {selected_model}")
+        
         return client, selected_voice, selected_model, endpoint_info
     
     # If specific voice is requested, find endpoint that supports it
     if voice:
+        logger.info(f"TTS Provider Selection: Looking for endpoint with voice '{voice}'")
         endpoint_info = provider_registry.find_endpoint_with_voice(voice)
         if not endpoint_info:
             raise ValueError(f"No available endpoint supports voice '{voice}'")
@@ -66,9 +72,14 @@ async def get_tts_client_and_voice(
             base_url=endpoint_info.url
         )
         
+        logger.info(f"  • Selected endpoint: {endpoint_info.url}")
+        logger.info(f"  • Selected voice: {voice}")
+        logger.info(f"  • Selected model: {selected_model}")
+        
         return client, voice, selected_model, endpoint_info
     
     # Otherwise, find first endpoint with a preferred voice
+    logger.info(f"TTS Provider Selection: No specific voice requested, checking preferred voices: {TTS_VOICES}")
     for preferred_voice in TTS_VOICES:
         endpoint_info = provider_registry.find_endpoint_with_voice(preferred_voice)
         if endpoint_info:
@@ -78,6 +89,10 @@ async def get_tts_client_and_voice(
                 api_key=OPENAI_API_KEY,
                 base_url=endpoint_info.url
             )
+            
+            logger.info(f"  • Selected endpoint: {endpoint_info.url}")
+            logger.info(f"  • Selected voice: {preferred_voice}")
+            logger.info(f"  • Selected model: {selected_model}")
             
             return client, preferred_voice, selected_model, endpoint_info
     

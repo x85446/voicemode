@@ -164,12 +164,21 @@ async def get_tts_config(provider: Optional[str] = None, voice: Optional[str] = 
         logger.warning(f"Instructions parameter is only supported with gpt-4o-mini-tts model, ignoring for model: {model}")
         instructions = None
     
+    # Map provider names to base URLs
+    provider_urls = {
+        'openai': 'https://api.openai.com/v1',
+        'kokoro': 'http://studio:8880/v1'
+    }
+    
+    # Convert provider name to URL if it's a known provider
+    base_url = provider_urls.get(provider, provider)
+    
     # Use new provider selection logic
     try:
         client, selected_voice, selected_model, endpoint_info = await get_tts_client_and_voice(
             voice=voice,
             model=model,
-            base_url=provider  # Allow provider to be a base URL
+            base_url=base_url  # Now using mapped URL
         )
         
         # Return configuration compatible with existing code
@@ -241,8 +250,12 @@ def validate_emotion_request(tts_model: Optional[str], tts_instructions: Optiona
 async def speech_to_text(audio_data: np.ndarray, save_audio: bool = False, audio_dir: Optional[Path] = None) -> Optional[str]:
     """Convert audio to text"""
     logger.info(f"STT: Converting speech to text, audio data shape: {audio_data.shape}")
+    
+    # Get proper STT configuration using the new provider system
+    stt_config = await get_stt_config()
+    
     if DEBUG:
-        logger.debug(f"STT config - Model: {STT_MODEL}, Base URL: {STT_BASE_URL}")
+        logger.debug(f"STT config - Model: {stt_config['model']}, Base URL: {stt_config['base_url']}")
         logger.debug(f"Audio stats - Min: {audio_data.min()}, Max: {audio_data.max()}, Mean: {audio_data.mean():.2f}")
     
     wav_file = None
@@ -317,9 +330,16 @@ async def speech_to_text(audio_data: np.ndarray, save_audio: bool = False, audio
             logger.debug(f"Uploading {file_size} bytes to STT API...")
             
             with open(upload_file, 'rb') as audio_file:
-                # Use async context manager if available, otherwise use regular create
-                transcription = await openai_clients['stt'].audio.transcriptions.create(
-                    model=STT_MODEL,
+                # Use the STT client from the configuration
+                if 'client' in stt_config:
+                    stt_client = stt_config['client']
+                else:
+                    # Fallback to legacy client
+                    openai_clients['_temp_stt'] = openai_clients.get(stt_config.get('client_key', 'stt'))
+                    stt_client = openai_clients['_temp_stt']
+                
+                transcription = await stt_client.audio.transcriptions.create(
+                    model=stt_config['model'],
                     file=audio_file,
                     response_format="text"
                 )
@@ -336,7 +356,7 @@ async def speech_to_text(audio_data: np.ndarray, save_audio: bool = False, audio
                         
         except Exception as e:
             logger.error(f"STT failed: {e}")
-            logger.error(f"STT config when error occurred - Model: {STT_MODEL}, Base URL: {STT_BASE_URL}")
+            logger.error(f"STT config when error occurred - Model: {stt_config.get('model', 'unknown')}, Base URL: {stt_config.get('base_url', 'unknown')}")
             if hasattr(e, 'response'):
                 logger.error(f"HTTP status: {e.response.status_code if hasattr(e.response, 'status_code') else 'unknown'}")
                 logger.error(f"Response text: {e.response.text if hasattr(e.response, 'text') else 'unknown'}")
@@ -601,7 +621,7 @@ async def converse(
         tts_instructions: Tone/style instructions for gpt-4o-mini-tts model only (e.g., "Speak in a cheerful tone", "Sound angry", "Be extremely sad")
         audio_feedback: Override global audio feedback setting (default: None uses VOICE_MCP_AUDIO_FEEDBACK env var)
         audio_feedback_style: Audio feedback style - "whisper" (default) or "shout" (default: None uses VOICE_MCP_FEEDBACK_STYLE env var)
-        audio_format: Override audio format (opus, mp3, wav, flac, aac, pcm) - defaults to VOICEMODE_TTS_AUDIO_FORMAT env var
+        audio_format: Override audio format (pcm, mp3, wav, flac, aac, opus) - defaults to VOICEMODE_TTS_AUDIO_FORMAT env var
         If wait_for_response is False: Confirmation that message was spoken
         If wait_for_response is True: The voice response received (or error/timeout message)
     
@@ -729,7 +749,7 @@ async def converse(
                 )
                 
                 logger.info(f"Speak-only result: {result}")
-                success = True
+                # success is already set correctly from TTS result
                 return result
             except Exception as e:
                 logger.error(f"Speak error: {e}")

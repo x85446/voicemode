@@ -11,6 +11,8 @@ Voice Mode now uses **PCM** audio format by default for TTS streaming. This chan
 
 For STT uploads and audio saving, compressed formats like Opus are still available.
 
+**Important Note**: While Opus was originally intended for streaming due to its low-latency design, in practice it requires full buffering before playback. PCM is the only format that truly supports progressive streaming for TTS.
+
 ## Quick Start
 
 For most users, no action is required. Voice Mode will automatically use PCM format for TTS streaming, providing the best real-time performance.
@@ -145,7 +147,7 @@ Opus files might appear larger if saved in an OGG container. The actual audio da
 | Format | File Size* | Quality | Latency | Best For |
 |--------|-----------|---------|---------|----------|
 | PCM | N/A (streaming) | Uncompressed | Zero | TTS streaming (default) |
-| Opus | Smallest (100KB) | Excellent for voice | Very Low | STT uploads, saving |
+| Opus | Smallest (100KB) | Excellent for voice | High (buffering required) | STT uploads, saving |
 | MP3 | Medium (500KB) | Good | Low | Wide compatibility |
 | AAC | Medium (450KB) | Good | Low | Apple ecosystem |
 | FLAC | Large (2MB) | Lossless | Low | Archival |

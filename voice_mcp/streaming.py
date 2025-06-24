@@ -374,7 +374,7 @@ async def stream_tts_audio(
     Returns:
         Tuple of (success, metrics)
     """
-    format = request_params.get('response_format', 'opus')
+    format = request_params.get('response_format', 'pcm')
     logger.info(f"Starting streaming TTS with format: {format}")
     
     # PCM is best for streaming (no decoding needed)
@@ -409,7 +409,7 @@ async def stream_with_buffering(
     This is used for formats like MP3, Opus, etc where frame boundaries are critical.
     For Opus, we download the complete audio before playing.
     """
-    format = request_params.get('response_format', 'opus')
+    format = request_params.get('response_format', 'pcm')
     logger.info(f"Using buffered streaming for format: {format}")
     
     metrics = StreamMetrics()

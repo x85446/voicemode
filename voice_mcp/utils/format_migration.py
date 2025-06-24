@@ -2,7 +2,7 @@
 Audio format migration utilities.
 
 This module provides utilities for detecting existing audio format usage
-and helping with migration to the new default Opus format.
+and helping with migration to the new default pcm format for streaming TTS.
 """
 
 import os

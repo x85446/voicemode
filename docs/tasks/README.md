@@ -4,6 +4,11 @@
 
 - [Implementation Notes](./implementation-notes.md) - Completed work and decisions
 - [Key Insights](./key-insights.md) - Important learnings and design principles
+- [Screencasts](./screencasts/) - Video production plans and scripts
+
+## The One Thing
+
+- [ ] [Create Screencast](./screencast-quickstart/README.md) - Make 2-minute quickstart video demonstrating voice-mode capabilities
 
 ## High Priority
 
@@ -28,6 +33,7 @@
 - [ ] Audio/transcription manifest files linking recordings with metadata
 - [ ] Conversation export features (for podcasts, analysis)
 - [ ] Provider capability matrix display
+- [ ] Add MCP resources for setup guides and troubleshooting (platform-specific instructions)
 
 ## Ideas to Explore
 

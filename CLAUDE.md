@@ -4,10 +4,11 @@
 
 ALWAYS read the following files at the start of any session:
 - README.md to understand the project
+- docs/tasks/README.md for an overview of work
 - .conventions/CONVENTIONS.md to understand the engineering conventions for this project
 - .ai_docs/README.md to understand where to read and write information about external tools, libraries, protocols, etc
 - .repos.txt # List of 3rd party repos we may use
-- docs/tasks/README.md # Current task list and recently completed work
+- docs/tasks/README.md # Current task list and recently completed work (take note of "The One Thing" - this is the most important task currently)
 - docs/tasks/implementation-notes.md # Important implementation decisions and fixes
 - docs/tasks/key-insights.md # Key learnings and design principles
 

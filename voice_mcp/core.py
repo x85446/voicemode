@@ -99,9 +99,20 @@ async def text_to_speech(
     import time
     
     logger.info(f"TTS: Converting text to speech: '{text[:100]}{'...' if len(text) > 100 else ''}'")
+    
+    # Always log the TTS configuration details
+    logger.info(f"TTS Request Details:")
+    logger.info(f"  • Endpoint URL: {tts_base_url}")
+    logger.info(f"  • Model: {tts_model}")
+    logger.info(f"  • Voice: {tts_voice}")
+    logger.info(f"  • Format: {audio_format or 'default'}")
+    logger.info(f"  • Client Key: {client_key}")
+    if instructions:
+        logger.info(f"  • Instructions: {instructions}")
+    
     if debug:
         logger.debug(f"TTS full text: {text}")
-        logger.debug(f"TTS config - Model: {tts_model}, Voice: {tts_voice}, Base URL: {tts_base_url}")
+        logger.debug(f"Debug mode enabled, will save audio files")
     
     metrics = {}
     
@@ -123,9 +134,11 @@ async def text_to_speech(
         
         # Determine provider from base URL (simple heuristic)
         provider = "openai"
-        if "localhost" in tts_base_url or "127.0.0.1" in tts_base_url:
+        if "localhost" in tts_base_url or "127.0.0.1" in tts_base_url or "studio" in tts_base_url:
             if "8880" in tts_base_url:
                 provider = "kokoro"
+        
+        logger.info(f"  • Detected Provider: {provider} (based on URL: {tts_base_url})")
         
         # Validate format for provider
         # Use provided format or fall back to configured default
@@ -409,7 +422,7 @@ def generate_chime(frequencies: list, duration: float = 0.1, sample_rate: int = 
     for freq in frequencies:
         # Generate sine wave
         t = np.linspace(0, duration, samples_per_tone, False)
-        tone = 0.3 * np.sin(2 * np.pi * freq * t)  # 0.3 amplitude for comfortable volume
+        tone = 0.0375 * np.sin(2 * np.pi * freq * t)  # 0.0375 amplitude for extremely quiet volume
         
         # Apply fade in/out to prevent clicks
         fade_in = np.linspace(0, 1, fade_samples)

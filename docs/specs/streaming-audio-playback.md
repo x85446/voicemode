@@ -65,23 +65,25 @@ async def stream_tts_audio(text: str, client: AsyncOpenAI, **params):
 
 ### 2. Format-Specific Considerations
 
-#### Opus (Recommended for Streaming)
+#### PCM (Recommended for Streaming)
+- **Advantage**: No decoding needed, direct playback
+- **Disadvantage**: Large bandwidth requirement
+- **Use case**: Local TTS with minimal latency
+
+#### Opus
 - **Container**: OGG with Opus codec
 - **Advantages**: 
   - Designed for low-latency streaming
   - Small chunk sizes (2.5-60ms frames)
   - Built-in error resilience
 - **Implementation**: Use `opuslib` or `pyogg` for decoding
+- **Critical Limitation**: Doesn't work for streaming - must be fully buffered before playback
+- **Recommendation**: Use PCM for streaming TTS, Opus only for file storage
 
 #### MP3
 - **Challenge**: Frame boundaries may not align with chunks
 - **Solution**: Buffer until valid frame header found
 - **Typical frame size**: ~400-1400 bytes
-
-#### PCM/WAV
-- **Advantage**: No decoding needed, direct playback
-- **Disadvantage**: Large bandwidth requirement
-- **Use case**: Local TTS with minimal latency
 
 ### 3. Audio Playback Backend Options
 
@@ -142,7 +144,6 @@ class SoundDeviceStream:
 - Establish buffering parameters
 
 #### Phase 2: Compressed Format Support
-- Add Opus streaming decoder
 - Implement MP3 frame boundary detection
 - Handle format-specific quirks
 

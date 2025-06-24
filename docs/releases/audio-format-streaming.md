@@ -2,15 +2,18 @@
 
 ## Summary
 
-This release adds configurable audio format support with Opus as the default, streaming audio playback infrastructure, and the ability to override audio formats per request.
+This release adds configurable audio format support with PCM as the default for streaming TTS, streaming audio playback infrastructure, and the ability to override audio formats per request.
+
+**Update**: PCM is now the default for TTS streaming as Opus was found to require full buffering before playback, defeating the purpose of streaming.
 
 ## Key Features
 
 ### 1. Audio Format Configuration
-- Added `VOICEMODE_AUDIO_FORMAT` environment variable (default: "opus")
+- Added `VOICEMODE_AUDIO_FORMAT` environment variable (default: "pcm" for TTS streaming)
 - Separate format control for TTS and STT via `VOICEMODE_TTS_AUDIO_FORMAT` and `VOICEMODE_STT_AUDIO_FORMAT`
 - Provider-aware format validation and fallback
 - Support for: opus, mp3, wav, flac, aac, pcm
+- **PCM is now default for TTS streaming** for zero-latency playback
 
 ### 2. Streaming Audio Playback
 - Added streaming infrastructure to reduce Time To First Audio (TTFA)
@@ -36,6 +39,11 @@ This release adds configurable audio format support with Opus as the default, st
 - OpenAI TTS with Opus format produces "terrible" audio quality
 - Documented in `docs/issues/openai-opus-audio-quality.md`
 - Workaround: Use MP3 for OpenAI, Opus for other providers
+
+### Opus Streaming Limitation
+- Opus format requires full buffering before playback
+- Cannot be used for true progressive streaming
+- **Solution**: Use PCM format for streaming TTS (now default)
 
 ## Technical Details
 
@@ -82,16 +90,18 @@ Replace all `VOICE_MCP_` prefixes with `VOICEMODE_`:
 - etc.
 
 ### Audio Format
-The default format is now Opus. If you experience issues:
-1. For OpenAI TTS: Set `VOICEMODE_TTS_AUDIO_FORMAT=mp3`
+The default format is now PCM for TTS streaming. If you need compressed formats:
+1. For file storage: Set `VOICEMODE_TTS_AUDIO_FORMAT=opus` or `mp3`
 2. For specific requests: Use `audio_format="mp3"` parameter
+3. For OpenAI TTS with issues: Use MP3 instead of Opus
 
 ## Testing Notes
 
-- Kokoro + Opus: Good quality ✅
+- Kokoro + Opus: Good quality ✅ (but requires buffering)
 - OpenAI + Opus: Poor quality ❌ (use MP3)
-- Streaming: Currently minimal benefit as full buffering still occurs
-- TTFA metric: Added but shows 0s until true streaming is implemented
+- PCM Streaming: True progressive playback with minimal latency ✅
+- Opus Streaming: Requires full buffering, no streaming benefit ❌
+- TTFA metric: Now accurately reflects time to first audio with PCM
 
 ## Future Work
 
