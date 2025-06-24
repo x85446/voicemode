@@ -45,6 +45,7 @@ desktop.ini
 # Logs
 *.log
 logs/
+logs
 *.err
 
 # Temporary files

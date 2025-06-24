@@ -22,16 +22,21 @@ jobs:
       id: notes
       run: |
         echo "NOTES<<EOF" >> $GITHUB_OUTPUT
-        echo "## What's Changed" >> $GITHUB_OUTPUT
-        echo "" >> $GITHUB_OUTPUT
-        # Get commits since last tag
-        PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
-        if [ -n "$PREV_TAG" ]; then
-          git log --pretty=format:"- %s (%h)" $PREV_TAG..HEAD >> $GITHUB_OUTPUT
-        else
-          git log --pretty=format:"- %s (%h)" HEAD >> $GITHUB_OUTPUT
-        fi
-        echo "" >> $GITHUB_OUTPUT
+        
+        # Extract release notes from CHANGELOG.md for this version
+        VERSION="${{ steps.version.outputs.VERSION }}"
+        
+        # Use awk to extract the section for this version
+        awk -v ver="$VERSION" '
+          /^## \[/ {
+            if (found) exit
+            if ($0 ~ "\\[" ver "\\]") found=1
+            next
+          }
+          found && /^## \[/ { exit }
+          found { print }
+        ' CHANGELOG.md >> $GITHUB_OUTPUT
+        
         echo "" >> $GITHUB_OUTPUT
         echo "## Installation" >> $GITHUB_OUTPUT
         echo "" >> $GITHUB_OUTPUT
@@ -45,10 +50,6 @@ jobs:
         echo "claude mcp add voice-mcp uvx voice-mcp" >> $GITHUB_OUTPUT
         echo '```' >> $GITHUB_OUTPUT
         echo "" >> $GITHUB_OUTPUT
-        echo "### Container" >> $GITHUB_OUTPUT
-        echo '```bash' >> $GITHUB_OUTPUT
-        echo "docker pull ghcr.io/mbailey/voice-mcp:${{ steps.version.outputs.VERSION }}" >> $GITHUB_OUTPUT
-        echo '```' >> $GITHUB_OUTPUT
         echo "EOF" >> $GITHUB_OUTPUT
     
     - name: Create GitHub Release
