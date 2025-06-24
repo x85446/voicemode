@@ -5,7 +5,7 @@ import logging
 import os
 import time
 import traceback
-from typing import Optional, Literal
+from typing import Optional, Literal, Tuple
 from pathlib import Path
 
 import numpy as np
@@ -201,23 +201,131 @@ async def get_stt_config(provider: Optional[str] = None):
         }
 
 
-def validate_emotion_request(tts_model: Optional[str], tts_instructions: Optional[str], tts_provider: Optional[str]) -> Optional[str]:
+
+async def text_to_speech_with_failover(
+    message: str,
+    voice: Optional[str] = None,
+    model: Optional[str] = None,
+    instructions: Optional[str] = None,
+    audio_format: Optional[str] = None,
+    initial_provider: Optional[str] = None
+) -> Tuple[bool, Optional[dict], Optional[dict]]:
     """
-    Validate if emotional TTS is allowed and appropriate.
-    Returns the instructions if valid, None if emotions should be stripped.
+    Text to speech with automatic failover to next available endpoint.
+    
+    Returns:
+        Tuple of (success, tts_metrics, tts_config)
     """
-    # No emotion instructions provided
-    if not tts_instructions:
-        return tts_instructions
+    from voice_mcp.provider_discovery import provider_registry
     
-    # Check if this is an emotion-capable model request
-    if tts_model == "gpt-4o-mini-tts":
-        # Emotional TTS is allowed for gpt-4o-mini-tts model
-        # Log provider switch if needed
-        if tts_provider != "openai":
-            logger.info("Switching to OpenAI for emotional speech support")
+    # Track which URLs we've tried
+    tried_urls = set()
+    last_error = None
     
-    return tts_instructions
+    # If initial_provider specified, try it first
+    if initial_provider:
+        provider_urls = {'openai': 'https://api.openai.com/v1', 'kokoro': 'http://studio:8880/v1'}
+        initial_url = provider_urls.get(initial_provider, initial_provider)
+        if initial_url:
+            tried_urls.add(initial_url)
+            try:
+                tts_config = await get_tts_config(initial_provider, voice, model, instructions)
+                
+                # Handle both new client object and legacy client_key
+                if 'client' in tts_config:
+                    openai_clients['_temp_tts'] = tts_config['client']
+                    client_key = '_temp_tts'
+                else:
+                    client_key = tts_config.get('client_key', 'tts')
+                
+                success, tts_metrics = await text_to_speech(
+                    text=message,
+                    openai_clients=openai_clients,
+                    tts_model=tts_config['model'],
+                    tts_base_url=tts_config['base_url'],
+                    tts_voice=tts_config['voice'],
+                    debug=DEBUG,
+                    debug_dir=DEBUG_DIR if DEBUG else None,
+                    save_audio=SAVE_AUDIO,
+                    audio_dir=AUDIO_DIR if SAVE_AUDIO else None,
+                    client_key=client_key,
+                    instructions=tts_config.get('instructions'),
+                    audio_format=audio_format
+                )
+                
+                # Clean up temporary client
+                if '_temp_tts' in openai_clients:
+                    del openai_clients['_temp_tts']
+                
+                if success:
+                    return success, tts_metrics, tts_config
+                
+                # Mark endpoint as unhealthy
+                await provider_registry.mark_unhealthy('tts', tts_config['base_url'], 'TTS request failed')
+                
+            except Exception as e:
+                last_error = str(e)
+                logger.warning(f"Initial provider {initial_provider} failed: {e}")
+    
+    # Try remaining endpoints in order
+    from voice_mcp.config import TTS_BASE_URLS
+    
+    for base_url in TTS_BASE_URLS:
+        if base_url in tried_urls:
+            continue
+            
+        tried_urls.add(base_url)
+        
+        try:
+            # Try to get config for this specific base URL
+            tts_config = await get_tts_config(None, voice, model, instructions)
+            
+            # Skip if we got a different URL than requested (means our preferred wasn't available)
+            if tts_config.get('base_url') != base_url:
+                continue
+            
+            # Handle both new client object and legacy client_key
+            if 'client' in tts_config:
+                openai_clients['_temp_tts'] = tts_config['client']
+                client_key = '_temp_tts'
+            else:
+                client_key = tts_config.get('client_key', 'tts')
+            
+            success, tts_metrics = await text_to_speech(
+                text=message,
+                openai_clients=openai_clients,
+                tts_model=tts_config['model'],
+                tts_base_url=tts_config['base_url'],
+                tts_voice=tts_config['voice'],
+                debug=DEBUG,
+                debug_dir=DEBUG_DIR if DEBUG else None,
+                save_audio=SAVE_AUDIO,
+                audio_dir=AUDIO_DIR if SAVE_AUDIO else None,
+                client_key=client_key,
+                instructions=tts_config.get('instructions'),
+                audio_format=audio_format
+            )
+            
+            # Clean up temporary client
+            if '_temp_tts' in openai_clients:
+                del openai_clients['_temp_tts']
+            
+            if success:
+                logger.info(f"TTS succeeded with failover to: {base_url}")
+                return success, tts_metrics, tts_config
+            else:
+                # Mark endpoint as unhealthy
+                await provider_registry.mark_unhealthy('tts', base_url, 'TTS request failed')
+                
+        except Exception as e:
+            last_error = str(e)
+            logger.warning(f"TTS failed for {base_url}: {e}")
+            # Mark endpoint as unhealthy
+            await provider_registry.mark_unhealthy('tts', base_url, str(e))
+    
+    # All endpoints failed
+    logger.error(f"All TTS endpoints failed. Last error: {last_error}")
+    return False, None, None
 
 
 async def speech_to_text(audio_data: np.ndarray, save_audio: bool = False, audio_dir: Optional[Path] = None) -> Optional[str]:
@@ -589,11 +697,15 @@ async def converse(
         transport: Transport method - "auto" (try LiveKit then local), "local" (direct mic), "livekit" (room-based)
         room_name: LiveKit room name (only for livekit transport, auto-discovered if empty)
         timeout: Maximum wait time for response in seconds (LiveKit only)
-        voice: Override TTS voice (e.g., OpenAI: nova, shimmer; Kokoro: af_sky, af_sarah, am_adam, af_nicole, am_michael)
-               IMPORTANT: Never use 'coral' voice. For Kokoro, always default to 'af_sky'
-        tts_provider: TTS provider to use - "openai" or "kokoro" (auto-detects based on voice if not specified)
-        tts_model: TTS model to use (e.g., OpenAI: tts-1, tts-1-hd, gpt-4o-mini-tts; Kokoro uses tts-1)
-                   IMPORTANT: gpt-4o-mini-tts is BEST for emotional speech and should be used when expressing emotions
+        voice: Override TTS voice - ONLY specify if user explicitly requests a specific voice
+               The system automatically selects the best available voice based on preferences.
+               Examples: nova, shimmer (OpenAI); af_sky, af_sarah, am_adam (Kokoro)
+               IMPORTANT: Never use 'coral' voice.
+        tts_provider: TTS provider - ONLY specify if user explicitly requests or for failover testing
+                      The system automatically selects based on availability and preferences.
+        tts_model: TTS model - ONLY specify for specific features (e.g., gpt-4o-mini-tts for emotions)
+                   The system automatically selects the best available model.
+                   Options: tts-1, tts-1-hd, gpt-4o-mini-tts (OpenAI); Kokoro uses tts-1
         tts_instructions: Tone/style instructions for gpt-4o-mini-tts model only (e.g., "Speak in a cheerful tone", "Sound angry", "Be extremely sad")
         audio_feedback: Override global audio feedback setting (default: None uses VOICE_MCP_AUDIO_FEEDBACK env var)
         audio_feedback_style: Audio feedback style - "whisper" (default) or "shout" (default: None uses VOICE_MCP_FEEDBACK_STYLE env var)
@@ -602,12 +714,13 @@ async def converse(
         If wait_for_response is True: The voice response received (or error/timeout message)
     
     Examples:
-        - Ask a question: converse("What's your name?")
-        - Make a statement and wait: converse("Tell me more about that")
+        - Ask a question: converse("What's your name?")  # Let system auto-select voice/model
+        - Make a statement and wait: converse("Tell me more about that")  # Auto-selection recommended
         - Just speak without waiting: converse("Goodbye!", wait_for_response=False)
-        - Use HD model: converse("High quality speech", tts_model="tts-1-hd")
+        - User requests specific voice: converse("Hello", voice="nova")  # Only when explicitly requested
+        - Need HD quality: converse("High quality speech", tts_model="tts-1-hd")  # Only for specific features
         
-    Emotional Speech (requires VOICE_ALLOW_EMOTIONS=true and OpenAI API):
+    Emotional Speech (Requires OpenAI API):
         - Excitement: converse("We did it!", tts_model="gpt-4o-mini-tts", tts_instructions="Sound extremely excited and celebratory")
         - Sadness: converse("I'm sorry for your loss", tts_model="gpt-4o-mini-tts", tts_instructions="Sound gentle and sympathetic")
         - Urgency: converse("Watch out!", tts_model="gpt-4o-mini-tts", tts_instructions="Sound urgent and concerned")
@@ -664,35 +777,14 @@ async def converse(
         if not wait_for_response:
             try:
                 async with audio_operation_lock:
-                    # Validate emotion request
-                    validated_instructions = validate_emotion_request(tts_model, tts_instructions, tts_provider)
-                    tts_config = await get_tts_config(tts_provider, voice, tts_model, validated_instructions)
-                    # Handle both new client object and legacy client_key
-                    if 'client' in tts_config:
-                        # Store client temporarily in openai_clients
-                        openai_clients['_temp_tts'] = tts_config['client']
-                        client_key = '_temp_tts'
-                    else:
-                        client_key = tts_config.get('client_key', 'tts')
-                    
-                    success, tts_metrics = await text_to_speech(
-                        text=message,
-                        openai_clients=openai_clients,
-                        tts_model=tts_config['model'],
-                        tts_base_url=tts_config['base_url'],
-                        tts_voice=tts_config['voice'],
-                        debug=DEBUG,
-                        debug_dir=DEBUG_DIR if DEBUG else None,
-                        save_audio=SAVE_AUDIO,
-                        audio_dir=AUDIO_DIR if SAVE_AUDIO else None,
-                        client_key=client_key,
-                        instructions=tts_config.get('instructions'),
-                        audio_format=audio_format
+                    success, tts_metrics, tts_config = await text_to_speech_with_failover(
+                        message=message,
+                        voice=voice,
+                        model=tts_model,
+                        instructions=tts_instructions,
+                        audio_format=audio_format,
+                        initial_provider=tts_provider
                     )
-                    
-                    # Clean up temporary client
-                    if '_temp_tts' in openai_clients:
-                        del openai_clients['_temp_tts']
                     
                 # Include timing info if available
                 timing_info = ""
@@ -787,36 +879,14 @@ async def converse(
                 async with audio_operation_lock:
                     # Speak the message
                     tts_start = time.perf_counter()
-                    # Validate emotion request
-                    validated_instructions = validate_emotion_request(tts_model, tts_instructions, tts_provider)
-                    tts_config = await get_tts_config(tts_provider, voice, tts_model, validated_instructions)
-                    
-                    # Handle both new client object and legacy client_key
-                    if 'client' in tts_config:
-                        # Store client temporarily in openai_clients
-                        openai_clients['_temp_tts'] = tts_config['client']
-                        client_key = '_temp_tts'
-                    else:
-                        client_key = tts_config.get('client_key', 'tts')
-                    
-                    tts_success, tts_metrics = await text_to_speech(
-                        text=message,
-                        openai_clients=openai_clients,
-                        tts_model=tts_config['model'],
-                        tts_base_url=tts_config['base_url'],
-                        tts_voice=tts_config['voice'],
-                        debug=DEBUG,
-                        debug_dir=DEBUG_DIR if DEBUG else None,
-                        save_audio=SAVE_AUDIO,
-                        audio_dir=AUDIO_DIR if SAVE_AUDIO else None,
-                        client_key=client_key,
-                        instructions=tts_config.get('instructions'),
-                        audio_format=audio_format
+                    tts_success, tts_metrics, tts_config = await text_to_speech_with_failover(
+                        message=message,
+                        voice=voice,
+                        model=tts_model,
+                        instructions=tts_instructions,
+                        audio_format=audio_format,
+                        initial_provider=tts_provider
                     )
-                    
-                    # Clean up temporary client
-                    if '_temp_tts' in openai_clients:
-                        del openai_clients['_temp_tts']
                     
                     # Add TTS sub-metrics
                     if tts_metrics:
@@ -1008,9 +1078,9 @@ async def ask_voice_question(
     Args:
         question: The question to ask
         duration: How long to listen for response in seconds (default: 15.0)
-        voice: Override TTS voice (e.g., OpenAI: nova, shimmer; Kokoro: af_sky)
-        tts_provider: TTS provider to use - "openai" or "kokoro"
-        tts_model: TTS model to use (e.g., tts-1, tts-1-hd, gpt-4o-mini-tts)
+        voice: Override TTS voice - ONLY specify if user explicitly requests
+        tts_provider: TTS provider - ONLY specify if user explicitly requests
+        tts_model: TTS model - ONLY specify for specific features
         tts_instructions: Tone/style instructions for gpt-4o-mini-tts model only
         audio_format: Override audio format (opus, mp3, wav, flac, aac, pcm)
     
