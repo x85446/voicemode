@@ -16,7 +16,6 @@ async def voice_setup() -> str:
    - TTS_MODEL: TTS model (e.g., 'tts-1', 'tts-1-hd', 'gpt-4o-mini-tts')
    - STT_MODEL: STT model (default: 'whisper-1')
    - VOICE_MCP_PREFER_LOCAL: Use local services when available (default: true)
-   - VOICE_ALLOW_EMOTIONS: Enable emotional TTS (default: false)
    - VOICE_MCP_AUTO_START_KOKORO: Auto-start Kokoro TTS (default: false)
 
 3. **Local Services** (optional):
@@ -42,8 +41,7 @@ async def emotional_speech_guide() -> str:
     return """To use emotional speech with voice-mcp:
 
 **Requirements**:
-1. Set `VOICE_ALLOW_EMOTIONS=true` in your environment
-2. Use OpenAI API (emotional speech requires OpenAI's gpt-4o-mini-tts model)
+- Use OpenAI API (emotional speech requires OpenAI's gpt-4o-mini-tts model)
 
 **Usage Examples**:
 
@@ -78,5 +76,5 @@ converse("This is a secret",
 - Be specific with emotional instructions
 - Combine emotions with speaking style (e.g., "Sound excited but speak slowly")
 - Cost: ~$0.02/minute for emotional speech
-- Falls back to standard TTS if emotions are disabled
+- Automatically uses gpt-4o-mini-tts when emotional instructions are provided
 """

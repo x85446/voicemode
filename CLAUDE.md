@@ -49,6 +49,35 @@ When using voice tools, ALWAYS set appropriate duration parameters based on expe
 
 **IMPORTANT**: Always err on the side of longer duration. It's better to have silence at the end than to cut off the user mid-sentence.
 
+## Voice Parameter Selection Guidelines
+
+When using voice tools (`converse`, `ask_voice_question`), DO NOT specify voice, model, or provider parameters unless:
+- The user explicitly requests a specific voice/model/provider (e.g., "use nova voice", "speak with Kokoro")
+- You need specific features (e.g., emotional TTS requires gpt-4o-mini-tts model)
+- You're testing failover by trying a different provider after a failure
+- You're debugging a specific configuration issue
+
+**Why**: The system automatically selects the best available endpoint, voice, and model based on:
+- Health status of endpoints (failing services are automatically skipped)
+- Configured preferences (TTS_VOICES, TTS_MODELS, TTS_BASE_URLS)
+- Feature requirements (e.g., emotional speech)
+
+**Examples**:
+```python
+# ✅ Good - Let system auto-select
+converse("How can I help you today?")
+
+# ❌ Bad - Unnecessarily specifying parameters
+converse("How can I help you today?", voice="af_sky", tts_provider="kokoro")
+
+# ✅ Good - User requested specific voice
+# User: "Can you speak with the nova voice?"
+converse("Sure, I'm now using the nova voice", voice="nova")
+
+# ✅ Good - Need emotional features
+converse("I'm so excited!", tts_model="gpt-4o-mini-tts", tts_instructions="Sound very excited")
+```
+
 You can get the attention of the USER when he is not responding by using tools from livekit-voice-mcp:ask_voice_question
 
 On startup, break the ice by asking a questions with your tools
