@@ -57,9 +57,8 @@ class TestServerSyntax:
                 imports.append(line)
         
         # Basic check that core imports are present
-        assert any('asyncio' in imp for imp in imports), "asyncio import missing"
-        assert any('logging' in imp for imp in imports), "logging import missing"
-        assert any('fastmcp' in imp for imp in imports), "fastmcp import missing"
+        assert any('fastmcp' in imp for imp in imports) or any('FastMCP' in imp for imp in imports), "fastmcp import missing"
+        assert any('config' in imp for imp in imports), "config import missing"
     
     def test_logger_initialization_order(self, server_path):
         """Test that logger is initialized before being used"""
@@ -146,14 +145,12 @@ class TestServerSyntax:
         with open(server_path, 'r') as f:
             content = f.read()
         
-        # Check for essential functions - some are imported from core
-        assert 'from .core import' in content and 'text_to_speech' in content, \
-            "text_to_speech should be imported from core module"
-        assert 'def speech_to_text' in content or 'async def speech_to_text' in content, \
-            "speech_to_text function not found"
-        assert 'def converse' in content or 'async def converse' in content, \
-            "converse function not found"
-        assert '@mcp.tool()' in content, "No MCP tools decorated"
+        # Check that key modules are imported (functions are now in separate modules)
+        assert 'from . import config' in content, "config module should be imported"
+        assert 'from . import tools' in content, "tools module should be imported"
+        assert 'def main()' in content, "main function not found"
+        # Tools are now in separate modules, not in server.py itself
+        assert 'from . import tools' in content, "tools module should be imported"
     
     @pytest.mark.skipif(sys.platform == "win32", reason="uv script execution differs on Windows")
     def test_module_executable(self, server_path):

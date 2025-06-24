@@ -15,7 +15,7 @@ from pydub import AudioSegment
 from openai import AsyncOpenAI
 import httpx
 
-from voice_mcp.server_new import mcp
+from voice_mcp.server import mcp
 from voice_mcp.config import (
     audio_operation_lock,
     SAMPLE_RATE,

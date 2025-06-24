@@ -1,6 +1,6 @@
 """Status check prompts for voice services."""
 
-from voice_mcp.server_new import mcp
+from voice_mcp.server import mcp
 
 
 @mcp.prompt(name="voice-status")

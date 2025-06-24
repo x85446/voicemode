@@ -1,6 +1,6 @@
 """Conversation prompts for voice interactions."""
 
-from voice_mcp.server_new import mcp
+from voice_mcp.server import mcp
 
 
 @mcp.prompt()

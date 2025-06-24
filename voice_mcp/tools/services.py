@@ -11,7 +11,7 @@ from typing import Optional, Dict
 from pathlib import Path
 
 import psutil
-from voice_mcp.server_new import mcp
+from voice_mcp.server import mcp
 
 logger = logging.getLogger("voice-mcp")
 

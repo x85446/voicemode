@@ -35,7 +35,6 @@ _Add any ideas that come up but aren't critical for the first screencast_
 - Create docs/runbooks/ directory for operational procedures
 - Add MCP server for screen sharing/screenshots to help with visual tasks
 - Move saved audio files to XDG standard location (~/.local/share/voicemode/audio)
-- Test server_new.py modular refactor (rename server.py → server_old.py, server_new.py → server.py) 
 
 ## Notes
 - Focus on showing the magic, not perfection

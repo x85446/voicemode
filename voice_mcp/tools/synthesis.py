@@ -3,7 +3,7 @@
 import logging
 from typing import Optional
 
-from voice_mcp.server_new import mcp
+from voice_mcp.server import mcp
 
 logger = logging.getLogger("voice-mcp")
 

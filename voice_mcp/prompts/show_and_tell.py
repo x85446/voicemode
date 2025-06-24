@@ -5,7 +5,7 @@ This prompt enables Claude to give guided audio-visual tours of the codebase,
 controlling the user's Neovim editor while explaining the code structure.
 """
 
-from voice_mcp.server_new import mcp
+from voice_mcp.server import mcp
 
 @mcp.prompt("show-and-tell")
 async def show_and_tell():

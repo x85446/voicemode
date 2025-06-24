@@ -21,7 +21,7 @@ class TestAudioFormatConfiguration:
         
         assert AUDIO_FORMAT == "pcm"
         assert TTS_AUDIO_FORMAT == "pcm"  # Default changed to PCM for optimal streaming
-        assert STT_AUDIO_FORMAT == "pcm"  # Inherits from AUDIO_FORMAT
+        assert STT_AUDIO_FORMAT == "mp3"  # PCM not supported by OpenAI Whisper, defaults to mp3
     
     @patch.dict(os.environ, {
         'VOICEMODE_AUDIO_FORMAT': 'mp3',

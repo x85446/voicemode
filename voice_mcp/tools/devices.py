@@ -4,7 +4,7 @@ import logging
 from typing import Optional
 import sounddevice as sd
 
-from voice_mcp.server_new import mcp
+from voice_mcp.server import mcp
 from voice_mcp.shared import startup_initialization
 
 logger = logging.getLogger("voice-mcp")
