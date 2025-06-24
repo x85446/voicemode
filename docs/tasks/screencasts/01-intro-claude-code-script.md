@@ -52,21 +52,16 @@ brew install uv
 pip install uv
 ```
 
-**You:** "Install voice-mode with uvx."
+You: Add voice-mcp to Claude's configuration
 
-```bash
-uvx install voice-mode
+```shell
+claude mcp add --scope user voice-mode uvx voice-mode
 ```
-
-**You:** "Add it to your Claude config."
-
-**[Show editing ~/.claude/config.json]**
 
 **You:** "Now just run Claude and use the converse command."
 
 ```bash
-claude
-/voice-mode:converse
+claude converse
 ```
 
 ---
