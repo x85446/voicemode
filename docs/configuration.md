@@ -77,7 +77,7 @@ When using voice-mcp with MCP hosts (Claude Desktop, VS Code, etc.), it's import
 |----------|---------|-------------|
 | `VOICEMODE_TTS_BASE_URL` | `https://api.openai.com/v1` | Base URL for TTS service |
 | `VOICEMODE_TTS_VOICE` | `alloy` | Default voice to use |
-| `VOICEMODE_TTS_MODEL` | `tts-1` | TTS model (`tts-1`, `tts-1-hd`, `gpt-4o-mini-tts`) |
+| `VOICEMODE_TTS_MODEL` | `tts-1` | TTS model (`tts-1`, `tts-1-hd`, `gpt-4o-mini-tts`)|
 | `VOICEMODE_VOICES` | `af_sky,nova` | Comma-separated list of preferred voices in order |
 | `VOICEMODE_OPENAI_TTS_BASE_URL` | `https://api.openai.com/v1` | OpenAI-specific TTS endpoint |
 | `VOICEMODE_KOKORO_TTS_BASE_URL` | `http://localhost:8880/v1` | Kokoro-specific TTS endpoint |
