@@ -55,7 +55,7 @@ def save_debug_file(data: bytes, prefix: str, extension: str, debug_dir: Path, d
         return None
 
 
-def get_openai_clients(api_key: str, stt_base_url: str, tts_base_url: str) -> dict:
+def get_openai_clients(api_key: str, stt_base_url: Optional[str] = None, tts_base_url: Optional[str] = None) -> dict:
     """Initialize OpenAI clients for STT and TTS with connection pooling"""
     # Configure timeouts and connection pooling
     http_client_config = {

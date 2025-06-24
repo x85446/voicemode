@@ -52,16 +52,11 @@ STT_BASE_URLS = parse_comma_list("VOICEMODE_STT_BASE_URLS", "https://api.openai.
 TTS_VOICES = parse_comma_list("VOICEMODE_TTS_VOICES", "af_sky,alloy,nova")
 TTS_MODELS = parse_comma_list("VOICEMODE_TTS_MODELS", "tts-1")
 
-# Legacy configuration (kept temporarily for backward compatibility)
-# TODO: Remove these after migration
-STT_BASE_URL = os.getenv("VOICEMODE_STT_BASE_URL", os.getenv("STT_BASE_URL", TTS_BASE_URLS[0] if TTS_BASE_URLS else "https://api.openai.com/v1"))
-STT_MODEL = os.getenv("VOICEMODE_STT_MODEL", os.getenv("STT_MODEL", "whisper-1"))
-TTS_BASE_URL = os.getenv("VOICEMODE_TTS_BASE_URL", os.getenv("TTS_BASE_URL", TTS_BASE_URLS[0] if TTS_BASE_URLS else "https://api.openai.com/v1"))
-TTS_VOICE = os.getenv("VOICEMODE_TTS_VOICE", os.getenv("TTS_VOICE", TTS_VOICES[0] if TTS_VOICES else "alloy"))
-VOICEMODE_VOICES = TTS_VOICES  # Alias for compatibility
-TTS_MODEL = os.getenv("VOICEMODE_TTS_MODEL", os.getenv("TTS_MODEL", TTS_MODELS[0] if TTS_MODELS else "tts-1"))
-OPENAI_TTS_BASE_URL = os.getenv("VOICEMODE_OPENAI_TTS_BASE_URL", os.getenv("OPENAI_TTS_BASE_URL", "https://api.openai.com/v1"))
-KOKORO_TTS_BASE_URL = os.getenv("VOICEMODE_KOKORO_TTS_BASE_URL", os.getenv("KOKORO_TTS_BASE_URL", os.getenv("TTS_BASE_URL", "http://localhost:8880/v1")))
+# Legacy variables have been removed - use the new list-based configuration:
+# - VOICEMODE_TTS_BASE_URLS (comma-separated list)
+# - VOICEMODE_STT_BASE_URLS (comma-separated list)
+# - VOICEMODE_TTS_VOICES (comma-separated list)
+# - VOICEMODE_TTS_MODELS (comma-separated list)
 
 # LiveKit configuration
 LIVEKIT_URL = os.getenv("LIVEKIT_URL", "ws://localhost:7880")

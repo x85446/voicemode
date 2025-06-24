@@ -25,13 +25,6 @@ from voice_mcp.config import (
     SAVE_AUDIO,
     AUDIO_DIR,
     OPENAI_API_KEY,
-    STT_BASE_URL,
-    TTS_BASE_URL,
-    TTS_VOICE,
-    TTS_MODEL,
-    STT_MODEL,
-    OPENAI_TTS_BASE_URL,
-    KOKORO_TTS_BASE_URL,
     LIVEKIT_URL,
     LIVEKIT_API_KEY,
     LIVEKIT_API_SECRET,
@@ -74,30 +67,10 @@ logger = logging.getLogger("voice-mcp")
 # Track last session end time for measuring AI thinking time
 last_session_end_time = None
 
-# Initialize OpenAI clients with provider-specific TTS clients
-openai_clients = get_openai_clients(OPENAI_API_KEY, STT_BASE_URL, TTS_BASE_URL)
+# Initialize OpenAI clients - now using provider registry for endpoint discovery
+openai_clients = get_openai_clients(OPENAI_API_KEY, None, None)
 
-# Add provider-specific TTS clients
-# Always create OpenAI TTS client for emotional speech support
-openai_clients['tts_openai'] = AsyncOpenAI(
-    api_key=OPENAI_API_KEY,
-    base_url=OPENAI_TTS_BASE_URL,
-    http_client=httpx.AsyncClient(
-        timeout=httpx.Timeout(30.0, connect=5.0),
-        limits=httpx.Limits(max_keepalive_connections=5, max_connections=10)
-    )
-)
-
-# Create Kokoro TTS client if different from default
-if KOKORO_TTS_BASE_URL != TTS_BASE_URL:
-    openai_clients['tts_kokoro'] = AsyncOpenAI(
-        api_key=OPENAI_API_KEY,
-        base_url=KOKORO_TTS_BASE_URL,
-        http_client=httpx.AsyncClient(
-            timeout=httpx.Timeout(30.0, connect=5.0),
-            limits=httpx.Limits(max_keepalive_connections=5, max_connections=10)
-        )
-    )
+# Provider-specific clients are now created dynamically by the provider registry
 
 
 async def startup_initialization():
@@ -118,7 +91,7 @@ async def startup_initialization():
         try:
             # Check if Kokoro is already running
             async with httpx.AsyncClient(timeout=3.0) as client:
-                base_url = KOKORO_TTS_BASE_URL.rstrip('/').removesuffix('/v1')
+                base_url = 'http://studio:8880'  # Kokoro default
                 health_url = f"{base_url}/health"
                 response = await client.get(health_url)
                 
@@ -195,9 +168,9 @@ async def get_tts_config(provider: Optional[str] = None, voice: Optional[str] = 
         # Fallback to legacy behavior
         return {
             'client_key': 'tts',
-            'base_url': TTS_BASE_URL,
-            'model': model or TTS_MODEL,
-            'voice': voice or TTS_VOICE,
+            'base_url': 'https://api.openai.com/v1',  # Fallback to OpenAI
+            'model': model or 'tts-1',
+            'voice': voice or 'alloy',
             'instructions': instructions
         }
 
@@ -222,8 +195,8 @@ async def get_stt_config(provider: Optional[str] = None):
         # Fallback to legacy behavior
         return {
             'client_key': 'stt',
-            'base_url': STT_BASE_URL,
-            'model': STT_MODEL,
+            'base_url': 'https://api.openai.com/v1',  # Fallback to OpenAI
+            'model': 'whisper-1',
             'provider': 'openai-whisper'
         }
 
@@ -294,8 +267,8 @@ async def speech_to_text(audio_data: np.ndarray, save_audio: bool = False, audio
             
             # Determine provider from base URL (simple heuristic)
             provider = "openai-whisper"
-            if "localhost" in STT_BASE_URL or "127.0.0.1" in STT_BASE_URL:
-                if "2022" in STT_BASE_URL:
+            # Check if using local Whisper endpoint
+            if stt_config.get('base_url') and ("localhost" in stt_config['base_url'] or "127.0.0.1" in stt_config['base_url'] or "studio:2022" in stt_config['base_url']):
                     provider = "whisper-local"
             
             # Validate format for provider
@@ -523,8 +496,11 @@ async def livekit_ask_voice_question(question: str, room_name: str = "", timeout
                 return "No active LiveKit rooms found"
         
         # Setup TTS and STT for LiveKit
-        tts_client = lk_openai.TTS(voice=TTS_VOICE, base_url=TTS_BASE_URL, model=TTS_MODEL)
-        stt_client = lk_openai.STT(base_url=STT_BASE_URL, model=STT_MODEL)
+        # Get default providers from registry
+        tts_config = await get_tts_config()
+        stt_config = await get_stt_config()
+        tts_client = lk_openai.TTS(voice=tts_config['voice'], base_url=tts_config['base_url'], model=tts_config['model'])
+        stt_client = lk_openai.STT(base_url=stt_config['base_url'], model=stt_config['model'])
         
         # Create simple agent that speaks and listens
         class VoiceAgent(Agent):

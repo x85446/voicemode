@@ -15,8 +15,7 @@ import sounddevice as sd
 from .config import (
     DEBUG, DEBUG_DIR, SAVE_AUDIO, AUDIO_DIR,
     AUDIO_FEEDBACK_ENABLED,
-    STT_BASE_URL, TTS_BASE_URL, TTS_VOICE, TTS_MODEL, STT_MODEL,
-    OPENAI_API_KEY, OPENAI_TTS_BASE_URL, KOKORO_TTS_BASE_URL,
+    OPENAI_API_KEY,
     LIVEKIT_URL, LIVEKIT_API_KEY, LIVEKIT_API_SECRET,
     AUTO_START_KOKORO, PREFER_LOCAL,
     SAMPLE_RATE, CHANNELS,
@@ -47,7 +46,7 @@ async def startup_initialization():
         try:
             # Check if Kokoro is already running
             async with httpx.AsyncClient(timeout=3.0) as client:
-                base_url = KOKORO_TTS_BASE_URL.rstrip('/').removesuffix('/v1')
+                base_url = 'http://studio:8880'  # Kokoro default endpoint
                 health_url = f"{base_url}/health"
                 response = await client.get(health_url)
                 
