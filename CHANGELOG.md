@@ -21,11 +21,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - System events: session start/end, transport switches, provider switches
 - Automatic timing metric calculation from event timestamps
 - Integration with conversation flow for accurate performance tracking
+- Provider management tools for voice-mcp
+  - `refresh_provider_registry` tool to manually update health checks
+  - `get_provider_details` tool to inspect specific endpoints
+  - Support for filtering by service type (tts/stt) or specific URL
+- Automatic TTS failover support in conversation tools
+  - Systematic failover through all configured endpoints
+  - Failed endpoints marked as unhealthy for automatic exclusion
+  - Better error tracking and debugging information
+
+### Changed
+- TTS provider selection algorithm now uses URL-priority based selection
+  - Iterates through TTS_BASE_URLS in preference order
+  - Supports both voice and model preference matching
+  - More predictable provider selection behavior
+- Default TTS configuration updated for local-first experience
+  - Kokoro (localhost:8880) prioritized over OpenAI
+  - Default voices: af_sky, alloy (available on both providers)
+  - Model preference order: gpt-4o-mini-tts, tts-1-hd, tts-1
+- Voice parameter selection guidelines added to CLAUDE.md
+  - Encourages auto-selection over manual specification
+  - Clear examples of when to specify parameters
 
 ### Fixed
 - Negative response time calculation in conversation metrics
   - Response time now correctly measured from end of recording
   - Event-based timing provides more accurate measurements
+
+### Removed
+- VOICE_ALLOW_EMOTIONS environment variable (emotional TTS now automatic with gpt-4o-mini-tts)
 
 ## [2.3.0] - 2025-06-23
 
