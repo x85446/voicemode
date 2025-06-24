@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.0] - 2025-06-25
+
 ### Added
 - Unified event logging system for tracking voice interaction events
   - JSONL format for easy parsing and analysis
