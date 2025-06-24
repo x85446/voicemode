@@ -26,10 +26,11 @@ Natural voice conversations for AI assistants. Voice Mode brings human-like voic
 ## Quick Start
 
 ```bash
+npm install -g @anthropic-ai/claude-code
+curl -LsSf https://astral.sh/uv/install.sh | sh
 claude mcp add --scope user voice-mode uvx voice-mode
 export OPENAI_API_KEY=your-openai-key
-claude
-> /converse
+claude converse
 ```
 
 ## 🎬 Demo
