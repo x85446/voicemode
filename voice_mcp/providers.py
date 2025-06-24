@@ -9,7 +9,7 @@ import logging
 from typing import Dict, Optional, List, Any, Tuple
 from openai import AsyncOpenAI
 
-from .config import TTS_VOICES, TTS_MODELS, OPENAI_API_KEY
+from .config import TTS_VOICES, TTS_MODELS, TTS_BASE_URLS, OPENAI_API_KEY
 from .provider_discovery import provider_registry, EndpointInfo
 
 logger = logging.getLogger("voice-mcp")
@@ -22,6 +22,15 @@ async def get_tts_client_and_voice(
 ) -> Tuple[AsyncOpenAI, str, str, EndpointInfo]:
     """
     Get TTS client with automatic selection based on preferences.
+    
+    Selection algorithm:
+    1. If specific base_url requested, use it with specified/best voice and model
+    2. If specific voice/model requested, iterate through TTS_BASE_URLS to find first
+       healthy endpoint that supports them
+    3. Otherwise, iterate through TTS_BASE_URLS and for each healthy endpoint:
+       - Find first supported voice from TTS_VOICES
+       - Find first supported model from TTS_MODELS
+       - Use this combination
     
     Args:
         voice: Specific voice to use (optional)
@@ -58,59 +67,75 @@ async def get_tts_client_and_voice(
         
         return client, selected_voice, selected_model, endpoint_info
     
-    # If specific voice is requested, find endpoint that supports it
-    if voice:
-        logger.info(f"TTS Provider Selection: Looking for endpoint with voice '{voice}'")
-        endpoint_info = provider_registry.find_endpoint_with_voice(voice)
-        if not endpoint_info:
-            raise ValueError(f"No available endpoint supports voice '{voice}'")
+    # New algorithm: iterate through TTS_BASE_URLS in preference order
+    logger.info(f"TTS Provider Selection: Checking endpoints in order: {TTS_BASE_URLS}")
+    logger.info(f"  Preferred voices: {TTS_VOICES}")
+    logger.info(f"  Preferred models: {TTS_MODELS}")
+    
+    for url in TTS_BASE_URLS:
+        endpoint_info = provider_registry.registry["tts"].get(url)
+        if not endpoint_info or not endpoint_info.healthy:
+            logger.debug(f"  Skipping unhealthy endpoint: {url}")
+            continue
         
-        selected_model = model or _select_model_for_endpoint(endpoint_info)
+        # If specific voice requested, check if this endpoint supports it
+        if voice:
+            if voice not in endpoint_info.voices:
+                logger.debug(f"  Endpoint {url} doesn't support requested voice '{voice}'")
+                continue
+            selected_voice = voice
+        else:
+            # Find first preferred voice this endpoint supports
+            selected_voice = None
+            for preferred_voice in TTS_VOICES:
+                if preferred_voice in endpoint_info.voices:
+                    selected_voice = preferred_voice
+                    break
+            
+            if not selected_voice:
+                # No preferred voices available, use first available
+                if endpoint_info.voices:
+                    selected_voice = endpoint_info.voices[0]
+                else:
+                    logger.debug(f"  Endpoint {url} has no voices available")
+                    continue
         
+        # If specific model requested, check if this endpoint supports it
+        if model:
+            if model not in endpoint_info.models:
+                logger.debug(f"  Endpoint {url} doesn't support requested model '{model}'")
+                continue
+            selected_model = model
+        else:
+            # Find first preferred model this endpoint supports
+            selected_model = None
+            for preferred_model in TTS_MODELS:
+                if preferred_model in endpoint_info.models:
+                    selected_model = preferred_model
+                    break
+            
+            if not selected_model:
+                # No preferred models available, use first available
+                if endpoint_info.models:
+                    selected_model = endpoint_info.models[0]
+                else:
+                    # Default to tts-1 if no models reported
+                    selected_model = "tts-1"
+        
+        # We found a suitable endpoint with voice and model
         client = AsyncOpenAI(
             api_key=OPENAI_API_KEY,
-            base_url=endpoint_info.url
+            base_url=url
         )
         
-        logger.info(f"  • Selected endpoint: {endpoint_info.url}")
-        logger.info(f"  • Selected voice: {voice}")
-        logger.info(f"  • Selected model: {selected_model}")
+        logger.info(f"  ✓ Selected endpoint: {url}")
+        logger.info(f"  ✓ Selected voice: {selected_voice}")
+        logger.info(f"  ✓ Selected model: {selected_model}")
         
-        return client, voice, selected_model, endpoint_info
+        return client, selected_voice, selected_model, endpoint_info
     
-    # Otherwise, find first endpoint with a preferred voice
-    logger.info(f"TTS Provider Selection: No specific voice requested, checking preferred voices: {TTS_VOICES}")
-    for preferred_voice in TTS_VOICES:
-        endpoint_info = provider_registry.find_endpoint_with_voice(preferred_voice)
-        if endpoint_info:
-            selected_model = model or _select_model_for_endpoint(endpoint_info)
-            
-            client = AsyncOpenAI(
-                api_key=OPENAI_API_KEY,
-                base_url=endpoint_info.url
-            )
-            
-            logger.info(f"  • Selected endpoint: {endpoint_info.url}")
-            logger.info(f"  • Selected voice: {preferred_voice}")
-            logger.info(f"  • Selected model: {selected_model}")
-            
-            return client, preferred_voice, selected_model, endpoint_info
-    
-    # Last resort: use any available endpoint
-    healthy_endpoints = provider_registry.get_healthy_endpoints("tts")
-    if not healthy_endpoints:
-        raise ValueError("No healthy TTS endpoints available")
-    
-    endpoint_info = healthy_endpoints[0]
-    selected_voice = _select_voice_for_endpoint(endpoint_info)
-    selected_model = model or _select_model_for_endpoint(endpoint_info)
-    
-    client = AsyncOpenAI(
-        api_key=OPENAI_API_KEY,
-        base_url=endpoint_info.url
-    )
-    
-    return client, selected_voice, selected_model, endpoint_info
+    # No suitable endpoint found
+    raise ValueError("No healthy TTS endpoints found that support requested voice/model preferences")
 
 
 async def get_stt_client(
