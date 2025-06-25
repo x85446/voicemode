@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Added automatic STT (Speech-to-Text) failover mechanism
+  - STT now automatically tries all configured endpoints when one fails
+  - Matches the existing TTS failover behavior for consistency
+  - Prevents complete STT failure when primary endpoint has connection issues
+- Implemented optimistic endpoint initialization
+  - All endpoints now assumed healthy at startup instead of pre-checked
+  - Endpoints only marked unhealthy when they actually fail during use
+  - Prevents false negatives from overly strict health checks
+  - Added optimistic mode to refresh_provider_registry tool (default: True)
+- Fixed EndpointInfo attribute naming bug
+  - Renamed 'url' to 'base_url' for consistency across codebase
+  - Fixed AttributeError that was preventing STT failover from working
+
 ## [2.4.1] - 2025-06-25
 
 ## [2.4.0] - 2025-06-25
