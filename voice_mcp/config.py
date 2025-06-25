@@ -48,7 +48,7 @@ def parse_comma_list(env_var: str, fallback: str) -> list:
 
 # New provider endpoint lists configuration
 TTS_BASE_URLS = parse_comma_list("VOICEMODE_TTS_BASE_URLS", "http://localhost:8880/v1,https://api.openai.com/v1")
-STT_BASE_URLS = parse_comma_list("VOICEMODE_STT_BASE_URLS", "https://api.openai.com/v1")
+STT_BASE_URLS = parse_comma_list("VOICEMODE_STT_BASE_URLS", "http://localhost:2022/v1,https://api.openai.com/v1")
 TTS_VOICES = parse_comma_list("VOICEMODE_TTS_VOICES", "af_sky,alloy")
 TTS_MODELS = parse_comma_list("VOICEMODE_TTS_MODELS", "gpt-4o-mini-tts,tts-1-hd,tts-1")
 
