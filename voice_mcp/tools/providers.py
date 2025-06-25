@@ -13,7 +13,8 @@ logger = logging.getLogger("voice-mcp")
 @mcp.tool()
 async def refresh_provider_registry(
     service_type: Optional[str] = None,
-    base_url: Optional[str] = None
+    base_url: Optional[str] = None,
+    optimistic: bool = True
 ) -> str:
     """Manually refresh health checks for voice provider endpoints.
     
@@ -23,6 +24,7 @@ async def refresh_provider_registry(
     Args:
         service_type: Optional - 'tts' or 'stt' to refresh only one type
         base_url: Optional - specific endpoint URL to refresh
+        optimistic: If True, mark all endpoints as healthy without checking (default: True)
     
     Returns:
         Summary of refreshed endpoints and their status
@@ -55,25 +57,42 @@ async def refresh_provider_registry(
                 urls = [base_url]
             
             for url in urls:
-                # Perform health check
-                healthy = await provider_registry.check_health(service, url)
-                endpoint_info = provider_registry.registry[service].get(url)
-                
-                if endpoint_info:
-                    emoji = "✅" if healthy else "❌"
-                    results.append(f"\n  {emoji} {url}")
+                if optimistic:
+                    # In optimistic mode, just mark everything as healthy
+                    from voice_mcp.provider_discovery import EndpointInfo
+                    from datetime import datetime
                     
-                    if healthy:
-                        if service == 'tts':
-                            results.append(f"     Models: {', '.join(endpoint_info.models) if endpoint_info.models else 'none detected'}")
-                            results.append(f"     Voices: {', '.join(endpoint_info.voices[:5])}{'...' if len(endpoint_info.voices) > 5 else ''}")
-                        else:
-                            results.append(f"     Models: {', '.join(endpoint_info.models) if endpoint_info.models else 'none detected'}")
+                    provider_registry.registry[service][url] = EndpointInfo(
+                        url=url,
+                        healthy=True,
+                        models=["whisper-1"] if service == "stt" else (["tts-1", "tts-1-hd"] if "openai.com" in url else ["tts-1"]),
+                        voices=[] if service == "stt" else (["alloy", "echo", "fable", "nova", "onyx", "shimmer"] if "openai.com" in url else []),
+                        last_health_check=datetime.utcnow().isoformat() + "Z",
+                        response_time_ms=None,
+                        error=None
+                    )
+                    results.append(f"\n  ✅ {url}")
+                    results.append(f"     Status: Marked as healthy (optimistic mode)")
+                else:
+                    # Perform actual health check
+                    healthy = await provider_registry.check_health(service, url)
+                    endpoint_info = provider_registry.registry[service].get(url)
+                    
+                    if endpoint_info:
+                        emoji = "✅" if healthy else "❌"
+                        results.append(f"\n  {emoji} {url}")
                         
-                        if endpoint_info.response_time_ms:
-                            results.append(f"     Response Time: {endpoint_info.response_time_ms:.0f}ms")
-                    else:
-                        results.append(f"     Error: {endpoint_info.error or 'Unknown error'}")
+                        if healthy:
+                            if service == 'tts':
+                                results.append(f"     Models: {', '.join(endpoint_info.models) if endpoint_info.models else 'none detected'}")
+                                results.append(f"     Voices: {', '.join(endpoint_info.voices[:5])}{'...' if len(endpoint_info.voices) > 5 else ''}")
+                            else:
+                                results.append(f"     Models: {', '.join(endpoint_info.models) if endpoint_info.models else 'none detected'}")
+                            
+                            if endpoint_info.response_time_ms:
+                                results.append(f"     Response Time: {endpoint_info.response_time_ms:.0f}ms")
+                        else:
+                            results.append(f"     Error: {endpoint_info.error or 'Unknown error'}")
         
         results.append("\n✨ Refresh complete!")
         return "\n".join(results)

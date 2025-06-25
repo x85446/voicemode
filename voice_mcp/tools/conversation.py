@@ -329,11 +329,92 @@ async def text_to_speech_with_failover(
 
 
 async def speech_to_text(audio_data: np.ndarray, save_audio: bool = False, audio_dir: Optional[Path] = None) -> Optional[str]:
-    """Convert audio to text"""
-    logger.info(f"STT: Converting speech to text, audio data shape: {audio_data.shape}")
+    """Convert audio to text with automatic failover"""
+    # Use the new failover implementation
+    return await speech_to_text_with_failover(audio_data, save_audio, audio_dir)
+
+
+async def speech_to_text_with_failover(
+    audio_data: np.ndarray, 
+    save_audio: bool = False, 
+    audio_dir: Optional[Path] = None
+) -> Optional[str]:
+    """
+    Speech to text with automatic failover to next available endpoint.
     
-    # Get proper STT configuration using the new provider system
-    stt_config = await get_stt_config()
+    Returns:
+        Transcribed text or None if all endpoints fail
+    """
+    from voice_mcp.provider_discovery import provider_registry
+    from voice_mcp.config import STT_BASE_URLS
+    
+    # Track which URLs we've tried
+    tried_urls = set()
+    last_error = None
+    
+    # Try configured endpoints in order
+    for base_url in STT_BASE_URLS:
+        if base_url in tried_urls:
+            continue
+            
+        tried_urls.add(base_url)
+        
+        try:
+            # Get STT config for this specific endpoint
+            client, selected_model, endpoint_info = await get_stt_client(base_url=base_url)
+            
+            if not client:
+                logger.warning(f"No STT client available for {base_url}")
+                continue
+            
+            stt_config = {
+                'client': client,
+                'model': selected_model,
+                'base_url': endpoint_info.base_url if endpoint_info else base_url,
+                'provider': 'whisper-local' if 'localhost' in base_url or '127.0.0.1' in base_url else 'openai-whisper'
+            }
+            
+            logger.info(f"Attempting STT with {stt_config['provider']} at {stt_config['base_url']}")
+            
+            # Create openai_clients dict with temporary STT client
+            openai_clients = {'_temp_stt': client}
+            
+            # Call original speech_to_text with this config
+            result = await _speech_to_text_internal(
+                audio_data, 
+                stt_config, 
+                openai_clients,
+                save_audio, 
+                audio_dir
+            )
+            
+            if result:
+                logger.info(f"STT succeeded with {stt_config['provider']}")
+                return result
+            else:
+                # Mark endpoint as unhealthy if it returned None
+                await provider_registry.mark_unhealthy('stt', base_url, 'STT returned no result')
+                
+        except Exception as e:
+            last_error = str(e)
+            logger.warning(f"STT failed for {base_url}: {e}")
+            # Mark endpoint as unhealthy
+            await provider_registry.mark_unhealthy('stt', base_url, str(e))
+    
+    # All endpoints failed
+    logger.error(f"All STT endpoints failed. Last error: {last_error}")
+    return None
+
+
+async def _speech_to_text_internal(
+    audio_data: np.ndarray,
+    stt_config: dict,
+    openai_clients: dict,
+    save_audio: bool = False,
+    audio_dir: Optional[Path] = None
+) -> Optional[str]:
+    """Internal speech to text implementation (extracted from original speech_to_text)"""
+    logger.info(f"STT: Converting speech to text, audio data shape: {audio_data.shape}")
     
     if DEBUG:
         logger.debug(f"STT config - Model: {stt_config['model']}, Base URL: {stt_config['base_url']}")
@@ -344,104 +425,119 @@ async def speech_to_text(audio_data: np.ndarray, save_audio: bool = False, audio
     export_format = None
     try:
         import tempfile
+        
+        # Check if input is silent
+        if np.abs(audio_data).max() < 0.001:
+            logger.warning("Audio appears to be silent")
+            return None
+        
+        # Ensure audio is in the correct format
+        if audio_data.dtype != np.int16:
+            logger.debug(f"Converting audio from {audio_data.dtype} to int16")
+            audio_data = (audio_data * 32767).astype(np.int16)
+        
+        # Save as WAV file temporarily
         with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as wav_file_obj:
             wav_file = wav_file_obj.name
             logger.debug(f"Writing audio to WAV file: {wav_file}")
             write(wav_file, SAMPLE_RATE, audio_data)
         
-            # Save debug file for original recording
-            if DEBUG:
-                try:
-                    with open(wav_file, 'rb') as f:
-                        debug_path = save_debug_file(f.read(), "stt-input", "wav", DEBUG_DIR, DEBUG)
-                        if debug_path:
-                            logger.info(f"STT debug recording saved to: {debug_path}")
-                except Exception as e:
-                    logger.error(f"Failed to save debug WAV: {e}")
-            
-            # Save audio file if audio saving is enabled
-            if save_audio and audio_dir:
-                try:
-                    with open(wav_file, 'rb') as f:
-                        audio_path = save_debug_file(f.read(), "stt", "wav", audio_dir, True)
-                        if audio_path:
-                            logger.info(f"STT audio saved to: {audio_path}")
-                except Exception as e:
-                    logger.error(f"Failed to save audio WAV: {e}")
+        # Save debug file for original recording
+        if DEBUG:
+            try:
+                with open(wav_file, 'rb') as f:
+                    debug_path = save_debug_file(f.read(), "stt-input", "wav", DEBUG_DIR, DEBUG)
+                    if debug_path:
+                        logger.info(f"STT debug recording saved to: {debug_path}")
+            except Exception as e:
+                logger.error(f"Failed to save debug WAV: {e}")
         
-        try:
-            # Import config for audio format
-            from ..config import STT_AUDIO_FORMAT, validate_audio_format, get_format_export_params
-            
-            # Determine provider from base URL (simple heuristic)
-            provider = "openai-whisper"
-            # Check if using local Whisper endpoint
-            if stt_config.get('base_url') and ("localhost" in stt_config['base_url'] or "127.0.0.1" in stt_config['base_url']):
-                    provider = "whisper-local"
-            
-            # Validate format for provider
-            export_format = validate_audio_format(STT_AUDIO_FORMAT, provider, "stt")
-            
-            # Convert WAV to target format for upload
-            logger.debug(f"Converting WAV to {export_format.upper()} for upload...")
-            audio = AudioSegment.from_wav(wav_file)
-            logger.debug(f"Audio loaded - Duration: {len(audio)}ms, Channels: {audio.channels}, Frame rate: {audio.frame_rate}")
-            
-            # Get export parameters for the format
-            export_params = get_format_export_params(export_format)
-            
-            with tempfile.NamedTemporaryFile(suffix=f'.{export_format}', delete=False) as export_file_obj:
-                export_file = export_file_obj.name
-                audio.export(export_file, **export_params)
-                upload_file = export_file
-                logger.debug(f"{export_format.upper()} created for STT upload: {upload_file}")
-            
-            # Save debug file for upload version
-            if DEBUG:
-                try:
-                    with open(upload_file, 'rb') as f:
-                        debug_path = save_debug_file(f.read(), "stt-upload", export_format, DEBUG_DIR, DEBUG)
-                        if debug_path:
-                            logger.info(f"Upload audio saved to: {debug_path}")
-                except Exception as e:
-                    logger.error(f"Failed to save debug {export_format.upper()}: {e}")
-            
-            # Get file size for logging
-            file_size = os.path.getsize(upload_file)
-            logger.debug(f"Uploading {file_size} bytes to STT API...")
-            
-            with open(upload_file, 'rb') as audio_file:
-                # Use the STT client from the configuration
-                if 'client' in stt_config:
-                    stt_client = stt_config['client']
-                else:
-                    # Fallback to legacy client
-                    openai_clients['_temp_stt'] = openai_clients.get(stt_config.get('client_key', 'stt'))
+        # Save audio file if audio saving is enabled
+        if save_audio and audio_dir:
+            try:
+                with open(wav_file, 'rb') as f:
+                    audio_path = save_debug_file(f.read(), "stt", "wav", audio_dir, True)
+                    if audio_path:
+                        logger.info(f"STT audio saved to: {audio_path}")
+            except Exception as e:
+                logger.error(f"Failed to save audio WAV: {e}")
+        
+        # Import config for audio format
+        from ..config import STT_AUDIO_FORMAT, validate_audio_format, get_format_export_params
+        
+        # Determine provider from base URL (simple heuristic)
+        provider = stt_config.get('provider', 'openai-whisper')
+        # Check if using local Whisper endpoint
+        if stt_config.get('base_url') and ("localhost" in stt_config['base_url'] or "127.0.0.1" in stt_config['base_url']):
+            provider = "whisper-local"
+        
+        # Validate format for provider
+        export_format = validate_audio_format(STT_AUDIO_FORMAT, provider, "stt")
+        
+        # Convert WAV to target format for upload
+        logger.debug(f"Converting WAV to {export_format.upper()} for upload...")
+        audio = AudioSegment.from_wav(wav_file)
+        logger.debug(f"Audio loaded - Duration: {len(audio)}ms, Channels: {audio.channels}, Frame rate: {audio.frame_rate}")
+        
+        # Get export parameters for the format
+        export_params = get_format_export_params(export_format)
+        
+        with tempfile.NamedTemporaryFile(suffix=f'.{export_format}', delete=False) as export_file_obj:
+            export_file = export_file_obj.name
+            audio.export(export_file, **export_params)
+            upload_file = export_file
+            logger.debug(f"{export_format.upper()} created for STT upload: {upload_file}")
+        
+        # Save debug file for upload version
+        if DEBUG:
+            try:
+                with open(upload_file, 'rb') as f:
+                    debug_path = save_debug_file(f.read(), "stt-upload", export_format, DEBUG_DIR, DEBUG)
+                    if debug_path:
+                        logger.info(f"Upload audio saved to: {debug_path}")
+            except Exception as e:
+                logger.error(f"Failed to save debug {export_format.upper()}: {e}")
+        
+        # Get file size for logging
+        file_size = os.path.getsize(upload_file)
+        logger.debug(f"Uploading {file_size} bytes to STT API...")
+        
+        # Perform STT based on configuration
+        with open(upload_file, 'rb') as audio_file:
+            # Use client from config
+            if 'client' in stt_config:
+                stt_client = stt_config['client']
+            else:
+                # Legacy: get from openai_clients dict
+                client_key = stt_config.get('client_key', 'stt')
+                stt_client = openai_clients.get(client_key)
+                if not stt_client:
+                    # Fallback to temporary client
                     stt_client = openai_clients['_temp_stt']
-                
-                transcription = await stt_client.audio.transcriptions.create(
-                    model=stt_config['model'],
-                    file=audio_file,
-                    response_format="text"
-                )
-                
-                logger.debug(f"STT API response type: {type(transcription)}")
-                text = transcription.strip() if isinstance(transcription, str) else transcription.text.strip()
-                
-                if text:
-                    logger.info(f"✓ STT result: '{text}'")
-                    return text
-                else:
-                    logger.warning("STT returned empty text")
-                    return None
-                        
-        except Exception as e:
-            logger.error(f"STT failed: {e}")
-            logger.error(f"STT config when error occurred - Model: {stt_config.get('model', 'unknown')}, Base URL: {stt_config.get('base_url', 'unknown')}")
-            if hasattr(e, 'response'):
-                logger.error(f"HTTP status: {e.response.status_code if hasattr(e.response, 'status_code') else 'unknown'}")
-                logger.error(f"Response text: {e.response.text if hasattr(e.response, 'text') else 'unknown'}")
-            return None
+            
+            transcription = await stt_client.audio.transcriptions.create(
+                model=stt_config['model'],
+                file=audio_file,
+                response_format="text"
+            )
+            
+            logger.debug(f"STT API response type: {type(transcription)}")
+            text = transcription.strip() if isinstance(transcription, str) else transcription.text.strip()
+            
+            if text:
+                logger.info(f"✓ STT result: '{text}'")
+                return text
+            else:
+                logger.warning("STT returned empty text")
+                return None
+                    
+    except Exception as e:
+        logger.error(f"STT failed: {e}")
+        logger.error(f"STT config when error occurred - Model: {stt_config.get('model', 'unknown')}, Base URL: {stt_config.get('base_url', 'unknown')}")
+        if hasattr(e, 'response'):
+            logger.error(f"HTTP status: {e.response.status_code if hasattr(e.response, 'status_code') else 'unknown'}")
+            logger.error(f"Response text: {e.response.text if hasattr(e.response, 'text') else 'unknown'}")
+        return None
     finally:
         # Clean up temporary files
         if wav_file and os.path.exists(wav_file):
@@ -451,12 +547,13 @@ async def speech_to_text(audio_data: np.ndarray, save_audio: bool = False, audio
             except Exception as e:
                 logger.error(f"Failed to clean up WAV file: {e}")
         
-        if 'export_file' in locals() and export_file and os.path.exists(export_file):
+        if export_file and os.path.exists(export_file):
             try:
                 os.unlink(export_file)
+                export_format = export_format if 'export_format' in locals() else 'audio'
                 logger.debug(f"Cleaned up {export_format.upper()} file: {export_file}")
             except Exception as e:
-                logger.error(f"Failed to clean up {export_format.upper()} file: {e}")
+                logger.error(f"Failed to clean up {export_format.upper() if 'export_format' in locals() else 'audio'} file: {e}")
 
 
 async def play_audio_feedback(

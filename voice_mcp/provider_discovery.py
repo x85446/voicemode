@@ -26,7 +26,7 @@ logger = logging.getLogger("voice-mcp")
 @dataclass
 class EndpointInfo:
     """Information about a discovered endpoint."""
-    url: str
+    base_url: str
     healthy: bool
     models: List[str]
     voices: List[str]  # Only for TTS
@@ -47,7 +47,7 @@ class ProviderRegistry:
         self._initialized = False
     
     async def initialize(self):
-        """Initialize the registry by discovering all configured endpoints."""
+        """Initialize the registry by assuming all configured endpoints are healthy."""
         if self._initialized:
             return
         
@@ -55,16 +55,32 @@ class ProviderRegistry:
             if self._initialized:  # Double-check after acquiring lock
                 return
             
-            logger.info("Initializing provider registry...")
+            logger.info("Initializing provider registry (optimistic mode)...")
             
-            # Discover TTS endpoints
-            await self._discover_endpoints("tts", TTS_BASE_URLS)
+            # Initialize TTS endpoints as healthy
+            for url in TTS_BASE_URLS:
+                self.registry["tts"][url] = EndpointInfo(
+                    base_url=url,
+                    healthy=True,
+                    models=["tts-1", "tts-1-hd"] if "openai.com" in url else ["tts-1"],
+                    voices=["alloy", "echo", "fable", "nova", "onyx", "shimmer"] if "openai.com" in url else [],
+                    last_health_check=datetime.utcnow().isoformat() + "Z",
+                    response_time_ms=None
+                )
             
-            # Discover STT endpoints
-            await self._discover_endpoints("stt", STT_BASE_URLS)
+            # Initialize STT endpoints as healthy
+            for url in STT_BASE_URLS:
+                self.registry["stt"][url] = EndpointInfo(
+                    base_url=url,
+                    healthy=True,
+                    models=["whisper-1"],
+                    voices=[],
+                    last_health_check=datetime.utcnow().isoformat() + "Z",
+                    response_time_ms=None
+                )
             
             self._initialized = True
-            logger.info(f"Provider registry initialized with {len(self.registry['tts'])} TTS and {len(self.registry['stt'])} STT endpoints")
+            logger.info(f"Provider registry initialized with {len(self.registry['tts'])} TTS and {len(self.registry['stt'])} STT endpoints (all assumed healthy)")
     
     async def _discover_endpoints(self, service_type: str, base_urls: List[str]):
         """Discover all endpoints for a service type."""
@@ -79,7 +95,7 @@ class ProviderRegistry:
                 if isinstance(result, Exception):
                     logger.error(f"Failed to discover {service_type} endpoint {url}: {result}")
                     self.registry[service_type][url] = EndpointInfo(
-                        url=url,
+                        base_url=url,
                         healthy=False,
                         models=[],
                         voices=[],
@@ -109,6 +125,33 @@ class ProviderRegistry:
             except Exception as e:
                 logger.debug(f"Could not list models at {base_url}: {e}")
                 # Not all endpoints support /v1/models, that's OK
+                # For STT endpoints, we'll do a more specific health check
+                if service_type == "stt":
+                    # Try a minimal transcription request to check if endpoint is alive
+                    try:
+                        # For local whisper, check if it responds to basic requests
+                        if "localhost" in base_url or "127.0.0.1" in base_url:
+                            # Local whisper doesn't need auth, just check connectivity
+                            import httpx
+                            async with httpx.AsyncClient(timeout=5.0) as http_client:
+                                response = await http_client.get(base_url.rstrip('/v1'))
+                                if response.status_code == 200:
+                                    logger.debug(f"Local whisper endpoint {base_url} is responding")
+                                    models = ["whisper-1"]  # Default model name
+                                else:
+                                    raise Exception(f"Whisper endpoint returned status {response.status_code}")
+                        else:
+                            # For OpenAI, models.list failure likely means auth issue
+                            # We'll still mark it as healthy since the endpoint exists
+                            models = ["whisper-1"]  # OpenAI's whisper model
+                            logger.debug(f"Assuming OpenAI whisper endpoint {base_url} is available")
+                    except Exception as health_error:
+                        logger.debug(f"STT health check failed for {base_url}: {health_error}")
+                        raise health_error
+            
+            # Ensure STT endpoints have at least the default whisper model
+            if service_type == "stt" and not models:
+                models = ["whisper-1"]
             
             # For TTS, discover voices
             voices = []
@@ -121,7 +164,7 @@ class ProviderRegistry:
             
             # Store endpoint info
             self.registry[service_type][base_url] = EndpointInfo(
-                url=base_url,
+                base_url=base_url,
                 healthy=True,
                 models=models,
                 voices=voices,
@@ -134,7 +177,7 @@ class ProviderRegistry:
         except Exception as e:
             logger.warning(f"Endpoint {base_url} discovery failed: {e}")
             self.registry[service_type][base_url] = EndpointInfo(
-                url=base_url,
+                base_url=base_url,
                 healthy=False,
                 models=[],
                 voices=[],
@@ -144,27 +187,27 @@ class ProviderRegistry:
     
     async def _discover_voices(self, base_url: str, client: AsyncOpenAI) -> List[str]:
         """Discover available voices for a TTS endpoint."""
-        # If it's OpenAI, use known voices
+        # If it's OpenAI, use known voices (they don't expose a voices endpoint)
         if "openai.com" in base_url:
             return ["alloy", "echo", "fable", "nova", "onyx", "shimmer"]
         
-        # Try Kokoro-style voices endpoint
+        # Try standard OpenAI-compatible voices endpoint
         try:
-            # Use httpx directly for non-standard endpoint
+            # Use httpx directly for the voices endpoint
             async with httpx.AsyncClient(timeout=5.0) as http_client:
                 response = await http_client.get(f"{base_url}/audio/voices")
                 if response.status_code == 200:
                     data = response.json()
                     if isinstance(data, dict) and "voices" in data:
-                        return data["voices"]
+                        return [v["id"] if isinstance(v, dict) else v for v in data["voices"]]
                     elif isinstance(data, list):
-                        return data
+                        return [v["id"] if isinstance(v, dict) else v for v in data]
         except Exception as e:
             logger.debug(f"Could not fetch voices from {base_url}/audio/voices: {e}")
         
-        # If we can't determine voices but the endpoint is healthy, assume OpenAI voices
-        # This allows compatibility with OpenAI-compatible APIs that don't expose voices
-        return ["alloy", "echo", "fable", "nova", "onyx", "shimmer"]
+        # If we can't determine voices but the endpoint is healthy, return empty list
+        # The system will use configured defaults instead
+        return []
     
     async def check_health(self, service_type: str, base_url: str) -> bool:
         """Check the health of a specific endpoint and update registry."""
