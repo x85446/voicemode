@@ -133,10 +133,10 @@ async def text_to_speech(
         )
         
         # Determine provider from base URL (simple heuristic)
-        provider = "openai"
-        if "localhost" in tts_base_url or "127.0.0.1" in tts_base_url or "studio" in tts_base_url:
-            if "8880" in tts_base_url:
-                provider = "kokoro"
+        if "openai" in tts_base_url:
+            provider = "openai"
+        else:
+            provider = "kokoro"
         
         logger.info(f"  • Detected Provider: {provider} (based on URL: {tts_base_url})")
         

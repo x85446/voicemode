@@ -91,7 +91,7 @@ async def startup_initialization():
         try:
             # Check if Kokoro is already running
             async with httpx.AsyncClient(timeout=3.0) as client:
-                base_url = 'http://studio:8880'  # Kokoro default
+                base_url = 'http://127.0.0.1:8880'  # Kokoro default
                 health_url = f"{base_url}/health"
                 response = await client.get(health_url)
                 
@@ -140,7 +140,7 @@ async def get_tts_config(provider: Optional[str] = None, voice: Optional[str] = 
     # Map provider names to base URLs
     provider_urls = {
         'openai': 'https://api.openai.com/v1',
-        'kokoro': 'http://studio:8880/v1'
+        'kokoro': 'http://127.0.0.1:8880/v1'
     }
     
     # Convert provider name to URL if it's a known provider
@@ -224,7 +224,7 @@ async def text_to_speech_with_failover(
     
     # If initial_provider specified, try it first
     if initial_provider:
-        provider_urls = {'openai': 'https://api.openai.com/v1', 'kokoro': 'http://studio:8880/v1'}
+        provider_urls = {'openai': 'https://api.openai.com/v1', 'kokoro': 'http://127.0.0.1:8880/v1'}
         initial_url = provider_urls.get(initial_provider, initial_provider)
         if initial_url:
             tried_urls.add(initial_url)
@@ -376,7 +376,7 @@ async def speech_to_text(audio_data: np.ndarray, save_audio: bool = False, audio
             # Determine provider from base URL (simple heuristic)
             provider = "openai-whisper"
             # Check if using local Whisper endpoint
-            if stt_config.get('base_url') and ("localhost" in stt_config['base_url'] or "127.0.0.1" in stt_config['base_url'] or "studio:2022" in stt_config['base_url']):
+            if stt_config.get('base_url') and ("localhost" in stt_config['base_url'] or "127.0.0.1" in stt_config['base_url']):
                     provider = "whisper-local"
             
             # Validate format for provider

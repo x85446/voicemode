@@ -46,7 +46,7 @@ async def startup_initialization():
         try:
             # Check if Kokoro is already running
             async with httpx.AsyncClient(timeout=3.0) as client:
-                base_url = 'http://studio:8880'  # Kokoro default endpoint
+                base_url = 'http://localhost:8880'  # Kokoro default endpoint
                 health_url = f"{base_url}/health"
                 response = await client.get(health_url)
                 

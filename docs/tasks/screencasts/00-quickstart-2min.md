@@ -19,11 +19,10 @@
 - Quick prerequisites check
 - `uvx install voice-mode`
 - Add to claude config
-- `claude`
-- `/voice-mode:converse`
+- `claude converse`
 
 ## First conversation: (1 minute 15 seconds)
-- "Hey Claude, what should we work on today?"
+- "Hey Claude, what is this voicemode MCP Server we're using?"
 - Show natural back-and-forth
 - Claude suggests looking at recent commits or todos
 - Quick code change based on conversation

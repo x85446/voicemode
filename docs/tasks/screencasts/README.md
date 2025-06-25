@@ -24,3 +24,8 @@ This directory contains outlines and scripts for VoiceMode video content.
 - [ ] Create short version for TikTok/Shorts
 - [ ] Update README with video link
 - [ ] Share on social media
+
+
+## Requests
+
+- Please show and tell recent changes to the project in my editor
