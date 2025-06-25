@@ -39,6 +39,12 @@ Watch Voice Mode in action:
 
 [![Voice Mode Demo](https://img.youtube.com/vi/aXRNWvpnwVs/maxresdefault.jpg)](https://www.youtube.com/watch?v=aXRNWvpnwVs)
 
+### Voice Mode with Gemini CLI
+
+See Voice Mode working with Google's Gemini CLI (their implementation of Claude Code):
+
+[![Voice Mode with Gemini CLI](https://img.youtube.com/vi/HC6BGxjCVnM/maxresdefault.jpg)](https://www.youtube.com/watch?v=HC6BGxjCVnM)
+
 ## Example Usage
 
 Once configured, try these prompts with Claude:
