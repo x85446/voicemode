@@ -13,6 +13,7 @@ import queue
 import threading
 from typing import Optional, Tuple, AsyncIterator
 from dataclasses import dataclass
+from pathlib import Path
 import numpy as np
 
 import sounddevice as sd
@@ -244,7 +245,9 @@ async def stream_pcm_audio(
     text: str,
     openai_client,
     request_params: dict,
-    debug: bool = False
+    debug: bool = False,
+    save_audio: bool = False,
+    audio_dir: Optional[Path] = None
 ) -> Tuple[bool, StreamMetrics]:
     """Stream PCM audio with true HTTP streaming for minimal latency.
     
@@ -254,6 +257,7 @@ async def stream_pcm_audio(
     start_time = time.perf_counter()
     stream = None
     first_chunk_time = None
+    save_buffer = io.BytesIO() if save_audio else None
     
     try:
         # Setup sounddevice stream for PCM playback
@@ -313,6 +317,10 @@ async def stream_pcm_audio(
                     # Play the chunk immediately
                     stream.write(audio_array)
                     
+                    # Save chunk if enabled
+                    if save_buffer:
+                        save_buffer.write(chunk)
+                    
                     chunk_count += 1
                     bytes_received += len(chunk)
                     metrics.chunks_received = chunk_count
@@ -346,6 +354,34 @@ async def stream_pcm_audio(
                    f"Total: {metrics.playback_time:.3f}s, "
                    f"Chunks: {metrics.chunks_received}")
         
+        # Save audio if enabled
+        if save_audio and save_buffer and audio_dir:
+            try:
+                from .core import save_debug_file
+                save_buffer.seek(0)
+                audio_data = save_buffer.read()
+                # PCM format needs special handling - save as WAV
+                if audio_data:
+                    # For PCM, we need to save as WAV with proper headers
+                    import wave
+                    import tempfile
+                    with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as tmp_wav:
+                        with wave.open(tmp_wav.name, 'wb') as wav_file:
+                            wav_file.setnchannels(1)
+                            wav_file.setsampwidth(2)  # 16-bit
+                            wav_file.setframerate(SAMPLE_RATE)
+                            wav_file.writeframes(audio_data)
+                        # Read back the WAV file
+                        with open(tmp_wav.name, 'rb') as f:
+                            wav_data = f.read()
+                        import os
+                        os.unlink(tmp_wav.name)
+                        audio_path = save_debug_file(wav_data, "tts", "wav", audio_dir, True)
+                        if audio_path:
+                            logger.info(f"TTS audio saved to: {audio_path}")
+            except Exception as e:
+                logger.error(f"Failed to save TTS audio: {e}")
+        
         return True, metrics
         
     except Exception as e:
@@ -361,7 +397,9 @@ async def stream_tts_audio(
     text: str,
     openai_client,
     request_params: dict,
-    debug: bool = False
+    debug: bool = False,
+    save_audio: bool = False,
+    audio_dir: Optional[Path] = None
 ) -> Tuple[bool, StreamMetrics]:
     """Stream TTS audio with progressive playback.
     
@@ -384,7 +422,9 @@ async def stream_tts_audio(
             text=text,
             openai_client=openai_client,
             request_params=request_params,
-            debug=debug
+            debug=debug,
+            save_audio=save_audio,
+            audio_dir=audio_dir
         )
     else:
         # Use buffered streaming for formats that need decoding
@@ -392,7 +432,9 @@ async def stream_tts_audio(
             text=text,
             openai_client=openai_client,
             request_params=request_params,
-            debug=debug
+            debug=debug,
+            save_audio=save_audio,
+            audio_dir=audio_dir
         )
 
 
@@ -402,7 +444,9 @@ async def stream_with_buffering(
     openai_client,
     request_params: dict,
     sample_rate: int = 24000,  # TTS standard sample rate
-    debug: bool = False
+    debug: bool = False,
+    save_audio: bool = False,
+    audio_dir: Optional[Path] = None
 ) -> Tuple[bool, StreamMetrics]:
     """Fallback streaming that buffers enough data to decode reliably.
     
@@ -417,6 +461,8 @@ async def stream_with_buffering(
     
     # Buffer for accumulating chunks
     buffer = io.BytesIO()
+    # Separate buffer for saving complete audio
+    save_buffer = io.BytesIO() if save_audio else None
     audio_started = False
     stream = None
     
@@ -448,6 +494,10 @@ async def stream_with_buffering(
                     
                     buffer.write(chunk)
                     metrics.chunks_received += 1
+                    
+                    # Also accumulate in save buffer if saving is enabled
+                    if save_buffer:
+                        save_buffer.write(chunk)
                     
                     # Try to decode when we have enough data (e.g., 32KB)
                     if buffer.tell() > 32768 and not audio_started:
@@ -491,6 +541,18 @@ async def stream_with_buffering(
         
         metrics.generation_time = time.perf_counter() - start_time
         metrics.playback_time = metrics.generation_time  # Approximate
+        
+        # Save audio if enabled
+        if save_audio and save_buffer and audio_dir:
+            try:
+                from .core import save_debug_file
+                save_buffer.seek(0)
+                audio_data = save_buffer.read()
+                audio_path = save_debug_file(audio_data, "tts", format, audio_dir, True)
+                if audio_path:
+                    logger.info(f"TTS audio saved to: {audio_path}")
+            except Exception as e:
+                logger.error(f"Failed to save TTS audio: {e}")
         
         return True, metrics
         

@@ -181,7 +181,9 @@ async def text_to_speech(
                 text=text,
                 openai_client=openai_clients[client_key],
                 request_params=request_params,
-                debug=debug
+                debug=debug,
+                save_audio=save_audio,
+                audio_dir=audio_dir
             )
             
             if success:
