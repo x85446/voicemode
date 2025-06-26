@@ -2,6 +2,10 @@
 
 > **Install via:** `uvx voice-mode` | `pip install voice-mode` | [getvoicemode.com](https://getvoicemode.com)
 
+[![PyPI Downloads](https://static.pepy.tech/badge/voice-mcp)](https://pepy.tech/project/voice-mcp)
+[![PyPI Downloads](https://static.pepy.tech/badge/voice-mcp/month)](https://pepy.tech/project/voice-mcp)
+[![PyPI Downloads](https://static.pepy.tech/badge/voice-mcp/week)](https://pepy.tech/project/voice-mcp)
+
 Natural voice conversations for AI assistants. Voice Mode brings human-like voice interactions to Claude, ChatGPT, and other LLMs through the Model Context Protocol (MCP).
 
 ## 🖥️ Compatibility
