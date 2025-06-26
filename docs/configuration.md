@@ -1,6 +1,6 @@
 # Voice-MCP Configuration
 
-> For integration-specific setup instructions, see the [setup guide](setup/).
+> For integration-specific setup instructions, see the [integration guides](integrations/README.md).
 
 This document provides a comprehensive reference for all environment variables used by voice-mcp.
 
@@ -75,12 +75,9 @@ When using voice-mcp with MCP hosts (Claude Desktop, VS Code, etc.), it's import
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `VOICEMODE_TTS_BASE_URL` | `https://api.openai.com/v1` | Base URL for TTS service |
-| `VOICEMODE_TTS_VOICE` | `alloy` | Default voice to use |
-| `VOICEMODE_TTS_MODEL` | `tts-1` | TTS model (`tts-1`, `tts-1-hd`, `gpt-4o-mini-tts`)|
-| `VOICEMODE_VOICES` | `af_sky,nova` | Comma-separated list of preferred voices in order |
-| `VOICEMODE_OPENAI_TTS_BASE_URL` | `https://api.openai.com/v1` | OpenAI-specific TTS endpoint |
-| `VOICEMODE_KOKORO_TTS_BASE_URL` | `http://localhost:8880/v1` | Kokoro-specific TTS endpoint |
+| `VOICEMODE_TTS_BASE_URLS` | `http://localhost:8880/v1,https://api.openai.com/v1` | Comma-separated list of TTS endpoints in priority order |
+| `VOICEMODE_TTS_VOICES` | `af_sky,alloy` | Comma-separated list of preferred voices in priority order |
+| `VOICEMODE_TTS_MODELS` | `gpt-4o-mini-tts,tts-1-hd,tts-1` | Comma-separated list of TTS models in priority order |
 
 ### Available Voices
 
@@ -91,8 +88,7 @@ When using voice-mcp with MCP hosts (Claude Desktop, VS Code, etc.), it's import
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `VOICEMODE_STT_BASE_URL` | `https://api.openai.com/v1` | Base URL for STT service |
-| `VOICEMODE_STT_MODEL` | `whisper-1` | STT model to use |
+| `VOICEMODE_STT_BASE_URLS` | `http://localhost:2022/v1,https://api.openai.com/v1` | Comma-separated list of STT endpoints in priority order |
 
 ## Audio Format Configuration
 
@@ -147,16 +143,17 @@ When using voice-mcp with MCP hosts (Claude Desktop, VS Code, etc.), it's import
 
 ## Configuration Examples
 
-### Use Local Kokoro TTS
+### Prioritize Local Kokoro TTS
 ```bash
-export VOICEMODE_TTS_BASE_URL="http://localhost:8880/v1"
-export VOICEMODE_TTS_VOICE="af_sky"
+export VOICEMODE_TTS_BASE_URLS="http://localhost:8880/v1,https://api.openai.com/v1"
+export VOICEMODE_TTS_VOICES="af_sky,nova"
 ```
 
-### Use OpenAI with HD Voice
+### Use Only OpenAI with HD Voice
 ```bash
-export VOICEMODE_TTS_MODEL="tts-1-hd"
-export VOICEMODE_TTS_VOICE="nova"
+export VOICEMODE_TTS_BASE_URLS="https://api.openai.com/v1"
+export VOICEMODE_TTS_VOICES="nova,alloy"
+export VOICEMODE_TTS_MODELS="tts-1-hd,tts-1"
 ```
 
 ### Debug Mode with Audio Saving
@@ -165,19 +162,20 @@ export VOICEMODE_DEBUG="true"
 export VOICEMODE_SAVE_AUDIO="true"
 ```
 
-### Custom Whisper STT Endpoint
+### Prioritize Local Whisper STT
 ```bash
-export VOICEMODE_STT_BASE_URL="http://localhost:2022/v1"
+export VOICEMODE_STT_BASE_URLS="http://localhost:2022/v1,https://api.openai.com/v1"
 ```
 
-## Backward Compatibility
+## Migration from Legacy Variables
 
-For backward compatibility, the following environment variables are also supported (but the `VOICEMODE_` prefixed versions take precedence):
+The following legacy environment variables have been replaced with list-based configuration:
 
-- `TTS_BASE_URL` → `VOICEMODE_TTS_BASE_URL`
-- `TTS_VOICE` → `VOICEMODE_TTS_VOICE`
-- `TTS_MODEL` → `VOICEMODE_TTS_MODEL`
-- `STT_BASE_URL` → `VOICEMODE_STT_BASE_URL`
-- `STT_MODEL` → `VOICEMODE_STT_MODEL`
-- `OPENAI_TTS_BASE_URL` → `VOICEMODE_OPENAI_TTS_BASE_URL`
-- `KOKORO_TTS_BASE_URL` → `VOICEMODE_KOKORO_TTS_BASE_URL`
+| Legacy Variable | New Variable | Notes |
+|----------------|--------------|-------|
+| `VOICEMODE_TTS_BASE_URL` | `VOICEMODE_TTS_BASE_URLS` | Now comma-separated list |
+| `VOICEMODE_STT_BASE_URL` | `VOICEMODE_STT_BASE_URLS` | Now comma-separated list |
+| `VOICEMODE_TTS_VOICE` | `VOICEMODE_TTS_VOICES` | Now comma-separated list |
+| `VOICEMODE_TTS_MODEL` | `VOICEMODE_TTS_MODELS` | Now comma-separated list |
+
+The new list-based approach allows Voice Mode to automatically failover between providers and select the best available option based on health checks and feature requirements.

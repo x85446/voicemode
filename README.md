@@ -29,6 +29,8 @@ Natural voice conversations for AI assistants. Voice Mode brings human-like voic
 
 ## Quick Start
 
+> 📖 **Using a different tool?** See our [Integration Guides](docs/integrations/README.md) for Cursor, VS Code, Gemini CLI, and more!
+
 ```bash
 npm install -g @anthropic-ai/claude-code
 curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -59,6 +61,21 @@ Once configured, try these prompts with Claude:
 - `"Say goodbye"` (Claude will speak without waiting)
 
 The new `converse` function makes voice interactions more natural - it automatically waits for your response by default.
+
+## Supported Tools
+
+Voice Mode works with your favorite AI coding assistants:
+
+- 🤖 **[Claude Code](docs/integrations/claude-code/README.md)** - Anthropic's official CLI
+- 🖥️ **[Claude Desktop](docs/integrations/claude-desktop/README.md)** - Desktop application
+- 🌟 **[Gemini CLI](docs/integrations/gemini-cli/README.md)** - Google's CLI tool
+- ⚡ **[Cursor](docs/integrations/cursor/README.md)** - AI-first code editor
+- 💻 **[VS Code](docs/integrations/vscode/README.md)** - With MCP preview support
+- 🦘 **[Roo Code](docs/integrations/roo-code/README.md)** - AI dev team in VS Code
+- 🔧 **[Cline](docs/integrations/cline/README.md)** - Autonomous coding agent
+- ⚡ **[Zed](docs/integrations/zed/README.md)** - High-performance editor
+- 🏄 **[Windsurf](docs/integrations/windsurf/README.md)** - Agentic IDE by Codeium
+- 🔄 **[Continue](docs/integrations/continue/README.md)** - Open-source AI assistant
 
 ## Installation
 
@@ -116,7 +133,11 @@ uvx voice-mode
 pip install voice-mode
 ```
 
-### Manual Configuration for Different Clients
+### Configuration for AI Coding Assistants
+
+> 📖 **Looking for detailed setup instructions?** Check our comprehensive [Integration Guides](docs/integrations/README.md) for step-by-step instructions for each tool!
+
+Below are quick configuration snippets. For full installation and setup instructions, see the integration guides above.
 
 <details>
 <summary><strong>Claude Code (CLI)</strong></summary>
@@ -357,9 +378,9 @@ pip install -e .
 
 ## Configuration
 
-**📖 See [docs/configuration.md](docs/configuration.md) for complete setup instructions for all MCP hosts**
-
-**📁 Ready-to-use config files in [config-examples/](config-examples/)**
+- 📖 **[Integration Guides](docs/integrations/README.md)** - Step-by-step setup for each tool
+- 🔧 **[Configuration Reference](docs/configuration.md)** - All environment variables
+- 📁 **[Config Examples](config-examples/)** - Ready-to-use configuration files
 
 ### Quick Setup
 
@@ -500,7 +521,11 @@ Audio files are saved to: `~/voicemode_audio/` with timestamps in the filename.
 
 ## Documentation
 
-- **[Configuration Guide](docs/configuration.md)** - Complete setup instructions for all MCP hosts
+### Getting Started
+- **[Integration Guides](docs/integrations/README.md)** - Step-by-step setup for all supported tools
+- **[Configuration Guide](docs/configuration.md)** - Complete environment variable reference
+
+### Development
 - **[Using uv/uvx](docs/uv.md)** - Package management with uv and uvx
 - **[Local Development](docs/local-development-uvx.md)** - Development setup guide
 - **[Audio Formats](docs/audio-format-migration.md)** - Audio format configuration and migration
@@ -527,6 +552,13 @@ Audio files are saved to: `~/voicemode_audio/` with timestamps in the filename.
 - **Discord**: [Join our community](https://discord.gg/gVHPPK5U)
 - **Twitter/X**: [@getvoicemode](https://twitter.com/getvoicemode)
 - **YouTube**: [@getvoicemode](https://youtube.com/@getvoicemode)
+
+## See Also
+
+- 🚀 [Integration Guides](docs/integrations/README.md) - Setup instructions for all supported tools
+- 🔧 [Configuration Reference](docs/configuration.md) - Environment variables and options
+- 🎤 [Local Services Setup](docs/kokoro.md) - Run TTS/STT locally for privacy
+- 🐛 [Troubleshooting](docs/troubleshooting/README.md) - Common issues and solutions
 
 ## License
 
