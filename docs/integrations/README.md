@@ -1,6 +1,6 @@
 # Voice Mode Integration Guides
 
-This directory contains step-by-step integration guides for setting up Voice Mode with various AI coding assistants and development tools.
+This directory contains beginner-friendly, step-by-step integration guides for setting up Voice Mode with various AI coding assistants and development tools. Each guide assumes no prior experience with the tool and walks you through from installation to your first voice conversation.
 
 ## Available Integrations
 
@@ -16,6 +16,18 @@ This directory contains step-by-step integration guides for setting up Voice Mod
 - ⚡ **[Zed](zed/README.md)** - High-performance, multiplayer code editor
 - 🏄 **[Windsurf](windsurf/README.md)** - The IDE that writes code for you
 - 🔄 **[Continue](continue/README.md)** - Open-source AI code assistant
+
+## 🤝 Community Help Needed
+
+> **Note**: These integration guides were created based on documentation and API specifications. We haven't yet tested installing and configuring each desktop application firsthand. If you're familiar with any of these tools, we'd greatly appreciate your review and feedback!
+> 
+> **How you can help:**
+> - Test the integration steps with your tool
+> - Submit issues for any inaccuracies or missing steps
+> - Open PRs with improvements or corrections
+> - Share tips that would help newcomers
+>
+> These guides are written for complete beginners - someone who has never used the tool before. Each guide should walk through everything from installation to first voice conversation.
 
 ## Quick Start
 
@@ -59,3 +71,4 @@ Voice Mode adds these capabilities to your development tools:
 - 🔧 Review [configuration options](../configuration.md)
 - 💬 Join our [Discord community](https://discord.gg/gVHPPK5U)
 - 🐛 See [troubleshooting guides](../troubleshooting/)
+- 🔨 [Report issues or contribute improvements](https://github.com/mbailey/voicemode/issues)
