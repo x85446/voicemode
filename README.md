@@ -10,7 +10,7 @@ Natural voice conversations for AI assistants. Voice Mode brings human-like voic
 
 ## 🖥️ Compatibility
 
-**Runs on:** Linux • macOS • Windows (WSL) | **Python:** 3.10+ | **Tested:** Ubuntu 24.04 LTS, Fedora 42
+**Runs on:** Linux • macOS • Windows (WSL) | **Python:** 3.10+
 
 ## ✨ Features
 
