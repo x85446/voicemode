@@ -30,8 +30,6 @@ async def voice_setup() -> str:
    # Test conversation
    converse("What's your name?")
    ```
-
-Use `voice_status()` to check current configuration and service status.
 """
 
 

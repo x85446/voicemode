@@ -49,6 +49,9 @@ async def check_audio_devices() -> str:
 async def voice_status() -> str:
     """Check the status of all voice services including TTS, STT, LiveKit, and audio devices.
     
+    IMPORTANT: Only use this tool for debugging when voice services fail. The system has automatic 
+    failover, so try using services directly first. This tool is for troubleshooting only.
+    
     Provides a unified view of the voice infrastructure configuration and health.
     """
     from voice_mcp.provider_discovery import provider_registry

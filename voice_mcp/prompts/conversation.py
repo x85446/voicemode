@@ -10,8 +10,7 @@ def converse() -> str:
         "Using tools from voice-mcp, have an ongoing two-way conversation",
         "End the chat when the user indicates they want to end it",
         "Keep your utterances brief unless a longer response is requested or necessary",
-        "Listen for up to 20 seconds per response",
-        "Prefer Kokoro TTS with voice 'af_sky' if available, otherwise use OpenAI with voice 'alloy'"
+        "Listen for up to 20 seconds per response"
     ]
     
     return "\n".join(f"- {instruction}" for instruction in instructions)
