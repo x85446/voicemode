@@ -563,3 +563,7 @@ Audio files are saved to: `~/voicemode_audio/` with timestamps in the filename.
 ## License
 
 MIT - A [Failmode](https://failmode.com) Project
+
+---
+
+<sub>[Project Statistics](docs/project-stats/README.md)</sub>
