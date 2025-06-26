@@ -2,7 +2,7 @@
 
 ## Summary
 
-Implemented configurable audio format support in voice-mcp with Opus as the new default format, replacing the hardcoded MP3 format.
+Implemented configurable audio format support in voice-mode with Opus as the new default format, replacing the hardcoded MP3 format.
 
 ## Changes Made
 

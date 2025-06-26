@@ -1,12 +1,12 @@
-# Voice-MCP Configuration
+# Voice-Mode Configuration
 
 > For integration-specific setup instructions, see the [integration guides](integrations/README.md).
 
-This document provides a comprehensive reference for all environment variables used by voice-mcp.
+This document provides a comprehensive reference for all environment variables used by voice-mode.
 
 ## MCP Environment Variable Precedence
 
-When using voice-mcp with MCP hosts (Claude Desktop, VS Code, etc.), it's important to understand how environment variables are handled:
+When using voice-mode with MCP hosts (Claude Desktop, VS Code, etc.), it's important to understand how environment variables are handled:
 
 ### Key Points
 

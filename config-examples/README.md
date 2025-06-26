@@ -1,4 +1,4 @@
-# Voice MCP Configuration Examples
+# Voice Mode Configuration Examples
 
 This directory contains ready-to-use configuration files for various MCP hosts and installation methods.
 

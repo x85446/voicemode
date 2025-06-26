@@ -138,10 +138,10 @@ _startup_initialized = False
 # ==================== LOGGING CONFIGURATION ====================
 
 def setup_logging() -> logging.Logger:
-    """Configure logging for the voice-mcp server.
+    """Configure logging for the voice-mode server.
     
     Returns:
-        Logger instance configured for voice-mcp
+        Logger instance configured for voice-mode
     """
     log_level = logging.DEBUG if DEBUG else logging.INFO
     logging.basicConfig(

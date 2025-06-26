@@ -1,6 +1,6 @@
-# Contributing to voice-mcp
+# Contributing to voice-mode
 
-Thank you for your interest in contributing to voice-mcp! This guide will help you get started with development.
+Thank you for your interest in contributing to voice-mode! This guide will help you get started with development.
 
 ## Development Setup
 
@@ -16,8 +16,8 @@ Thank you for your interest in contributing to voice-mcp! This guide will help y
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/mbailey/voice-mcp.git
-   cd voice-mcp
+   git clone https://github.com/mbailey/voicemode.git
+   cd voicemode
    ```
 
 2. **Create a virtual environment**
@@ -46,7 +46,7 @@ Thank you for your interest in contributing to voice-mcp! This guide will help y
 pytest
 
 # Run with coverage
-pytest --cov=voice_mcp
+pytest --cov=voice_mode
 
 # Run specific test file
 pytest tests/test_server_syntax.py
@@ -90,10 +90,10 @@ python -c "from voice_mcp.core import text_to_speech; import asyncio; asyncio.ru
 
 Enable debug mode for detailed logging:
 ```bash
-export VOICE_MCP_DEBUG=true
+export VOICEMODE_DEBUG=true
 ```
 
-Debug recordings are saved to `~/voice-mcp_recordings/`
+Debug recordings are saved to `~/.voicemode/audio/`
 
 ## Common Development Tasks
 

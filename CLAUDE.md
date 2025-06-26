@@ -79,13 +79,13 @@ converse("Sure, I'm now using the nova voice", voice="nova")
 converse("I'm so excited!", tts_model="gpt-4o-mini-tts", tts_instructions="Sound very excited")
 ```
 
-You can get the attention of the USER when he is not responding by using tools from livekit-voice-mcp:ask_voice_question
+You can get the attention of the USER when he is not responding by using tools from voice-mode:ask_voice_question
 
 On startup, break the ice by asking a questions with your tools
 
 ## Task Management
 
-When working on voice-mcp features:
+When working on voice-mode features:
 1. Check `docs/tasks/` directory for current work and plans
 2. Key files in docs/tasks/:
    - `README.md` - Task list and completed features
@@ -97,7 +97,7 @@ When working on voice-mcp features:
 
 ## Voice Stack Overview
 
-The voice-mcp project now has a complete local voice processing stack:
+The voice-mode project now has a complete local voice processing stack:
 
 ### Services
 - **Whisper.cpp STT** (Port 2022): Local speech-to-text with OpenAI-compatible API
@@ -138,20 +138,20 @@ NEVER proactively create documentation files (*.md) or README files. Only create
 
 ### kokoro-start
 When the user asks to "start kokoro", "enable kokoro", "turn on kokoro", "use local TTS", or similar:
-- Use the `mcp__voice-mcp__kokoro_start` tool
+- Use the `mcp__voice-mode__kokoro_start` tool
 - The tool will start the Kokoro TTS service on port 8880
 - Optional: specify a custom models directory path (defaults to ~/Models/kokoro)
 - After starting, inform the user that Kokoro is now running and ready for local TTS
 
 ### kokoro-stop  
 When the user asks to "stop kokoro", "disable kokoro", "turn off kokoro", or similar:
-- Use the `mcp__voice-mcp__kokoro_stop` tool
+- Use the `mcp__voice-mode__kokoro_stop` tool
 - The tool will gracefully terminate the Kokoro TTS service
 - Inform the user that Kokoro has been stopped
 
 ### kokoro-status
 When the user asks "is kokoro running?", "kokoro status", "check kokoro", or similar:
-- Use the `mcp__voice-mcp__kokoro_status` tool
+- Use the `mcp__voice-mode__kokoro_status` tool
 - The tool will check if Kokoro is running and provide process details
 - Report the status to the user including CPU/memory usage if available
 

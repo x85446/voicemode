@@ -14,9 +14,7 @@ Voice Mode is currently available as a Python package:
 
 ```bash
 # Install via pip
-pip install voice-mcp
-# or
-pip install voice-mode
+pip install voicemode
 ```
 
 ## Coming Soon

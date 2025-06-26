@@ -39,7 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - System events: session start/end, transport switches, provider switches
 - Automatic timing metric calculation from event timestamps
 - Integration with conversation flow for accurate performance tracking
-- Provider management tools for voice-mcp
+- Provider management tools for voice-mode
   - `refresh_provider_registry` tool to manually update health checks
   - `get_provider_details` tool to inspect specific endpoints
   - Support for filtering by service type (tts/stt) or specific URL

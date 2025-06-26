@@ -1,6 +1,6 @@
 # Voice Conversation Statistics Dashboard
 
-The voice-mcp system now includes a comprehensive live statistics dashboard that tracks and displays conversation performance metrics in real-time.
+The voice-mode system now includes a comprehensive live statistics dashboard that tracks and displays conversation performance metrics in real-time.
 
 ## Features
 
