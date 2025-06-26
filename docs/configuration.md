@@ -135,11 +135,14 @@ When using voice-mcp with MCP hosts (Claude Desktop, VS Code, etc.), it's import
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `VOICEMODE_DEBUG` | `false` | Enable debug logging (`true`, `trace` for verbose) |
-| `VOICEMODE_SAVE_AUDIO` | `false` | Save audio recordings to `~/voicemode_audio/` |
+| `VOICEMODE_DEBUG` | `false` | Enable debug logging (`true`, `trace` for verbose). Automatically enables all saving. |
+| `VOICEMODE_SAVE_ALL` | `false` | Enable all data saving (audio, transcriptions, event logs) |
+| `VOICEMODE_SAVE_AUDIO` | `false` | Save audio recordings to `~/.voicemode/audio/` |
+| `VOICEMODE_SAVE_TRANSCRIPTIONS` | `false` | Save transcriptions to `~/.voicemode/transcriptions/` |
 | `VOICEMODE_EVENT_LOG_ENABLED` | `true` | Enable structured event logging |
-| `VOICEMODE_EVENT_LOG_DIR` | `~/voicemode_logs` | Directory for event log files |
+| `VOICEMODE_EVENT_LOG_DIR` | `~/.voicemode/logs/events` | Directory for event log files |
 | `VOICEMODE_EVENT_LOG_ROTATION` | `daily` | Log rotation frequency |
+| `VOICEMODE_BASE_DIR` | `~/.voicemode` | Base directory for all voicemode data |
 
 ## Configuration Examples
 
@@ -156,10 +159,20 @@ export VOICEMODE_TTS_VOICES="nova,alloy"
 export VOICEMODE_TTS_MODELS="tts-1-hd,tts-1"
 ```
 
-### Debug Mode with Audio Saving
+### Debug Mode (Automatically Saves Everything)
 ```bash
 export VOICEMODE_DEBUG="true"
+```
+
+### Save All Data
+```bash
+export VOICEMODE_SAVE_ALL="true"
+```
+
+### Fine-grained Saving Control
+```bash
 export VOICEMODE_SAVE_AUDIO="true"
+export VOICEMODE_SAVE_TRANSCRIPTIONS="true"
 ```
 
 ### Prioritize Local Whisper STT
