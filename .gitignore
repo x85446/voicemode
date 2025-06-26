@@ -1,6 +1,9 @@
 .external/
 !.external/repos.txt
 
+# Claude workspace
+.claude/
+
 # Environment configuration
 .env.local
 .env
