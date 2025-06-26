@@ -1,6 +1,6 @@
 # PyPI Download Statistics
 
-This document provides information about tracking and monitoring download statistics for the `voice-mcp` package on PyPI.
+This document provides information about tracking and monitoring download statistics for the `voice-mode` package on PyPI.
 
 ## Download Badges
 
@@ -13,7 +13,7 @@ The project uses [pepy.tech](https://pepy.tech) badges to display download stati
 ## Statistics Sources
 
 ### 1. PyPI Stats (pepy.tech)
-- **URL**: https://pepy.tech/project/voice-mcp
+- **URL**: https://pepy.tech/project/voice-mode
 - **Features**: 
   - Real-time download counts
   - Historical download charts
@@ -21,14 +21,14 @@ The project uses [pepy.tech](https://pepy.tech) badges to display download stati
   - Geographic distribution data
 
 ### 2. PyPI Official Stats
-- **URL**: https://pypi.org/project/voice-mcp/
+- **URL**: https://pypi.org/project/voice-mode/
 - **Features**:
   - Release history
   - Version download counts
   - Project metadata
 
 ### 3. Libraries.io
-- **URL**: https://libraries.io/pypi/voice-mcp
+- **URL**: https://libraries.io/pypi/voice-mode
 - **Features**:
   - Dependency tracking
   - SourceRank score
@@ -45,16 +45,16 @@ The project uses [pepy.tech](https://pepy.tech) badges to display download stati
 pip install pypinfo
 
 # Get download counts for the last 30 days
-pypinfo voice-mcp
+pypinfo voice-mode
 
 # Get downloads by Python version
-pypinfo voice-mcp pyversion
+pypinfo voice-mode pyversion
 
 # Get downloads by operating system
-pypinfo voice-mcp system
+pypinfo voice-mode system
 
 # Get downloads by country
-pypinfo voice-mcp country
+pypinfo voice-mode country
 ```
 
 #### Using pypi-stats
@@ -63,7 +63,7 @@ pypinfo voice-mcp country
 pip install pypi-stats
 
 # Get recent download stats
-pypi-stats voice-mcp
+pypi-stats voice-mode
 ```
 
 ### API Access
@@ -71,13 +71,13 @@ pypi-stats voice-mcp
 #### PyPI JSON API
 ```bash
 # Get package metadata including download URLs
-curl https://pypi.org/pypi/voice-mcp/json | jq '.info.downloads'
+curl https://pypi.org/pypi/voice-mode/json | jq '.info.downloads'
 ```
 
 #### Libraries.io API
 ```bash
 # Requires API key from https://libraries.io/api
-curl https://libraries.io/api/pypi/voice-mcp?api_key=YOUR_API_KEY
+curl https://libraries.io/api/pypi/voice-mode?api_key=YOUR_API_KEY
 ```
 
 ## Understanding Download Metrics
@@ -145,8 +145,8 @@ jobs:
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
         run: |
-          pypinfo voice-mcp > stats/downloads-$(date +%Y%m%d).txt
-          pypinfo voice-mcp pyversion > stats/python-versions-$(date +%Y%m%d).txt
+          pypinfo voice-mode > stats/downloads-$(date +%Y%m%d).txt
+          pypinfo voice-mode pyversion > stats/python-versions-$(date +%Y%m%d).txt
           
       - name: Commit Stats
         run: |
