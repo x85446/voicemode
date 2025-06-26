@@ -11,7 +11,7 @@
   - Kokoro also uses `/health` (not `/v1/health`)
 
 ### 2. Auto-start Functionality
-- Added `VOICE_MCP_AUTO_START_KOKORO` environment variable
+- Added `VOICE_MODE_AUTO_START_KOKORO` environment variable
 - Automatically starts Kokoro on first tool use if not running
 - Checks if service is already running externally to avoid conflicts
 - Integrated into `startup_initialization()` function
@@ -38,7 +38,7 @@
 - Automatic fallback chains for reliability
 
 ### Audio Recording Feature
-- Saves to `~/voice-mode_audio/` when `VOICE_MCP_SAVE_AUDIO=true`
+- Saves to `~/voice-mode_audio/` when `VOICE_MODE_SAVE_AUDIO=true`
 - Future: Add transcription saving to `~/voice-mode/transcriptions/`
 - Keep audio and text in separate directories for organization
 

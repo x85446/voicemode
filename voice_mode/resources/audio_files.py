@@ -14,7 +14,7 @@ async def list_audio_files(directory: str = "all") -> Optional[str]:
     creation times and sizes.
     """
     if not SAVE_AUDIO:
-        return "Audio saving is not enabled. Set VOICE_MCP_SAVE_AUDIO=1 to enable."
+        return "Audio saving is not enabled. Set VOICE_MODE_SAVE_AUDIO=1 to enable."
     
     if not os.path.exists(AUDIO_DIR):
         return "No audio files found - directory does not exist."
@@ -41,7 +41,7 @@ async def get_audio_file(filename: str) -> Optional[str]:
         File metadata including size and creation time.
     """
     if not SAVE_AUDIO:
-        return "Audio saving is not enabled. Set VOICE_MCP_SAVE_AUDIO=1 to enable."
+        return "Audio saving is not enabled. Set VOICE_MODE_SAVE_AUDIO=1 to enable."
     file_path = os.path.join(AUDIO_DIR, filename)
     
     if not os.path.exists(file_path):

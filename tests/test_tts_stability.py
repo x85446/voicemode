@@ -180,7 +180,7 @@ class TestTTSStability:
     async def test_debug_logging(self, mock_openai_client, tmp_path):
         """Test debug logging functionality"""
         # Set debug mode
-        debug_dir = tmp_path / "voice-mcp_recordings"
+        debug_dir = tmp_path / "voice-mode_recordings"
         debug_dir.mkdir(exist_ok=True)
         
         # Test saving debug file
@@ -225,16 +225,16 @@ class TestTTSStability:
     @pytest.mark.asyncio
     async def test_trace_logging(self, tmp_path):
         """Test trace logging functionality"""
-        os.environ['VOICE_MCP_DEBUG'] = 'trace'
-        trace_file = tmp_path / "voice_mcp_trace.log"
+        os.environ['VOICE_MODE_DEBUG'] = 'trace'
+        trace_file = tmp_path / "voice_mode_trace.log"
         
         # This test would require actually importing the module with trace enabled
         # For now, we'll test the trace file creation logic
-        assert os.environ['VOICE_MCP_DEBUG'] == 'trace'
+        assert os.environ['VOICE_MODE_DEBUG'] == 'trace'
         
         # In actual implementation, trace logging would create the file
         # We'll just verify the environment is set correctly
-        assert os.getenv('VOICE_MCP_DEBUG', '').lower() == 'trace'
+        assert os.getenv('VOICE_MODE_DEBUG', '').lower() == 'trace'
 
 
 class TestMemoryManagement:

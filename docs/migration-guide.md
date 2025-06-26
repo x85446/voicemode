@@ -2,7 +2,7 @@
 
 ## Overview
 
-Starting with version 2.2.0, all environment variables have been renamed from `VOICE_MCP_` prefix to `VOICEMODE_` prefix to reflect the project's new name.
+Starting with version 2.2.0, all environment variables have been renamed from `VOICE_MODE_` prefix to `VOICEMODE_` prefix to reflect the project's new name.
 
 ## Environment Variable Changes
 
@@ -10,14 +10,14 @@ Starting with version 2.2.0, all environment variables have been renamed from `V
 
 | Old Variable | New Variable |
 |--------------|--------------|
-| `VOICE_MCP_DEBUG` | `VOICEMODE_DEBUG` |
-| `VOICE_MCP_SAVE_AUDIO` | `VOICEMODE_SAVE_AUDIO` |
-| `VOICE_MCP_AUDIO_FEEDBACK` | `VOICEMODE_AUDIO_FEEDBACK` |
-| `VOICE_MCP_FEEDBACK_VOICE` | `VOICEMODE_FEEDBACK_VOICE` |
-| `VOICE_MCP_FEEDBACK_MODEL` | `VOICEMODE_FEEDBACK_MODEL` |
-| `VOICE_MCP_FEEDBACK_STYLE` | `VOICEMODE_FEEDBACK_STYLE` |
-| `VOICE_MCP_PREFER_LOCAL` | `VOICEMODE_PREFER_LOCAL` |
-| `VOICE_MCP_AUTO_START_KOKORO` | `VOICEMODE_AUTO_START_KOKORO` |
+| `VOICE_MODE_DEBUG` | `VOICEMODE_DEBUG` |
+| `VOICE_MODE_SAVE_AUDIO` | `VOICEMODE_SAVE_AUDIO` |
+| `VOICE_MODE_AUDIO_FEEDBACK` | `VOICEMODE_AUDIO_FEEDBACK` |
+| `VOICE_MODE_FEEDBACK_VOICE` | `VOICEMODE_FEEDBACK_VOICE` |
+| `VOICE_MODE_FEEDBACK_MODEL` | `VOICEMODE_FEEDBACK_MODEL` |
+| `VOICE_MODE_FEEDBACK_STYLE` | `VOICEMODE_FEEDBACK_STYLE` |
+| `VOICE_MODE_PREFER_LOCAL` | `VOICEMODE_PREFER_LOCAL` |
+| `VOICE_MODE_AUTO_START_KOKORO` | `VOICEMODE_AUTO_START_KOKORO` |
 
 ### New Prefixed Variables
 
@@ -67,8 +67,8 @@ Debug and audio directories have also been renamed:
 1. **Update Environment Variables**
    ```bash
    # Old
-   export VOICE_MCP_DEBUG=true
-   export VOICE_MCP_SAVE_AUDIO=true
+   export VOICE_MODE_DEBUG=true
+   export VOICE_MODE_SAVE_AUDIO=true
    
    # New
    export VOICEMODE_DEBUG=true
@@ -89,7 +89,7 @@ Debug and audio directories have also been renamed:
          "args": ["voice-mode"],
          "env": {
            "OPENAI_API_KEY": "your-key",
-           "VOICEMODE_DEBUG": "true"  // Updated from VOICE_MCP_DEBUG
+           "VOICEMODE_DEBUG": "true"  // Updated from VOICE_MODE_DEBUG
          }
        }
      }

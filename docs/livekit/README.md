@@ -1,10 +1,10 @@
-# LiveKit Integration for Voice MCP
+# LiveKit Integration for Voice Mode
 
 ## Overview
 
 LiveKit is a powerful real-time voice and video infrastructure that enables voice-mode to work beyond your local computer. With LiveKit, you can have voice conversations with Claude from anywhere - your phone, tablet, or any device with a web browser.
 
-## Why LiveKit for Voice MCP?
+## Why LiveKit for Voice Mode?
 
 ### 🌐 Access from Anywhere
 - Talk to Claude from your iPhone, Android, or any web browser
@@ -44,7 +44,7 @@ This guide will walk you through:
 ## How It Works
 
 ```
-Your Device          LiveKit Cloud         Voice MCP
+Your Device          LiveKit Cloud         Voice Mode
 (iPhone/Web)         (Sandbox)            (with Claude)
     │                    │                     │
     ├──── Voice ────────►│                     │

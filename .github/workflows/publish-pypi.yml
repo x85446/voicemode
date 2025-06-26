@@ -40,27 +40,27 @@ jobs:
     - name: Check voice-mode package
       run: twine check dist/*
     
-    - name: Build voice-mcp package (legacy)
+    - name: Build voice-mode package (legacy)
       run: |
         # Move voice-mode artifacts to separate directory
         mkdir -p dist-voice-mode
         mv dist/* dist-voice-mode/
         
-        # Swap pyproject files to build voice-mcp
+        # Swap pyproject files to build voice-mode
         mv pyproject.toml pyproject.toml.tmp
-        mv pyproject-voice-mcp.toml pyproject.toml
+        mv pyproject-voice-mode.toml pyproject.toml
         
-        # Build voice-mcp
+        # Build voice-mode
         python -m build
         
         # Restore original pyproject.toml
-        mv pyproject.toml pyproject-voice-mcp.toml
+        mv pyproject.toml pyproject-voice-mode.toml
         mv pyproject.toml.tmp pyproject.toml
     
-    - name: Check voice-mcp package
+    - name: Check voice-mode package
       run: twine check dist/*
     
-    - name: Publish voice-mcp to TestPyPI
+    - name: Publish voice-mode to TestPyPI
       if: github.event_name == 'workflow_dispatch' && inputs.target == 'testpypi'
       env:
         TWINE_USERNAME: __token__
@@ -74,7 +74,7 @@ jobs:
         TWINE_PASSWORD: ${{ secrets.TEST_PYPI_API_TOKEN }}
       run: twine upload --repository testpypi dist-voice-mode/*
     
-    - name: Publish voice-mcp to PyPI (using API token)
+    - name: Publish voice-mode to PyPI (using API token)
       if: (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) || (github.event_name == 'workflow_dispatch' && inputs.target == 'pypi')
       env:
         TWINE_USERNAME: __token__

@@ -61,7 +61,7 @@ Let the MCP server read from the global environment:
     "voice-mode": {
       "command": "./mcp-servers/voice-mode",
       "env": {
-        "VOICE_MCP_DEBUG": "true"  // Only MCP-specific vars
+        "VOICE_MODE_DEBUG": "true"  // Only MCP-specific vars
       }
       // OPENAI_API_KEY will be read from global environment
     }
@@ -89,7 +89,7 @@ Let the MCP server read from the global environment:
       "args": ["voice-mode"],
       "env": {
         "OPENAI_API_KEY": "sk-proj-actual-key-here",
-        "VOICE_MCP_DEBUG": "true",
+        "VOICE_MODE_DEBUG": "true",
         "STT_BASE_URL": "https://api.openai.com/v1",
         "TTS_BASE_URL": "https://api.openai.com/v1"
       }
@@ -179,7 +179,7 @@ Our working voice-mode configuration uses Option 2 (literal values):
         "LIVEKIT_URL": "ws://localhost:7880",
         "LIVEKIT_API_KEY": "devkey",
         "LIVEKIT_API_SECRET": "secret",
-        "VOICE_MCP_DEBUG": "true",
+        "VOICE_MODE_DEBUG": "true",
         "OPENAI_API_KEY": "sk-proj-actual-key-here"
       }
     }
@@ -193,7 +193,7 @@ To test whether variables are being passed correctly:
 
 1. **Add debug logging** to your MCP server startup
 2. **Check process.env** in your server code
-3. **Use VOICE_MCP_DEBUG=true** to see detailed logs
+3. **Use VOICE_MODE_DEBUG=true** to see detailed logs
 4. **Verify API calls** work with the provided credentials
 
 ## Summary

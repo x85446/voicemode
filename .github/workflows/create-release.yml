@@ -42,12 +42,12 @@ jobs:
         echo "" >> $GITHUB_OUTPUT
         echo "### PyPI" >> $GITHUB_OUTPUT
         echo '```bash' >> $GITHUB_OUTPUT
-        echo "pip install voice-mcp==${{ steps.version.outputs.VERSION }}" >> $GITHUB_OUTPUT
+        echo "pip install voice-mode==${{ steps.version.outputs.VERSION }}" >> $GITHUB_OUTPUT
         echo '```' >> $GITHUB_OUTPUT
         echo "" >> $GITHUB_OUTPUT
         echo "### Claude Code" >> $GITHUB_OUTPUT
         echo '```bash' >> $GITHUB_OUTPUT
-        echo "claude mcp add voice-mcp uvx voice-mcp" >> $GITHUB_OUTPUT
+        echo "claude mcp add voice-mode uvx voice-mode" >> $GITHUB_OUTPUT
         echo '```' >> $GITHUB_OUTPUT
         echo "" >> $GITHUB_OUTPUT
         echo "EOF" >> $GITHUB_OUTPUT

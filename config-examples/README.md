@@ -35,7 +35,7 @@ For Claude Code, use the command line:
 
 ```bash
 export OPENAI_API_KEY=your-openai-key
-claude mcp add voice-mcp uvx voice-mcp
+claude mcp add voice-mode uvx voice-mode
 ```
 
 ## Configuration Options
@@ -47,6 +47,6 @@ All configurations support these environment variables:
 - `TTS_BASE_URL`: Custom text-to-speech service URL
 - `TTS_VOICE`: Voice selection (alloy, nova, echo, fable, onyx, shimmer)
 - `LIVEKIT_URL`: LiveKit server URL for room-based communication
-- `VOICE_MCP_DEBUG`: Enable debug mode ("true" or "false")
+- `VOICE_MODE_DEBUG`: Enable debug mode ("true" or "false")
 
 See [docs/configuration.md](../docs/configuration.md) for complete documentation.

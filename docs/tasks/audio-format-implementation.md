@@ -6,7 +6,7 @@ Implemented configurable audio format support in voice-mode with Opus as the new
 
 ## Changes Made
 
-### 1. Configuration Module (`voice_mcp/config.py`)
+### 1. Configuration Module (`voice_mode/config.py`)
 
 Added audio format configuration:
 - `AUDIO_FORMAT` - Primary format (default: "opus")
@@ -21,7 +21,7 @@ Added utility functions:
 - `get_audio_loader_for_format()` - Returns appropriate PyDub loader
 - `get_format_export_params()` - Returns export parameters for each format
 
-### 2. Core Module (`voice_mcp/core.py`)
+### 2. Core Module (`voice_mode/core.py`)
 
 Updated `text_to_speech()` function:
 - Replaced hardcoded `audio_format = "mp3"` with configurable format
@@ -30,7 +30,7 @@ Updated `text_to_speech()` function:
 - Dynamic audio loading based on format
 - Updated fallback file extension
 
-### 3. Conversation Module (`voice_mcp/tools/conversation.py`)
+### 3. Conversation Module (`voice_mode/tools/conversation.py`)
 
 Updated `speech_to_text()` function:
 - Replaced hardcoded MP3 conversion with configurable format
@@ -52,7 +52,7 @@ Updated `speech_to_text()` function:
 
 ### 6. Utilities
 
-- **voice_mcp/utils/format_migration.py**: Migration detection utilities (for future use)
+- **voice_mode/utils/format_migration.py**: Migration detection utilities (for future use)
 
 ## Provider Format Support
 

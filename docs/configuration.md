@@ -65,84 +65,44 @@ When using voice-mode with MCP hosts (Claude Desktop, VS Code, etc.), it's impor
 - [Model Context Protocol Specification](https://modelcontextprotocol.io/docs/specification) - Official MCP specification
 - [Known Limitations](https://github.com/microsoft/vscode/issues/245237) - Feature request for variable substitution
 
-## Required Configuration
+## Environment Variables
 
-| Variable | Description |
-|----------|-------------|
-| `OPENAI_API_KEY` | Your OpenAI API key (required for cloud STT/TTS services) |
-
-## TTS (Text-to-Speech) Configuration
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `VOICEMODE_TTS_BASE_URLS` | `http://localhost:8880/v1,https://api.openai.com/v1` | Comma-separated list of TTS endpoints in priority order |
-| `VOICEMODE_TTS_VOICES` | `af_sky,alloy` | Comma-separated list of preferred voices in priority order |
-| `VOICEMODE_TTS_MODELS` | `gpt-4o-mini-tts,tts-1-hd,tts-1` | Comma-separated list of TTS models in priority order |
+| Variable | Default | Description | Category |
+|----------|---------|-------------|----------|
+| `LIVEKIT_API_KEY` | `devkey` | LiveKit API key | LiveKit |
+| `LIVEKIT_API_SECRET` | `secret` | LiveKit API secret | LiveKit |
+| `LIVEKIT_URL` | `ws://localhost:7880` | LiveKit server WebSocket URL | LiveKit |
+| `OPENAI_API_KEY` | *(required)* | Your OpenAI API key (required for cloud STT/TTS services) | API Keys |
+| `VOICEMODE_AAC_BITRATE` | `64k` | AAC bitrate | Audio Format |
+| `VOICEMODE_AUDIO_FEEDBACK` | `true` | Play audio feedback when recording starts/stops | Audio |
+| `VOICEMODE_AUDIO_FORMAT` | `pcm` | Primary audio format (`pcm`, `opus`, `mp3`, `wav`, `flac`, `aac`) | Audio Format |
+| `VOICEMODE_AUTO_START_KOKORO` | `false` | Automatically start Kokoro TTS on startup | Provider |
+| `VOICEMODE_BASE_DIR` | `~/.voicemode` | Base directory for all voicemode data | Storage |
+| `VOICEMODE_DEBUG` | `false` | Enable debug logging (`true`, `trace` for verbose). Automatically enables all saving. | Debug |
+| `VOICEMODE_EVENT_LOG_DIR` | `~/.voicemode/logs/events` | Directory for event log files | Logging |
+| `VOICEMODE_EVENT_LOG_ENABLED` | `true` | Enable structured event logging | Logging |
+| `VOICEMODE_EVENT_LOG_ROTATION` | `daily` | Log rotation frequency | Logging |
+| `VOICEMODE_MP3_BITRATE` | `64k` | MP3 bitrate | Audio Format |
+| `VOICEMODE_OPUS_BITRATE` | `32000` | Opus bitrate in bps | Audio Format |
+| `VOICEMODE_PREFER_LOCAL` | `true` | Prefer local providers (Kokoro/Whisper) when available | Provider |
+| `VOICEMODE_SAVE_ALL` | `false` | Enable all data saving (audio, transcriptions, event logs) | Storage |
+| `VOICEMODE_SAVE_AUDIO` | `false` | Save audio recordings to `~/.voicemode/audio/` | Storage |
+| `VOICEMODE_SAVE_TRANSCRIPTIONS` | `false` | Save transcriptions to `~/.voicemode/transcriptions/` | Storage |
+| `VOICEMODE_STREAM_BUFFER_MS` | `150` | Initial buffer before playback (milliseconds) | Streaming |
+| `VOICEMODE_STREAM_CHUNK_SIZE` | `4096` | Download chunk size in bytes | Streaming |
+| `VOICEMODE_STREAM_MAX_BUFFER` | `2.0` | Maximum buffer size in seconds | Streaming |
+| `VOICEMODE_STREAMING_ENABLED` | `true` | Enable streaming audio playback | Streaming |
+| `VOICEMODE_STT_AUDIO_FORMAT` | `mp3`* | Override format for STT (*auto-selects `mp3` if primary is `pcm`) | Audio Format |
+| `VOICEMODE_STT_BASE_URLS` | `http://localhost:2022/v1,https://api.openai.com/v1` | Comma-separated list of STT endpoints in priority order | STT |
+| `VOICEMODE_TTS_AUDIO_FORMAT` | `pcm` | Override format for TTS (defaults to primary) | Audio Format |
+| `VOICEMODE_TTS_BASE_URLS` | `http://localhost:8880/v1,https://api.openai.com/v1` | Comma-separated list of TTS endpoints in priority order | TTS |
+| `VOICEMODE_TTS_MODELS` | `gpt-4o-mini-tts,tts-1-hd,tts-1` | Comma-separated list of TTS models in priority order | TTS |
+| `VOICEMODE_TTS_VOICES` | `af_sky,alloy` | Comma-separated list of preferred voices in priority order | TTS |
 
 ### Available Voices
 
 - **OpenAI**: `alloy`, `nova`, `echo`, `fable`, `onyx`, `shimmer`
 - **Kokoro**: `af_sky`, `af_sarah`, `am_adam`, `af_nicole`, `am_michael`
-
-## STT (Speech-to-Text) Configuration
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `VOICEMODE_STT_BASE_URLS` | `http://localhost:2022/v1,https://api.openai.com/v1` | Comma-separated list of STT endpoints in priority order |
-
-## Audio Format Configuration
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `VOICEMODE_AUDIO_FORMAT` | `pcm` | Primary audio format (`pcm`, `opus`, `mp3`, `wav`, `flac`, `aac`) |
-| `VOICEMODE_TTS_AUDIO_FORMAT` | `pcm` | Override format for TTS (defaults to primary) |
-| `VOICEMODE_STT_AUDIO_FORMAT` | `mp3`* | Override format for STT (*auto-selects `mp3` if primary is `pcm`) |
-| `VOICEMODE_OPUS_BITRATE` | `32000` | Opus bitrate in bps |
-| `VOICEMODE_MP3_BITRATE` | `64k` | MP3 bitrate |
-| `VOICEMODE_AAC_BITRATE` | `64k` | AAC bitrate |
-
-## Provider Selection
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `VOICEMODE_PREFER_LOCAL` | `true` | Prefer local providers (Kokoro/Whisper) when available |
-| `VOICEMODE_AUTO_START_KOKORO` | `false` | Automatically start Kokoro TTS on startup |
-
-## LiveKit Configuration
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `LIVEKIT_URL` | `ws://localhost:7880` | LiveKit server WebSocket URL |
-| `LIVEKIT_API_KEY` | `devkey` | LiveKit API key |
-| `LIVEKIT_API_SECRET` | `secret` | LiveKit API secret |
-
-## Audio Feedback & Interaction
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `VOICEMODE_AUDIO_FEEDBACK` | `true` | Play audio feedback when recording starts/stops |
-
-## Streaming Configuration
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `VOICEMODE_STREAMING_ENABLED` | `true` | Enable streaming audio playback |
-| `VOICEMODE_STREAM_CHUNK_SIZE` | `4096` | Download chunk size in bytes |
-| `VOICEMODE_STREAM_BUFFER_MS` | `150` | Initial buffer before playback (milliseconds) |
-| `VOICEMODE_STREAM_MAX_BUFFER` | `2.0` | Maximum buffer size in seconds |
-
-## Debug & Logging
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `VOICEMODE_DEBUG` | `false` | Enable debug logging (`true`, `trace` for verbose). Automatically enables all saving. |
-| `VOICEMODE_SAVE_ALL` | `false` | Enable all data saving (audio, transcriptions, event logs) |
-| `VOICEMODE_SAVE_AUDIO` | `false` | Save audio recordings to `~/.voicemode/audio/` |
-| `VOICEMODE_SAVE_TRANSCRIPTIONS` | `false` | Save transcriptions to `~/.voicemode/transcriptions/` |
-| `VOICEMODE_EVENT_LOG_ENABLED` | `true` | Enable structured event logging |
-| `VOICEMODE_EVENT_LOG_DIR` | `~/.voicemode/logs/events` | Directory for event log files |
-| `VOICEMODE_EVENT_LOG_ROTATION` | `daily` | Log rotation frequency |
-| `VOICEMODE_BASE_DIR` | `~/.voicemode` | Base directory for all voicemode data |
 
 ## Configuration Examples
 

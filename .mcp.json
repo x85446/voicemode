@@ -13,7 +13,9 @@
         "--refresh",
         "."
       ],
-      "env": {}
+      "env": {
+        "VOICEMODE_SAVE_ALL": "true"
+      }
     }
   }
 }

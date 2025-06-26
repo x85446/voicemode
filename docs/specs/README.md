@@ -4,8 +4,8 @@ This directory contains technical specifications, design documents, and architec
 
 ## 📚 Available Specifications
 
-### [Voice MCP Bigger Spec Review](./voice-mcp-bigger-spec-review.md)
-A comprehensive analysis of specifications from the `voice-mcp-bigger` repository, identifying which documents should be integrated into Voice Mode. This review covers Docker deployment, Kokoro integration, architectural decisions, and future enhancement opportunities.
+### [Voice MCP Bigger Spec Review](./voice-mode-bigger-spec-review.md)
+A comprehensive analysis of specifications from the `voice-mode-bigger` repository, identifying which documents should be integrated into Voice Mode. This review covers Docker deployment, Kokoro integration, architectural decisions, and future enhancement opportunities.
 
 ## 🎯 Purpose
 

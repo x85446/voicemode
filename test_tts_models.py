@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Test script for TTS model selection in voice-mcp"""
+"""Test script for TTS model selection in voice-mode"""
 
 import asyncio
 from voice_mode.core import get_openai_clients, text_to_speech

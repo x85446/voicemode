@@ -140,4 +140,4 @@ The dashboard helps identify:
 - **Automatic integration**: No manual calls needed - statistics track automatically
 - **Error resilient**: Statistics tracking failures don't interrupt voice operations
 
-The statistics system provides valuable insights into voice conversation performance and helps optimize the voice-mcp system for the best user experience.
+The statistics system provides valuable insights into voice conversation performance and helps optimize the voice-mode system for the best user experience.

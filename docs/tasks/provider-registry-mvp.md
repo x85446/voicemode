@@ -4,7 +4,7 @@
 
 ### 1. Create Basic Provider Registry (Day 1)
 ```python
-# voice_mcp/providers.py
+# voice_mode/providers.py
 PROVIDERS = {
     "kokoro": {
         "id": "kokoro",

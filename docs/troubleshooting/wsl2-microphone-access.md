@@ -174,7 +174,7 @@ Instead of using local microphone access, use LiveKit for room-based audio:
 3. **Enable Debug Mode**:
    ```bash
    export VOICEMODE_DEBUG=true
-   python3 -m voice_mcp
+   python3 -m voice_mode
    ```
 
 4. **Test Basic Audio**:

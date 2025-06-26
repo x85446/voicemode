@@ -71,7 +71,7 @@ pytest tests/test_server_syntax.py
 
 ```bash
 # Test TTS and audio playback
-python -c "from voice_mcp.core import text_to_speech; import asyncio; asyncio.run(text_to_speech(...))"
+python -c "from voice_mode.core import text_to_speech; import asyncio; asyncio.run(text_to_speech(...))"
 ```
 
 ## Making Changes

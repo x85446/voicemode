@@ -2,7 +2,7 @@
 
 ## What We Built (MVP)
 
-### 1. Provider Registry Module (`voice_mcp/providers.py`)
+### 1. Provider Registry Module (`voice_mode/providers.py`)
 - Basic provider metadata storage
 - Provider availability checking
 - Provider selection logic with preferences

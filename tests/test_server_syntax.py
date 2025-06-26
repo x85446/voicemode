@@ -2,7 +2,7 @@
 """
 Test server module syntax and structure.
 
-These tests ensure the voice-mcp server module:
+These tests ensure the voice-mode server module:
 - Has valid Python syntax
 - Can be imported without errors
 - Has proper structure
@@ -17,11 +17,11 @@ import pytest
 
 
 class TestServerSyntax:
-    """Test the voice-mcp server module syntax and structure"""
+    """Test the voice-mode server module syntax and structure"""
     
     @pytest.fixture
     def server_path(self):
-        """Get the path to the voice-mcp server module"""
+        """Get the path to the voice-mode server module"""
         return Path(__file__).parent.parent / "voice_mode" / "server.py"
     
     def test_module_exists(self, server_path):
@@ -185,7 +185,7 @@ class TestServerStructure:
     
     @pytest.fixture
     def server_path(self):
-        """Get the path to the voice-mcp server module"""
+        """Get the path to the voice-mode server module"""
         return Path(__file__).parent.parent / "voice_mode" / "server.py"
     
     @pytest.fixture

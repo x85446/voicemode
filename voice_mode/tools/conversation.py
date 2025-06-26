@@ -78,10 +78,10 @@ openai_clients = get_openai_clients(OPENAI_API_KEY or "dummy-key-for-local", Non
 
 async def startup_initialization():
     """Initialize services on startup based on configuration"""
-    if voice_mcp.config._startup_initialized:
+    if voice_mode.config._startup_initialized:
         return
     
-    voice_mcp.config._startup_initialized = True
+    voice_mode.config._startup_initialized = True
     logger.info("Running startup initialization...")
     
     # Initialize provider registry
@@ -89,7 +89,7 @@ async def startup_initialization():
     await provider_registry.initialize()
     
     # Check if we should auto-start Kokoro
-    auto_start_kokoro = os.getenv("VOICE_MCP_AUTO_START_KOKORO", "").lower() in ("true", "1", "yes", "on")
+    auto_start_kokoro = os.getenv("VOICE_MODE_AUTO_START_KOKORO", "").lower() in ("true", "1", "yes", "on")
     if auto_start_kokoro:
         try:
             # Check if Kokoro is already running
@@ -833,8 +833,8 @@ async def converse(
                    The system automatically selects the best available model.
                    Options: tts-1, tts-1-hd, gpt-4o-mini-tts (OpenAI); Kokoro uses tts-1
         tts_instructions: Tone/style instructions for gpt-4o-mini-tts model only (e.g., "Speak in a cheerful tone", "Sound angry", "Be extremely sad")
-        audio_feedback: Override global audio feedback setting (default: None uses VOICE_MCP_AUDIO_FEEDBACK env var)
-        audio_feedback_style: Audio feedback style - "whisper" (default) or "shout" (default: None uses VOICE_MCP_FEEDBACK_STYLE env var)
+        audio_feedback: Override global audio feedback setting (default: None uses VOICE_MODE_AUDIO_FEEDBACK env var)
+        audio_feedback_style: Audio feedback style - "whisper" (default) or "shout" (default: None uses VOICE_MODE_FEEDBACK_STYLE env var)
         audio_format: Override audio format (pcm, mp3, wav, flac, aac, opus) - defaults to VOICEMODE_TTS_AUDIO_FORMAT env var
         If wait_for_response is False: Confirmation that message was spoken
         If wait_for_response is True: The voice response received (or error/timeout message)

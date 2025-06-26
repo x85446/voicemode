@@ -163,7 +163,7 @@ def setup_logging() -> logging.Logger:
         def trace_calls(frame, event, arg):
             if event == 'call':
                 code = frame.f_code
-                if 'voicemode' in code.co_filename or 'voice_mcp' in code.co_filename:
+                if 'voicemode' in code.co_filename or 'voice_mode' in code.co_filename:
                     trace_logger.debug(f"Called {code.co_filename}:{frame.f_lineno} {code.co_name}")
             elif event == 'exception':
                 trace_logger.debug(f"Exception: {arg}")

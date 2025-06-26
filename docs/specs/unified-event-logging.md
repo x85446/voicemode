@@ -76,7 +76,7 @@ Each event is a JSON object on its own line (JSONL format):
 
 ### Event Logger Module
 
-Create `voice_mcp/event_logger.py`:
+Create `voice_mode/event_logger.py`:
 
 ```python
 import json

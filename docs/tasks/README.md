@@ -1,4 +1,4 @@
-# Voice-MCP Tasks and Ideas
+# Voice-Mode Tasks and Ideas
 
 ## Documentation
 

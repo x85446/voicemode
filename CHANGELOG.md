@@ -129,15 +129,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Memory-efficient storage (maintains last 1000 interactions)
 
 ### Changed
-- **BREAKING**: All `VOICE_MCP_` environment variables renamed to `VOICEMODE_`
-  - `VOICE_MCP_DEBUG` → `VOICEMODE_DEBUG`
-  - `VOICE_MCP_SAVE_AUDIO` → `VOICEMODE_SAVE_AUDIO`
-  - `VOICE_MCP_AUDIO_FEEDBACK` → `VOICEMODE_AUDIO_FEEDBACK`
-  - `VOICE_MCP_FEEDBACK_VOICE` → `VOICEMODE_FEEDBACK_VOICE`
-  - `VOICE_MCP_FEEDBACK_MODEL` → `VOICEMODE_FEEDBACK_MODEL`
-  - `VOICE_MCP_FEEDBACK_STYLE` → `VOICEMODE_FEEDBACK_STYLE`
-  - `VOICE_MCP_PREFER_LOCAL` → `VOICEMODE_PREFER_LOCAL`
-  - `VOICE_MCP_AUTO_START_KOKORO` → `VOICEMODE_AUTO_START_KOKORO`
+- **BREAKING**: All `VOICE_MODE_` environment variables renamed to `VOICEMODE_`
+  - `VOICE_MODE_DEBUG` → `VOICEMODE_DEBUG`
+  - `VOICE_MODE_SAVE_AUDIO` → `VOICEMODE_SAVE_AUDIO`
+  - `VOICE_MODE_AUDIO_FEEDBACK` → `VOICEMODE_AUDIO_FEEDBACK`
+  - `VOICE_MODE_FEEDBACK_VOICE` → `VOICEMODE_FEEDBACK_VOICE`
+  - `VOICE_MODE_FEEDBACK_MODEL` → `VOICEMODE_FEEDBACK_MODEL`
+  - `VOICE_MODE_FEEDBACK_STYLE` → `VOICEMODE_FEEDBACK_STYLE`
+  - `VOICE_MODE_PREFER_LOCAL` → `VOICEMODE_PREFER_LOCAL`
+  - `VOICE_MODE_AUTO_START_KOKORO` → `VOICEMODE_AUTO_START_KOKORO`
 - Also renamed non-prefixed variables to use `VOICEMODE_` prefix:
   - `VOICE_ALLOW_EMOTIONS` → `VOICEMODE_ALLOW_EMOTIONS`
   - `VOICE_EMOTION_AUTO_UPGRADE` → `VOICEMODE_EMOTION_AUTO_UPGRADE`
@@ -174,7 +174,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Audio feedback chimes for recording start/stop (inspired by PR #1 from @jtuffin)
-- New `VOICE_MCP_AUDIO_FEEDBACK` configuration with options: `chime` (default), `voice`, `both`, `none`
+- New `VOICE_MODE_AUDIO_FEEDBACK` configuration with options: `chime` (default), `voice`, `both`, `none`
 - Backward compatibility for boolean audio feedback values
 
 ### Changed
@@ -239,7 +239,7 @@ This change reflects our vision for the project's future. While MCP (Model Conte
 
 ### Added
 - Audio feedback with whispered responses by default
-- Configurable audio feedback style (whisper or shout) via VOICE_MCP_FEEDBACK_STYLE environment variable
+- Configurable audio feedback style (whisper or shout) via VOICE_MODE_FEEDBACK_STYLE environment variable
 - Support for overriding audio feedback settings per conversation
 
 ## [0.1.29] - 2025-06-17
@@ -262,7 +262,7 @@ This change reflects our vision for the project's future. While MCP (Model Conte
 
 ### Added
 - Voice chat prompt/command (`/voice-mcp:converse`) for interactive voice conversations
-- Automatic local provider preference with VOICE_MCP_PREFER_LOCAL environment variable
+- Automatic local provider preference with VOICE_MODE_PREFER_LOCAL environment variable
 - Documentation improvements with better organization and cross-linking
 
 ### Changed
@@ -330,7 +330,7 @@ This change reflects our vision for the project's future. While MCP (Model Conte
 ## [0.1.21] - 2025-06-16
 
 ### Added
-- VOICE_MCP_SAVE_AUDIO environment variable to save all TTS/STT audio files
+- VOICE_MODE_SAVE_AUDIO environment variable to save all TTS/STT audio files
 - Audio files saved to ~/voice-mcp_audio/ with timestamps
 - Improved voice selection documentation and guidance
 

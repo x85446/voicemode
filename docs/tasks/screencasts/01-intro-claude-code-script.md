@@ -52,7 +52,7 @@ brew install uv
 pip install uv
 ```
 
-You: Add voice-mcp to Claude's configuration
+You: Add voice-mode to Claude's configuration
 
 ```shell
 claude mcp add --scope user voice-mode uvx voice-mode

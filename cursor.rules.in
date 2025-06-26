@@ -57,7 +57,7 @@ client, voice = await get_tts_client_and_voice()
 
 ## Important Files
 
-- voice_mcp/config.py - All configuration and environment variables
-- voice_mcp/providers.py - Provider selection logic
-- voice_mcp/tools/conversation.py - Main voice interaction tools
+- voice_mode/config.py - All configuration and environment variables
+- voice_mode/providers.py - Provider selection logic
+- voice_mode/tools/conversation.py - Main voice interaction tools
 - docs/configuration/environment.md - Environment variable reference

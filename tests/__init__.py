@@ -1,1 +1,1 @@
-# Test package for voice-mcp
+# Test package for voice-mode

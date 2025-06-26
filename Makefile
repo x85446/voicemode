@@ -36,13 +36,13 @@ help:
 
 # Install package
 install:
-	@echo "Installing voice-mcp..."
+	@echo "Installing voice-mode..."
 	uv pip install -e .
 	@echo "Installation complete!"
 
 # Install package with development dependencies
 dev-install:
-	@echo "Installing voice-mcp with development dependencies..."
+	@echo "Installing voice-mode with development dependencies..."
 	uv pip install -e ".[dev,test]"
 	@echo "Development installation complete!"
 
@@ -71,8 +71,8 @@ test-package: build-package
 	cd /tmp && \
 	python -m venv test-env && \
 	. test-env/bin/activate && \
-	pip install $(CURDIR)/dist/voice_mcp-*.whl && \
-	voice-mcp --help && \
+	pip install $(CURDIR)/dist/voice_mode-*.whl && \
+	voice-mode --help && \
 	deactivate && \
 	rm -rf test-env
 	@echo "Package test successful!"
@@ -83,7 +83,7 @@ publish-test: build-package
 	@echo "Make sure you have configured ~/.pypirc with testpypi credentials"
 	python -m twine upload --repository testpypi dist/*
 	@echo "Published to TestPyPI. Install with:"
-	@echo "  pip install --index-url https://test.pypi.org/simple/ voice-mcp"
+	@echo "  pip install --index-url https://test.pypi.org/simple/ voice-mode"
 
 # Publish to PyPI
 publish: build-package
@@ -91,7 +91,7 @@ publish: build-package
 	@echo "Make sure you have configured ~/.pypirc with pypi credentials"
 	python -m twine upload dist/*
 	@echo "Published to PyPI. Install with:"
-	@echo "  pip install voice-mcp"
+	@echo "  pip install voice-mode"
 
 # Clean build artifacts
 clean:
@@ -105,7 +105,7 @@ clean:
 release:
 	@echo "Creating a new release..."
 	@echo ""
-	@echo "Current version: $$(grep -E '^__version__ = ' voice_mcp/__version__.py | cut -d'"' -f2)"
+	@echo "Current version: $$(grep -E '^__version__ = ' voice_mode/__version__.py | cut -d'"' -f2)"
 	@echo ""
 	@read -p "Enter new version (e.g., 0.1.3): " version; \
 	if [ -z "$$version" ]; then \
@@ -113,13 +113,13 @@ release:
 		exit 1; \
 	fi; \
 	echo "Updating version to $$version..."; \
-	sed -i.bak 's/^__version__ = .*/__version__ = "'$$version'"/' voice_mcp/__version__.py && \
-	rm voice_mcp/__version__.py.bak; \
+	sed -i.bak 's/^__version__ = .*/__version__ = "'$$version'"/' voice_mode/__version__.py && \
+	rm voice_mode/__version__.py.bak; \
 	echo "Updating CHANGELOG.md..."; \
 	date=$$(date +%Y-%m-%d); \
 	sed -i.bak "s/## \[Unreleased\]/## [Unreleased]\n\n## [$$version] - $$date/" CHANGELOG.md && \
 	rm CHANGELOG.md.bak; \
-	git add voice_mcp/__version__.py CHANGELOG.md && \
+	git add voice_mode/__version__.py CHANGELOG.md && \
 	git commit -m "chore: bump version to $$version" && \
 	git tag -a "v$$version" -m "Release v$$version" && \
 	echo "" && \
@@ -135,18 +135,18 @@ release:
 	echo "1. Create a GitHub release with changelog" && \
 	echo "2. Publish to PyPI" && \
 	echo "" && \
-	echo "Monitor progress at: https://github.com/mbailey/voice-mcp/actions"
+	echo "Monitor progress at: https://github.com/mbailey/voice-mode/actions"
 
 # Build voice-mode package
 build-voice-mode:
 	@echo "Building voice-mode package..."
 	@# Temporarily swap pyproject files
-	@mv pyproject.toml pyproject-voice-mcp.toml.tmp
+	@mv pyproject.toml pyproject-voice-mode.toml.tmp
 	@cp pyproject-voice-mode.toml pyproject.toml
 	@# Build the package
 	python -m build
 	@# Restore original pyproject.toml
-	@mv pyproject-voice-mcp.toml.tmp pyproject.toml
+	@mv pyproject-voice-mode.toml.tmp pyproject.toml
 	@echo "voice-mode package built successfully in dist/"
 
 # Publish voice-mode to PyPI
@@ -163,36 +163,6 @@ publish-voice-mode: build-voice-mode
 	python -m twine upload "$$latest_wheel" "$$latest_sdist"
 	@echo "Published to PyPI. Install with:"
 	@echo "  pip install voice-mode"
-
-# Sync pyproject.toml files
-sync-tomls:
-	@echo "Syncing pyproject.toml with pyproject-voice-mode.toml..."
-	@# Create a temporary file with the content after the warning comment
-	@tail -n +7 pyproject.toml > pyproject-voice-mode.toml.tmp
-	@# Add the voice-mode specific warning comment
-	@echo '# WARNING: This is a companion to pyproject.toml for the voice-mode package' > pyproject-voice-mode.toml.new
-	@echo '# Any changes to dependencies, version, or other settings in pyproject.toml' >> pyproject-voice-mode.toml.new
-	@echo '# should be synchronized here to ensure voice-mcp and voice-mode packages' >> pyproject-voice-mode.toml.new
-	@echo '# remain functionally identical.' >> pyproject-voice-mode.toml.new
-	@echo '#' >> pyproject-voice-mode.toml.new
-	@echo '# The only intended differences are:' >> pyproject-voice-mode.toml.new
-	@echo '# - name: "voice-mode" vs "voice-mcp"' >> pyproject-voice-mode.toml.new
-	@echo '# - description: mentions dual availability' >> pyproject-voice-mode.toml.new
-	@echo '# - scripts: different command names' >> pyproject-voice-mode.toml.new
-	@echo '#' >> pyproject-voice-mode.toml.new
-	@echo '# Consider using '\''make sync-tomls'\'' if available, or manually update both files.' >> pyproject-voice-mode.toml.new
-	@echo '' >> pyproject-voice-mode.toml.new
-	@cat pyproject-voice-mode.toml.tmp >> pyproject-voice-mode.toml.new
-	@# Update the package name
-	@sed -i 's/name = "voice-mcp"/name = "voice-mode"/' pyproject-voice-mode.toml.new
-	@# Update the description to mention dual availability
-	@sed -i 's/description = "Voice interaction capabilities for Model Context Protocol (MCP) servers"/description = "Voice interaction capabilities for Model Context Protocol (MCP) servers (also available as voice-mcp)"/' pyproject-voice-mode.toml.new
-	@# Update the scripts section
-	@sed -i 's/voice-mcp = "voice_mcp.cli:voice_mcp"/voice-mode = "voice_mcp.cli:voice_mode"\nvoice-mcp = "voice_mcp.cli:voice_mcp"/' pyproject-voice-mode.toml.new
-	@# Clean up temp file and move new file
-	@rm pyproject-voice-mode.toml.tmp
-	@mv pyproject-voice-mode.toml.new pyproject-voice-mode.toml
-	@echo "✅ Files synced successfully!"
 
 # Generate CLAUDE.md from template
 CLAUDE.md: CLAUDE.md.in GLOSSARY.md docs/tasks/README.md docs/tasks/key-insights.md docs/tasks/implementation-notes.md docs/configuration/environment.md

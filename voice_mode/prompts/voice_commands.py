@@ -15,8 +15,8 @@ async def voice_setup() -> str:
    - TTS_VOICE: Default voice (e.g., 'nova', 'alloy', 'af_sky')
    - TTS_MODEL: TTS model (e.g., 'tts-1', 'tts-1-hd', 'gpt-4o-mini-tts')
    - STT_MODEL: STT model (default: 'whisper-1')
-   - VOICE_MCP_PREFER_LOCAL: Use local services when available (default: true)
-   - VOICE_MCP_AUTO_START_KOKORO: Auto-start Kokoro TTS (default: false)
+   - VOICE_MODE_PREFER_LOCAL: Use local services when available (default: true)
+   - VOICE_MODE_AUTO_START_KOKORO: Auto-start Kokoro TTS (default: false)
 
 3. **Local Services** (optional):
    - Kokoro TTS: Run `kokoro_start()` for local TTS
