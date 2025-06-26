@@ -50,8 +50,6 @@ AUTO_START_KOKORO = os.getenv("VOICEMODE_AUTO_START_KOKORO", "").lower() in ("tr
 
 # OpenAI configuration
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-if not OPENAI_API_KEY:
-    raise ValueError("OPENAI_API_KEY is required")
 
 # Helper function to parse comma-separated lists
 def parse_comma_list(env_var: str, fallback: str) -> list:

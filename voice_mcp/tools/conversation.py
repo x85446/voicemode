@@ -71,7 +71,7 @@ logger = logging.getLogger("voice-mcp")
 last_session_end_time = None
 
 # Initialize OpenAI clients - now using provider registry for endpoint discovery
-openai_clients = get_openai_clients(OPENAI_API_KEY, None, None)
+openai_clients = get_openai_clients(OPENAI_API_KEY or "dummy-key-for-local", None, None)
 
 # Provider-specific clients are now created dynamically by the provider registry
 
@@ -548,9 +548,24 @@ async def _speech_to_text_internal(
     except Exception as e:
         logger.error(f"STT failed: {e}")
         logger.error(f"STT config when error occurred - Model: {stt_config.get('model', 'unknown')}, Base URL: {stt_config.get('base_url', 'unknown')}")
+        
+        # Check for authentication errors
+        error_message = str(e).lower()
+        base_url = stt_config.get('base_url', '')
         if hasattr(e, 'response'):
             logger.error(f"HTTP status: {e.response.status_code if hasattr(e.response, 'status_code') else 'unknown'}")
             logger.error(f"Response text: {e.response.text if hasattr(e.response, 'text') else 'unknown'}")
+            
+            # Check for 401 Unauthorized specifically on OpenAI endpoints
+            if hasattr(e.response, 'status_code') and e.response.status_code == 401:
+                if 'openai.com' in base_url:
+                    logger.error("⚠️  Authentication failed with OpenAI. Please set OPENAI_API_KEY environment variable.")
+                    logger.error("   Alternatively, you can use local services (Whisper) without an API key.")
+        elif 'api key' in error_message or 'unauthorized' in error_message or 'authentication' in error_message:
+            if 'openai.com' in base_url:
+                logger.error("⚠️  Authentication issue detected. Please check your OPENAI_API_KEY.")
+                logger.error("   For local-only usage, ensure Whisper is running and configured.")
+        
         return None
     finally:
         # Clean up temporary files

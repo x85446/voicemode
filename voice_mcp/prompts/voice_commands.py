@@ -8,8 +8,8 @@ async def voice_setup() -> str:
     """Guide for setting up voice services"""
     return """To set up voice services for voice-mcp:
 
-1. **Environment Variables** (required):
-   - OPENAI_API_KEY: Your OpenAI API key for TTS/STT services
+1. **Environment Variables**:
+   - OPENAI_API_KEY: Your OpenAI API key (only required if using OpenAI services)
    
 2. **Optional Configuration**:
    - TTS_VOICE: Default voice (e.g., 'nova', 'alloy', 'af_sky')

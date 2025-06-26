@@ -2,11 +2,11 @@
 
 Complete reference of all environment variables supported by Voice Mode.
 
-## Required
+## API Keys
 
-| Variable | Description |
-|----------|-------------|
-| `OPENAI_API_KEY` | OpenAI API key (or compatible service) |
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `OPENAI_API_KEY` | (none) | OpenAI API key - Required for OpenAI services, optional for local-only setups |
 
 ## TTS/STT Configuration
 

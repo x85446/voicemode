@@ -12,11 +12,13 @@ This directory contains configuration documentation for Voice Mode.
 
 ### Minimal Configuration
 
-The only required configuration is your OpenAI API key:
+For OpenAI services, you'll need an API key:
 
 ```bash
 export OPENAI_API_KEY="your-api-key"
 ```
+
+For local-only setups (Kokoro + Whisper), no API key is required!
 
 ### Common Configurations
 

@@ -57,7 +57,7 @@ async def get_tts_client_and_voice(
         selected_model = model or _select_model_for_endpoint(endpoint_info)
         
         client = AsyncOpenAI(
-            api_key=OPENAI_API_KEY,
+            api_key=OPENAI_API_KEY or "dummy-key-for-local",
             base_url=base_url
         )
         
@@ -167,7 +167,7 @@ async def get_stt_client(
         selected_model = model or "whisper-1"  # Default STT model
         
         client = AsyncOpenAI(
-            api_key=OPENAI_API_KEY,
+            api_key=OPENAI_API_KEY or "dummy-key-for-local",
             base_url=base_url
         )
         

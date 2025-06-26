@@ -399,9 +399,23 @@ async def text_to_speech(
     except Exception as e:
         logger.error(f"TTS failed: {e}")
         logger.error(f"TTS config when error occurred - Model: {tts_model}, Voice: {tts_voice}, Base URL: {tts_base_url}")
+        
+        # Check for authentication errors
+        error_message = str(e).lower()
         if hasattr(e, 'response'):
             logger.error(f"HTTP status: {e.response.status_code if hasattr(e.response, 'status_code') else 'unknown'}")
             logger.error(f"Response text: {e.response.text if hasattr(e.response, 'text') else 'unknown'}")
+            
+            # Check for 401 Unauthorized specifically on OpenAI endpoints
+            if hasattr(e.response, 'status_code') and e.response.status_code == 401:
+                if 'openai.com' in tts_base_url:
+                    logger.error("⚠️  Authentication failed with OpenAI. Please set OPENAI_API_KEY environment variable.")
+                    logger.error("   Alternatively, you can use local services (Kokoro) without an API key.")
+        elif 'api key' in error_message or 'unauthorized' in error_message or 'authentication' in error_message:
+            if 'openai.com' in tts_base_url:
+                logger.error("⚠️  Authentication issue detected. Please check your OPENAI_API_KEY.")
+                logger.error("   For local-only usage, ensure Kokoro is running and configured.")
+        
         return False, metrics
 
 
