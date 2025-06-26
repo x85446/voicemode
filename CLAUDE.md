@@ -4,6 +4,7 @@
 
 ALWAYS read the following files at the start of any session:
 - README.md to understand the project
+- GLOSSARY.md to understand key terms and concepts used in the project
 - docs/tasks/README.md for an overview of work
 - .conventions/CONVENTIONS.md to understand the engineering conventions for this project
 - .ai_docs/README.md to understand where to read and write information about external tools, libraries, protocols, etc

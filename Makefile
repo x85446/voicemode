@@ -1,16 +1,22 @@
 # Voice MCP Makefile
 
-.PHONY: help build-package test test-package publish-test publish release install dev-install clean build-voice-mode publish-voice-mode sync-tomls
+.PHONY: help build-package test test-package publish-test publish release install dev-install clean build-voice-mode publish-voice-mode sync-tomls claude cursor
 
 # Default target
 help:
 	@echo "Voice MCP Build Targets:"
+	@echo ""
+	@echo "Quick start:"
+	@echo "  claude        - Generate CLAUDE.md and start Claude Code with voice"
+	@echo "  cursor        - Generate cursor.rules for Cursor IDE"
 	@echo ""
 	@echo "Development targets:"
 	@echo "  install       - Install package in normal mode"
 	@echo "  dev-install   - Install package in editable mode with dev dependencies"
 	@echo "  test          - Run unit tests with pytest"
 	@echo "  clean         - Remove build artifacts and caches"
+	@echo "  CLAUDE.md     - Generate CLAUDE.md with consolidated startup context"
+	@echo "  cursor.rules  - Generate cursor.rules from template"
 	@echo ""
 	@echo "Python package targets:"
 	@echo "  build-package - Build Python package for PyPI"
@@ -187,3 +193,108 @@ sync-tomls:
 	@rm pyproject-voice-mode.toml.tmp
 	@mv pyproject-voice-mode.toml.new pyproject-voice-mode.toml
 	@echo "✅ Files synced successfully!"
+
+# Generate CLAUDE.md from template
+CLAUDE.md: CLAUDE.md.in GLOSSARY.md docs/tasks/README.md docs/tasks/key-insights.md docs/tasks/implementation-notes.md docs/configuration/environment.md
+	@echo "Generating CLAUDE.md from template..."
+	@# Start with the template
+	@cp CLAUDE.md.in CLAUDE.md.tmp
+	@# Replace timestamp
+	@sed -i "s/@TIMESTAMP@/$$(date -u +%Y-%m-%dT%H:%M:%SZ)/g" CLAUDE.md.tmp
+	@# Process @include directives
+	@while grep -q "@include " CLAUDE.md.tmp; do \
+		file=$$(grep -m1 "@include " CLAUDE.md.tmp | sed 's/.*@include //'); \
+		if [ -f "$$file" ]; then \
+			sed -i "/@include $$file/r $$file" CLAUDE.md.tmp; \
+			sed -i "/@include $$file/d" CLAUDE.md.tmp; \
+		else \
+			echo "Warning: Could not find $$file"; \
+			sed -i "s|@include $$file|[File not found: $$file]|" CLAUDE.md.tmp; \
+		fi; \
+	done
+	@# Process @include-section directives (file, pattern, lines)
+	@while grep -q "@include-section " CLAUDE.md.tmp; do \
+		line=$$(grep -m1 "@include-section " CLAUDE.md.tmp); \
+		file=$$(echo "$$line" | awk '{print $$2}'); \
+		pattern=$$(echo "$$line" | awk '{print $$3}' | tr -d '"'); \
+		lines=$$(echo "$$line" | awk '{print $$4}'); \
+		if [ -f "$$file" ]; then \
+			grep -A $$lines "$$pattern" "$$file" > include.tmp || true; \
+			sed -i "/@include-section $$file/r include.tmp" CLAUDE.md.tmp; \
+			rm -f include.tmp; \
+		fi; \
+		sed -i "/@include-section $$file/d" CLAUDE.md.tmp; \
+	done
+	@mv CLAUDE.md.tmp CLAUDE.md
+	@echo "✅ CLAUDE.md generated successfully!"
+
+# Generate cursor.rules from template
+cursor.rules: cursor.rules.in GLOSSARY.md docs/tasks/README.md
+	@echo "Generating cursor.rules from template..."
+	@# Start with the template
+	@cp cursor.rules.in cursor.rules.tmp
+	@# Replace timestamp
+	@sed -i "s/@TIMESTAMP@/$$(date -u +%Y-%m-%dT%H:%M:%SZ)/g" cursor.rules.tmp
+	@# Process @include directives
+	@while grep -q "@include " cursor.rules.tmp; do \
+		file=$$(grep -m1 "@include " cursor.rules.tmp | sed 's/.*@include //'); \
+		if [ -f "$$file" ]; then \
+			sed -i "/@include $$file/r $$file" cursor.rules.tmp; \
+			sed -i "/@include $$file/d" cursor.rules.tmp; \
+		else \
+			echo "Warning: Could not find $$file"; \
+			sed -i "s|@include $$file|[File not found: $$file]|" cursor.rules.tmp; \
+		fi; \
+	done
+	@# Process @include-section directives
+	@while grep -q "@include-section " cursor.rules.tmp; do \
+		line=$$(grep -m1 "@include-section " cursor.rules.tmp); \
+		file=$$(echo "$$line" | awk '{print $$2}'); \
+		pattern=$$(echo "$$line" | awk '{print $$3}' | tr -d '"'); \
+		lines=$$(echo "$$line" | awk '{print $$4}'); \
+		if [ -f "$$file" ]; then \
+			grep -A $$lines "$$pattern" "$$file" > include.tmp || true; \
+			sed -i "/@include-section $$file/r include.tmp" cursor.rules.tmp; \
+			rm -f include.tmp; \
+		fi; \
+		sed -i "/@include-section $$file/d" cursor.rules.tmp; \
+	done
+	@mv cursor.rules.tmp cursor.rules
+	@echo "✅ cursor.rules generated successfully!"
+
+# Prepare everything and start Claude
+claude: CLAUDE.md
+	@echo "Preparing to start Claude Code..."
+	@echo ""
+	@# Check if Claude is installed
+	@if ! command -v claude >/dev/null 2>&1; then \
+		echo "❌ Claude Code is not installed!"; \
+		echo ""; \
+		echo "Install with:"; \
+		echo "  npm install -g @anthropic-ai/claude-code"; \
+		exit 1; \
+	fi
+	@echo "✅ Claude Code is installed"
+	@echo ""
+	@# Check environment
+	@if [ -z "$$OPENAI_API_KEY" ]; then \
+		echo "⚠️  Warning: OPENAI_API_KEY is not set"; \
+		echo "  Voice Mode requires this for TTS/STT"; \
+		echo ""; \
+	fi
+	@# Start Claude
+	@echo "Starting Claude Code..."
+	@echo ""
+	@claude converse
+
+# Prepare everything and start Cursor
+cursor: cursor.rules
+	@echo "Cursor rules have been generated!"
+	@echo ""
+	@echo "cursor.rules file is ready for use in your Cursor workspace."
+	@echo ""
+	@echo "To use:"
+	@echo "1. Copy cursor.rules to your project root"
+	@echo "2. Cursor will automatically detect and use these rules"
+	@echo ""
+	@ls -la cursor.rules
