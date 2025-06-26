@@ -22,7 +22,7 @@ import httpx
 os.environ['OPENAI_API_KEY'] = os.environ.get('OPENAI_API_KEY', 'test-key')
 
 # Import from the core module
-from voice_mcp.core import text_to_speech, get_openai_clients, cleanup, save_debug_file
+from voice_mode.core import text_to_speech, get_openai_clients, cleanup, save_debug_file
 
 
 class TestTTSStability:
@@ -65,8 +65,8 @@ class TestTTSStability:
         openai_clients = {'tts': mock_openai_client}
         
         # Mock dependencies
-        with patch('voice_mcp.core.AudioSegment') as mock_audio, \
-             patch('voice_mcp.core.logger') as mock_logger:
+        with patch('voice_mode.core.AudioSegment') as mock_audio, \
+             patch('voice_mode.core.logger') as mock_logger:
             
             # Mock audio processing
             mock_audio_instance = MagicMock()
@@ -123,8 +123,8 @@ class TestTTSStability:
     @pytest.mark.asyncio
     async def test_tts_with_connection_pooling(self):
         """Test TTS with connection pooling configuration"""
-        with patch('voice_mcp.core.AsyncOpenAI') as mock_openai_class, \
-             patch('voice_mcp.core.httpx.AsyncClient') as mock_http_client:
+        with patch('voice_mode.core.AsyncOpenAI') as mock_openai_class, \
+             patch('voice_mode.core.httpx.AsyncClient') as mock_http_client:
             
             # Call get_openai_clients
             clients = get_openai_clients(
@@ -155,7 +155,7 @@ class TestTTSStability:
         
         openai_clients = {'tts': mock_openai_client}
         
-        with patch('voice_mcp.core.logger') as mock_logger:
+        with patch('voice_mode.core.logger') as mock_logger:
             
             result, metrics = await text_to_speech(
                 text="Test message",
@@ -194,8 +194,8 @@ class TestTTSStability:
         # Test debug mode with TTS
         openai_clients = {'tts': mock_openai_client}
         
-        with patch('voice_mcp.core.AudioSegment') as mock_audio, \
-             patch('voice_mcp.core.sd') as mock_sd:
+        with patch('voice_mode.core.AudioSegment') as mock_audio, \
+             patch('voice_mode.core.sd') as mock_sd:
             
             # Mock audio processing
             mock_audio_instance = MagicMock()
@@ -243,7 +243,7 @@ class TestMemoryManagement:
     @pytest.mark.asyncio
     async def test_garbage_collection_on_cleanup(self):
         """Test that garbage collection runs during cleanup"""
-        with patch('voice_mcp.core.gc') as mock_gc:
+        with patch('voice_mode.core.gc') as mock_gc:
             
             mock_gc.collect.return_value = 42  # Number of objects collected
             
@@ -270,10 +270,10 @@ class TestAudioFileHandling:
             temp_files_created.append(tmp.name)
             return tmp
         
-        with patch('voice_mcp.core.AudioSegment') as mock_audio, \
-             patch('voice_mcp.core.sd') as mock_sd, \
-             patch('voice_mcp.core.tempfile.NamedTemporaryFile', track_tempfile), \
-             patch('voice_mcp.core.os.unlink') as mock_unlink:
+        with patch('voice_mode.core.AudioSegment') as mock_audio, \
+             patch('voice_mode.core.sd') as mock_sd, \
+             patch('voice_mode.core.tempfile.NamedTemporaryFile', track_tempfile), \
+             patch('voice_mode.core.os.unlink') as mock_unlink:
             
             # Mock audio processing
             mock_audio_instance = MagicMock()

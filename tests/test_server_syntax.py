@@ -22,7 +22,7 @@ class TestServerSyntax:
     @pytest.fixture
     def server_path(self):
         """Get the path to the voice-mcp server module"""
-        return Path(__file__).parent.parent / "voice_mcp" / "server.py"
+        return Path(__file__).parent.parent / "voice_mode" / "server.py"
     
     def test_module_exists(self, server_path):
         """Test that the server module exists"""
@@ -186,7 +186,7 @@ class TestServerStructure:
     @pytest.fixture
     def server_path(self):
         """Get the path to the voice-mcp server module"""
-        return Path(__file__).parent.parent / "voice_mcp" / "server.py"
+        return Path(__file__).parent.parent / "voice_mode" / "server.py"
     
     @pytest.fixture
     def server_content(self, server_path):

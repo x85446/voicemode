@@ -1,5 +1,5 @@
 """
-voice-mcp - Voice interaction capabilities for Model Context Protocol (MCP) servers
+voice-mode - Voice interaction capabilities for Model Context Protocol (MCP) servers
 
 This package provides MCP servers for voice interactions through multiple transports:
 - Local microphone recording and playback

@@ -1,5 +1,5 @@
 """
-Streaming audio playback for voice-mcp.
+Streaming audio playback for voice-mode.
 
 This module provides progressive audio playback to reduce latency
 by playing audio chunks as they arrive from the TTS service.

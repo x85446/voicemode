@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Optional
 import logging
 
-logger = logging.getLogger("voice-mcp")
+logger = logging.getLogger("voice-mode")
 
 
 def detect_existing_format_preference() -> Optional[str]:
@@ -20,7 +20,7 @@ def detect_existing_format_preference() -> Optional[str]:
     Returns:
         Format string if a clear preference is detected, None otherwise
     """
-    audio_dir = Path.home() / "voice-mcp_audio"
+    audio_dir = Path.home() / "voice-mode_audio"
     
     if not audio_dir.exists():
         return None
@@ -59,7 +59,7 @@ def should_show_migration_hint() -> bool:
         return False
     
     # Check if migration hint was already shown
-    hint_file = Path.home() / '.voice-mcp-format-migration-shown'
+    hint_file = Path.home() / '.voice-mode-format-migration-shown'
     if hint_file.exists():
         return False
     
@@ -73,7 +73,7 @@ def should_show_migration_hint() -> bool:
 
 def mark_migration_hint_shown():
     """Mark that the migration hint has been shown to the user."""
-    hint_file = Path.home() / '.voice-mcp-format-migration-shown'
+    hint_file = Path.home() / '.voice-mode-format-migration-shown'
     hint_file.touch()
 
 

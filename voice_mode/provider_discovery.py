@@ -1,5 +1,5 @@
 """
-Provider discovery and registry management for voice-mcp.
+Provider discovery and registry management for voice-mode.
 
 This module handles automatic discovery of TTS/STT endpoints, including:
 - Health checks
@@ -20,7 +20,7 @@ from openai import AsyncOpenAI
 
 from .config import TTS_BASE_URLS, STT_BASE_URLS, OPENAI_API_KEY
 
-logger = logging.getLogger("voice-mcp")
+logger = logging.getLogger("voice-mode")
 
 
 @dataclass

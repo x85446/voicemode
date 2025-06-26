@@ -1,12 +1,12 @@
 """Voice command prompts for guided interactions."""
 
-from voice_mcp.server import mcp
+from voice_mode.server import mcp
 
 
 @mcp.prompt()
 async def voice_setup() -> str:
     """Guide for setting up voice services"""
-    return """To set up voice services for voice-mcp:
+    return """To set up voice services for voice-mode:
 
 1. **Environment Variables**:
    - OPENAI_API_KEY: Your OpenAI API key (only required if using OpenAI services)
@@ -36,7 +36,7 @@ async def voice_setup() -> str:
 @mcp.prompt()
 async def emotional_speech_guide() -> str:
     """Guide for using emotional speech features"""
-    return """To use emotional speech with voice-mcp:
+    return """To use emotional speech with voice-mode:
 
 **Requirements**:
 - Use OpenAI API (emotional speech requires OpenAI's gpt-4o-mini-tts model)

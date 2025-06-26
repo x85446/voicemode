@@ -1,7 +1,7 @@
 """
-Core functionality for voice-mcp.
+Core functionality for voice-mode.
 
-This module contains the main functions used by the voice-mcp script,
+This module contains the main functions used by the voice-mode script,
 extracted to allow for easier testing and reuse.
 """
 
@@ -358,7 +358,7 @@ async def text_to_speech(
                     
                     # Last resort: save to user's home directory for manual playback
                     try:
-                        fallback_path = Path.home() / f"voice-mcp-audio-{datetime.now().strftime('%Y%m%d_%H%M%S')}.{validated_format}"
+                        fallback_path = Path.home() / f"voice-mode-audio-{datetime.now().strftime('%Y%m%d_%H%M%S')}.{validated_format}"
                         import shutil
                         shutil.copy(tmp_file.name, fallback_path)
                         logger.warning(f"Audio saved to {fallback_path} for manual playback")
@@ -494,7 +494,7 @@ async def play_chime_end(sample_rate: int = SAMPLE_RATE) -> bool:
 
 async def cleanup(openai_clients: dict):
     """Cleanup function to close HTTP clients and resources"""
-    logger.info("Shutting down Voice MCP Server...")
+    logger.info("Shutting down Voice Mode Server...")
     
     # Close OpenAI HTTP clients
     try:

@@ -76,16 +76,16 @@ Repository = "https://github.com/mbailey/voicemode"
 Issues = "https://github.com/mbailey/voicemode/issues"
 
 [project.scripts]
-voice-mode = "voice_mcp.cli:voice_mode"
-voicemode = "voice_mcp.cli:voice_mode"
-voice-mcp = "voice_mcp.cli:voice_mcp"
+voice-mode = "voice_mode.cli:voice_mode"
+voicemode = "voice_mode.cli:voice_mode"
+voice-mcp = "voice_mode.cli:voice_mcp"
 
 [tool.hatch.build.targets.wheel]
-packages = ["voice_mcp"]
+packages = ["voice_mode"]
 
 [tool.hatch.build.targets.sdist]
 include = [
-  "/voice_mcp",
+  "/voice_mode",
   "/README.md",
   "/LICENSE",
   "/pyproject.toml",
@@ -101,7 +101,7 @@ exclude = [
 ]
 
 [tool.hatch.version]
-path = "voice_mcp/__version__.py"
+path = "voice_mode/__version__.py"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

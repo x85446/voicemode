@@ -1,13 +1,13 @@
-"""Provider management tools for voice-mcp."""
+"""Provider management tools for voice-mode."""
 
 import logging
 from typing import Optional, Dict, Any
 
-from voice_mcp.server import mcp
-from voice_mcp.provider_discovery import provider_registry
-from voice_mcp.config import TTS_BASE_URLS, STT_BASE_URLS
+from voice_mode.server import mcp
+from voice_mode.provider_discovery import provider_registry
+from voice_mode.config import TTS_BASE_URLS, STT_BASE_URLS
 
-logger = logging.getLogger("voice-mcp")
+logger = logging.getLogger("voice-mode")
 
 
 @mcp.tool()
@@ -59,7 +59,7 @@ async def refresh_provider_registry(
             for url in urls:
                 if optimistic:
                     # In optimistic mode, just mark everything as healthy
-                    from voice_mcp.provider_discovery import EndpointInfo
+                    from voice_mode.provider_discovery import EndpointInfo
                     from datetime import datetime
                     
                     provider_registry.registry[service][url] = EndpointInfo(

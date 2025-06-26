@@ -16,7 +16,7 @@ from pathlib import Path
 
 import logging
 
-logger = logging.getLogger("voice-mcp")
+logger = logging.getLogger("voice-mode")
 
 
 @dataclass

@@ -1,5 +1,5 @@
 """
-Provider selection and management for voice-mcp.
+Provider selection and management for voice-mode.
 
 This module provides compatibility layer and selection logic for voice providers,
 working with the dynamic provider discovery system.
@@ -12,7 +12,7 @@ from openai import AsyncOpenAI
 from .config import TTS_VOICES, TTS_MODELS, TTS_BASE_URLS, OPENAI_API_KEY
 from .provider_discovery import provider_registry, EndpointInfo
 
-logger = logging.getLogger("voice-mcp")
+logger = logging.getLogger("voice-mode")
 
 
 async def get_tts_client_and_voice(

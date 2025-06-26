@@ -2,8 +2,8 @@
 """Test script for TTS model selection in voice-mcp"""
 
 import asyncio
-from voice_mcp.core import get_openai_clients, text_to_speech
-from voice_mcp.server import get_tts_config
+from voice_mode.core import get_openai_clients, text_to_speech
+from voice_mode.server import get_tts_config
 import os
 
 async def test_tts_models():

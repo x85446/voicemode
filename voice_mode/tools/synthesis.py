@@ -3,9 +3,9 @@
 import logging
 from typing import Optional
 
-from voice_mcp.server import mcp
+from voice_mode.server import mcp
 
-logger = logging.getLogger("voice-mcp")
+logger = logging.getLogger("voice-mode")
 
 # Placeholder - TTS tools will be implemented here
 # This would include tools for:

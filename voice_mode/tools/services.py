@@ -1,5 +1,5 @@
 """
-Service management tools for Voice MCP.
+Service management tools for Voice Mode.
 
 This module provides tools for managing external services like Kokoro TTS.
 """
@@ -11,9 +11,9 @@ from typing import Optional, Dict
 from pathlib import Path
 
 import psutil
-from voice_mcp.server import mcp
+from voice_mode.server import mcp
 
-logger = logging.getLogger("voice-mcp")
+logger = logging.getLogger("voice-mode")
 
 # Global state for service management
 service_processes: Dict[str, subprocess.Popen] = {}

@@ -4,10 +4,10 @@ import logging
 from typing import Optional
 import sounddevice as sd
 
-from voice_mcp.server import mcp
-from voice_mcp.shared import startup_initialization
+from voice_mode.server import mcp
+from voice_mode.shared import startup_initialization
 
-logger = logging.getLogger("voice-mcp")
+logger = logging.getLogger("voice-mode")
 
 
 @mcp.tool()
@@ -54,8 +54,8 @@ async def voice_status() -> str:
     
     Provides a unified view of the voice infrastructure configuration and health.
     """
-    from voice_mcp.provider_discovery import provider_registry
-    from voice_mcp.config import TTS_BASE_URLS, STT_BASE_URLS
+    from voice_mode.provider_discovery import provider_registry
+    from voice_mode.config import TTS_BASE_URLS, STT_BASE_URLS
     
     try:
         # Ensure registry is initialized
@@ -86,7 +86,7 @@ async def voice_status() -> str:
                     status_lines.append(f"     Models: {', '.join(endpoint_info.models) if endpoint_info.models else 'none'}")
         
         # Configuration
-        from voice_mcp.config import (
+        from voice_mode.config import (
             TTS_VOICES, TTS_MODELS, 
             PREFER_LOCAL, AUTO_START_KOKORO,
             AUDIO_FEEDBACK_ENABLED, LIVEKIT_URL

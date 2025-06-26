@@ -1,4 +1,4 @@
-"""Voice MCP utility modules."""
+"""Voice Mode utility modules."""
 
 from .event_logger import (
     EventLogger,

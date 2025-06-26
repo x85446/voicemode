@@ -16,8 +16,8 @@ from pydub import AudioSegment
 from openai import AsyncOpenAI
 import httpx
 
-from voice_mcp.server import mcp
-from voice_mcp.config import (
+from voice_mode.server import mcp
+from voice_mode.config import (
     audio_operation_lock,
     SAMPLE_RATE,
     CHANNELS,
@@ -36,16 +36,16 @@ from voice_mcp.config import (
     save_transcription,
     SAVE_TRANSCRIPTIONS
 )
-import voice_mcp.config
-from voice_mcp.providers import (
+import voice_mode.config
+from voice_mode.providers import (
     get_tts_client_and_voice,
     get_stt_client,
     is_provider_available,
     get_provider_by_voice,
     select_best_voice
 )
-from voice_mcp.provider_discovery import provider_registry
-from voice_mcp.core import (
+from voice_mode.provider_discovery import provider_registry
+from voice_mode.core import (
     get_openai_clients,
     text_to_speech,
     cleanup as cleanup_clients,
@@ -54,8 +54,8 @@ from voice_mcp.core import (
     play_chime_start,
     play_chime_end
 )
-from voice_mcp.tools.statistics import track_voice_interaction
-from voice_mcp.utils import (
+from voice_mode.tools.statistics import track_voice_interaction
+from voice_mode.utils import (
     get_event_logger,
     log_recording_start,
     log_recording_end,
@@ -65,7 +65,7 @@ from voice_mcp.utils import (
     log_tool_request_end
 )
 
-logger = logging.getLogger("voice-mcp")
+logger = logging.getLogger("voice-mode")
 
 # Track last session end time for measuring AI thinking time
 last_session_end_time = None
@@ -219,7 +219,7 @@ async def text_to_speech_with_failover(
     Returns:
         Tuple of (success, tts_metrics, tts_config)
     """
-    from voice_mcp.provider_discovery import provider_registry
+    from voice_mode.provider_discovery import provider_registry
     
     # Track which URLs we've tried
     tried_urls = set()
@@ -271,7 +271,7 @@ async def text_to_speech_with_failover(
                 logger.warning(f"Initial provider {initial_provider} failed: {e}")
     
     # Try remaining endpoints in order
-    from voice_mcp.config import TTS_BASE_URLS
+    from voice_mode.config import TTS_BASE_URLS
     
     for base_url in TTS_BASE_URLS:
         if base_url in tried_urls:
@@ -348,8 +348,8 @@ async def speech_to_text_with_failover(
     Returns:
         Transcribed text or None if all endpoints fail
     """
-    from voice_mcp.provider_discovery import provider_registry
-    from voice_mcp.config import STT_BASE_URLS
+    from voice_mode.provider_discovery import provider_registry
+    from voice_mode.config import STT_BASE_URLS
     
     # Track which URLs we've tried
     tried_urls = set()
@@ -760,7 +760,7 @@ async def livekit_ask_voice_question(question: str, room_name: str = "", timeout
         
         # Connect and run
         token = api.AccessToken(LIVEKIT_API_KEY, LIVEKIT_API_SECRET)
-        token.with_identity("voice-mcp-bot").with_name("Voice MCP Bot")
+        token.with_identity("voice-mode-bot").with_name("Voice Mode Bot")
         token.with_grants(api.VideoGrants(
             room_join=True, room=room_name,
             can_publish=True, can_subscribe=True,

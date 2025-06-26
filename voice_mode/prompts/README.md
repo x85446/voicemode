@@ -1,6 +1,6 @@
-# Voice MCP Prompts
+# Voice Mode Prompts
 
-This directory contains all the FastMCP prompt definitions for the Voice MCP server.
+This directory contains all the FastMCP prompt definitions for the Voice Mode server.
 
 ## Prompt Files
 

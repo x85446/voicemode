@@ -86,7 +86,7 @@ async def startup_initialization():
 
 def cleanup_on_shutdown():
     """Cleanup function called on shutdown"""
-    from voice_mcp.core import cleanup as cleanup_clients
+    from voice_mode.core import cleanup as cleanup_clients
     
     # Cleanup OpenAI clients
     cleanup_clients()
