@@ -5,8 +5,9 @@ import logging
 import os
 import time
 import traceback
-from typing import Optional, Literal, Tuple
+from typing import Optional, Literal, Tuple, Dict
 from pathlib import Path
+from datetime import datetime
 
 import numpy as np
 import sounddevice as sd
@@ -31,7 +32,9 @@ from voice_mcp.config import (
     PREFER_LOCAL,
     AUDIO_FEEDBACK_ENABLED,
     service_processes,
-    HTTP_CLIENT_CONFIG
+    HTTP_CLIENT_CONFIG,
+    save_transcription,
+    SAVE_TRANSCRIPTIONS
 )
 import voice_mcp.config
 from voice_mcp.providers import (
@@ -526,6 +529,17 @@ async def _speech_to_text_internal(
             
             if text:
                 logger.info(f"✓ STT result: '{text}'")
+                
+                # Save transcription if enabled
+                if SAVE_TRANSCRIPTIONS:
+                    metadata = {
+                        "type": "stt",
+                        "model": stt_config.get('model', 'unknown'),
+                        "provider": stt_config.get('provider', 'unknown'),
+                        "timestamp": datetime.now().isoformat()
+                    }
+                    save_transcription(text, prefix="stt", metadata=metadata)
+                
                 return text
             else:
                 logger.warning("STT returned empty text")
@@ -1092,6 +1106,20 @@ async def converse(
                     event_logger.end_session()
                 
                 if response_text:
+                    # Save conversation transcription if enabled
+                    if SAVE_TRANSCRIPTIONS:
+                        conversation_text = f"Assistant: {message}\n\nUser: {response_text}"
+                        metadata = {
+                            "type": "conversation",
+                            "transport": transport,
+                            "voice": voice,
+                            "model": tts_model,
+                            "stt_model": "whisper-1",  # Default STT model
+                            "timing": timing_str,
+                            "timestamp": datetime.now().isoformat()
+                        }
+                        save_transcription(conversation_text, prefix="conversation", metadata=metadata)
+                    
                     result = f"Voice response: {response_text} | Timing: {timing_str}"
                     success = True
                 else:

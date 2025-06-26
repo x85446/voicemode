@@ -15,14 +15,27 @@ from datetime import datetime
 
 # ==================== ENVIRONMENT CONFIGURATION ====================
 
+# Base directory for all voicemode data
+BASE_DIR = Path(os.getenv("VOICEMODE_BASE_DIR", str(Path.home() / ".voicemode")))
+
+# Unified directory structure
+AUDIO_DIR = BASE_DIR / "audio"
+TRANSCRIPTIONS_DIR = BASE_DIR / "transcriptions"
+LOGS_DIR = BASE_DIR / "logs"
+CONFIG_DIR = BASE_DIR / "config"
+
 # Debug configuration
 DEBUG = os.getenv("VOICEMODE_DEBUG", "").lower() in ("true", "1", "yes", "on")
 TRACE_DEBUG = os.getenv("VOICEMODE_DEBUG", "").lower() == "trace"
-DEBUG_DIR = Path.home() / "voicemode_debug"
+DEBUG_DIR = LOGS_DIR / "debug"  # Debug files now go under logs
+
+# Master save-all configuration
+SAVE_ALL = os.getenv("VOICEMODE_SAVE_ALL", "").lower() in ("true", "1", "yes", "on")
 
 # Audio saving configuration
-SAVE_AUDIO = os.getenv("VOICEMODE_SAVE_AUDIO", "").lower() in ("true", "1", "yes", "on")
-AUDIO_DIR = Path.home() / "voicemode_audio"
+# Enable if SAVE_ALL is true, DEBUG is true, or individually enabled
+SAVE_AUDIO = SAVE_ALL or DEBUG or os.getenv("VOICEMODE_SAVE_AUDIO", "").lower() in ("true", "1", "yes", "on")
+SAVE_TRANSCRIPTIONS = SAVE_ALL or DEBUG or os.getenv("VOICEMODE_SAVE_TRANSCRIPTIONS", "").lower() in ("true", "1", "yes", "on")
 
 # Audio feedback configuration
 AUDIO_FEEDBACK_ENABLED = os.getenv("VOICEMODE_AUDIO_FEEDBACK", "true").lower() in ("true", "1", "yes", "on")
@@ -107,8 +120,9 @@ STREAM_MAX_BUFFER = float(os.getenv("VOICEMODE_STREAM_MAX_BUFFER", "2.0"))  # Ma
 # ==================== EVENT LOGGING CONFIGURATION ====================
 
 # Event logging configuration
-EVENT_LOG_ENABLED = os.getenv("VOICEMODE_EVENT_LOG_ENABLED", "true").lower() in ("true", "1", "yes", "on")
-EVENT_LOG_DIR = os.getenv("VOICEMODE_EVENT_LOG_DIR", str(Path.home() / "voicemode_logs"))
+# Event logs are enabled by default, or if SAVE_ALL is true
+EVENT_LOG_ENABLED = SAVE_ALL or os.getenv("VOICEMODE_EVENT_LOG_ENABLED", "true").lower() in ("true", "1", "yes", "on")
+EVENT_LOG_DIR = os.getenv("VOICEMODE_EVENT_LOG_DIR", str(LOGS_DIR / "events"))
 EVENT_LOG_ROTATION = os.getenv("VOICEMODE_EVENT_LOG_ROTATION", "daily")  # Currently only daily is supported
 
 # ==================== GLOBAL STATE ====================
@@ -180,12 +194,23 @@ def setup_logging() -> logging.Logger:
 # ==================== DIRECTORY INITIALIZATION ====================
 
 def initialize_directories():
-    """Create necessary directories for debug and audio storage."""
-    if DEBUG:
-        DEBUG_DIR.mkdir(exist_ok=True)
+    """Create necessary directories for voicemode data storage."""
+    # Create base directory
+    BASE_DIR.mkdir(exist_ok=True)
     
-    if SAVE_AUDIO:
-        AUDIO_DIR.mkdir(exist_ok=True)
+    # Create all subdirectories
+    AUDIO_DIR.mkdir(exist_ok=True)
+    TRANSCRIPTIONS_DIR.mkdir(exist_ok=True)
+    LOGS_DIR.mkdir(exist_ok=True)
+    CONFIG_DIR.mkdir(exist_ok=True)
+    
+    # Create subdirectories for logs
+    if DEBUG:
+        DEBUG_DIR.mkdir(parents=True, exist_ok=True)
+    
+    # Create events log directory
+    if EVENT_LOG_ENABLED:
+        Path(EVENT_LOG_DIR).mkdir(parents=True, exist_ok=True)
 
 # ==================== UTILITY FUNCTIONS ====================
 
@@ -201,6 +226,46 @@ def get_debug_filename(prefix: str, extension: str) -> str:
     """
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")[:-3]
     return f"{prefix}_{timestamp}.{extension}"
+
+
+def save_transcription(text: str, prefix: str = "transcript", metadata: Optional[Dict] = None) -> Optional[Path]:
+    """Save a transcription to the transcriptions directory.
+    
+    Args:
+        text: The transcription text to save
+        prefix: Prefix for the filename (e.g., 'stt', 'conversation')
+        metadata: Optional metadata to include at the top of the file
+    
+    Returns:
+        Path to the saved file or None if saving is disabled
+    """
+    if not SAVE_TRANSCRIPTIONS:
+        return None
+    
+    try:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")[:-3]
+        filename = f"{prefix}_{timestamp}.txt"
+        filepath = TRANSCRIPTIONS_DIR / filename
+        
+        content = []
+        
+        # Add metadata header if provided
+        if metadata:
+            content.append("--- METADATA ---")
+            for key, value in metadata.items():
+                content.append(f"{key}: {value}")
+            content.append("--- TRANSCRIPT ---")
+            content.append("")
+        
+        content.append(text)
+        
+        filepath.write_text("\n".join(content), encoding="utf-8")
+        logger.debug(f"Transcription saved to: {filepath}")
+        return filepath
+        
+    except Exception as e:
+        logger.error(f"Failed to save transcription: {e}")
+        return None
 
 # ==================== SOUNDDEVICE WORKAROUND ====================
 
