@@ -34,55 +34,19 @@ jobs:
         python -m pip install --upgrade pip
         pip install build twine
     
-    - name: Build voice-mode package (primary)
+    - name: Build package
       run: python -m build
     
-    - name: Check voice-mode package
+    - name: Check package
       run: twine check dist/*
     
-    - name: Build voice-mode package (legacy)
-      run: |
-        # Move voice-mode artifacts to separate directory
-        mkdir -p dist-voice-mode
-        mv dist/* dist-voice-mode/
-        
-        # Swap pyproject files to build voice-mode
-        mv pyproject.toml pyproject.toml.tmp
-        mv pyproject-voice-mode.toml pyproject.toml
-        
-        # Build voice-mode
-        python -m build
-        
-        # Restore original pyproject.toml
-        mv pyproject.toml pyproject-voice-mode.toml
-        mv pyproject.toml.tmp pyproject.toml
-    
-    - name: Check voice-mode package
-      run: twine check dist/*
-    
-    - name: Publish voice-mode to TestPyPI
+    - name: Publish to TestPyPI
       if: github.event_name == 'workflow_dispatch' && inputs.target == 'testpypi'
       env:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.TEST_PYPI_API_TOKEN }}
       run: twine upload --repository testpypi dist/*
     
-    - name: Publish voice-mode to TestPyPI
-      if: github.event_name == 'workflow_dispatch' && inputs.target == 'testpypi'
-      env:
-        TWINE_USERNAME: __token__
-        TWINE_PASSWORD: ${{ secrets.TEST_PYPI_API_TOKEN }}
-      run: twine upload --repository testpypi dist-voice-mode/*
-    
-    - name: Publish voice-mode to PyPI (using API token)
-      if: (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) || (github.event_name == 'workflow_dispatch' && inputs.target == 'pypi')
-      env:
-        TWINE_USERNAME: __token__
-        TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-      run: twine upload dist/*
-    
-    - name: Publish voice-mode to PyPI (using trusted publisher)
+    - name: Publish to PyPI
       if: (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) || (github.event_name == 'workflow_dispatch' && inputs.target == 'pypi')
       uses: pypa/gh-action-pypi-publish@release/v1
-      with:
-        packages-dir: dist-voice-mode/
