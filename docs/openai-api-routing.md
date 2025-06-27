@@ -22,7 +22,7 @@ upstream openai_primary {
 }
 
 upstream openai_fallback {
-    server localhost:8880;  # Local Kokoro TTS
+    server 127.0.0.1:8880;  # Local Kokoro TTS
 }
 
 location /v1/audio/speech {
@@ -54,7 +54,7 @@ async def route_tts(request: Request):
         # Use local Kokoro for standard TTS
         async with httpx.AsyncClient() as client:
             return await client.post(
-                "http://localhost:8880/v1/audio/speech",
+                "http://127.0.0.1:8880/v1/audio/speech",
                 json=body
             )
     else:
@@ -76,7 +76,7 @@ app.post('/v1/audio/speech', async (req, res) => {
     
     // Route Sky voice to Kokoro, others to OpenAI
     if (voice === 'af_sky') {
-        const response = await fetch('http://localhost:8880/v1/audio/speech', {
+        const response = await fetch('http://127.0.0.1:8880/v1/audio/speech', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ ...req.body, model: 'kokoro-v0.87' })
@@ -114,8 +114,8 @@ backend tts_servers
     option httpchk GET /health
     
     server openai api.openai.com:443 ssl verify none check
-    server kokoro1 localhost:8880 check
-    server kokoro2 localhost:8881 check backup
+    server kokoro1 127.0.0.1:8880 check
+    server kokoro2 127.0.0.1:8881 check backup
 ```
 
 ## Configuration
@@ -140,8 +140,8 @@ For more granular control, voice-mode also supports provider-specific endpoints:
 
 ```bash
 # Use different endpoints for STT and TTS
-export STT_BASE_URL="http://localhost:2022/v1"  # Local Whisper
-export TTS_BASE_URL="http://localhost:8880/v1"  # Local Kokoro
+export STT_BASE_URL="http://127.0.0.1:2022/v1"  # Local Whisper
+export TTS_BASE_URL="http://127.0.0.1:8880/v1"  # Local Kokoro
 ```
 
 Your router receives all requests and can then:
@@ -185,8 +185,8 @@ EOF
 litellm --config litellm_config.yaml --port 9000
 
 # Configure voice-mode
-export TTS_BASE_URL="http://localhost:9000"
-export STT_BASE_URL="http://localhost:9000"
+export TTS_BASE_URL="http://127.0.0.1:9000"
+export STT_BASE_URL="http://127.0.0.1:9000"
 ```
 
 This architecture ensures voice-mode remains simple while enabling sophisticated deployment patterns through external routing layers.

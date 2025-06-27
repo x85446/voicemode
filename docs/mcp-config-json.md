@@ -176,7 +176,7 @@ Our working voice-mode configuration uses Option 2 (literal values):
         "TTS_VOICE": "alloy",
         "TTS_MODEL": "tts-1",
         "STT_MODEL": "whisper-1",
-        "LIVEKIT_URL": "ws://localhost:7880",
+        "LIVEKIT_URL": "ws://127.0.0.1:7880",
         "LIVEKIT_API_KEY": "devkey",
         "LIVEKIT_API_SECRET": "secret",
         "VOICE_MODE_DEBUG": "true",

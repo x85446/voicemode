@@ -42,6 +42,37 @@
 - Add provider quality ratings based on user feedback
 - Support for provider-specific features (emotions, voice cloning, etc.)
 
+## Inbox (New Ideas to Review)
+
+- [ ] In-memory buffer for conversation timing metrics
+  - Track full conversation lifecycle including Claude response times
+  - Maintain recent interaction history without persistent storage
+- [ ] Sentence-based TTS streaming
+  - Send first sentence to TTS immediately while rest is being generated
+  - Significant reduction in time to first audio (TTFA)
+- [ ] Persistent settings file for voice-mode
+  - Allow Claude to modify user preferences
+  - Include: silence threshold, VAD aggressiveness, preferred voices
+  - Respect security boundaries (some env vars remain read-only)
+- [ ] LiveKit integration improvements
+  - Complete integration for room-based conversations
+  - iOS app setup for mobile voice interactions
+- [ ] Streaming HTTP version for voice interactions
+- [ ] Fix Kokoro authentication with OpenAI client
+  - Currently works via curl but fails through AsyncOpenAI client
+  - May need special handling for local endpoints
+- [ ] Implement proper debug logging with trace mode
+  - Add VOICEMODE_DEBUG=trace option for verbose HTTP logging
+  - Enable httpx and openai library debug logging
+  - Write debug logs to ~/.voicemode/logs/debug/voicemode_debug_YYYY-MM-DD.log
+  - Essential for troubleshooting provider connection issues
+- [ ] Multi-agent coordination via LiveKit rooms ("Minions")
+  - Agents on different computers connect to shared LiveKit room
+  - Voice-based inter-agent communication and coordination
+  - Distributed task management and status sharing
+  - Failover and load balancing capabilities
+  - Like Despicable Me minions but for system administration
+
 ## Recently Completed
 
 - [x] Provider Registry MVP - Basic registry with availability checking and selection logic

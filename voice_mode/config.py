@@ -58,10 +58,10 @@ def parse_comma_list(env_var: str, fallback: str) -> list:
     return [item.strip() for item in value.split(",") if item.strip()]
 
 # New provider endpoint lists configuration
-TTS_BASE_URLS = parse_comma_list("VOICEMODE_TTS_BASE_URLS", "http://localhost:8880/v1,https://api.openai.com/v1")
-STT_BASE_URLS = parse_comma_list("VOICEMODE_STT_BASE_URLS", "http://localhost:2022/v1,https://api.openai.com/v1")
+TTS_BASE_URLS = parse_comma_list("VOICEMODE_TTS_BASE_URLS", "http://127.0.0.1:8880/v1,https://api.openai.com/v1")
+STT_BASE_URLS = parse_comma_list("VOICEMODE_STT_BASE_URLS", "http://127.0.0.1:2022/v1,https://api.openai.com/v1")
 TTS_VOICES = parse_comma_list("VOICEMODE_TTS_VOICES", "af_sky,alloy")
-TTS_MODELS = parse_comma_list("VOICEMODE_TTS_MODELS", "gpt-4o-mini-tts,tts-1-hd,tts-1")
+TTS_MODELS = parse_comma_list("VOICEMODE_TTS_MODELS", "tts-1,tts-1-hd,gpt-4o-mini-tts")
 
 # Legacy variables have been removed - use the new list-based configuration:
 # - VOICEMODE_TTS_BASE_URLS (comma-separated list)
@@ -70,7 +70,7 @@ TTS_MODELS = parse_comma_list("VOICEMODE_TTS_MODELS", "gpt-4o-mini-tts,tts-1-hd,
 # - VOICEMODE_TTS_MODELS (comma-separated list)
 
 # LiveKit configuration
-LIVEKIT_URL = os.getenv("LIVEKIT_URL", "ws://localhost:7880")
+LIVEKIT_URL = os.getenv("LIVEKIT_URL", "ws://127.0.0.1:7880")
 LIVEKIT_API_KEY = os.getenv("LIVEKIT_API_KEY", "devkey")
 LIVEKIT_API_SECRET = os.getenv("LIVEKIT_API_SECRET", "secret")
 
@@ -90,6 +90,7 @@ VAD_AGGRESSIVENESS = int(os.getenv("VOICEMODE_VAD_AGGRESSIVENESS", "2"))  # 0-3,
 SILENCE_THRESHOLD_MS = int(os.getenv("VOICEMODE_SILENCE_THRESHOLD_MS", "1000"))  # Stop after 1000ms (1 second) of silence
 MIN_RECORDING_DURATION = float(os.getenv("VOICEMODE_MIN_RECORDING_DURATION", "0.5"))  # Minimum 0.5s recording
 VAD_CHUNK_DURATION_MS = 30  # VAD frame size (must be 10, 20, or 30ms)
+INITIAL_SILENCE_GRACE_PERIOD = float(os.getenv("VOICEMODE_INITIAL_SILENCE_GRACE_PERIOD", "4.0"))  # Give users 4s to start speaking
 
 # Audio format configuration
 AUDIO_FORMAT = os.getenv("VOICEMODE_AUDIO_FORMAT", "pcm").lower()
@@ -164,6 +165,33 @@ def setup_logging() -> logging.Logger:
     # Trace logging setup
     if TRACE_DEBUG:
         import sys
+        from datetime import datetime
+        
+        # Create debug log directory
+        debug_log_dir = Path.home() / ".voicemode" / "logs" / "debug"
+        debug_log_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Create dated debug log file
+        debug_log_file = debug_log_dir / f"voicemode_debug_{datetime.now().strftime('%Y-%m-%d')}.log"
+        
+        # Set up file handler for debug logs
+        debug_handler = logging.FileHandler(debug_log_file, mode='a')
+        debug_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+        
+        # Enable debug logging for httpx and openai
+        httpx_logger = logging.getLogger("httpx")
+        httpx_logger.setLevel(logging.DEBUG)
+        httpx_logger.addHandler(debug_handler)
+        
+        openai_logger = logging.getLogger("openai")
+        openai_logger.setLevel(logging.DEBUG)
+        openai_logger.addHandler(debug_handler)
+        
+        # Also add to main logger
+        logger.addHandler(debug_handler)
+        logger.info(f"Trace debug logging enabled, writing to {debug_log_file}")
+        
+        # Legacy trace file support
         trace_file = Path.home() / "voicemode_trace.log"
         trace_logger = logging.getLogger("voicemode-trace")
         trace_handler = logging.FileHandler(trace_file, mode='a')

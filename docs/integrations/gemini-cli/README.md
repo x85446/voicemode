@@ -89,8 +89,8 @@ For advanced configuration:
 export OPENAI_API_KEY="your-key"
 
 # Optional - Use local services
-export VOICEMODE_TTS_BASE_URL="http://localhost:8880/v1"
-export VOICEMODE_STT_BASE_URL="http://localhost:2022/v1"
+export VOICEMODE_TTS_BASE_URL="http://127.0.0.1:8880/v1"
+export VOICEMODE_STT_BASE_URL="http://127.0.0.1:2022/v1"
 
 # Optional - Preferred voice
 export VOICEMODE_TTS_VOICE="nova"
@@ -195,8 +195,8 @@ For privacy and offline usage:
    ```json
    {
      "env": {
-       "VOICEMODE_TTS_BASE_URL": "http://localhost:8880/v1",
-       "VOICEMODE_STT_BASE_URL": "http://localhost:2022/v1",
+       "VOICEMODE_TTS_BASE_URL": "http://127.0.0.1:8880/v1",
+       "VOICEMODE_STT_BASE_URL": "http://127.0.0.1:2022/v1",
        "VOICEMODE_PREFER_LOCAL": "true"
      }
    }

@@ -13,7 +13,7 @@ Based on OpenRouter's model and our requirements, here's a proposed design for t
     "status": "available",  # available, unavailable, starting, error
     
     # Endpoints
-    "base_url": "http://localhost:8880/v1",
+    "base_url": "http://127.0.0.1:8880/v1",
     "health_endpoint": "/health",
     "requires_auth": false,
     
@@ -99,7 +99,7 @@ Based on OpenRouter's model and our requirements, here's a proposed design for t
     "id": "whisper-local",
     "name": "Whisper.cpp",
     "type": "stt",
-    "base_url": "http://localhost:2022/v1",
+    "base_url": "http://127.0.0.1:2022/v1",
     
     # Models array with specific properties
     "models": {
@@ -199,7 +199,7 @@ PROVIDER_REGISTRY = {
         "id": "whisper-local",
         "name": "Whisper.cpp",
         "type": "stt",
-        "base_url": "http://localhost:2022/v1",
+        "base_url": "http://127.0.0.1:2022/v1",
         "cost": {"amount": 0.0},
         "privacy": {"level": "local"},
         "requirements": {

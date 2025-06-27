@@ -11,14 +11,14 @@ Whisper.cpp is a local speech-to-text engine that provides an OpenAI-compatible 
 
 2. Configure voice-mode to use local Whisper:
    ```bash
-   export STT_BASE_URL=http://localhost:2022/v1
+   export STT_BASE_URL=http://127.0.0.1:2022/v1
    ```
 
 3. Or add to `.mcp.json`:
    ```json
    "voice-mode": {
      "env": {
-       "STT_BASE_URL": "http://localhost:2022/v1"
+       "STT_BASE_URL": "http://127.0.0.1:2022/v1"
      }
    }
    ```
@@ -42,7 +42,7 @@ Local Whisper typically processes speech in 1-3 seconds depending on:
 For completely offline voice processing, combine Whisper with Kokoro:
 
 ```bash
-export STT_BASE_URL=http://localhost:2022/v1
-export TTS_BASE_URL=http://localhost:8880/v1
+export STT_BASE_URL=http://127.0.0.1:2022/v1
+export TTS_BASE_URL=http://127.0.0.1:8880/v1
 export TTS_VOICE=af_sky
 ```

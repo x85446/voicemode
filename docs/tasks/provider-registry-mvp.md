@@ -10,7 +10,7 @@ PROVIDERS = {
         "id": "kokoro",
         "name": "Kokoro TTS", 
         "type": "tts",
-        "base_url": "http://localhost:8880/v1",
+        "base_url": "http://127.0.0.1:8880/v1",
         "local": True,
         "auto_start": True,
         "features": ["local", "free", "fast"]
@@ -27,7 +27,7 @@ PROVIDERS = {
         "id": "whisper",
         "name": "Whisper.cpp",
         "type": "stt",
-        "base_url": "http://localhost:2022/v1", 
+        "base_url": "http://127.0.0.1:2022/v1", 
         "local": True,
         "features": ["local", "free", "accurate"]
     }

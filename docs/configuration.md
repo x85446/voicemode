@@ -71,7 +71,7 @@ When using voice-mode with MCP hosts (Claude Desktop, VS Code, etc.), it's impor
 |----------|---------|-------------|----------|
 | `LIVEKIT_API_KEY` | `devkey` | LiveKit API key | LiveKit |
 | `LIVEKIT_API_SECRET` | `secret` | LiveKit API secret | LiveKit |
-| `LIVEKIT_URL` | `ws://localhost:7880` | LiveKit server WebSocket URL | LiveKit |
+| `LIVEKIT_URL` | `ws://127.0.0.1:7880` | LiveKit server WebSocket URL | LiveKit |
 | `OPENAI_API_KEY` | *(required)* | Your OpenAI API key (required for cloud STT/TTS services) | API Keys |
 | `VOICEMODE_AAC_BITRATE` | `64k` | AAC bitrate | Audio Format |
 | `VOICEMODE_AUDIO_FEEDBACK` | `true` | Play audio feedback when recording starts/stops | Audio |
@@ -93,9 +93,9 @@ When using voice-mode with MCP hosts (Claude Desktop, VS Code, etc.), it's impor
 | `VOICEMODE_STREAM_MAX_BUFFER` | `2.0` | Maximum buffer size in seconds | Streaming |
 | `VOICEMODE_STREAMING_ENABLED` | `true` | Enable streaming audio playback | Streaming |
 | `VOICEMODE_STT_AUDIO_FORMAT` | `mp3`* | Override format for STT (*auto-selects `mp3` if primary is `pcm`) | Audio Format |
-| `VOICEMODE_STT_BASE_URLS` | `http://localhost:2022/v1,https://api.openai.com/v1` | Comma-separated list of STT endpoints in priority order | STT |
+| `VOICEMODE_STT_BASE_URLS` | `http://127.0.0.1:2022/v1,https://api.openai.com/v1` | Comma-separated list of STT endpoints in priority order | STT |
 | `VOICEMODE_TTS_AUDIO_FORMAT` | `pcm` | Override format for TTS (defaults to primary) | Audio Format |
-| `VOICEMODE_TTS_BASE_URLS` | `http://localhost:8880/v1,https://api.openai.com/v1` | Comma-separated list of TTS endpoints in priority order | TTS |
+| `VOICEMODE_TTS_BASE_URLS` | `http://127.0.0.1:8880/v1,https://api.openai.com/v1` | Comma-separated list of TTS endpoints in priority order | TTS |
 | `VOICEMODE_TTS_MODELS` | `gpt-4o-mini-tts,tts-1-hd,tts-1` | Comma-separated list of TTS models in priority order | TTS |
 | `VOICEMODE_TTS_VOICES` | `af_sky,alloy` | Comma-separated list of preferred voices in priority order | TTS |
 
@@ -108,7 +108,7 @@ When using voice-mode with MCP hosts (Claude Desktop, VS Code, etc.), it's impor
 
 ### Prioritize Local Kokoro TTS
 ```bash
-export VOICEMODE_TTS_BASE_URLS="http://localhost:8880/v1,https://api.openai.com/v1"
+export VOICEMODE_TTS_BASE_URLS="http://127.0.0.1:8880/v1,https://api.openai.com/v1"
 export VOICEMODE_TTS_VOICES="af_sky,nova"
 ```
 
@@ -137,7 +137,7 @@ export VOICEMODE_SAVE_TRANSCRIPTIONS="true"
 
 ### Prioritize Local Whisper STT
 ```bash
-export VOICEMODE_STT_BASE_URLS="http://localhost:2022/v1,https://api.openai.com/v1"
+export VOICEMODE_STT_BASE_URLS="http://127.0.0.1:2022/v1,https://api.openai.com/v1"
 ```
 
 ## Migration from Legacy Variables

@@ -107,7 +107,7 @@ async def get_provider_details(base_url: str) -> str:
     """Get detailed information about a specific provider endpoint.
     
     Args:
-        base_url: The base URL of the provider (e.g., 'http://localhost:8880/v1')
+        base_url: The base URL of the provider (e.g., 'http://127.0.0.1:8880/v1')
     
     Returns:
         Detailed information about the provider including all models and voices

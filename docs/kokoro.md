@@ -6,7 +6,7 @@ Kokoro is a local text-to-speech engine that provides an OpenAI-compatible API.
 
 2. Configure voice-mode to use Kokoro:
    ```bash
-   export VOICEMODE_TTS_BASE_URLS=http://localhost:8880/v1
+   export VOICEMODE_TTS_BASE_URLS=http://127.0.0.1:8880/v1
    export VOICEMODE_TTS_VOICES=af_sky  # Default for Kokoro (or af_nova, am_adam, etc.)
    ```
 
@@ -14,7 +14,7 @@ Kokoro is a local text-to-speech engine that provides an OpenAI-compatible API.
    ```json
    "voice-mode": {
      "env": {
-       "VOICEMODE_TTS_BASE_URLS": "http://localhost:8880/v1",
+       "VOICEMODE_TTS_BASE_URLS": "http://127.0.0.1:8880/v1",
        "TTS_VOICE": "af_sky"
      }
    }

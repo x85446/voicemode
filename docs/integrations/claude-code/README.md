@@ -66,11 +66,11 @@ For advanced configuration, you can set these environment variables:
 export OPENAI_API_KEY="your-key"
 
 # Optional - Use local Kokoro TTS
-export VOICEMODE_TTS_BASE_URL="http://localhost:8880/v1"
+export VOICEMODE_TTS_BASE_URL="http://127.0.0.1:8880/v1"
 export VOICEMODE_TTS_VOICE="af_sky"
 
 # Optional - Use local Whisper STT
-export VOICEMODE_STT_BASE_URL="http://localhost:2022/v1"
+export VOICEMODE_STT_BASE_URL="http://127.0.0.1:2022/v1"
 
 # Optional - Debug mode
 export VOICEMODE_DEBUG="true"
@@ -176,8 +176,8 @@ To use local services for complete privacy:
 2. **Configure Voice Mode:**
    ```bash
    claude mcp add voice-mode \
-     --env VOICEMODE_TTS_BASE_URL=http://localhost:8880/v1 \
-     --env VOICEMODE_STT_BASE_URL=http://localhost:2022/v1 \
+     --env VOICEMODE_TTS_BASE_URL=http://127.0.0.1:8880/v1 \
+     --env VOICEMODE_STT_BASE_URL=http://127.0.0.1:2022/v1 \
      uvx voice-mode
    ```
 

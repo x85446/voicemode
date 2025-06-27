@@ -13,7 +13,7 @@ import logging
 import time
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, asdict
-from datetime import datetime
+from datetime import datetime, timezone
 
 import httpx
 from openai import AsyncOpenAI
@@ -21,6 +21,27 @@ from openai import AsyncOpenAI
 from .config import TTS_BASE_URLS, STT_BASE_URLS, OPENAI_API_KEY
 
 logger = logging.getLogger("voice-mode")
+
+
+def detect_provider_type(base_url: str) -> str:
+    """Detect provider type from base URL."""
+    if "openai.com" in base_url:
+        return "openai"
+    elif ":8880" in base_url:
+        return "kokoro"
+    elif ":2022" in base_url:
+        return "whisper"
+    elif "127.0.0.1" in base_url or "127.0.0.1" in base_url:
+        # Try to infer from port if not already detected
+        if base_url.endswith("/v1"):
+            port_part = base_url[:-3].split(":")[-1]
+            if port_part == "8880":
+                return "kokoro"
+            elif port_part == "2022":
+                return "whisper"
+        return "local"  # Generic local provider
+    else:
+        return "unknown"
 
 
 @dataclass
@@ -33,6 +54,7 @@ class EndpointInfo:
     last_health_check: str  # ISO format timestamp
     response_time_ms: Optional[float] = None
     error: Optional[str] = None
+    provider_type: Optional[str] = None  # e.g., "openai", "kokoro", "whisper"
 
 
 class ProviderRegistry:
@@ -59,24 +81,28 @@ class ProviderRegistry:
             
             # Initialize TTS endpoints as healthy
             for url in TTS_BASE_URLS:
+                provider_type = detect_provider_type(url)
                 self.registry["tts"][url] = EndpointInfo(
                     base_url=url,
                     healthy=True,
-                    models=["tts-1", "tts-1-hd"] if "openai.com" in url else ["tts-1"],
-                    voices=["alloy", "echo", "fable", "nova", "onyx", "shimmer"] if "openai.com" in url else [],
-                    last_health_check=datetime.utcnow().isoformat() + "Z",
-                    response_time_ms=None
+                    models=["gpt4o-mini-tts", "tts-1", "tts-1-hd"] if provider_type == "openai" else ["tts-1"],
+                    voices=["alloy", "echo", "fable", "nova", "onyx", "shimmer"] if provider_type == "openai" else ["af_sky", "af_sarah", "am_adam", "af_nicole", "am_michael", "bf_emma", "bf_isabella", "af_bella", "bm_george", "bm_lewis"],
+                    last_health_check=datetime.now(timezone.utc).isoformat(),
+                    response_time_ms=None,
+                    provider_type=provider_type
                 )
             
             # Initialize STT endpoints as healthy
             for url in STT_BASE_URLS:
+                provider_type = detect_provider_type(url)
                 self.registry["stt"][url] = EndpointInfo(
                     base_url=url,
                     healthy=True,
                     models=["whisper-1"],
                     voices=[],
-                    last_health_check=datetime.utcnow().isoformat() + "Z",
-                    response_time_ms=None
+                    last_health_check=datetime.now(timezone.utc).isoformat(),
+                    response_time_ms=None,
+                    provider_type=provider_type
                 )
             
             self._initialized = True
@@ -99,8 +125,9 @@ class ProviderRegistry:
                         healthy=False,
                         models=[],
                         voices=[],
-                        last_health_check=datetime.utcnow().isoformat() + "Z",
-                        error=str(result)
+                        last_health_check=datetime.now(timezone.utc).isoformat(),
+                        error=str(result),
+                        provider_type=detect_provider_type(url)
                     )
     
     async def _discover_endpoint(self, service_type: str, base_url: str) -> None:
@@ -130,7 +157,7 @@ class ProviderRegistry:
                     # Try a minimal transcription request to check if endpoint is alive
                     try:
                         # For local whisper, check if it responds to basic requests
-                        if "localhost" in base_url or "127.0.0.1" in base_url:
+                        if "127.0.0.1" in base_url or "127.0.0.1" in base_url:
                             # Local whisper doesn't need auth, just check connectivity
                             import httpx
                             async with httpx.AsyncClient(timeout=5.0) as http_client:
@@ -168,8 +195,9 @@ class ProviderRegistry:
                 healthy=True,
                 models=models,
                 voices=voices,
-                last_health_check=datetime.utcnow().isoformat() + "Z",
-                response_time_ms=response_time
+                last_health_check=datetime.now(timezone.utc).isoformat(),
+                response_time_ms=response_time,
+                provider_type=detect_provider_type(base_url)
             )
             
             logger.info(f"Successfully discovered {service_type} endpoint {base_url} with {len(models)} models and {len(voices)} voices")
@@ -181,8 +209,9 @@ class ProviderRegistry:
                 healthy=False,
                 models=[],
                 voices=[],
-                last_health_check=datetime.utcnow().isoformat() + "Z",
-                error=str(e)
+                last_health_check=datetime.now(timezone.utc).isoformat(),
+                error=str(e),
+                provider_type=detect_provider_type(base_url)
             )
     
     async def _discover_voices(self, base_url: str, client: AsyncOpenAI) -> List[str]:
@@ -279,7 +308,7 @@ class ProviderRegistry:
         if base_url in self.registry[service_type]:
             self.registry[service_type][base_url].healthy = False
             self.registry[service_type][base_url].error = error
-            self.registry[service_type][base_url].last_health_check = datetime.utcnow().isoformat() + "Z"
+            self.registry[service_type][base_url].last_health_check = datetime.now(timezone.utc).isoformat()
             logger.warning(f"Marked {service_type} endpoint {base_url} as unhealthy: {error}")
 
 

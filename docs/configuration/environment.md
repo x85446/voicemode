@@ -12,8 +12,8 @@ Complete reference of all environment variables supported by Voice Mode.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `VOICEMODE_TTS_BASE_URLS` | `http://localhost:8880/v1,https://api.openai.com/v1` | Comma-separated list of TTS endpoints |
-| `VOICEMODE_STT_BASE_URLS` | `http://localhost:2022/v1,https://api.openai.com/v1` | Comma-separated list of STT endpoints |
+| `VOICEMODE_TTS_BASE_URLS` | `http://127.0.0.1:8880/v1,https://api.openai.com/v1` | Comma-separated list of TTS endpoints |
+| `VOICEMODE_STT_BASE_URLS` | `http://127.0.0.1:2022/v1,https://api.openai.com/v1` | Comma-separated list of STT endpoints |
 | `VOICEMODE_TTS_VOICES` | `af_sky,alloy` | Comma-separated list of preferred voices |
 | `VOICEMODE_TTS_MODELS` | `gpt-4o-mini-tts,tts-1-hd,tts-1` | Comma-separated list of TTS models |
 
@@ -39,7 +39,7 @@ Complete reference of all environment variables supported by Voice Mode.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `LIVEKIT_URL` | `ws://localhost:7880` | LiveKit server WebSocket URL |
+| `LIVEKIT_URL` | `ws://127.0.0.1:7880` | LiveKit server WebSocket URL |
 | `LIVEKIT_API_KEY` | `devkey` | LiveKit API key |
 | `LIVEKIT_API_SECRET` | `secret` | LiveKit API secret |
 

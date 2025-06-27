@@ -399,6 +399,7 @@ async def text_to_speech(
     except Exception as e:
         logger.error(f"TTS failed: {e}")
         logger.error(f"TTS config when error occurred - Model: {tts_model}, Voice: {tts_voice}, Base URL: {tts_base_url}")
+        logger.debug(f"Full TTS error details:", exc_info=True)
         
         # Check for authentication errors
         error_message = str(e).lower()

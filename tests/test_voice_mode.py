@@ -200,8 +200,8 @@ class TestConfiguration:
     def test_environment_variables(self):
         """Test that environment variables are properly loaded"""
         # Set custom environment variables
-        os.environ['STT_BASE_URL'] = 'http://localhost:2022/v1'
-        os.environ['TTS_BASE_URL'] = 'http://localhost:8880/v1'
+        os.environ['STT_BASE_URL'] = 'http://127.0.0.1:2022/v1'
+        os.environ['TTS_BASE_URL'] = 'http://127.0.0.1:8880/v1'
         os.environ['TTS_VOICE'] = 'custom_voice'
         os.environ['TTS_MODEL'] = 'custom-tts'
         os.environ['STT_MODEL'] = 'custom-stt'
@@ -247,8 +247,8 @@ class TestConfiguration:
                 voice_mode_module = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(voice_mode_module)
                 
-                assert voice_mode_module.STT_BASE_URL == 'http://localhost:2022/v1'
-                assert voice_mode_module.TTS_BASE_URL == 'http://localhost:8880/v1'
+                assert voice_mode_module.STT_BASE_URL == 'http://127.0.0.1:2022/v1'
+                assert voice_mode_module.TTS_BASE_URL == 'http://127.0.0.1:8880/v1'
                 assert voice_mode_module.TTS_VOICE == 'custom_voice'
                 assert voice_mode_module.TTS_MODEL == 'custom-tts'
                 assert voice_mode_module.STT_MODEL == 'custom-stt'

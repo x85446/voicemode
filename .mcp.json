@@ -14,7 +14,8 @@
         "."
       ],
       "env": {
-        "VOICEMODE_SAVE_ALL": "true"
+        "VOICEMODE_SAVE_ALL": "true",
+        "XVOICEMODE_DEBUG": "trace"
       }
     }
   }

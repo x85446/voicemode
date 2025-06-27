@@ -126,7 +126,7 @@ You can configure Voice Mode behavior with these environment variables:
 
 ```bash
 # Use multiple TTS providers with fallback
-export VOICEMODE_TTS_BASE_URLS="http://localhost:8880/v1,https://api.openai.com/v1"
+export VOICEMODE_TTS_BASE_URLS="http://127.0.0.1:8880/v1,https://api.openai.com/v1"
 
 # Prefer specific voices
 export VOICEMODE_TTS_VOICES="af_sky,nova,alloy"
@@ -179,8 +179,8 @@ For complete privacy, use local services:
       "command": "uvx",
       "args": ["voice-mode"],
       "env": {
-        "VOICEMODE_TTS_BASE_URLS": "http://localhost:8880/v1,https://api.openai.com/v1",
-        "VOICEMODE_STT_BASE_URLS": "http://localhost:2022/v1,https://api.openai.com/v1"
+        "VOICEMODE_TTS_BASE_URLS": "http://127.0.0.1:8880/v1,https://api.openai.com/v1",
+        "VOICEMODE_STT_BASE_URLS": "http://127.0.0.1:2022/v1,https://api.openai.com/v1"
       }
     }
   }

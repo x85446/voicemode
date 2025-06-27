@@ -56,13 +56,13 @@ These are the standard OpenAI API endpoints we use:
 ### Kokoro TTS
 ```bash
 # Documentation
-curl http://localhost:8880/docs
-curl http://localhost:8880/openapi.json
+curl http://127.0.0.1:8880/docs
+curl http://127.0.0.1:8880/openapi.json
 
 # API endpoints
-curl http://localhost:8880/v1/models
-curl http://localhost:8880/v1/audio/voices
-curl http://localhost:8880/health
+curl http://127.0.0.1:8880/v1/models
+curl http://127.0.0.1:8880/v1/audio/voices
+curl http://127.0.0.1:8880/health
 ```
 
 ### OpenAI API

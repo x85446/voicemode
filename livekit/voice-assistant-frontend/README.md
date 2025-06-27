@@ -26,7 +26,7 @@ pnpm install
 pnpm dev
 ```
 
-And open http://localhost:3000 in your browser.
+And open http://127.0.0.1:3000 in your browser.
 
 You'll also need an agent to speak with. Try our [Voice AI Quickstart](https://docs.livekit.io/start/voice-ai) for the easiest way to get started.
 

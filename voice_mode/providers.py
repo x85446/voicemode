@@ -23,13 +23,12 @@ async def get_tts_client_and_voice(
     """
     Get TTS client with automatic selection based on preferences.
     
-    Selection algorithm:
+    Selection algorithm (voice-first approach):
     1. If specific base_url requested, use it with specified/best voice and model
-    2. If specific voice/model requested, iterate through TTS_BASE_URLS to find first
-       healthy endpoint that supports them
-    3. Otherwise, iterate through TTS_BASE_URLS and for each healthy endpoint:
-       - Find first supported voice from TTS_VOICES
-       - Find first supported model from TTS_MODELS
+    2. If specific voice requested, find first healthy endpoint that supports it
+    3. Otherwise, iterate through TTS_VOICES preference list:
+       - For each voice, find first healthy endpoint that supports it
+       - Then find compatible model from TTS_MODELS preference list
        - Use this combination
     
     Args:
@@ -67,72 +66,77 @@ async def get_tts_client_and_voice(
         
         return client, selected_voice, selected_model, endpoint_info
     
-    # New algorithm: iterate through TTS_BASE_URLS in preference order
-    logger.info(f"TTS Provider Selection: Checking endpoints in order: {TTS_BASE_URLS}")
+    # Voice-first selection algorithm
+    logger.info(f"TTS Provider Selection (voice-first)")
     logger.info(f"  Preferred voices: {TTS_VOICES}")
     logger.info(f"  Preferred models: {TTS_MODELS}")
+    logger.info(f"  Available endpoints: {TTS_BASE_URLS}")
     
+    # If specific voice is requested, find an endpoint that supports it
+    if voice:
+        logger.info(f"  Specific voice requested: {voice}")
+        for url in TTS_BASE_URLS:
+            endpoint_info = provider_registry.registry["tts"].get(url)
+            if not endpoint_info or not endpoint_info.healthy:
+                continue
+            
+            if voice in endpoint_info.voices:
+                selected_voice = voice
+                selected_model = _select_model_for_endpoint(endpoint_info, model)
+                
+                api_key = OPENAI_API_KEY if endpoint_info.provider_type == "openai" else (OPENAI_API_KEY or "dummy-key-for-local")
+                client = AsyncOpenAI(api_key=api_key, base_url=url)
+                
+                logger.info(f"  ✓ Selected endpoint: {url} ({endpoint_info.provider_type})")
+                logger.info(f"  ✓ Selected voice: {selected_voice}")
+                logger.info(f"  ✓ Selected model: {selected_model}")
+                
+                return client, selected_voice, selected_model, endpoint_info
+    
+    # No specific voice requested - iterate through voice preferences
+    logger.info("  No specific voice requested, checking voice preferences...")
+    for preferred_voice in TTS_VOICES:
+        logger.debug(f"  Looking for voice: {preferred_voice}")
+        
+        # Check each endpoint for this voice
+        for url in TTS_BASE_URLS:
+            endpoint_info = provider_registry.registry["tts"].get(url)
+            if not endpoint_info or not endpoint_info.healthy:
+                continue
+            
+            if preferred_voice in endpoint_info.voices:
+                logger.info(f"  Found voice '{preferred_voice}' at {url} ({endpoint_info.provider_type})")
+                selected_voice = preferred_voice
+                selected_model = _select_model_for_endpoint(endpoint_info, model)
+                
+                api_key = OPENAI_API_KEY if endpoint_info.provider_type == "openai" else (OPENAI_API_KEY or "dummy-key-for-local")
+                client = AsyncOpenAI(api_key=api_key, base_url=url)
+                
+                logger.info(f"  ✓ Selected endpoint: {url} ({endpoint_info.provider_type})")
+                logger.info(f"  ✓ Selected voice: {selected_voice}")
+                logger.info(f"  ✓ Selected model: {selected_model}")
+                
+                return client, selected_voice, selected_model, endpoint_info
+    
+    # No preferred voices found - fall back to any available endpoint
+    logger.warning("  No preferred voices available, using any available endpoint...")
     for url in TTS_BASE_URLS:
         endpoint_info = provider_registry.registry["tts"].get(url)
         if not endpoint_info or not endpoint_info.healthy:
-            logger.debug(f"  Skipping unhealthy endpoint: {url}")
             continue
         
-        # If specific voice requested, check if this endpoint supports it
-        if voice:
-            if voice not in endpoint_info.voices:
-                logger.debug(f"  Endpoint {url} doesn't support requested voice '{voice}'")
-                continue
-            selected_voice = voice
-        else:
-            # Find first preferred voice this endpoint supports
-            selected_voice = None
-            for preferred_voice in TTS_VOICES:
-                if preferred_voice in endpoint_info.voices:
-                    selected_voice = preferred_voice
-                    break
+        if endpoint_info.voices:
+            selected_voice = endpoint_info.voices[0]
+            selected_model = _select_model_for_endpoint(endpoint_info, model)
             
-            if not selected_voice:
-                # No preferred voices available, use first available
-                if endpoint_info.voices:
-                    selected_voice = endpoint_info.voices[0]
-                else:
-                    logger.debug(f"  Endpoint {url} has no voices available")
-                    continue
-        
-        # If specific model requested, check if this endpoint supports it
-        if model:
-            if model not in endpoint_info.models:
-                logger.debug(f"  Endpoint {url} doesn't support requested model '{model}'")
-                continue
-            selected_model = model
-        else:
-            # Find first preferred model this endpoint supports
-            selected_model = None
-            for preferred_model in TTS_MODELS:
-                if preferred_model in endpoint_info.models:
-                    selected_model = preferred_model
-                    break
+            api_key = OPENAI_API_KEY if endpoint_info.provider_type == "openai" else (OPENAI_API_KEY or "dummy-key-for-local")
+            client = AsyncOpenAI(api_key=api_key, base_url=url)
             
-            if not selected_model:
-                # No preferred models available, use first available
-                if endpoint_info.models:
-                    selected_model = endpoint_info.models[0]
-                else:
-                    # Default to tts-1 if no models reported
-                    selected_model = "tts-1"
-        
-        # We found a suitable endpoint with voice and model
-        client = AsyncOpenAI(
-            api_key=OPENAI_API_KEY,
-            base_url=url
-        )
-        
-        logger.info(f"  ✓ Selected endpoint: {url}")
-        logger.info(f"  ✓ Selected voice: {selected_voice}")
-        logger.info(f"  ✓ Selected model: {selected_model}")
-        
-        return client, selected_voice, selected_model, endpoint_info
+            logger.info(f"  ✓ Selected endpoint: {url} ({endpoint_info.provider_type})")
+            logger.info(f"  ✓ Selected voice: {selected_voice}")
+            logger.info(f"  ✓ Selected model: {selected_model}")
+            
+            return client, selected_voice, selected_model, endpoint_info
     
     # No suitable endpoint found
     raise ValueError("No healthy TTS endpoints found that support requested voice/model preferences")
@@ -181,8 +185,9 @@ async def get_stt_client(
     endpoint_info = healthy_endpoints[0]
     selected_model = model or "whisper-1"
     
+    api_key = OPENAI_API_KEY if endpoint_info.provider_type == "openai" else (OPENAI_API_KEY or "dummy-key-for-local")
     client = AsyncOpenAI(
-        api_key=OPENAI_API_KEY,
+        api_key=api_key,
         base_url=endpoint_info.base_url
     )
     
@@ -204,8 +209,12 @@ def _select_voice_for_endpoint(endpoint_info: EndpointInfo) -> str:
     return "alloy"
 
 
-def _select_model_for_endpoint(endpoint_info: EndpointInfo) -> str:
+def _select_model_for_endpoint(endpoint_info: EndpointInfo, requested_model: Optional[str] = None) -> str:
     """Select the best available model for an endpoint."""
+    # If specific model requested and supported, use it
+    if requested_model and requested_model in endpoint_info.models:
+        return requested_model
+    
     # Try to find a preferred model
     for model in TTS_MODELS:
         if model in endpoint_info.models:
@@ -228,9 +237,9 @@ async def is_provider_available(provider_id: str, timeout: float = 2.0) -> bool:
     
     # Map old provider IDs to base URLs
     provider_map = {
-        "kokoro": "http://localhost:8880/v1",
+        "kokoro": "http://127.0.0.1:8880/v1",
         "openai": "https://api.openai.com/v1",
-        "whisper-local": "http://localhost:2022/v1",
+        "whisper-local": "http://127.0.0.1:2022/v1",
         "openai-whisper": "https://api.openai.com/v1"
     }
     
@@ -253,7 +262,7 @@ def get_provider_by_voice(voice: str) -> Optional[Dict[str, Any]]:
             "id": "kokoro",
             "name": "Kokoro TTS",
             "type": "tts",
-            "base_url": "http://localhost:8880/v1",
+            "base_url": "http://127.0.0.1:8880/v1",
             "voices": ["af_sky", "af_sarah", "am_adam", "af_nicole", "am_michael"]
         }
     

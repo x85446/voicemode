@@ -19,7 +19,7 @@ This glossary defines key terms and concepts used throughout the Voice Mode proj
 
 **Base Directory**: The root directory for all Voice Mode data, defaults to `~/.voicemode`.
 
-**Endpoint**: A specific URL where a provider's API is accessible (e.g., `http://localhost:8880/v1`).
+**Endpoint**: A specific URL where a provider's API is accessible (e.g., `http://127.0.0.1:8880/v1`).
 
 **Event Log**: Structured log of voice interaction events used for debugging and performance analysis.
 

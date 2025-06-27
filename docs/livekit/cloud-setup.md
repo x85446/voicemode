@@ -92,7 +92,7 @@ npm install
 npm run dev
 ```
 
-Visit `http://localhost:3000` to access your voice interface.
+Visit `http://127.0.0.1:3000` to access your voice interface.
 
 ## Step 7: Set Up iPhone (Optional)
 
@@ -106,7 +106,7 @@ See [iPhone Installation Guide](./iphone-install.md) for detailed instructions o
 ## Step 8: Start Talking!
 
 ### Web Frontend
-1. Open `http://localhost:3000` in your browser
+1. Open `http://127.0.0.1:3000` in your browser
 2. Click "Connect" or start talking
 3. You'll hear Claude respond through your browser
 
@@ -122,7 +122,7 @@ See [iPhone Installation Guide](./iphone-install.md) for detailed instructions o
 
 To verify everything works:
 - **In Claude**: "Check LiveKit room status" 
-- **Web Frontend**: Visit localhost:3000 and click Connect
+- **Web Frontend**: Visit 127.0.0.1:3000 and click Connect
 - **iPhone App**: Tap Connect, say "Hello Claude"
 
 ## Troubleshooting

@@ -21,12 +21,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Automatic fallback to fixed-duration recording if VAD unavailable or errors occur
   - Comprehensive test suite and manual testing tools
   - Full documentation in docs/silence-detection.md
+- Voice-first provider selection algorithm
+  - TTS providers are now selected based on voice availability rather than base URL order
+  - Ensures Kokoro is automatically selected when af_sky voice is preferred
+  - Added provider_type field to EndpointInfo for clearer provider identification
+  - Improved model selection to respect provider capabilities
+  - Comprehensive test coverage for voice-first selection logic
 
 ### Fixed
-- Fixed microphone indicator flickering on Linux/Fedora systems
-  - Replaced repeated sd.rec() calls with continuous InputStream using callbacks
-  - Maintains single persistent microphone connection during recording
-  - Prevents rapid microphone access/release cycles that caused flickering
 - Fixed WebRTC VAD sample rate compatibility issue
   - VAD requires 8kHz, 16kHz, or 32kHz but voice_mode uses 24kHz
   - Implemented proper sample extraction for VAD processing
@@ -43,6 +45,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed EndpointInfo attribute naming bug
   - Renamed 'url' to 'base_url' for consistency across codebase
   - Fixed AttributeError that was preventing STT failover from working
+- Fixed Kokoro TTS not being selected despite being available
+  - Provider registry now initializes with known Kokoro voices
+  - Enables automatic Kokoro selection when af_sky is preferred
+
+### Changed
+- Updated default 127.0.0.1 URLs to use 127.0.0.1 for better IPv6 compatibility
+  - Prevents issues with SSH port forwarding on dual-stack systems
+  - Affects TTS, STT, and LiveKit default URLs
+- Increased initial silence grace period from 1s to 2s
+- Made initial silence grace period configurable
+  - Previously hardcoded 2-second wait before speech detection timeout
+  - Now configurable via `VOICEMODE_INITIAL_SILENCE_GRACE_PERIOD` (default: 4.0s)
+  - Prevents premature cutoff when users need time to think before speaking
+  - Gives users more time to start speaking before VAD stops recording
+  - Prevents premature recording cutoff at the beginning
+- Added trace-level debug logging when VOICEMODE_DEBUG=trace
+  - Enables httpx and openai library debug logging
+  - Writes to ~/.voicemode/logs/debug/voicemode_debug_YYYY-MM-DD.log
+  - Helps diagnose provider connection issues
+
+### Planned
+- In-memory buffer for conversation timing metrics
+  - Track full conversation lifecycle including Claude response times
+  - Maintain recent interaction history without persistent storage
+  - Enable better performance analysis and debugging
+- Sentence-based TTS streaming
+  - Send first sentence to TTS immediately while rest is being generated
+  - Significant reduction in time to first audio (TTFA)
+  - More responsive conversation experience
 
 ## [2.4.1] - 2025-06-25
 
@@ -77,7 +108,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Supports both voice and model preference matching
   - More predictable provider selection behavior
 - Default TTS configuration updated for local-first experience
-  - Kokoro (localhost:8880) prioritized over OpenAI
+  - Kokoro (127.0.0.1:8880) prioritized over OpenAI
   - Default voices: af_sky, alloy (available on both providers)
   - Model preference order: gpt-4o-mini-tts, tts-1-hd, tts-1
 - Voice parameter selection guidelines added to CLAUDE.md

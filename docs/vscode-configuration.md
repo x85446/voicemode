@@ -24,7 +24,7 @@ Create a `.vscode/mcp.json` file in your workspace root:
       "command": "uvx",
       "args": ["voice-mode"],
       "env": {
-        "LIVEKIT_HOST": "localhost:7880",
+        "LIVEKIT_HOST": "127.0.0.1:7880",
         "LIVEKIT_API_KEY": "devkey",
         "LIVEKIT_API_SECRET": "secret",
         "OPENAI_API_KEY": "${input:openai-api-key}"
@@ -93,15 +93,15 @@ If you're running the complete local voice stack, you can configure voice-mode t
       "command": "uvx",
       "args": ["voice-mode"],
       "env": {
-        "LIVEKIT_HOST": "localhost:7880",
+        "LIVEKIT_HOST": "127.0.0.1:7880",
         "LIVEKIT_API_KEY": "devkey",
         "LIVEKIT_API_SECRET": "secret",
         "STT_SERVICE": "whisper",
         "TTS_SERVICE": "kokoro",
         "WHISPER_API_KEY": "local",
-        "WHISPER_BASE_URL": "http://localhost:2022/v1",
+        "WHISPER_BASE_URL": "http://127.0.0.1:2022/v1",
         "KOKORO_API_KEY": "local",
-        "KOKORO_BASE_URL": "http://localhost:8880/v1"
+        "KOKORO_BASE_URL": "http://127.0.0.1:8880/v1"
       }
     }
   }

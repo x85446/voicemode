@@ -54,7 +54,8 @@ from voice_mode.config import (
     VAD_AGGRESSIVENESS,
     SILENCE_THRESHOLD_MS,
     MIN_RECORDING_DURATION,
-    VAD_CHUNK_DURATION_MS
+    VAD_CHUNK_DURATION_MS,
+    INITIAL_SILENCE_GRACE_PERIOD
 )
 import voice_mode.config
 from voice_mode.providers import (
@@ -159,6 +160,8 @@ async def startup_initialization():
 
 async def get_tts_config(provider: Optional[str] = None, voice: Optional[str] = None, model: Optional[str] = None, instructions: Optional[str] = None):
     """Get TTS configuration based on provider selection"""
+    logger.info(f"[DEBUG] get_tts_config called with provider={provider}, voice={voice}, model={model}")
+    
     # Validate instructions usage
     if instructions and model != "gpt-4o-mini-tts":
         logger.warning(f"Instructions parameter is only supported with gpt-4o-mini-tts model, ignoring for model: {model}")
@@ -182,13 +185,16 @@ async def get_tts_config(provider: Optional[str] = None, voice: Optional[str] = 
         )
         
         # Return configuration compatible with existing code
+        logger.info(f"[DEBUG] TTS endpoint selected: {endpoint_info.base_url} (provider: {endpoint_info.provider_type})")
+        logger.info(f"[DEBUG] Using voice: {selected_voice}, model: {selected_model}")
+        
         return {
             'client': client,
-            'base_url': endpoint_info.url,
+            'base_url': endpoint_info.base_url,
             'model': selected_model,
             'voice': selected_voice,
             'instructions': instructions,
-            'provider': endpoint_info.url  # For logging
+            'provider': endpoint_info.base_url  # For logging
         }
     except Exception as e:
         logger.error(f"Failed to get TTS client: {e}")
@@ -293,6 +299,7 @@ async def text_to_speech_with_failover(
             except Exception as e:
                 last_error = str(e)
                 logger.warning(f"Initial provider {initial_provider} failed: {e}")
+                logger.debug(f"Full error details for {initial_provider}:", exc_info=True)
     
     # Try remaining endpoints in order
     from voice_mode.config import TTS_BASE_URLS
@@ -398,7 +405,7 @@ async def speech_to_text_with_failover(
                 'client': client,
                 'model': selected_model,
                 'base_url': endpoint_info.base_url if endpoint_info else base_url,
-                'provider': 'whisper-local' if 'localhost' in base_url or '127.0.0.1' in base_url else 'openai-whisper'
+                'provider': 'whisper-local' if '127.0.0.1' in base_url or '127.0.0.1' in base_url else 'openai-whisper'
             }
             
             logger.info(f"Attempting STT with {stt_config['provider']} at {stt_config['base_url']}")
@@ -495,7 +502,7 @@ async def _speech_to_text_internal(
         # Determine provider from base URL (simple heuristic)
         provider = stt_config.get('provider', 'openai-whisper')
         # Check if using local Whisper endpoint
-        if stt_config.get('base_url') and ("localhost" in stt_config['base_url'] or "127.0.0.1" in stt_config['base_url']):
+        if stt_config.get('base_url') and ("127.0.0.1" in stt_config['base_url'] or "127.0.0.1" in stt_config['base_url']):
             provider = "whisper-local"
         
         # Validate format for provider
@@ -782,7 +789,8 @@ def record_audio_with_silence_detection(max_duration: float, disable_vad: bool =
         
         logger.debug(f"VAD config - Aggressiveness: {VAD_AGGRESSIVENESS}, "
                     f"Silence threshold: {SILENCE_THRESHOLD_MS}ms, "
-                    f"Min duration: {MIN_RECORDING_DURATION}s")
+                    f"Min duration: {MIN_RECORDING_DURATION}s, "
+                    f"Initial grace period: {INITIAL_SILENCE_GRACE_PERIOD}s")
         
         def audio_callback(indata, frames, time, status):
             """Callback for continuous audio stream"""
@@ -842,9 +850,10 @@ def record_audio_with_silence_detection(max_duration: float, disable_vad: bool =
                                 print(f"BREAKING: Silence detected after {recording_duration:.1f}s", flush=True)
                                 stop_recording = True
                         
-                        # Also stop if we haven't detected any speech after a reasonable time
-                        if not speech_detected and recording_duration >= MIN_RECORDING_DURATION * 2:
-                            logger.info("No speech detected, stopping recording")
+                        # Also stop if we haven't detected any speech after a grace period
+                        # Give user time to start speaking
+                        if not speech_detected and recording_duration >= INITIAL_SILENCE_GRACE_PERIOD:
+                            logger.info(f"No speech detected after {INITIAL_SILENCE_GRACE_PERIOD}s grace period, stopping recording")
                             stop_recording = True
                             
                     except queue.Empty:

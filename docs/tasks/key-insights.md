@@ -53,8 +53,8 @@
 ```bash
 # Core
 OPENAI_API_KEY=required
-STT_BASE_URL=http://localhost:2022/v1
-TTS_BASE_URL=http://localhost:8880/v1
+STT_BASE_URL=http://127.0.0.1:2022/v1
+TTS_BASE_URL=http://127.0.0.1:8880/v1
 
 # Features
 VOICE_MODE_AUTO_START_KOKORO=true

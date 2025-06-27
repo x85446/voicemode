@@ -71,8 +71,8 @@ For advanced configuration, you can set these environment variables:
 export OPENAI_API_KEY="your-key"
 
 # Optional - Custom STT/TTS endpoints (comma-separated lists)
-export VOICEMODE_TTS_BASE_URLS="http://localhost:8880/v1,https://api.openai.com/v1"
-export VOICEMODE_STT_BASE_URLS="http://localhost:2022/v1,https://api.openai.com/v1"
+export VOICEMODE_TTS_BASE_URLS="http://127.0.0.1:8880/v1,https://api.openai.com/v1"
+export VOICEMODE_STT_BASE_URLS="http://127.0.0.1:2022/v1,https://api.openai.com/v1"
 
 # Optional - Voice preferences (comma-separated lists)
 export VOICEMODE_TTS_VOICES="af_sky,nova,alloy"
@@ -145,8 +145,8 @@ To use local services for privacy:
    ```json
    {
      "env": {
-       "VOICEMODE_TTS_BASE_URLS": "http://localhost:8880/v1,https://api.openai.com/v1",
-       "VOICEMODE_STT_BASE_URLS": "http://localhost:2022/v1,https://api.openai.com/v1"
+       "VOICEMODE_TTS_BASE_URLS": "http://127.0.0.1:8880/v1,https://api.openai.com/v1",
+       "VOICEMODE_STT_BASE_URLS": "http://127.0.0.1:2022/v1,https://api.openai.com/v1"
      }
    }
    ```

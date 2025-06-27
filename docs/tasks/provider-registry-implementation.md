@@ -14,7 +14,7 @@
     "id": "kokoro",
     "name": "Kokoro TTS",
     "type": "tts",  # or "stt"
-    "base_url": "http://localhost:8880/v1",
+    "base_url": "http://127.0.0.1:8880/v1",
     "local": True,
     "auto_start": True,
     "features": ["local", "free", "fast"],

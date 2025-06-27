@@ -17,10 +17,10 @@ This specification describes a system for configuring multiple TTS and STT base 
 
 ```bash
 # Comma-separated list of TTS base URLs (tried in order)
-VOICEMODE_TTS_BASE_URLS=http://localhost:8880/v1,https://api.openai.com/v1
+VOICEMODE_TTS_BASE_URLS=http://127.0.0.1:8880/v1,https://api.openai.com/v1
 
 # Comma-separated list of STT base URLs (tried in order)
-VOICEMODE_STT_BASE_URLS=http://localhost:2022/v1,https://api.openai.com/v1
+VOICEMODE_STT_BASE_URLS=http://127.0.0.1:2022/v1,https://api.openai.com/v1
 
 # Comma-separated list of preferred TTS voices (tried in order of availability)
 VOICEMODE_TTS_VOICES=af_sky,nova,alloy
@@ -71,7 +71,7 @@ The registry stores discovered capabilities for each base URL:
 ```json
 {
   "tts": {
-    "http://localhost:8880/v1": {
+    "http://127.0.0.1:8880/v1": {
       "healthy": true,
       "models": ["tts-1"],
       "voices": ["af_sky", "af_sarah", "am_adam", "af_nicole", "am_michael"],
@@ -87,7 +87,7 @@ The registry stores discovered capabilities for each base URL:
     }
   },
   "stt": {
-    "http://localhost:2022/v1": {
+    "http://127.0.0.1:2022/v1": {
       "healthy": true,
       "models": ["whisper-1"],
       "last_health_check": "2024-01-20T10:30:00Z",
@@ -116,11 +116,11 @@ When a TTS request is made:
 
 Given:
 ```bash
-VOICEMODE_TTS_BASE_URLS=http://localhost:8880/v1,https://api.openai.com/v1
+VOICEMODE_TTS_BASE_URLS=http://127.0.0.1:8880/v1,https://api.openai.com/v1
 VOICEMODE_TTS_VOICES=af_sky,nova,alloy
 ```
 
-If localhost:8880 is healthy and has `af_sky`, use it. Otherwise, check if OpenAI has `nova` or `alloy`.
+If 127.0.0.1:8880 is healthy and has `af_sky`, use it. Otherwise, check if OpenAI has `nova` or `alloy`.
 
 ## Registry Updates
 
@@ -177,8 +177,8 @@ OPENAI_API_KEY=sk-...
 
 ### Local Development
 ```bash
-VOICEMODE_TTS_BASE_URLS=http://localhost:8880/v1,https://api.openai.com/v1
-VOICEMODE_STT_BASE_URLS=http://localhost:2022/v1,https://api.openai.com/v1
+VOICEMODE_TTS_BASE_URLS=http://127.0.0.1:8880/v1,https://api.openai.com/v1
+VOICEMODE_STT_BASE_URLS=http://127.0.0.1:2022/v1,https://api.openai.com/v1
 VOICEMODE_TTS_VOICES=af_sky,nova,alloy
 OPENAI_API_KEY=sk-...
 ```

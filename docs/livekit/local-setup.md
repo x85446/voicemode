@@ -41,7 +41,7 @@ docker run -d \
 
 Then set:
 ```bash
-export LIVEKIT_URL="ws://localhost:7880"
+export LIVEKIT_URL="ws://127.0.0.1:7880"
 export LIVEKIT_API_KEY="devkey"
 export LIVEKIT_API_SECRET="secret"
 ```

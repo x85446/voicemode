@@ -75,9 +75,9 @@ class TestConfiguration:
         """Test URL format validation"""
         valid_urls = [
             'https://api.openai.com/v1',
-            'http://localhost:2022/v1',
+            'http://127.0.0.1:2022/v1',
             'wss://example.livekit.cloud',
-            'ws://localhost:7880'
+            'ws://127.0.0.1:7880'
         ]
         
         for url in valid_urls:
