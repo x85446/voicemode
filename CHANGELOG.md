@@ -10,18 +10,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Automatic silence detection for voice recording
   - Uses WebRTC VAD (Voice Activity Detection) to detect when user stops speaking
-  - Automatically stops recording after configurable silence threshold (default: 800ms)
+  - Automatically stops recording after configurable silence threshold (default: 1000ms)
   - Significantly reduces latency for short responses (e.g., "yes" now takes ~1s instead of 20s)
   - Configurable via environment variables:
     - `VOICEMODE_ENABLE_SILENCE_DETECTION` - Enable/disable feature (default: true)
     - `VOICEMODE_VAD_AGGRESSIVENESS` - VAD sensitivity 0-3 (default: 2)
-    - `VOICEMODE_SILENCE_THRESHOLD_MS` - Silence duration before stopping (default: 800)
+    - `VOICEMODE_SILENCE_THRESHOLD_MS` - Silence duration before stopping (default: 1000)
     - `VOICEMODE_MIN_RECORDING_DURATION` - Minimum recording time (default: 0.5s)
+  - Added `disable_vad` parameter to converse() for per-interaction control
   - Automatic fallback to fixed-duration recording if VAD unavailable or errors occur
   - Comprehensive test suite and manual testing tools
   - Full documentation in docs/silence-detection.md
 
 ### Fixed
+- Fixed microphone indicator flickering on Linux/Fedora systems
+  - Replaced repeated sd.rec() calls with continuous InputStream using callbacks
+  - Maintains single persistent microphone connection during recording
+  - Prevents rapid microphone access/release cycles that caused flickering
 - Fixed WebRTC VAD sample rate compatibility issue
   - VAD requires 8kHz, 16kHz, or 32kHz but voice_mode uses 24kHz
   - Implemented proper sample extraction for VAD processing

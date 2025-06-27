@@ -768,6 +768,11 @@ def record_audio_with_silence_detection(max_duration: float, disable_vad: bool =
         silence_duration_ms = 0
         recording_duration = 0
         speech_detected = False
+        stop_recording = False
+        
+        # Use a queue for thread-safe communication
+        import queue
+        audio_queue = queue.Queue()
         
         # Save stdio state
         import sys
@@ -779,57 +784,75 @@ def record_audio_with_silence_detection(max_duration: float, disable_vad: bool =
                     f"Silence threshold: {SILENCE_THRESHOLD_MS}ms, "
                     f"Min duration: {MIN_RECORDING_DURATION}s")
         
+        def audio_callback(indata, frames, time, status):
+            """Callback for continuous audio stream"""
+            if status:
+                logger.warning(f"Audio stream status: {status}")
+            # Put the audio data in the queue for processing
+            audio_queue.put(indata.copy())
+        
         try:
-            while recording_duration < max_duration:
-                # Record a chunk
-                chunk = sd.rec(
-                    chunk_samples,
-                    samplerate=SAMPLE_RATE,
-                    channels=CHANNELS,
-                    dtype=np.int16
-                )
-                sd.wait()
+            # Create continuous input stream
+            with sd.InputStream(samplerate=SAMPLE_RATE,
+                               channels=CHANNELS,
+                               dtype=np.int16,
+                               callback=audio_callback,
+                               blocksize=chunk_samples):
                 
-                # Flatten for consistency
-                chunk_flat = chunk.flatten()
-                chunks.append(chunk_flat)
+                logger.debug("Started continuous audio stream")
                 
-                # For VAD, we need to provide exactly the right number of bytes
-                # VAD expects 16kHz audio, so we'll take a subset of our 24kHz samples
-                # This is a simple downsampling approach that works for VAD
-                vad_chunk = chunk_flat[:vad_chunk_samples]
-                chunk_bytes = vad_chunk.tobytes()
-                
-                # Check if chunk contains speech
-                try:
-                    is_speech = vad.is_speech(chunk_bytes, vad_sample_rate)
-                except Exception as vad_e:
-                    logger.warning(f"VAD error: {vad_e}, treating as speech")
-                    is_speech = True
-                
-                if is_speech:
-                    if not speech_detected:
-                        logger.debug("Speech detected, recording...")
-                    speech_detected = True
-                    silence_duration_ms = 0
-                else:
-                    silence_duration_ms += VAD_CHUNK_DURATION_MS
-                    if speech_detected and silence_duration_ms % 200 == 0:  # Log every 200ms
-                        logger.debug(f"Silence: {silence_duration_ms}ms")
-                
-                recording_duration += chunk_duration_s
-                
-                # Check stop conditions
-                if speech_detected and recording_duration >= MIN_RECORDING_DURATION:
-                    if silence_duration_ms >= SILENCE_THRESHOLD_MS:
-                        logger.info(f"✓ Silence detected after {recording_duration:.1f}s, stopping recording")
-                        print(f"BREAKING: Silence detected after {recording_duration:.1f}s", flush=True)
+                while recording_duration < max_duration and not stop_recording:
+                    try:
+                        # Get audio chunk from queue with timeout
+                        chunk = audio_queue.get(timeout=0.1)
+                        
+                        # Flatten for consistency
+                        chunk_flat = chunk.flatten()
+                        chunks.append(chunk_flat)
+                        
+                        # For VAD, we need to provide exactly the right number of bytes
+                        # VAD expects 16kHz audio, so we'll take a subset of our 24kHz samples
+                        # This is a simple downsampling approach that works for VAD
+                        vad_chunk = chunk_flat[:vad_chunk_samples]
+                        chunk_bytes = vad_chunk.tobytes()
+                        
+                        # Check if chunk contains speech
+                        try:
+                            is_speech = vad.is_speech(chunk_bytes, vad_sample_rate)
+                        except Exception as vad_e:
+                            logger.warning(f"VAD error: {vad_e}, treating as speech")
+                            is_speech = True
+                        
+                        if is_speech:
+                            if not speech_detected:
+                                logger.debug("Speech detected, recording...")
+                            speech_detected = True
+                            silence_duration_ms = 0
+                        else:
+                            silence_duration_ms += VAD_CHUNK_DURATION_MS
+                            if speech_detected and silence_duration_ms % 200 == 0:  # Log every 200ms
+                                logger.debug(f"Silence: {silence_duration_ms}ms")
+                        
+                        recording_duration += chunk_duration_s
+                        
+                        # Check stop conditions
+                        if speech_detected and recording_duration >= MIN_RECORDING_DURATION:
+                            if silence_duration_ms >= SILENCE_THRESHOLD_MS:
+                                logger.info(f"✓ Silence detected after {recording_duration:.1f}s, stopping recording")
+                                print(f"BREAKING: Silence detected after {recording_duration:.1f}s", flush=True)
+                                stop_recording = True
+                        
+                        # Also stop if we haven't detected any speech after a reasonable time
+                        if not speech_detected and recording_duration >= MIN_RECORDING_DURATION * 2:
+                            logger.info("No speech detected, stopping recording")
+                            stop_recording = True
+                            
+                    except queue.Empty:
+                        # No audio data available, continue waiting
+                        continue
+                    except Exception as e:
+                        logger.error(f"Error processing audio chunk: {e}")
                         break
-                
-                # Also stop if we haven't detected any speech after a reasonable time
-                if not speech_detected and recording_duration >= MIN_RECORDING_DURATION * 2:
-                    logger.info("No speech detected, stopping recording")
-                    break
             
             # Concatenate all chunks
             if chunks:

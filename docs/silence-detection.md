@@ -151,6 +151,15 @@ Voice Mode automatically falls back to fixed-duration recording when:
 - **Latency**: 30ms per chunk (configurable)
 - **Accuracy**: ~85% true positive rate, ~97% true negative rate
 
+## Implementation Details
+
+The silence detection uses a continuous audio stream with callbacks to avoid microphone indicator flickering:
+
+- **Continuous Stream**: Uses `sd.InputStream` with callbacks instead of repeated `sd.rec()` calls
+- **Single Connection**: Maintains one persistent microphone connection throughout recording
+- **Queue-Based Processing**: Audio chunks are passed via thread-safe queue for VAD processing
+- **No Flickering**: Prevents rapid microphone access/release that causes indicator flickering on Linux/Fedora
+
 ## Future Enhancements
 
 Planned improvements include:
