@@ -7,7 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Automatic silence detection for voice recording
+  - Uses WebRTC VAD (Voice Activity Detection) to detect when user stops speaking
+  - Automatically stops recording after configurable silence threshold (default: 800ms)
+  - Significantly reduces latency for short responses (e.g., "yes" now takes ~1s instead of 20s)
+  - Configurable via environment variables:
+    - `VOICEMODE_ENABLE_SILENCE_DETECTION` - Enable/disable feature (default: true)
+    - `VOICEMODE_VAD_AGGRESSIVENESS` - VAD sensitivity 0-3 (default: 2)
+    - `VOICEMODE_SILENCE_THRESHOLD_MS` - Silence duration before stopping (default: 800)
+    - `VOICEMODE_MIN_RECORDING_DURATION` - Minimum recording time (default: 0.5s)
+  - Automatic fallback to fixed-duration recording if VAD unavailable or errors occur
+  - Comprehensive test suite and manual testing tools
+  - Full documentation in docs/silence-detection.md
+
 ### Fixed
+- Fixed WebRTC VAD sample rate compatibility issue
+  - VAD requires 8kHz, 16kHz, or 32kHz but voice_mode uses 24kHz
+  - Implemented proper sample extraction for VAD processing
+  - Silence detection now works correctly with 24kHz audio
 - Added automatic STT (Speech-to-Text) failover mechanism
   - STT now automatically tries all configured endpoints when one fails
   - Matches the existing TTS failover behavior for consistency

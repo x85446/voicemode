@@ -40,6 +40,8 @@ dependencies = [
     "simpleaudio",
     "httpx",
     "psutil>=5.9.0",
+    "setuptools",  # Required for pkg_resources used by webrtcvad
+    "webrtcvad>=2.0.10",
 ]
 
 [project.optional-dependencies]

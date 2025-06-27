@@ -2,6 +2,20 @@
 
 ## Completed Features
 
+### 0. Silence Detection (2025-06-26) - UPDATED 2025-06-27
+- Implemented WebRTC VAD-based silence detection for automatic recording stop
+- Added configurable environment variables:
+  - `VOICEMODE_ENABLE_SILENCE_DETECTION` (default: true for better UX)
+  - `VOICEMODE_VAD_AGGRESSIVENESS` (0-3, default: 2)
+  - `VOICEMODE_SILENCE_THRESHOLD_MS` (default: 1000ms - increased from 800ms)
+  - `VOICEMODE_MIN_RECORDING_DURATION` (default: 0.5s)
+- Created `record_audio_with_silence_detection()` function
+- Automatic fallback to fixed duration if VAD unavailable or errors occur
+- Added comprehensive test suite and manual testing tools
+- Full documentation in docs/silence-detection.md
+- **NEW**: Added `disable_vad` parameter to converse() for LLM control
+- **NEW**: VAD requires speech detection before silence can trigger stop
+
 ### 1. Unified Voice Service Status Tool
 - Created comprehensive `voice_status()` tool that checks all services in parallel
 - Shows STT, TTS, LiveKit, and audio device status

@@ -2,6 +2,16 @@
 
 ## Technical Insights
 
+### Silence Detection Implementation
+- WebRTC VAD requires specific chunk sizes (10, 20, or 30ms)
+- Sample rate conversion may be needed (24kHz -> 16kHz for VAD)
+- Chunked recording allows real-time processing without buffering entire audio
+- VAD aggressiveness affects both false positives and false negatives
+- Minimum recording duration prevents cutting off very short utterances
+- Fallback to fixed duration ensures reliability when VAD fails
+- LLMs can disable VAD per-interaction using disable_vad parameter
+- Speech must be detected before silence can trigger stop (prevents early cutoff)
+
 ### MCP Server Architecture
 - MCP servers are stateless - configuration via env vars only
 - Server needs restart to pick up code changes
@@ -48,6 +58,10 @@ TTS_BASE_URL=http://localhost:8880/v1
 
 # Features
 VOICE_MODE_AUTO_START_KOKORO=true
+VOICEMODE_ENABLE_SILENCE_DETECTION=true   # Default on for better UX
+VOICEMODE_VAD_AGGRESSIVENESS=2          # 0-3, higher = more aggressive
+VOICEMODE_SILENCE_THRESHOLD_MS=1000     # Stop after 1 second of silence
+VOICEMODE_MIN_RECORDING_DURATION=0.5    # Min recording time in seconds
 VOICE_ALLOW_EMOTIONS=true
 VOICE_MODE_SAVE_AUDIO=true
 

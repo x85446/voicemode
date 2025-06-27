@@ -80,6 +80,17 @@ LIVEKIT_API_SECRET = os.getenv("LIVEKIT_API_SECRET", "secret")
 SAMPLE_RATE = 24000  # Standard TTS sample rate for both OpenAI and Kokoro
 CHANNELS = 1
 
+# ==================== SILENCE DETECTION CONFIGURATION ====================
+
+# Enable silence detection feature
+ENABLE_SILENCE_DETECTION = os.getenv("VOICEMODE_ENABLE_SILENCE_DETECTION", "true").lower() in ("true", "1", "yes", "on")
+
+# VAD (Voice Activity Detection) configuration
+VAD_AGGRESSIVENESS = int(os.getenv("VOICEMODE_VAD_AGGRESSIVENESS", "2"))  # 0-3, higher = more aggressive
+SILENCE_THRESHOLD_MS = int(os.getenv("VOICEMODE_SILENCE_THRESHOLD_MS", "1000"))  # Stop after 1000ms (1 second) of silence
+MIN_RECORDING_DURATION = float(os.getenv("VOICEMODE_MIN_RECORDING_DURATION", "0.5"))  # Minimum 0.5s recording
+VAD_CHUNK_DURATION_MS = 30  # VAD frame size (must be 10, 20, or 30ms)
+
 # Audio format configuration
 AUDIO_FORMAT = os.getenv("VOICEMODE_AUDIO_FORMAT", "pcm").lower()
 TTS_AUDIO_FORMAT = os.getenv("VOICEMODE_TTS_AUDIO_FORMAT", "pcm").lower()  # Default to PCM for optimal streaming

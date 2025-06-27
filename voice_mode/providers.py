@@ -183,7 +183,7 @@ async def get_stt_client(
     
     client = AsyncOpenAI(
         api_key=OPENAI_API_KEY,
-        base_url=endpoint_info.url
+        base_url=endpoint_info.base_url
     )
     
     return client, selected_model, endpoint_info

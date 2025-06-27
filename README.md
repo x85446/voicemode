@@ -19,6 +19,7 @@ Natural voice conversations for AI assistants. Voice Mode brings human-like voic
 - **🗣️ OpenAI-compatible** - works with any STT/TTS service (local or cloud)
 - **⚡ Real-time** - low-latency voice interactions with automatic transport selection
 - **🔧 MCP Integration** - seamless with Claude Desktop and other MCP clients
+- **🎯 Silence detection** - automatically stops recording when you stop speaking (no more waiting!)
 
 ## 🎯 Simple Requirements
 

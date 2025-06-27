@@ -1,5 +1,7 @@
 # Using uvx with Local Development
 
+> **See also:** [Building Voice Mode](development/building.md) for creating development builds and wheels.
+
 ## Running the local package with uvx
 
 ### 1. Direct local execution (simplest!)

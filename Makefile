@@ -1,6 +1,6 @@
 # Voice MCP Makefile
 
-.PHONY: help build-package test test-package publish-test publish release install dev-install clean build-voice-mode publish-voice-mode sync-tomls claude cursor
+.PHONY: help build-package build-dev test test-package publish-test publish release install dev-install clean build-voice-mode publish-voice-mode sync-tomls claude cursor
 
 # Default target
 help:
@@ -20,6 +20,7 @@ help:
 	@echo ""
 	@echo "Python package targets:"
 	@echo "  build-package - Build Python package for PyPI"
+	@echo "  build-dev     - Build development package with auto-versioning"
 	@echo "  test-package  - Test package installation"
 	@echo "  publish-test  - Publish to TestPyPI"
 	@echo "  publish       - Publish to PyPI"
@@ -51,6 +52,21 @@ build-package:
 	@echo "Building Python package..."
 	python -m build
 	@echo "Package built successfully in dist/"
+
+# Build development package with auto-versioning
+build-dev:
+	@echo "Building development package..."
+	@# Save current version
+	@cp voice_mode/__version__.py voice_mode/__version__.py.bak
+	@# Get current version and append .dev suffix with timestamp
+	@CURRENT_VERSION=$$(python -c "exec(open('voice_mode/__version__.py').read()); print(__version__)") && \
+	DEV_VERSION="$$CURRENT_VERSION.dev$$(date +%Y%m%d%H%M%S)" && \
+	echo "__version__ = \"$$DEV_VERSION\"" > voice_mode/__version__.py && \
+	echo "Building version $$DEV_VERSION..." && \
+	uv build || (mv voice_mode/__version__.py.bak voice_mode/__version__.py; exit 1)
+	@# Restore original version
+	@mv voice_mode/__version__.py.bak voice_mode/__version__.py
+	@echo "Development package built successfully in dist/"
 
 # Run unit tests
 test:
