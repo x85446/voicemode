@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.5.0] - 2025-06-28
+
 ### Added
 - Automatic silence detection for voice recording
   - Uses WebRTC VAD (Voice Activity Detection) to detect when user stops speaking
@@ -27,6 +29,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added provider_type field to EndpointInfo for clearer provider identification
   - Improved model selection to respect provider capabilities
   - Comprehensive test coverage for voice-first selection logic
+- Configurable initial silence grace period
+  - New `VOICEMODE_INITIAL_SILENCE_GRACE_PERIOD` environment variable (default: 4.0s)
+  - Prevents premature cutoff when users need time to think before speaking
+  - Gives users more time to start speaking before VAD stops recording
+- Trace-level debug logging
+  - Enabled with `VOICEMODE_DEBUG=trace` environment variable
+  - Includes httpx and openai library debug output
+  - Writes to `~/.voicemode/logs/debug/voicemode_debug_YYYY-MM-DD.log`
+  - Helps diagnose provider connection issues
 
 ### Fixed
 - Fixed WebRTC VAD sample rate compatibility issue
@@ -48,22 +59,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed Kokoro TTS not being selected despite being available
   - Provider registry now initializes with known Kokoro voices
   - Enables automatic Kokoro selection when af_sky is preferred
+- Prevented microphone indicator flickering on macOS
+  - Changed from start/stop recording for each interaction to continuous stream
+  - Microphone stays active during voice session preventing UI flicker
+  - More responsive recording start times
 
 ### Changed
-- Updated default 127.0.0.1 URLs to use 127.0.0.1 for better IPv6 compatibility
+- Replaced all localhost URLs with 127.0.0.1 for better IPv6 compatibility
   - Prevents issues with SSH port forwarding on dual-stack systems
-  - Affects TTS, STT, and LiveKit default URLs
-- Increased initial silence grace period from 1s to 2s
-- Made initial silence grace period configurable
-  - Previously hardcoded 2-second wait before speech detection timeout
-  - Now configurable via `VOICEMODE_INITIAL_SILENCE_GRACE_PERIOD` (default: 4.0s)
-  - Prevents premature cutoff when users need time to think before speaking
-  - Gives users more time to start speaking before VAD stops recording
-  - Prevents premature recording cutoff at the beginning
-- Added trace-level debug logging when VOICEMODE_DEBUG=trace
-  - Enables httpx and openai library debug logging
-  - Writes to ~/.voicemode/logs/debug/voicemode_debug_YYYY-MM-DD.log
-  - Helps diagnose provider connection issues
+  - Affects TTS, STT, and LiveKit default URLs throughout codebase
+
+### Removed
+- Cleaned up temporary and development files
+  - Removed unused debug scripts and test files
+  - Removed obsolete documentation and analysis files
 
 ### Planned
 - In-memory buffer for conversation timing metrics
