@@ -247,7 +247,8 @@ async def stream_pcm_audio(
     request_params: dict,
     debug: bool = False,
     save_audio: bool = False,
-    audio_dir: Optional[Path] = None
+    audio_dir: Optional[Path] = None,
+    conversation_id: Optional[str] = None
 ) -> Tuple[bool, StreamMetrics]:
     """Stream PCM audio with true HTTP streaming for minimal latency.
     
@@ -376,7 +377,7 @@ async def stream_pcm_audio(
                             wav_data = f.read()
                         import os
                         os.unlink(tmp_wav.name)
-                        audio_path = save_debug_file(wav_data, "tts", "wav", audio_dir, True)
+                        audio_path = save_debug_file(wav_data, "tts", "wav", audio_dir, True, conversation_id)
                         if audio_path:
                             logger.info(f"TTS audio saved to: {audio_path}")
             except Exception as e:
@@ -399,7 +400,8 @@ async def stream_tts_audio(
     request_params: dict,
     debug: bool = False,
     save_audio: bool = False,
-    audio_dir: Optional[Path] = None
+    audio_dir: Optional[Path] = None,
+    conversation_id: Optional[str] = None
 ) -> Tuple[bool, StreamMetrics]:
     """Stream TTS audio with progressive playback.
     
@@ -424,7 +426,8 @@ async def stream_tts_audio(
             request_params=request_params,
             debug=debug,
             save_audio=save_audio,
-            audio_dir=audio_dir
+            audio_dir=audio_dir,
+            conversation_id=conversation_id
         )
     else:
         # Use buffered streaming for formats that need decoding
@@ -434,7 +437,8 @@ async def stream_tts_audio(
             request_params=request_params,
             debug=debug,
             save_audio=save_audio,
-            audio_dir=audio_dir
+            audio_dir=audio_dir,
+            conversation_id=conversation_id
         )
 
 
@@ -446,7 +450,8 @@ async def stream_with_buffering(
     sample_rate: int = 24000,  # TTS standard sample rate
     debug: bool = False,
     save_audio: bool = False,
-    audio_dir: Optional[Path] = None
+    audio_dir: Optional[Path] = None,
+    conversation_id: Optional[str] = None
 ) -> Tuple[bool, StreamMetrics]:
     """Fallback streaming that buffers enough data to decode reliably.
     
@@ -548,7 +553,7 @@ async def stream_with_buffering(
                 from .core import save_debug_file
                 save_buffer.seek(0)
                 audio_data = save_buffer.read()
-                audio_path = save_debug_file(audio_data, "tts", format, audio_dir, True)
+                audio_path = save_debug_file(audio_data, "tts", format, audio_dir, True, conversation_id)
                 if audio_path:
                     logger.info(f"TTS audio saved to: {audio_path}")
             except Exception as e:

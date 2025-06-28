@@ -332,8 +332,8 @@ def group_by_date(exchanges: List[Dict]) -> Dict[str, Dict[str, List[Dict]]]:
         project = exchange["metadata"].get("project_path", "Unknown Project")
         grouped[date_key]["projects"].add(project)
     
-    # Sort by date (newest first)
-    sorted_grouped = dict(sorted(grouped.items(), reverse=True))
+    # Sort by date (newest first) - ensure proper date sorting
+    sorted_grouped = dict(sorted(grouped.items(), key=lambda x: x[0], reverse=True))
     
     # Convert sets to lists for display
     for date_data in sorted_grouped.values():
@@ -563,7 +563,7 @@ HTML_TEMPLATE = """
             {% for project, project_convs in conversations_by_project.items() %}
             <div class="project-section">
                 <div class="project-title">{{ project }}</div>
-                {% for conv in project_convs %}
+                {% for conv in project_exchanges %}
                 <div class="conversation exchange" onclick="toggleExchange(this)">
                     <div class="metadata">
                         <span class="type-badge type-{{ conv.type }}">{{ conv.type|upper }}</span>
@@ -597,16 +597,16 @@ HTML_TEMPLATE = """
     </div>
     {% endfor %}
     
-    {% else %}
+    {% elif view_mode == 'project' %}
     <!-- Project View -->
     {% for project, project_exchanges in grouped_exchanges.items() %}
     <div class="date-group expanded">
         <div class="date-header expanded">
             <div class="date-title">{{ project }}</div>
-            <div class="date-stats">{{ project_convs|length }} conversations</div>
+            <div class="date-stats">{{ project_exchanges|length }} exchanges</div>
         </div>
         <div class="date-content" style="display: block;">
-            {% for conv in project_convs %}
+            {% for conv in project_exchanges %}
             <div class="conversation exchange" onclick="toggleExchange(this)">
                 <div class="metadata">
                     <span class="type-badge type-{{ conv.type }}">{{ conv.type|upper }}</span>
@@ -714,6 +714,17 @@ HTML_TEMPLATE = """
             element.classList.toggle('selected');
         }
         
+        function toggleExchange(element) {
+            // Remove selected class from all exchanges
+            document.querySelectorAll('.exchange').forEach(el => {
+                if (el !== element) {
+                    el.classList.remove('selected');
+                }
+            });
+            // Toggle selected class on clicked element
+            element.classList.toggle('selected');
+        }
+        
         // Auto-expand today's conversations
         window.onload = function() {
             const today = new Date().toISOString().split('T')[0];
@@ -779,6 +790,9 @@ def index():
         # Convert sets to lists
         for date_data in grouped.values():
             date_data["projects"] = sorted(list(date_data["projects"]))
+        
+        # Sort by date (newest first)
+        grouped = dict(sorted(grouped.items(), key=lambda x: x[0], reverse=True))
     else:
         grouped = group_by_date(exchanges)
     

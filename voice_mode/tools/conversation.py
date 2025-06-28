@@ -272,6 +272,10 @@ async def text_to_speech_with_failover(
                 else:
                     client_key = tts_config.get('client_key', 'tts')
                 
+                # Get conversation ID from logger
+                conversation_logger = get_conversation_logger()
+                conversation_id = conversation_logger.conversation_id
+                
                 success, tts_metrics = await text_to_speech(
                     text=message,
                     openai_clients=openai_clients,
@@ -284,7 +288,8 @@ async def text_to_speech_with_failover(
                     audio_dir=AUDIO_DIR if SAVE_AUDIO else None,
                     client_key=client_key,
                     instructions=tts_config.get('instructions'),
-                    audio_format=audio_format
+                    audio_format=audio_format,
+                    conversation_id=conversation_id
                 )
                 
                 # Clean up temporary client
@@ -326,6 +331,10 @@ async def text_to_speech_with_failover(
             else:
                 client_key = tts_config.get('client_key', 'tts')
             
+            # Get conversation ID from logger
+            conversation_logger = get_conversation_logger()
+            conversation_id = conversation_logger.conversation_id
+            
             success, tts_metrics = await text_to_speech(
                 text=message,
                 openai_clients=openai_clients,
@@ -338,7 +347,8 @@ async def text_to_speech_with_failover(
                 audio_dir=AUDIO_DIR if SAVE_AUDIO else None,
                 client_key=client_key,
                 instructions=tts_config.get('instructions'),
-                audio_format=audio_format
+                audio_format=audio_format,
+                conversation_id=conversation_id
             )
             
             # Clean up temporary client
@@ -491,7 +501,10 @@ async def _speech_to_text_internal(
         if save_audio and audio_dir:
             try:
                 with open(wav_file, 'rb') as f:
-                    audio_path = save_debug_file(f.read(), "stt", "wav", audio_dir, True)
+                    # Get conversation ID from logger
+                    conversation_logger = get_conversation_logger()
+                    conversation_id = conversation_logger.conversation_id
+                    audio_path = save_debug_file(f.read(), "stt", "wav", audio_dir, True, conversation_id)
                     if audio_path:
                         logger.info(f"STT audio saved to: {audio_path}")
             except Exception as e:
