@@ -2,9 +2,11 @@
 
 ## Documentation
 
+- [Task Management Guidelines](./TASK-MANAGEMENT.md) - How to manage tasks and documentation
 - [Implementation Notes](./implementation-notes.md) - Completed work and decisions
 - [Key Insights](./key-insights.md) - Important learnings and design principles
 - [Screencasts](./screencasts/) - Video production plans and scripts
+- [Screencast Quickstart](./screencast-quickstart/) - Quick video creation guide and runbook
 
 ## The One Thing
 
@@ -12,13 +14,11 @@
 
 ## High Priority
 
+- [ ] [Context Prime Optimization](./context-prime-optimization/) - Make /context-prime command super fast
 - [ ] Fix voice-mode ImportError - Add missing voice_mode() function to cli.py (v0.1.26)
-- [ ] Provider Registry System - Unified configuration with provider metadata (cost, latency, privacy, features)
-  - [Design Document](./provider-registry-design.md)
-  - [MVP Implementation](./provider-registry-mvp.md)
-  - [Implementation Notes](./provider-registry-implementation.md)
 - [ ] Save Transcriptions - Add text saving alongside audio recordings in voice-mode/transcriptions/
 - [ ] Enhance provider registry with cost/latency/privacy metadata
+- [ ] Fix MCP timing issues with silence detection (VAD works in standalone but has delays through MCP)
 
 ## Medium Priority
 
@@ -75,7 +75,15 @@
 
 ## Recently Completed
 
+- [x] Audio format configuration - PCM as default for TTS streaming (better than Opus for streaming)
+  - [Implementation Notes](./archive/audio-format-implementation.md)
 - [x] Provider Registry MVP - Basic registry with availability checking and selection logic
+  - [Design Document](./provider-registry-design.md)
+  - [MVP Implementation](./provider-registry-mvp.md)
+  - [Implementation Notes](./archive/provider-registry-implementation.md)
+- [x] Silence detection implementation - WebRTC VAD for automatic recording stop
+  - [Design Document](./silence-detection-design.md)
+  - [Implementation Notes](./silence-detection-implementation.md)
 - [x] Update default voices - alloy for OpenAI, af_sky for Kokoro
 - [x] Unified voice service status tool
 - [x] Auto-start Kokoro functionality
