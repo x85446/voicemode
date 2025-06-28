@@ -68,7 +68,7 @@ class TestSilenceDetection:
             
             yield mock_webrtcvad
     
-    @patch('voice_mode.tools.conversation.ENABLE_SILENCE_DETECTION', True)
+    @patch('voice_mode.tools.conversation.DISABLE_SILENCE_DETECTION', False)
     @patch('voice_mode.tools.conversation.VAD_AVAILABLE', True)
     def test_silence_detection_stops_early(self, mock_vad, mock_sounddevice):
         """Test that recording stops when silence is detected."""
@@ -85,7 +85,7 @@ class TestSilenceDetection:
         # Verify we recorded the expected number of chunks before stopping
         assert mock_sounddevice.rec.call_count == 6
     
-    @patch('voice_mode.tools.conversation.ENABLE_SILENCE_DETECTION', True)
+    @patch('voice_mode.tools.conversation.DISABLE_SILENCE_DETECTION', False)
     @patch('voice_mode.tools.conversation.VAD_AVAILABLE', True)
     def test_no_speech_detected(self, mock_vad, mock_sounddevice):
         """Test behavior when no speech is detected."""
@@ -102,7 +102,7 @@ class TestSilenceDetection:
         min_chunks = int((MIN_RECORDING_DURATION * 2) / (VAD_CHUNK_DURATION_MS / 1000))
         assert mock_sounddevice.rec.call_count >= min_chunks
     
-    @patch('voice_mode.tools.conversation.ENABLE_SILENCE_DETECTION', True)
+    @patch('voice_mode.tools.conversation.DISABLE_SILENCE_DETECTION', False)
     @patch('voice_mode.tools.conversation.VAD_AVAILABLE', True)
     def test_continuous_speech(self, mock_vad, mock_sounddevice):
         """Test that recording continues with continuous speech."""
@@ -123,7 +123,7 @@ class TestSilenceDetection:
         expected_chunks = int(max_duration / (VAD_CHUNK_DURATION_MS / 1000))
         assert mock_sounddevice.rec.call_count == expected_chunks
     
-    @patch('voice_mode.tools.conversation.ENABLE_SILENCE_DETECTION', False)
+    @patch('voice_mode.tools.conversation.DISABLE_SILENCE_DETECTION', True)
     @patch('voice_mode.tools.conversation.VAD_AVAILABLE', True)
     def test_silence_detection_disabled(self, mock_vad, mock_sounddevice):
         """Test that silence detection can be disabled."""
@@ -136,7 +136,7 @@ class TestSilenceDetection:
             mock_record.assert_called_once_with(5.0)
             assert np.array_equal(result, np.array([1, 2, 3]))
     
-    @patch('voice_mode.tools.conversation.ENABLE_SILENCE_DETECTION', True)
+    @patch('voice_mode.tools.conversation.DISABLE_SILENCE_DETECTION', False)
     @patch('voice_mode.tools.conversation.VAD_AVAILABLE', False)
     def test_vad_not_available(self):
         """Test fallback when webrtcvad is not available."""
@@ -149,7 +149,7 @@ class TestSilenceDetection:
             mock_record.assert_called_once_with(5.0)
             assert np.array_equal(result, np.array([1, 2, 3]))
     
-    @patch('voice_mode.tools.conversation.ENABLE_SILENCE_DETECTION', True)
+    @patch('voice_mode.tools.conversation.DISABLE_SILENCE_DETECTION', False)
     @patch('voice_mode.tools.conversation.VAD_AVAILABLE', True)
     def test_vad_error_handling(self, mock_vad, mock_sounddevice):
         """Test that VAD errors are handled gracefully."""
