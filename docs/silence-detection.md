@@ -177,4 +177,4 @@ The silence detection feature is implemented in:
 - Configuration in `voice_mode/config.py`
 - Tests in `tests/test_silence_detection.py`
 
-No API changes are required - the feature works transparently with existing `converse()` and `ask_voice_question()` functions.
+No API changes are required - the feature works transparently with the existing `converse()` function.

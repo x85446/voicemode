@@ -137,8 +137,8 @@ class TestVoiceMCPTools:
             assert "Test transcription" in result[0].text
     
     @pytest.mark.asyncio
-    async def test_ask_voice_question_local(self, voice_mode_server):
-        """Test voice question with local transport"""
+    async def test_converse_local(self, voice_mode_server):
+        """Test voice conversation with local transport"""
         async with Client(voice_mode_server) as client:
             result = await client.call_tool(
                 "converse",

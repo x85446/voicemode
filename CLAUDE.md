@@ -31,28 +31,10 @@ Check for convention overrides in this order:
 
 Later files override earlier ones for the same convention.
 
-## Voice Duration Guidelines
-
-When using voice tools, ALWAYS set appropriate duration parameters based on expected response length:
-
-### For `ask_voice_question`:
-- Simple yes/no questions: use `duration=10` 
-- Normal conversational responses: use `duration=20` (better than default 15)
-- Open-ended questions: use `duration=30`
-- Questions expecting detailed explanations: use `duration=45`
-- Questions about stories or long explanations: use `duration=60`
-
-### For `listen_for_speech`:
-- Single words/commands: use `duration=5`
-- Normal sentences: use `duration=10`
-- Multiple sentences: use `duration=20`
-- Long dictation: use `duration=30-60`
-
-**IMPORTANT**: Always err on the side of longer duration. It's better to have silence at the end than to cut off the user mid-sentence.
 
 ## Voice Parameter Selection Guidelines
 
-When using voice tools (`converse`, `ask_voice_question`), DO NOT specify voice, model, or provider parameters unless:
+When using the voice tool (`converse`), DO NOT specify voice, model, or provider parameters unless:
 - The user explicitly requests a specific voice/model/provider (e.g., "use nova voice", "speak with Kokoro")
 - You need specific features (e.g., emotional TTS requires gpt-4o-mini-tts model)
 - You're testing failover by trying a different provider after a failure
@@ -79,7 +61,7 @@ converse("Sure, I'm now using the nova voice", voice="nova")
 converse("I'm so excited!", tts_model="gpt-4o-mini-tts", tts_instructions="Sound very excited")
 ```
 
-You can get the attention of the USER when he is not responding by using tools from voice-mode:ask_voice_question
+You can get the attention of the USER when he is not responding by using the converse tool
 
 On startup, break the ice by asking a questions with your tools
 
