@@ -20,9 +20,10 @@ import os
 import re
 from pathlib import Path
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Any
 import json
 import time
+from collections import defaultdict
 
 from flask import Flask, render_template_string, jsonify, send_file, request
 
@@ -32,6 +33,7 @@ app = Flask(__name__)
 BASE_DIR = Path(os.getenv("VOICEMODE_BASE_DIR", str(Path.home() / ".voicemode")))
 TRANSCRIPTIONS_DIR = BASE_DIR / "transcriptions"
 AUDIO_DIR = BASE_DIR / "audio"
+LOGS_DIR = BASE_DIR / "logs"
 
 # Simple cache
 CACHE = {
@@ -109,35 +111,78 @@ def find_matching_audio(transcription: Dict) -> Optional[str]:
     
     return None
 
-def get_all_conversations() -> List[Dict]:
-    """Get all conversation transcriptions with metadata."""
+def read_jsonl_exchanges() -> List[Dict[str, Any]]:
+    """Read exchanges from JSONL log files."""
+    exchanges = []
+    
+    if not LOGS_DIR.exists():
+        return exchanges
+    
+    # Read all JSONL files
+    for jsonl_file in sorted(LOGS_DIR.glob("exchanges_*.jsonl")):
+        try:
+            with open(jsonl_file, 'r') as f:
+                for line in f:
+                    if line.strip():
+                        try:
+                            entry = json.loads(line)
+                            # Convert JSONL format to exchange format
+                            exchange = {
+                                "filepath": str(jsonl_file),
+                                "filename": f"{entry['type']}_{entry['timestamp'].replace(':', '-')}.txt",
+                                "metadata": {
+                                    "file_timestamp": entry.get("timestamp"),
+                                    "project_path": entry.get("project_path"),
+                                    "conversation_id": entry.get("conversation_id"),
+                                    "model": entry.get("metadata", {}).get("model"),
+                                    "voice": entry.get("metadata", {}).get("voice"),
+                                    "provider": entry.get("metadata", {}).get("provider"),
+                                    "timing": entry.get("metadata", {}).get("timing"),
+                                },
+                                "transcript": entry.get("text", ""),
+                                "type": entry.get("type", "unknown"),
+                                "audio_path": entry.get("audio_file")
+                            }
+                            exchanges.append(exchange)
+                        except json.JSONDecodeError:
+                            continue
+        except Exception as e:
+            print(f"Error reading JSONL file {jsonl_file}: {e}")
+    
+    return exchanges
+
+def get_all_exchanges() -> List[Dict]:
+    """Get all exchanges from both transcription files and JSONL logs."""
     # Check cache
     current_time = time.time()
     if (CACHE['conversations'] is not None and 
         current_time - CACHE['last_update'] < CACHE['cache_duration']):
         return CACHE['conversations']
     
-    conversations = []
+    exchanges = []
     
-    if not TRANSCRIPTIONS_DIR.exists():
-        return conversations
+    # First, read from JSONL files (preferred source)
+    jsonl_exchanges = read_jsonl_exchanges()
+    exchanges.extend(jsonl_exchanges)
     
-    # Get all transcription files
-    for filepath in sorted(TRANSCRIPTIONS_DIR.glob("*.txt"), reverse=True):
-        transcription = parse_transcription_file(filepath)
-        
-        # Find matching audio
-        audio_path = find_matching_audio(transcription)
-        if audio_path:
-            transcription["audio_path"] = audio_path
-        
-        conversations.append(transcription)
+    # Then, read from transcription files if they exist
+    if TRANSCRIPTIONS_DIR.exists():
+        # Get all transcription files
+        for filepath in sorted(TRANSCRIPTIONS_DIR.glob("*.txt"), reverse=True):
+            transcription = parse_transcription_file(filepath)
+            
+            # Find matching audio
+            audio_path = find_matching_audio(transcription)
+            if audio_path:
+                transcription["audio_path"] = audio_path
+            
+            exchanges.append(transcription)
     
     # Update cache
-    CACHE['conversations'] = conversations
+    CACHE['conversations'] = exchanges
     CACHE['last_update'] = current_time
     
-    return conversations
+    return exchanges
 
 def group_by_project(exchanges: List[Dict]) -> Dict[str, List[Dict]]:
     """Group exchanges by project path."""
@@ -156,7 +201,7 @@ def group_by_project(exchanges: List[Dict]) -> Dict[str, List[Dict]]:
     return grouped
 
 def group_exchanges_into_conversations(exchanges: List[Dict], gap_minutes: int = 5) -> List[Dict[str, any]]:
-    """Group exchanges into conversations based on time gaps.
+    """Group exchanges into conversations based on conversation_id or time gaps.
     
     Args:
         exchanges: List of exchange dictionaries
@@ -168,34 +213,67 @@ def group_exchanges_into_conversations(exchanges: List[Dict], gap_minutes: int =
     if not exchanges:
         return []
     
-    # Sort exchanges by timestamp
-    sorted_exchanges = sorted(exchanges, key=lambda x: x["metadata"].get("file_timestamp", ""))
+    # First, try to group by conversation_id
+    conversations_by_id = defaultdict(list)
+    exchanges_without_id = []
     
+    for exchange in exchanges:
+        conv_id = exchange["metadata"].get("conversation_id")
+        if conv_id:
+            conversations_by_id[conv_id].append(exchange)
+        else:
+            exchanges_without_id.append(exchange)
+    
+    # Convert conversation_id groups to conversation format
     conversations = []
-    current_conversation = {
-        "exchanges": [sorted_exchanges[0]],
-        "start_time": sorted_exchanges[0]["metadata"].get("file_timestamp", ""),
-        "project": sorted_exchanges[0]["metadata"].get("project_path", "Unknown Project")
-    }
+    for conv_id, conv_exchanges in conversations_by_id.items():
+        sorted_exch = sorted(conv_exchanges, key=lambda x: x["metadata"].get("file_timestamp", ""))
+        conversations.append({
+            "exchanges": sorted_exch,
+            "start_time": sorted_exch[0]["metadata"].get("file_timestamp", ""),
+            "end_time": sorted_exch[-1]["metadata"].get("file_timestamp", ""),
+            "project": sorted_exch[0]["metadata"].get("project_path", "Unknown Project"),
+            "conversation_id": conv_id
+        })
     
-    for i in range(1, len(sorted_exchanges)):
-        exchange = sorted_exchanges[i]
-        prev_exchange = sorted_exchanges[i-1]
+    # Then handle exchanges without conversation_id using time-based grouping
+    if exchanges_without_id:
+        sorted_exchanges = sorted(exchanges_without_id, key=lambda x: x["metadata"].get("file_timestamp", ""))
         
-        # Parse timestamps
-        try:
-            current_time = datetime.fromisoformat(exchange["metadata"].get("file_timestamp", ""))
-            prev_time = datetime.fromisoformat(prev_exchange["metadata"].get("file_timestamp", ""))
-            time_diff = (current_time - prev_time).total_seconds() / 60  # Convert to minutes
+        current_conversation = {
+            "exchanges": [sorted_exchanges[0]],
+            "start_time": sorted_exchanges[0]["metadata"].get("file_timestamp", ""),
+            "project": sorted_exchanges[0]["metadata"].get("project_path", "Unknown Project")
+        }
+        
+        for i in range(1, len(sorted_exchanges)):
+            exchange = sorted_exchanges[i]
+            prev_exchange = sorted_exchanges[i-1]
             
-            # Check if same project and within time gap
-            same_project = exchange["metadata"].get("project_path") == prev_exchange["metadata"].get("project_path")
-            
-            if same_project and time_diff <= gap_minutes:
-                # Add to current conversation
-                current_conversation["exchanges"].append(exchange)
-            else:
-                # Start new conversation
+            # Parse timestamps
+            try:
+                current_time = datetime.fromisoformat(exchange["metadata"].get("file_timestamp", ""))
+                prev_time = datetime.fromisoformat(prev_exchange["metadata"].get("file_timestamp", ""))
+                time_diff = (current_time - prev_time).total_seconds() / 60  # Convert to minutes
+                
+                # Check if same project and within time gap
+                same_project = exchange["metadata"].get("project_path") == prev_exchange["metadata"].get("project_path")
+                
+                if same_project and time_diff <= gap_minutes:
+                    # Add to current conversation
+                    current_conversation["exchanges"].append(exchange)
+                else:
+                    # Start new conversation
+                    current_conversation["end_time"] = prev_exchange["metadata"].get("file_timestamp", "")
+                    conversations.append(current_conversation)
+                    
+                    current_conversation = {
+                        "exchanges": [exchange],
+                        "start_time": exchange["metadata"].get("file_timestamp", ""),
+                        "project": exchange["metadata"].get("project_path", "Unknown Project")
+                    }
+            except:
+                # If timestamp parsing fails, start new conversation
                 current_conversation["end_time"] = prev_exchange["metadata"].get("file_timestamp", "")
                 conversations.append(current_conversation)
                 
@@ -204,21 +282,11 @@ def group_exchanges_into_conversations(exchanges: List[Dict], gap_minutes: int =
                     "start_time": exchange["metadata"].get("file_timestamp", ""),
                     "project": exchange["metadata"].get("project_path", "Unknown Project")
                 }
-        except:
-            # If timestamp parsing fails, start new conversation
-            current_conversation["end_time"] = prev_exchange["metadata"].get("file_timestamp", "")
-            conversations.append(current_conversation)
-            
-            current_conversation = {
-                "exchanges": [exchange],
-                "start_time": exchange["metadata"].get("file_timestamp", ""),
-                "project": exchange["metadata"].get("project_path", "Unknown Project")
-            }
     
-    # Add last conversation
-    if current_conversation["exchanges"]:
-        current_conversation["end_time"] = current_conversation["exchanges"][-1]["metadata"].get("file_timestamp", "")
-        conversations.append(current_conversation)
+        # Add last conversation
+        if current_conversation["exchanges"]:
+            current_conversation["end_time"] = current_conversation["exchanges"][-1]["metadata"].get("file_timestamp", "")
+            conversations.append(current_conversation)
     
     # Calculate conversation summaries
     for conv in conversations:
