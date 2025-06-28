@@ -1,0 +1,591 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#     "flask",
+# ]
+# ///
+"""
+Conversation Browser for Voice Mode
+
+A simple web interface to browse voice mode conversations and play associated audio.
+
+Usage:
+    uvx conversation_browser.py
+    # or
+    python conversation_browser.py
+"""
+
+import os
+import re
+from pathlib import Path
+from datetime import datetime
+from typing import Dict, List, Optional, Tuple
+import json
+import time
+
+from flask import Flask, render_template_string, jsonify, send_file, request
+
+app = Flask(__name__)
+
+# Configuration
+BASE_DIR = Path(os.getenv("VOICEMODE_BASE_DIR", str(Path.home() / ".voicemode")))
+TRANSCRIPTIONS_DIR = BASE_DIR / "transcriptions"
+AUDIO_DIR = BASE_DIR / "audio"
+
+# Simple cache
+CACHE = {
+    'conversations': None,
+    'last_update': 0,
+    'cache_duration': 60  # Cache for 60 seconds
+}
+
+def parse_transcription_file(filepath: Path) -> Dict:
+    """Parse a transcription file and extract metadata and content."""
+    try:
+        content = filepath.read_text(encoding="utf-8")
+        
+        # Split metadata and transcript
+        parts = content.split("--- TRANSCRIPT ---")
+        
+        metadata = {}
+        transcript = ""
+        
+        if len(parts) == 2:
+            # Parse metadata
+            metadata_text = parts[0].replace("--- METADATA ---", "").strip()
+            for line in metadata_text.split("\n"):
+                if ": " in line:
+                    key, value = line.split(": ", 1)
+                    metadata[key.strip()] = value.strip()
+            
+            transcript = parts[1].strip()
+        else:
+            # No metadata, just transcript
+            transcript = content.strip()
+        
+        # Extract timestamp from filename
+        filename_parts = filepath.stem.split("_")
+        if len(filename_parts) >= 3:
+            timestamp_str = "_".join(filename_parts[1:3])
+            try:
+                # Parse timestamp (YYYYMMDD_HHMMSS)
+                timestamp = datetime.strptime(timestamp_str, "%Y%m%d_%H%M%S")
+                metadata["file_timestamp"] = timestamp.isoformat()
+            except:
+                pass
+        
+        return {
+            "filepath": str(filepath),
+            "filename": filepath.name,
+            "metadata": metadata,
+            "transcript": transcript,
+            "type": filename_parts[0] if filename_parts else "unknown"
+        }
+    except Exception as e:
+        return {
+            "filepath": str(filepath),
+            "filename": filepath.name,
+            "metadata": {"error": str(e)},
+            "transcript": f"Error reading file: {e}",
+            "type": "error"
+        }
+
+def find_matching_audio(transcription: Dict) -> Optional[str]:
+    """Find audio file that matches the transcription timestamp."""
+    # Extract timestamp from transcription filename
+    filename = Path(transcription["filename"]).stem
+    parts = filename.split("_")
+    
+    if len(parts) >= 3:
+        # Get the timestamp part (YYYYMMDD_HHMMSS)
+        timestamp = "_".join(parts[1:3])
+        
+        # Look for audio files with similar timestamp
+        # Audio files are named like: tts_20250628_185848_123.mp3
+        for audio_file in AUDIO_DIR.glob("*"):
+            if timestamp in audio_file.name:
+                return str(audio_file)
+    
+    return None
+
+def get_all_conversations() -> List[Dict]:
+    """Get all conversation transcriptions with metadata."""
+    # Check cache
+    current_time = time.time()
+    if (CACHE['conversations'] is not None and 
+        current_time - CACHE['last_update'] < CACHE['cache_duration']):
+        return CACHE['conversations']
+    
+    conversations = []
+    
+    if not TRANSCRIPTIONS_DIR.exists():
+        return conversations
+    
+    # Get all transcription files
+    for filepath in sorted(TRANSCRIPTIONS_DIR.glob("*.txt"), reverse=True):
+        transcription = parse_transcription_file(filepath)
+        
+        # Find matching audio
+        audio_path = find_matching_audio(transcription)
+        if audio_path:
+            transcription["audio_path"] = audio_path
+        
+        conversations.append(transcription)
+    
+    # Update cache
+    CACHE['conversations'] = conversations
+    CACHE['last_update'] = current_time
+    
+    return conversations
+
+def group_by_project(conversations: List[Dict]) -> Dict[str, List[Dict]]:
+    """Group conversations by project path."""
+    grouped = {}
+    
+    for conv in conversations:
+        project = conv["metadata"].get("project_path", "Unknown Project")
+        if project not in grouped:
+            grouped[project] = []
+        grouped[project].append(conv)
+    
+    # Sort conversations within each project by timestamp (newest first)
+    for project_convs in grouped.values():
+        project_convs.sort(key=lambda x: x["metadata"].get("file_timestamp", ""), reverse=True)
+    
+    return grouped
+
+def group_by_date(conversations: List[Dict]) -> Dict[str, Dict[str, List[Dict]]]:
+    """Group conversations by date, then by project."""
+    grouped = {}
+    
+    for conv in conversations:
+        # Extract date from timestamp
+        timestamp_str = conv["metadata"].get("file_timestamp", "")
+        if timestamp_str:
+            try:
+                dt = datetime.fromisoformat(timestamp_str)
+                date_key = dt.strftime("%Y-%m-%d")
+                date_display = dt.strftime("%A, %B %d, %Y")  # e.g., "Friday, June 28, 2024"
+            except:
+                date_key = "Unknown Date"
+                date_display = "Unknown Date"
+        else:
+            date_key = "Unknown Date"
+            date_display = "Unknown Date"
+        
+        if date_key not in grouped:
+            grouped[date_key] = {
+                "display": date_display,
+                "conversations": [],
+                "projects": set()
+            }
+        
+        grouped[date_key]["conversations"].append(conv)
+        project = conv["metadata"].get("project_path", "Unknown Project")
+        grouped[date_key]["projects"].add(project)
+    
+    # Sort by date (newest first)
+    sorted_grouped = dict(sorted(grouped.items(), reverse=True))
+    
+    # Convert sets to lists for display
+    for date_data in sorted_grouped.values():
+        date_data["projects"] = sorted(list(date_data["projects"]))
+    
+    return sorted_grouped
+
+# HTML Template
+HTML_TEMPLATE = """
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Voice Mode Conversation Browser</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .date-group {
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .date-header {
+            background: #f8f9fa;
+            padding: 15px 20px;
+            cursor: pointer;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s;
+        }
+        .date-header:hover {
+            background: #e9ecef;
+        }
+        .date-header.expanded {
+            background: #007bff;
+            color: white;
+        }
+        .date-title {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        .date-stats {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+        .expand-hint {
+            font-size: 0.85em;
+            font-style: italic;
+            opacity: 0.7;
+            margin-left: 10px;
+        }
+        .date-content {
+            display: none;
+            padding: 20px;
+        }
+        .date-group.expanded .date-content {
+            display: block;
+        }
+        .project-section {
+            margin-bottom: 20px;
+        }
+        .project-title {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 10px;
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+            word-break: break-all;
+        }
+        .conversation {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: #fafafa;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .conversation:hover {
+            background: #f0f0f0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .conversation.selected {
+            background: #e3f2fd;
+            border-color: #2196f3;
+        }
+        .metadata {
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        .transcript-preview {
+            color: #333;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .full-transcript {
+            display: none;
+            margin-top: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+        .conversation.selected .full-transcript {
+            display: block;
+        }
+        .audio-player {
+            margin-top: 10px;
+            width: 100%;
+        }
+        .type-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 0.8em;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .type-conversation {
+            background: #4caf50;
+            color: white;
+        }
+        .type-stt {
+            background: #ff9800;
+            color: white;
+        }
+        .stats {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .view-controls {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .view-button {
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            padding: 8px 16px;
+            margin: 0 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .view-button:hover {
+            background: #e9ecef;
+        }
+        .view-button.active {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <h1>Voice Mode Conversation Browser</h1>
+    
+    <div class="stats">
+        <strong>Total Conversations:</strong> {{ total_count }} |
+        <strong>Projects:</strong> {{ project_count }} |
+        <strong>Latest:</strong> {{ latest_date }}
+    </div>
+    
+    <div class="view-controls">
+        <button class="view-button {% if view_mode == 'date' %}active{% endif %}" 
+                onclick="window.location.href='/?view=date'">
+            Group by Date
+        </button>
+        <button class="view-button {% if view_mode == 'project' %}active{% endif %}"
+                onclick="window.location.href='/?view=project'">
+            Group by Project
+        </button>
+    </div>
+    
+    {% if view_mode == 'date' %}
+    {% for date_key, date_data in grouped_conversations.items() %}
+    <div class="date-group" id="date-{{ date_key }}">
+        <div class="date-header" onclick="toggleDateGroup(this)">
+            <div>
+                <div class="date-title">{{ date_data.display }}</div>
+                <div class="date-stats">
+                    {{ date_data.conversations|length }} conversations |
+                    {{ date_data.projects|length }} project{% if date_data.projects|length != 1 %}s{% endif %}
+                    <span class="expand-hint">Click to expand</span>
+                </div>
+            </div>
+        </div>
+        <div class="date-content">
+            {% set conversations_by_project = {} %}
+            {% for conv in date_data.conversations %}
+                {% set project = conv.metadata.get('project_path', 'Unknown Project') %}
+                {% if project not in conversations_by_project %}
+                    {% set _ = conversations_by_project.update({project: []}) %}
+                {% endif %}
+                {% set _ = conversations_by_project[project].append(conv) %}
+            {% endfor %}
+            
+            {% for project, project_convs in conversations_by_project.items() %}
+            <div class="project-section">
+                <div class="project-title">{{ project }}</div>
+                {% for conv in project_convs %}
+                <div class="conversation" onclick="toggleConversation(this)">
+                    <div class="metadata">
+                        <span class="type-badge type-{{ conv.type }}">{{ conv.type|upper }}</span>
+                        {% if conv.metadata.file_timestamp %}
+                            <strong>{{ conv.metadata.file_timestamp|format_timestamp }}</strong>
+                        {% else %}
+                            <strong>{{ conv.filename }}</strong>
+                        {% endif %}
+                        {% if conv.metadata.timing %}
+                            | {{ conv.metadata.timing }}
+                        {% endif %}
+                    </div>
+                    <div class="transcript-preview">
+                        {{ conv.transcript[:200] }}{% if conv.transcript|length > 200 %}...{% endif %}
+                    </div>
+                    <div class="full-transcript">
+                        {{ conv.transcript }}
+                        
+                        {% if conv.audio_path %}
+                        <audio class="audio-player" controls>
+                            <source src="/audio/{{ conv.audio_path|basename }}" type="audio/mpeg">
+                            Your browser does not support the audio element.
+                        </audio>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+    
+    {% else %}
+    <!-- Project View -->
+    {% for project, project_convs in grouped_conversations.items() %}
+    <div class="date-group expanded">
+        <div class="date-header expanded">
+            <div class="date-title">{{ project }}</div>
+            <div class="date-stats">{{ project_convs|length }} conversations</div>
+        </div>
+        <div class="date-content" style="display: block;">
+            {% for conv in project_convs %}
+            <div class="conversation" onclick="toggleConversation(this)">
+                <div class="metadata">
+                    <span class="type-badge type-{{ conv.type }}">{{ conv.type|upper }}</span>
+                    {% if conv.metadata.file_timestamp %}
+                        <strong>{{ conv.metadata.file_timestamp|format_timestamp }}</strong>
+                    {% else %}
+                        <strong>{{ conv.filename }}</strong>
+                    {% endif %}
+                    {% if conv.metadata.timing %}
+                        | {{ conv.metadata.timing }}
+                    {% endif %}
+                </div>
+                <div class="transcript-preview">
+                    {{ conv.transcript[:200] }}{% if conv.transcript|length > 200 %}...{% endif %}
+                </div>
+                <div class="full-transcript">
+                    {{ conv.transcript }}
+                    
+                    {% if conv.audio_path %}
+                    <audio class="audio-player" controls>
+                        <source src="/audio/{{ conv.audio_path|basename }}" type="audio/mpeg">
+                        Your browser does not support the audio element.
+                    </audio>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+    {% endif %}
+    
+    <script>
+        function toggleDateGroup(header) {
+            const dateGroup = header.parentElement;
+            dateGroup.classList.toggle('expanded');
+            header.classList.toggle('expanded');
+        }
+        
+        function toggleConversation(element) {
+            // Remove selected class from all conversations
+            document.querySelectorAll('.conversation').forEach(el => {
+                if (el !== element) {
+                    el.classList.remove('selected');
+                }
+            });
+            // Toggle selected class on clicked element
+            element.classList.toggle('selected');
+        }
+        
+        // Auto-expand today's conversations
+        window.onload = function() {
+            const today = new Date().toISOString().split('T')[0];
+            const todayGroup = document.getElementById('date-' + today);
+            if (todayGroup) {
+                todayGroup.classList.add('expanded');
+                todayGroup.querySelector('.date-header').classList.add('expanded');
+            }
+        };
+    </script>
+</body>
+</html>
+"""
+
+@app.template_filter('format_timestamp')
+def format_timestamp(timestamp_str):
+    """Format ISO timestamp to readable format."""
+    try:
+        dt = datetime.fromisoformat(timestamp_str)
+        return dt.strftime("%Y-%m-%d %H:%M:%S")
+    except:
+        return timestamp_str
+
+@app.template_filter('basename')
+def basename(path):
+    """Get basename of a path."""
+    return os.path.basename(path)
+
+@app.route('/')
+def index():
+    """Main page showing all conversations."""
+    view_mode = request.args.get('view', 'date')  # Default to date view
+    conversations = get_all_conversations()
+    
+    # Group based on view mode
+    if view_mode == 'project':
+        grouped = group_by_project(conversations)
+    else:
+        grouped = group_by_date(conversations)
+    
+    # Calculate stats
+    total_count = len(conversations)
+    project_count = len(set(conv["metadata"].get("project_path", "Unknown") 
+                           for conv in conversations))
+    latest_date = "N/A"
+    
+    if conversations:
+        latest = max(conversations, 
+                    key=lambda x: x["metadata"].get("file_timestamp", ""))
+        if "file_timestamp" in latest["metadata"]:
+            latest_date = format_timestamp(latest["metadata"]["file_timestamp"])
+    
+    return render_template_string(
+        HTML_TEMPLATE,
+        grouped_conversations=grouped,
+        total_count=total_count,
+        project_count=project_count,
+        latest_date=latest_date,
+        view_mode=view_mode
+    )
+
+@app.route('/audio/<filename>')
+def serve_audio(filename):
+    """Serve audio files."""
+    audio_path = AUDIO_DIR / filename
+    if audio_path.exists():
+        return send_file(audio_path)
+    return "Audio file not found", 404
+
+@app.route('/api/conversations')
+def api_conversations():
+    """API endpoint to get all conversations as JSON."""
+    conversations = get_all_conversations()
+    return jsonify(conversations)
+
+if __name__ == '__main__':
+    print(f"Starting Voice Mode Conversation Browser...")
+    print(f"Base directory: {BASE_DIR}")
+    print(f"Transcriptions: {TRANSCRIPTIONS_DIR}")
+    print(f"Audio files: {AUDIO_DIR}")
+    print(f"\nOpen http://localhost:5000 in your browser\n")
+    
+    app.run(debug=True, host='0.0.0.0', port=5000)
