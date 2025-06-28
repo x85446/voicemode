@@ -139,29 +139,108 @@ def get_all_conversations() -> List[Dict]:
     
     return conversations
 
-def group_by_project(conversations: List[Dict]) -> Dict[str, List[Dict]]:
-    """Group conversations by project path."""
+def group_by_project(exchanges: List[Dict]) -> Dict[str, List[Dict]]:
+    """Group exchanges by project path."""
     grouped = {}
     
-    for conv in conversations:
-        project = conv["metadata"].get("project_path", "Unknown Project")
+    for exchange in exchanges:
+        project = exchange["metadata"].get("project_path", "Unknown Project")
         if project not in grouped:
             grouped[project] = []
-        grouped[project].append(conv)
+        grouped[project].append(exchange)
     
-    # Sort conversations within each project by timestamp (newest first)
-    for project_convs in grouped.values():
-        project_convs.sort(key=lambda x: x["metadata"].get("file_timestamp", ""), reverse=True)
+    # Sort exchanges within each project by timestamp (newest first)
+    for project_exchanges in grouped.values():
+        project_exchanges.sort(key=lambda x: x["metadata"].get("file_timestamp", ""), reverse=True)
     
     return grouped
 
-def group_by_date(conversations: List[Dict]) -> Dict[str, Dict[str, List[Dict]]]:
-    """Group conversations by date, then by project."""
+def group_exchanges_into_conversations(exchanges: List[Dict], gap_minutes: int = 5) -> List[Dict[str, any]]:
+    """Group exchanges into conversations based on time gaps.
+    
+    Args:
+        exchanges: List of exchange dictionaries
+        gap_minutes: Maximum minutes between exchanges to be considered same conversation
+        
+    Returns:
+        List of conversation dictionaries containing grouped exchanges
+    """
+    if not exchanges:
+        return []
+    
+    # Sort exchanges by timestamp
+    sorted_exchanges = sorted(exchanges, key=lambda x: x["metadata"].get("file_timestamp", ""))
+    
+    conversations = []
+    current_conversation = {
+        "exchanges": [sorted_exchanges[0]],
+        "start_time": sorted_exchanges[0]["metadata"].get("file_timestamp", ""),
+        "project": sorted_exchanges[0]["metadata"].get("project_path", "Unknown Project")
+    }
+    
+    for i in range(1, len(sorted_exchanges)):
+        exchange = sorted_exchanges[i]
+        prev_exchange = sorted_exchanges[i-1]
+        
+        # Parse timestamps
+        try:
+            current_time = datetime.fromisoformat(exchange["metadata"].get("file_timestamp", ""))
+            prev_time = datetime.fromisoformat(prev_exchange["metadata"].get("file_timestamp", ""))
+            time_diff = (current_time - prev_time).total_seconds() / 60  # Convert to minutes
+            
+            # Check if same project and within time gap
+            same_project = exchange["metadata"].get("project_path") == prev_exchange["metadata"].get("project_path")
+            
+            if same_project and time_diff <= gap_minutes:
+                # Add to current conversation
+                current_conversation["exchanges"].append(exchange)
+            else:
+                # Start new conversation
+                current_conversation["end_time"] = prev_exchange["metadata"].get("file_timestamp", "")
+                conversations.append(current_conversation)
+                
+                current_conversation = {
+                    "exchanges": [exchange],
+                    "start_time": exchange["metadata"].get("file_timestamp", ""),
+                    "project": exchange["metadata"].get("project_path", "Unknown Project")
+                }
+        except:
+            # If timestamp parsing fails, start new conversation
+            current_conversation["end_time"] = prev_exchange["metadata"].get("file_timestamp", "")
+            conversations.append(current_conversation)
+            
+            current_conversation = {
+                "exchanges": [exchange],
+                "start_time": exchange["metadata"].get("file_timestamp", ""),
+                "project": exchange["metadata"].get("project_path", "Unknown Project")
+            }
+    
+    # Add last conversation
+    if current_conversation["exchanges"]:
+        current_conversation["end_time"] = current_conversation["exchanges"][-1]["metadata"].get("file_timestamp", "")
+        conversations.append(current_conversation)
+    
+    # Calculate conversation summaries
+    for conv in conversations:
+        conv["exchange_count"] = len(conv["exchanges"])
+        # Get first few words from each exchange for summary
+        summaries = []
+        for ex in conv["exchanges"][:3]:  # First 3 exchanges
+            transcript = ex.get("transcript", "").strip()
+            words = transcript.split()[:10]  # First 10 words
+            if words:
+                summaries.append(" ".join(words) + "...")
+        conv["summary"] = " | ".join(summaries)
+    
+    return conversations
+
+def group_by_date(exchanges: List[Dict]) -> Dict[str, Dict[str, List[Dict]]]:
+    """Group exchanges by date, then by project."""
     grouped = {}
     
-    for conv in conversations:
+    for exchange in exchanges:
         # Extract date from timestamp
-        timestamp_str = conv["metadata"].get("file_timestamp", "")
+        timestamp_str = exchange["metadata"].get("file_timestamp", "")
         if timestamp_str:
             try:
                 dt = datetime.fromisoformat(timestamp_str)
@@ -177,12 +256,12 @@ def group_by_date(conversations: List[Dict]) -> Dict[str, Dict[str, List[Dict]]]
         if date_key not in grouped:
             grouped[date_key] = {
                 "display": date_display,
-                "conversations": [],
+                "exchanges": [],
                 "projects": set()
             }
         
-        grouped[date_key]["conversations"].append(conv)
-        project = conv["metadata"].get("project_path", "Unknown Project")
+        grouped[date_key]["exchanges"].append(exchange)
+        project = exchange["metadata"].get("project_path", "Unknown Project")
         grouped[date_key]["projects"].add(project)
     
     # Sort by date (newest first)
@@ -384,10 +463,14 @@ HTML_TEMPLATE = """
                 onclick="window.location.href='/?view=project'">
             Group by Project
         </button>
+        <button class="view-button {% if view_mode == 'conversation' %}active{% endif %}"
+                onclick="window.location.href='/?view=conversation'">
+            Group by Conversation
+        </button>
     </div>
     
     {% if view_mode == 'date' %}
-    {% for date_key, date_data in grouped_conversations.items() %}
+    {% for date_key, date_data in grouped_exchanges.items() %}
     <div class="date-group" id="date-{{ date_key }}">
         <div class="date-header" onclick="toggleDateGroup(this)">
             <div>
@@ -413,7 +496,7 @@ HTML_TEMPLATE = """
             <div class="project-section">
                 <div class="project-title">{{ project }}</div>
                 {% for conv in project_convs %}
-                <div class="conversation" onclick="toggleConversation(this)">
+                <div class="conversation exchange" onclick="toggleExchange(this)">
                     <div class="metadata">
                         <span class="type-badge type-{{ conv.type }}">{{ conv.type|upper }}</span>
                         {% if conv.metadata.file_timestamp %}
@@ -448,7 +531,7 @@ HTML_TEMPLATE = """
     
     {% else %}
     <!-- Project View -->
-    {% for project, project_convs in grouped_conversations.items() %}
+    {% for project, project_exchanges in grouped_exchanges.items() %}
     <div class="date-group expanded">
         <div class="date-header expanded">
             <div class="date-title">{{ project }}</div>
@@ -456,7 +539,7 @@ HTML_TEMPLATE = """
         </div>
         <div class="date-content" style="display: block;">
             {% for conv in project_convs %}
-            <div class="conversation" onclick="toggleConversation(this)">
+            <div class="conversation exchange" onclick="toggleExchange(this)">
                 <div class="metadata">
                     <span class="type-badge type-{{ conv.type }}">{{ conv.type|upper }}</span>
                     {% if conv.metadata.file_timestamp %}
@@ -481,6 +564,63 @@ HTML_TEMPLATE = """
                     </audio>
                     {% endif %}
                 </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+    
+    {% elif view_mode == 'conversation' %}
+    <!-- Conversation View -->
+    {% for date_key, date_data in grouped_exchanges.items() %}
+    <div class="date-group" id="date-{{ date_key }}">
+        <div class="date-header" onclick="toggleDateGroup(this)">
+            <div>
+                <div class="date-title">{{ date_data.display }}</div>
+                <div class="date-stats">
+                    {{ date_data.conversations|length }} conversation{% if date_data.conversations|length != 1 %}s{% endif %} |
+                    {{ date_data.projects|length }} project{% if date_data.projects|length != 1 %}s{% endif %}
+                    <span class="expand-hint">Click to expand</span>
+                </div>
+            </div>
+        </div>
+        <div class="date-content">
+            {% for conv in date_data.conversations %}
+            <div class="conversation-group" style="border: 2px solid #007bff; border-radius: 8px; padding: 15px; margin-bottom: 15px; background: #f0f8ff;">
+                <div style="font-weight: bold; color: #007bff; margin-bottom: 10px;">
+                    Conversation ({{ conv.exchange_count }} exchanges) - {{ conv.project }}
+                    <br>
+                    <span style="font-size: 0.9em; color: #666;">
+                        {{ conv.start_time|format_timestamp }} - {{ conv.end_time|format_timestamp }}
+                    </span>
+                </div>
+                <div style="margin-bottom: 10px; font-style: italic; color: #555;">
+                    {{ conv.summary }}
+                </div>
+                {% for exchange in conv.exchanges %}
+                <div class="conversation exchange" onclick="toggleExchange(this)" style="margin-left: 20px;">
+                    <div class="metadata">
+                        <span class="type-badge type-{{ exchange.type }}">{{ exchange.type|upper }}</span>
+                        <strong>{{ exchange.metadata.file_timestamp|format_timestamp }}</strong>
+                        {% if exchange.metadata.timing %}
+                            | {{ exchange.metadata.timing }}
+                        {% endif %}
+                    </div>
+                    <div class="transcript-preview">
+                        {{ exchange.transcript[:200] }}{% if exchange.transcript|length > 200 %}...{% endif %}
+                    </div>
+                    <div class="full-transcript">
+                        {{ exchange.transcript }}
+                        
+                        {% if exchange.audio_path %}
+                        <audio class="audio-player" controls>
+                            <source src="/audio/{{ exchange.audio_path|basename }}" type="audio/mpeg">
+                            Your browser does not support the audio element.
+                        </audio>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
             </div>
             {% endfor %}
         </div>
@@ -536,31 +676,59 @@ def basename(path):
 
 @app.route('/')
 def index():
-    """Main page showing all conversations."""
+    """Main page showing all exchanges."""
     view_mode = request.args.get('view', 'date')  # Default to date view
-    conversations = get_all_conversations()
+    exchanges = get_all_exchanges()
     
     # Group based on view mode
     if view_mode == 'project':
-        grouped = group_by_project(conversations)
+        grouped = group_by_project(exchanges)
+    elif view_mode == 'conversation':
+        # Group exchanges into conversations
+        conversations = group_exchanges_into_conversations(exchanges)
+        # Then group conversations by date
+        grouped = {}
+        for conv in conversations:
+            # Extract date from start time
+            try:
+                dt = datetime.fromisoformat(conv["start_time"])
+                date_key = dt.strftime("%Y-%m-%d")
+                date_display = dt.strftime("%A, %B %d, %Y")
+            except:
+                date_key = "Unknown Date"
+                date_display = "Unknown Date"
+            
+            if date_key not in grouped:
+                grouped[date_key] = {
+                    "display": date_display,
+                    "conversations": [],
+                    "projects": set()
+                }
+            
+            grouped[date_key]["conversations"].append(conv)
+            grouped[date_key]["projects"].add(conv["project"])
+        
+        # Convert sets to lists
+        for date_data in grouped.values():
+            date_data["projects"] = sorted(list(date_data["projects"]))
     else:
-        grouped = group_by_date(conversations)
+        grouped = group_by_date(exchanges)
     
     # Calculate stats
-    total_count = len(conversations)
-    project_count = len(set(conv["metadata"].get("project_path", "Unknown") 
-                           for conv in conversations))
+    total_count = len(exchanges)
+    project_count = len(set(exchange["metadata"].get("project_path", "Unknown") 
+                           for exchange in exchanges))
     latest_date = "N/A"
     
-    if conversations:
-        latest = max(conversations, 
+    if exchanges:
+        latest = max(exchanges, 
                     key=lambda x: x["metadata"].get("file_timestamp", ""))
         if "file_timestamp" in latest["metadata"]:
             latest_date = format_timestamp(latest["metadata"]["file_timestamp"])
     
     return render_template_string(
         HTML_TEMPLATE,
-        grouped_conversations=grouped,
+        grouped_exchanges=grouped,
         total_count=total_count,
         project_count=project_count,
         latest_date=latest_date,

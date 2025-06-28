@@ -14,9 +14,8 @@
 
 ## High Priority
 
+- [ ] [Conversation Browser Improvements](./conversation-browser/) - Group exchanges into conversations, better UI
 - [ ] [Context Prime Optimization](./context-prime-optimization/) - Make /context-prime command super fast
-- [ ] Fix voice-mode ImportError - Add missing voice_mode() function to cli.py (v0.1.26)
-- [ ] Save Transcriptions - Add text saving alongside audio recordings in voice-mode/transcriptions/
 - [ ] Enhance provider registry with cost/latency/privacy metadata
 - [ ] Fix MCP timing issues with silence detection (VAD works in standalone but has delays through MCP)
 

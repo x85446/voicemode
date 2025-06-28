@@ -19,7 +19,11 @@ This glossary defines key terms and concepts used throughout the Voice Mode proj
 
 **Base Directory**: The root directory for all Voice Mode data, defaults to `~/.voicemode`.
 
+**Conversation**: A group of related exchanges that form a complete interaction, typically with less than 5 minutes between exchanges.
+
 **Endpoint**: A specific URL where a provider's API is accessible (e.g., `http://127.0.0.1:8880/v1`).
+
+**Exchange**: A single call-and-response interaction in voice mode. One user utterance and one assistant response.
 
 **Event Log**: Structured log of voice interaction events used for debugging and performance analysis.
 
