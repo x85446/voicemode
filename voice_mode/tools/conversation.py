@@ -50,7 +50,7 @@ from voice_mode.config import (
     HTTP_CLIENT_CONFIG,
     save_transcription,
     SAVE_TRANSCRIPTIONS,
-    ENABLE_SILENCE_DETECTION,
+    DISABLE_SILENCE_DETECTION,
     VAD_AGGRESSIVENESS,
     SILENCE_THRESHOLD_MS,
     MIN_RECORDING_DURATION,
@@ -89,8 +89,8 @@ from voice_mode.utils import (
 logger = logging.getLogger("voice-mode")
 
 # Debug: Print silence detection config at module load time
-print(f"MODULE LOAD: ENABLE_SILENCE_DETECTION={ENABLE_SILENCE_DETECTION}", flush=True)
-logger.info(f"Module loaded with ENABLE_SILENCE_DETECTION={ENABLE_SILENCE_DETECTION}")
+print(f"MODULE LOAD: DISABLE_SILENCE_DETECTION={DISABLE_SILENCE_DETECTION}", flush=True)
+logger.info(f"Module loaded with DISABLE_SILENCE_DETECTION={DISABLE_SILENCE_DETECTION}")
 
 # Track last session end time for measuring AI thinking time
 last_session_end_time = None
@@ -721,7 +721,7 @@ def record_audio(duration: float) -> np.ndarray:
             sys.stderr = original_stderr
 
 
-def record_audio_with_silence_detection(max_duration: float, disable_vad: bool = False) -> np.ndarray:
+def record_audio_with_silence_detection(max_duration: float, disable_silence_detection: bool = False) -> np.ndarray:
     """Record audio from microphone with automatic silence detection.
     
     Uses WebRTC VAD to detect when the user stops speaking and automatically
@@ -729,29 +729,29 @@ def record_audio_with_silence_detection(max_duration: float, disable_vad: bool =
     
     Args:
         max_duration: Maximum recording duration in seconds
-        disable_vad: If True, disables VAD and uses fixed duration recording
+        disable_silence_detection: If True, disables silence detection and uses fixed duration recording
         
     Returns:
         Numpy array of recorded audio samples
     """
     # Write to file for debugging
     with open('/tmp/voicemode_silence_debug.txt', 'a') as f:
-        f.write(f"[{time.time()}] record_audio_with_silence_detection called - VAD={VAD_AVAILABLE}, ENABLED={ENABLE_SILENCE_DETECTION}\n")
+        f.write(f"[{time.time()}] record_audio_with_silence_detection called - VAD={VAD_AVAILABLE}, DISABLED={DISABLE_SILENCE_DETECTION}\n")
         f.flush()
     
-    logger.info(f"record_audio_with_silence_detection called - VAD_AVAILABLE={VAD_AVAILABLE}, ENABLE_SILENCE_DETECTION={ENABLE_SILENCE_DETECTION}")
-    print(f"DEBUG: record_audio_with_silence_detection - VAD={VAD_AVAILABLE}, ENABLED={ENABLE_SILENCE_DETECTION}", flush=True)
+    logger.info(f"record_audio_with_silence_detection called - VAD_AVAILABLE={VAD_AVAILABLE}, DISABLE_SILENCE_DETECTION={DISABLE_SILENCE_DETECTION}")
+    print(f"DEBUG: record_audio_with_silence_detection - VAD={VAD_AVAILABLE}, DISABLED={DISABLE_SILENCE_DETECTION}", flush=True)
     
     if not VAD_AVAILABLE:
         logger.warning("webrtcvad not available, falling back to fixed duration recording")
         return record_audio(max_duration)
     
-    if not ENABLE_SILENCE_DETECTION or disable_vad:
-        if disable_vad:
-            logger.info("VAD disabled for this interaction by request")
+    if DISABLE_SILENCE_DETECTION or disable_silence_detection:
+        if disable_silence_detection:
+            logger.info("Silence detection disabled for this interaction by request")
         else:
-            logger.warning(f"Silence detection disabled (ENABLE_SILENCE_DETECTION={ENABLE_SILENCE_DETECTION}), using fixed duration recording")
-        print(f"SILENCE DETECTION DISABLED: {not ENABLE_SILENCE_DETECTION or disable_vad}", flush=True)
+            logger.info("Silence detection disabled globally via VOICEMODE_DISABLE_SILENCE_DETECTION")
+        print(f"SILENCE DETECTION DISABLED: {DISABLE_SILENCE_DETECTION or disable_silence_detection}", flush=True)
         return record_audio(max_duration)
     
     logger.info(f"🎤 Recording with silence detection (max {max_duration}s)...")
@@ -916,8 +916,8 @@ async def check_livekit_available() -> bool:
         return False
 
 
-async def livekit_ask_voice_question(question: str, room_name: str = "", timeout: float = 60.0) -> str:
-    """Ask voice question using LiveKit transport"""
+async def livekit_converse(message: str, room_name: str = "", timeout: float = 60.0) -> str:
+    """Have a conversation using LiveKit transport"""
     try:
         from livekit import rtc, api
         from livekit.agents import Agent, AgentSession
@@ -959,7 +959,7 @@ async def livekit_ask_voice_question(question: str, room_name: str = "", timeout
             async def on_enter(self):
                 await asyncio.sleep(0.5)
                 if self.session:
-                    await self.session.say(question, allow_interruptions=True)
+                    await self.session.say(message, allow_interruptions=True)
                     self.has_spoken = True
             
             async def on_user_turn_completed(self, chat_ctx, new_message):
@@ -1006,7 +1006,7 @@ async def livekit_ask_voice_question(question: str, room_name: str = "", timeout
 async def converse(
     message: str,
     wait_for_response: bool = True,
-    listen_duration: float = 15.0,
+    listen_duration: float = 30.0,
     transport: Literal["auto", "local", "livekit"] = "auto",
     room_name: str = "",
     timeout: float = 60.0,
@@ -1017,7 +1017,7 @@ async def converse(
     audio_feedback: Optional[bool] = None,
     audio_feedback_style: Optional[str] = None,
     audio_format: Optional[str] = None,
-    disable_vad: bool = False
+    disable_silence_detection: bool = False
 ) -> str:
     """Have a voice conversation - speak a message and optionally listen for response.
     
@@ -1028,7 +1028,15 @@ async def converse(
     Args:
         message: The message to speak
         wait_for_response: Whether to listen for a response after speaking (default: True)
-        listen_duration: How long to listen for response in seconds (default: 15.0)
+        listen_duration: How long to listen for response in seconds (default: 30.0)
+                         Recommended durations based on expected response:
+                         - Simple yes/no questions: 10 seconds
+                         - Normal conversational responses: 20 seconds  
+                         - Open-ended questions: 30 seconds (default)
+                         - Detailed explanations: 45 seconds
+                         - Stories or long explanations: 60 seconds
+                         Always err on the side of longer duration - it's better to have 
+                         silence at the end than to cut off the user mid-sentence.
         transport: Transport method - "auto" (try LiveKit then local), "local" (direct mic), "livekit" (room-based)
         room_name: LiveKit room name (only for livekit transport, auto-discovered if empty)
         timeout: Maximum wait time for response in seconds (LiveKit only)
@@ -1045,9 +1053,10 @@ async def converse(
         audio_feedback: Override global audio feedback setting (default: None uses VOICE_MODE_AUDIO_FEEDBACK env var)
         audio_feedback_style: Audio feedback style - "whisper" (default) or "shout" (default: None uses VOICE_MODE_FEEDBACK_STYLE env var)
         audio_format: Override audio format (pcm, mp3, wav, flac, aac, opus) - defaults to VOICEMODE_TTS_AUDIO_FORMAT env var
-        disable_vad: Disable Voice Activity Detection (VAD) for this interaction only (default: False)
-                     VAD automatically stops recording after detecting silence. Disable if user reports being cut off
-                     or for use cases like dictation where pauses are expected.
+        disable_silence_detection: Disable silence detection for this interaction only (default: False)
+                                   Silence detection automatically stops recording after detecting silence. 
+                                   Disable if user reports being cut off, in noisy environments, or for 
+                                   use cases like dictation where pauses are expected.
         If wait_for_response is False: Confirmation that message was spoken
         If wait_for_response is True: The voice response received (or error/timeout message)
     
@@ -1190,7 +1199,7 @@ async def converse(
         
         if transport == "livekit":
             # For LiveKit, use the existing function but with the message parameter
-            livekit_result = await livekit_ask_voice_question(message, room_name, timeout)
+            livekit_result = await livekit_converse(message, room_name, timeout)
             
             # Track LiveKit interaction (simplified since we don't have detailed timing)
             success = not livekit_result.startswith("Error:") and not livekit_result.startswith("No ")
@@ -1251,9 +1260,9 @@ async def converse(
                         event_logger.log_event(event_logger.RECORDING_START)
                     
                     record_start = time.perf_counter()
-                    print(f"DEBUG: About to call record_audio_with_silence_detection with duration={listen_duration}, disable_vad={disable_vad}", flush=True)
+                    print(f"DEBUG: About to call record_audio_with_silence_detection with duration={listen_duration}, disable_silence_detection={disable_silence_detection}", flush=True)
                     audio_data = await asyncio.get_event_loop().run_in_executor(
-                        None, record_audio_with_silence_detection, listen_duration, disable_vad
+                        None, record_audio_with_silence_detection, listen_duration, disable_silence_detection
                     )
                     timings['record'] = time.perf_counter() - record_start
                     
@@ -1412,46 +1421,6 @@ async def converse(
             logger.debug(f"Garbage collected {collected} objects")
 
 
-@mcp.tool()
-async def ask_voice_question(
-    question: str,
-    duration: float = 15.0,
-    voice: Optional[str] = None,
-    tts_provider: Optional[Literal["openai", "kokoro"]] = None,
-    tts_model: Optional[str] = None,
-    tts_instructions: Optional[str] = None,
-    audio_format: Optional[str] = None
-) -> str:
-    """Ask a voice question and listen for the answer.
-    
-    PRIVACY NOTICE: This tool will access your microphone to record audio
-    for speech-to-text conversion. Audio is processed using the configured
-    STT service and is not permanently stored.
-    
-    Args:
-        question: The question to ask
-        duration: How long to listen for response in seconds (default: 15.0)
-        voice: Override TTS voice - ONLY specify if user explicitly requests
-        tts_provider: TTS provider - ONLY specify if user explicitly requests
-        tts_model: TTS model - ONLY specify for specific features
-        tts_instructions: Tone/style instructions for gpt-4o-mini-tts model only
-        audio_format: Override audio format (opus, mp3, wav, flac, aac, pcm)
-    
-    Returns:
-        The voice response received
-    
-    This is a convenience wrapper around converse() for backward compatibility.
-    """
-    return await converse(
-        message=question,
-        wait_for_response=True,
-        listen_duration=duration,
-        voice=voice,
-        tts_provider=tts_provider,
-        tts_model=tts_model,
-        tts_instructions=tts_instructions,
-        audio_format=audio_format
-    )
 
 
 @mcp.tool()

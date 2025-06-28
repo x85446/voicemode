@@ -367,7 +367,7 @@ pip install -e .
 
 | Tool | Description | Key Parameters |
 |------|-------------|----------------|
-| `converse` | Have a voice conversation - speak and optionally listen | `message`, `wait_for_response` (default: true), `listen_duration` (default: 10s), `transport` (auto/local/livekit) |
+| `converse` | Have a voice conversation - speak and optionally listen | `message`, `wait_for_response` (default: true), `listen_duration` (default: 30s), `transport` (auto/local/livekit) |
 | `listen_for_speech` | Listen for speech and convert to text | `duration` (default: 5s) |
 | `check_room_status` | Check LiveKit room status and participants | None |
 | `check_audio_devices` | List available audio input/output devices | None |
