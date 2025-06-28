@@ -82,8 +82,9 @@ CHANNELS = 1
 
 # ==================== SILENCE DETECTION CONFIGURATION ====================
 
-# Enable silence detection feature
-ENABLE_SILENCE_DETECTION = os.getenv("VOICEMODE_ENABLE_SILENCE_DETECTION", "true").lower() in ("true", "1", "yes", "on")
+# Disable silence detection (useful for noisy environments)
+# Silence detection is enabled by default
+DISABLE_SILENCE_DETECTION = os.getenv("VOICEMODE_DISABLE_SILENCE_DETECTION", "false").lower() in ("true", "1", "yes", "on")
 
 # VAD (Voice Activity Detection) configuration
 VAD_AGGRESSIVENESS = int(os.getenv("VOICEMODE_VAD_AGGRESSIVENESS", "2"))  # 0-3, higher = more aggressive
@@ -265,6 +266,25 @@ def get_debug_filename(prefix: str, extension: str) -> str:
     return f"{prefix}_{timestamp}.{extension}"
 
 
+def get_project_path() -> str:
+    """Get the current project path (git root or current working directory)."""
+    try:
+        # Try to get git root
+        result = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            capture_output=True,
+            text=True,
+            cwd=os.getcwd()
+        )
+        if result.returncode == 0:
+            return result.stdout.strip()
+    except Exception:
+        pass
+    
+    # Fall back to current working directory
+    return os.getcwd()
+
+
 def save_transcription(text: str, prefix: str = "transcript", metadata: Optional[Dict] = None) -> Optional[Path]:
     """Save a transcription to the transcriptions directory.
     
@@ -286,13 +306,17 @@ def save_transcription(text: str, prefix: str = "transcript", metadata: Optional
         
         content = []
         
-        # Add metadata header if provided
-        if metadata:
-            content.append("--- METADATA ---")
-            for key, value in metadata.items():
-                content.append(f"{key}: {value}")
-            content.append("--- TRANSCRIPT ---")
-            content.append("")
+        # Create metadata with project path
+        if metadata is None:
+            metadata = {}
+        metadata["project_path"] = get_project_path()
+        
+        # Add metadata header
+        content.append("--- METADATA ---")
+        for key, value in metadata.items():
+            content.append(f"{key}: {value}")
+        content.append("--- TRANSCRIPT ---")
+        content.append("")
         
         content.append(text)
         

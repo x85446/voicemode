@@ -79,6 +79,7 @@ When using voice-mode with MCP hosts (Claude Desktop, VS Code, etc.), it's impor
 | `VOICEMODE_AUTO_START_KOKORO` | `false` | Automatically start Kokoro TTS on startup | Provider |
 | `VOICEMODE_BASE_DIR` | `~/.voicemode` | Base directory for all voicemode data | Storage |
 | `VOICEMODE_DEBUG` | `false` | Enable debug logging (`true`, `trace` for verbose). Automatically enables all saving. | Debug |
+| `VOICEMODE_DISABLE_SILENCE_DETECTION` | `false` | Disable silence detection globally (useful for noisy environments) | Audio |
 | `VOICEMODE_EVENT_LOG_DIR` | `~/.voicemode/logs/events` | Directory for event log files | Logging |
 | `VOICEMODE_EVENT_LOG_ENABLED` | `true` | Enable structured event logging | Logging |
 | `VOICEMODE_EVENT_LOG_ROTATION` | `daily` | Log rotation frequency | Logging |
@@ -98,6 +99,10 @@ When using voice-mode with MCP hosts (Claude Desktop, VS Code, etc.), it's impor
 | `VOICEMODE_TTS_BASE_URLS` | `http://127.0.0.1:8880/v1,https://api.openai.com/v1` | Comma-separated list of TTS endpoints in priority order | TTS |
 | `VOICEMODE_TTS_MODELS` | `gpt-4o-mini-tts,tts-1-hd,tts-1` | Comma-separated list of TTS models in priority order | TTS |
 | `VOICEMODE_TTS_VOICES` | `af_sky,alloy` | Comma-separated list of preferred voices in priority order | TTS |
+| `VOICEMODE_VAD_AGGRESSIVENESS` | `2` | Voice Activity Detection aggressiveness (0-3, higher = more aggressive) | Audio |
+| `VOICEMODE_SILENCE_THRESHOLD_MS` | `1000` | Milliseconds of silence before stopping recording | Audio |
+| `VOICEMODE_MIN_RECORDING_DURATION` | `0.5` | Minimum recording duration in seconds | Audio |
+| `VOICEMODE_INITIAL_SILENCE_GRACE_PERIOD` | `4.0` | Seconds to wait for user to start speaking | Audio |
 
 ### Available Voices
 
@@ -138,6 +143,11 @@ export VOICEMODE_SAVE_TRANSCRIPTIONS="true"
 ### Prioritize Local Whisper STT
 ```bash
 export VOICEMODE_STT_BASE_URLS="http://127.0.0.1:2022/v1,https://api.openai.com/v1"
+```
+
+### Disable Silence Detection (Noisy Environments)
+```bash
+export VOICEMODE_DISABLE_SILENCE_DETECTION="true"
 ```
 
 ## Migration from Legacy Variables
