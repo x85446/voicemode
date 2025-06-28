@@ -37,6 +37,37 @@
 - Added emotion status display in voice_status
 - Fixed bug: Always create OpenAI TTS client (don't rely on URL comparison)
 
+### 4. Exchange/Conversation Terminology Update (2025-06-29)
+- Updated terminology throughout the codebase:
+  - "Exchange": A single call-and-response interaction (user utterance + assistant response)
+  - "Conversation": A group of related exchanges with < 5 minute gaps
+- Updated GLOSSARY.md with clear definitions
+- Modified conversation_browser.py to use correct terminology
+
+### 5. JSONL Conversation Logging (2025-06-29)
+- Implemented comprehensive JSONL logging system in conversation_logger.py
+- Each utterance logged as a separate JSON line with:
+  - Conversation ID (format: conv_YYYYMMDD_HHMMSS_suffix)
+  - Timestamp, type (STT/TTS), text, and metadata
+  - Schema versioning for future compatibility
+- Handles conversation continuity across voice-mode restarts
+- Correctly handles midnight log file rollover
+- Integrated into conversation.py for automatic logging
+
+### 6. Audio File Naming with Conversation IDs (2025-06-29)
+- Updated audio file naming format: `timestamp_convID_type.extension`
+- Example: `20250629_001718_lhzgg4_tts.mp3`
+- Modified get_debug_filename() and save_debug_file() to accept conversation_id
+- Updated all TTS and STT code paths to pass conversation ID
+- Makes it easy to associate audio files with their conversations
+
+### 7. Conversation Browser Improvements (2025-06-29)
+- Fixed Jinja2 template syntax error (can't have elif after else)
+- Fixed date sorting to show newest dates first
+- Added conversation grouping view
+- Browser now reads from both JSONL logs and legacy transcription files
+- Supports three view modes: Date, Project, and Conversation
+
 ## Key Architecture Decisions
 
 ### Provider Registry Design

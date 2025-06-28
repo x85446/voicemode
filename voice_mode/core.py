@@ -30,19 +30,48 @@ from .utils import (
 logger = logging.getLogger("voicemode")
 
 
-def get_debug_filename(prefix: str, extension: str) -> str:
-    """Generate debug filename with timestamp"""
+def get_debug_filename(prefix: str, extension: str, conversation_id: Optional[str] = None) -> str:
+    """Generate debug filename with timestamp and optional conversation ID.
+    
+    Args:
+        prefix: File prefix (e.g., 'tts', 'stt')
+        extension: File extension (e.g., 'mp3', 'wav')
+        conversation_id: Optional conversation ID to include in filename
+        
+    Returns:
+        Filename in format: timestamp_conv_id_prefix.extension
+        or timestamp_prefix.extension if no conversation ID
+    """
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")[:-3]  # milliseconds
-    return f"{timestamp}-{prefix}.{extension}"
+    
+    if conversation_id:
+        # Extract just the suffix part of conversation ID for brevity
+        # conv_20250628_233802_4t8u0f -> 4t8u0f
+        conv_suffix = conversation_id.split('_')[-1] if '_' in conversation_id else conversation_id
+        return f"{timestamp}_{conv_suffix}_{prefix}.{extension}"
+    else:
+        return f"{timestamp}-{prefix}.{extension}"
 
 
-def save_debug_file(data: bytes, prefix: str, extension: str, debug_dir: Path, debug: bool = False) -> Optional[str]:
-    """Save debug file if debug mode is enabled"""
+def save_debug_file(data: bytes, prefix: str, extension: str, debug_dir: Path, debug: bool = False, conversation_id: Optional[str] = None) -> Optional[str]:
+    """Save debug file if debug mode is enabled.
+    
+    Args:
+        data: File data to save
+        prefix: File prefix (e.g., 'tts', 'stt')
+        extension: File extension
+        debug_dir: Directory to save files in
+        debug: Whether to save the file
+        conversation_id: Optional conversation ID to include in filename
+        
+    Returns:
+        Path to saved file or None
+    """
     if not debug:
         return None
     
     try:
-        filename = get_debug_filename(prefix, extension)
+        filename = get_debug_filename(prefix, extension, conversation_id)
         filepath = debug_dir / filename
         
         with open(filepath, 'wb') as f:
@@ -89,7 +118,8 @@ async def text_to_speech(
     audio_dir: Optional[Path] = None,
     client_key: str = 'tts',
     instructions: Optional[str] = None,
-    audio_format: Optional[str] = None
+    audio_format: Optional[str] = None,
+    conversation_id: Optional[str] = None
 ) -> tuple[bool, Optional[dict]]:
     """Convert text to speech and play it.
     
@@ -183,7 +213,8 @@ async def text_to_speech(
                 request_params=request_params,
                 debug=debug,
                 save_audio=save_audio,
-                audio_dir=audio_dir
+                audio_dir=audio_dir,
+                conversation_id=conversation_id
             )
             
             if success:
@@ -218,13 +249,13 @@ async def text_to_speech(
         
         # Save debug file if enabled
         if debug and debug_dir:
-            debug_path = save_debug_file(response_content, "tts-output", validated_format, debug_dir, debug)
+            debug_path = save_debug_file(response_content, "tts-output", validated_format, debug_dir, debug, conversation_id)
             if debug_path:
                 logger.info(f"TTS debug audio saved to: {debug_path}")
         
         # Save audio file if audio saving is enabled
         if save_audio and audio_dir:
-            audio_path = save_debug_file(response_content, "tts", validated_format, audio_dir, True)
+            audio_path = save_debug_file(response_content, "tts", validated_format, audio_dir, True, conversation_id)
             if audio_path:
                 logger.info(f"TTS audio saved to: {audio_path}")
         

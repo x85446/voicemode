@@ -14,13 +14,15 @@
 
 ## High Priority
 
-- [ ] [Conversation Browser Improvements](./conversation-browser/) - Group exchanges into conversations, better UI
+- [ ] [Conversation Browser Improvements](./conversation-browser/README.md) - Group exchanges into conversations, better UI
 - [ ] [Context Prime Optimization](./context-prime-optimization/) - Make /context-prime command super fast
 - [ ] Enhance provider registry with cost/latency/privacy metadata
 - [ ] Fix MCP timing issues with silence detection (VAD works in standalone but has delays through MCP)
 
 ## Medium Priority
 
+- [ ] Fix metrics attribution in JSONL logs - STT metrics should appear on user utterances, TTS metrics on assistant utterances
+- [ ] Add inline audio players to conversation browser - click to play audio without leaving the page
 - [ ] Provider selection logic based on user preferences (cost, privacy, features)
 - [ ] Automatic fallback chain for providers
 - [ ] Better first-run experience for Kokoro model downloads

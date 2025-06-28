@@ -32,6 +32,7 @@ except ImportError as e:
         f.write(f"Python executable: {sys.executable}\n")
 
 from voice_mode.server import mcp
+from voice_mode.conversation_logger import get_conversation_logger
 from voice_mode.config import (
     audio_operation_lock,
     SAMPLE_RATE,
@@ -271,6 +272,10 @@ async def text_to_speech_with_failover(
                 else:
                     client_key = tts_config.get('client_key', 'tts')
                 
+                # Get conversation ID from logger
+                conversation_logger = get_conversation_logger()
+                conversation_id = conversation_logger.conversation_id
+                
                 success, tts_metrics = await text_to_speech(
                     text=message,
                     openai_clients=openai_clients,
@@ -283,7 +288,8 @@ async def text_to_speech_with_failover(
                     audio_dir=AUDIO_DIR if SAVE_AUDIO else None,
                     client_key=client_key,
                     instructions=tts_config.get('instructions'),
-                    audio_format=audio_format
+                    audio_format=audio_format,
+                    conversation_id=conversation_id
                 )
                 
                 # Clean up temporary client
@@ -325,6 +331,10 @@ async def text_to_speech_with_failover(
             else:
                 client_key = tts_config.get('client_key', 'tts')
             
+            # Get conversation ID from logger
+            conversation_logger = get_conversation_logger()
+            conversation_id = conversation_logger.conversation_id
+            
             success, tts_metrics = await text_to_speech(
                 text=message,
                 openai_clients=openai_clients,
@@ -337,7 +347,8 @@ async def text_to_speech_with_failover(
                 audio_dir=AUDIO_DIR if SAVE_AUDIO else None,
                 client_key=client_key,
                 instructions=tts_config.get('instructions'),
-                audio_format=audio_format
+                audio_format=audio_format,
+                conversation_id=conversation_id
             )
             
             # Clean up temporary client
@@ -490,7 +501,10 @@ async def _speech_to_text_internal(
         if save_audio and audio_dir:
             try:
                 with open(wav_file, 'rb') as f:
-                    audio_path = save_debug_file(f.read(), "stt", "wav", audio_dir, True)
+                    # Get conversation ID from logger
+                    conversation_logger = get_conversation_logger()
+                    conversation_id = conversation_logger.conversation_id
+                    audio_path = save_debug_file(f.read(), "stt", "wav", audio_dir, True, conversation_id)
                     if audio_path:
                         logger.info(f"STT audio saved to: {audio_path}")
             except Exception as e:
@@ -570,6 +584,20 @@ async def _speech_to_text_internal(
                         "timestamp": datetime.now().isoformat()
                     }
                     save_transcription(text, prefix="stt", metadata=metadata)
+                
+                # Log to JSONL
+                try:
+                    conversation_logger = get_conversation_logger()
+                    conversation_logger.log_stt(
+                        text=text,
+                        audio_file=audio_path.name if audio_path else None,
+                        duration_ms=int(duration * 1000) if duration else None,
+                        model=stt_config.get('model'),
+                        provider=stt_config.get('provider', 'openai'),
+                        audio_format='mp3'  # STT uploads are always mp3
+                    )
+                except Exception as e:
+                    logger.error(f"Failed to log STT to JSONL: {e}")
                 
                 return text
             else:
@@ -1163,6 +1191,21 @@ async def converse(
                     error_message=None if success else "TTS failed"
                 )
                 
+                # Log TTS to JSONL for speak-only mode
+                if success:
+                    try:
+                        conversation_logger = get_conversation_logger()
+                        conversation_logger.log_tts(
+                            text=message,
+                            model=tts_model,
+                            voice=voice,
+                            provider=tts_provider if tts_provider else 'openai',
+                            timing=timing_str,
+                            audio_format=audio_format
+                        )
+                    except Exception as e:
+                        logger.error(f"Failed to log TTS to JSONL: {e}")
+                
                 logger.info(f"Speak-only result: {result}")
                 # success is already set correctly from TTS result
                 return result
@@ -1356,6 +1399,29 @@ async def converse(
                             "timestamp": datetime.now().isoformat()
                         }
                         save_transcription(conversation_text, prefix="conversation", metadata=metadata)
+                    
+                    # Log to JSONL - TTS message first
+                    try:
+                        conversation_logger = get_conversation_logger()
+                        # Log the TTS utterance
+                        conversation_logger.log_tts(
+                            text=message,
+                            model=tts_model,
+                            voice=voice,
+                            provider=tts_provider if tts_provider else 'openai',
+                            timing=timing_str,
+                            audio_format=audio_format
+                        )
+                        
+                        # Log the STT response
+                        conversation_logger.log_stt(
+                            text=response_text,
+                            model='whisper-1',  # Default STT model
+                            provider='openai',
+                            audio_format='mp3'
+                        )
+                    except Exception as e:
+                        logger.error(f"Failed to log conversation to JSONL: {e}")
                     
                     result = f"Voice response: {response_text} | Timing: {timing_str}"
                     success = True
