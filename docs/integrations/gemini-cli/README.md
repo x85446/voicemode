@@ -36,7 +36,7 @@ gemini-cli
 
 ### 1. Install Gemini CLI
 
-> **macOS Users**: To avoid using sudo with npm, see our [npm setup guide](../../npm-global-no-sudo.md)
+> **macOS/Linux Users**: To avoid using sudo with npm, see our [npm setup guide](../../npm-global-no-sudo.md)
 
 ```bash
 # Install globally via npm

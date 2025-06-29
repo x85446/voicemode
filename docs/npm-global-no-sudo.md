@@ -1,6 +1,6 @@
-# Installing npm Global Packages Without sudo on macOS
+# Installing npm Global Packages Without sudo on macOS/Linux
 
-This guide explains how to configure npm to install global packages without requiring root permissions on macOS.
+This guide explains how to configure npm to install global packages without requiring root permissions on macOS and Linux.
 
 ## Why This Matters
 
@@ -9,7 +9,27 @@ By default, npm installs global packages to `/usr/local`, which requires sudo ac
 - Security concerns from running npm with elevated privileges
 - Conflicts with system-installed Node.js
 
-## Solution: Configure npm to Use Your Home Directory
+## Quick Setup
+
+We provide an automated setup script that handles all the configuration for you:
+
+```bash
+# Download and run the setup script
+curl -fsSL https://raw.githubusercontent.com/mbailey/voicemode/master/scripts/setup-npm-global.sh | bash
+
+# Or if you've cloned the repository:
+./scripts/setup-npm-global.sh
+```
+
+The script will:
+- Create the `~/.npm-global` directory
+- Configure npm to use this directory
+- Add the directory to your PATH
+- Update your shell configuration file
+
+## Manual Setup
+
+If you prefer to configure manually, follow these steps:
 
 ### 1. Create npm Global Directory
 
