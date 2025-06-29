@@ -668,8 +668,12 @@ async def play_audio_feedback(
     if enabled is False:
         return
     
-    # If enabled is None, check global setting
-    if enabled is None and not AUDIO_FEEDBACK_ENABLED:
+    # If enabled is None, use global setting
+    if enabled is None:
+        enabled = AUDIO_FEEDBACK_ENABLED
+    
+    # Skip if disabled
+    if not enabled:
         return
     
     try:
