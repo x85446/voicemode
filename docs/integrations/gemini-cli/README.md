@@ -48,25 +48,13 @@ gemini-cli auth login
 
 ### 2. Add Voice Mode to Gemini CLI
 
-**Option A: Using Gemini CLI config (if supported):**
-```bash
-gemini-cli config set mcpServers.voice-mode '{
-  "command": "uvx",
-  "args": ["voice-mode"]
-}'
-```
-
-**Option B: Manual configuration:**
-
 Find Gemini CLI's configuration file:
 - **macOS/Linux**: `~/.gemini/settings.json`
 - **Windows**: `%USERPROFILE%\.gemini\settings.json`
 
-Add Voice Mode configuration:
+Add the Voice Mode MCP server to your existing configuration:
 ```json
 {
-  "theme": "Dracula",
-  "selectedAuthType": "oauth-personal",
   "mcpServers": {
     "voice-mode": {
       "command": "uvx",
