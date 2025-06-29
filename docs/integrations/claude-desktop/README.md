@@ -194,4 +194,4 @@ Then update config to use the installed version:
 
 ---
 
-**Need Help?** Join our [Discord community](https://discord.gg/gVHPPK5U)
+**Need Help?** Join our [Discord community](https://discord.gg/Hm7dF3uCfG)

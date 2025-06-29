@@ -229,4 +229,4 @@ Continue supports any LLM provider:
 
 ---
 
-**Need Help?** Join our [Discord community](https://discord.gg/gVHPPK5U) or check the [FAQ](../../README.md#troubleshooting)
+**Need Help?** Join our [Discord community](https://discord.gg/Hm7dF3uCfG) or check the [FAQ](../../README.md#troubleshooting)

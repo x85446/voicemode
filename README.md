@@ -42,9 +42,9 @@ claude converse
 
 ## 🎬 Demo
 
-Watch Voice Mode in action:
+Watch Voice Mode in action with Claude Code:
 
-[![Voice Mode Demo](https://img.youtube.com/vi/aXRNWvpnwVs/maxresdefault.jpg)](https://www.youtube.com/watch?v=aXRNWvpnwVs)
+[![Voice Mode Demo](https://img.youtube.com/vi/cYdwOD_-dQc/maxresdefault.jpg)](https://www.youtube.com/watch?v=cYdwOD_-dQc)
 
 ### Voice Mode with Gemini CLI
 

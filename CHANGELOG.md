@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Updated Discord link to new community server
+- Increased default listen duration to 45 seconds for better user experience
+- Fixed config import issue in conversation tool
+- Improved FFmpeg detection for MCP mode
+
+### Added
+- Screencast preparation materials including title cards
+- Initial screencast planning documentation
+
 ## [2.5.1] - 2025-06-28
 
 ## [2.5.0] - 2025-06-28

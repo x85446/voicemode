@@ -211,4 +211,4 @@ export VOICEMODE_LISTEN_DURATION="30"
 
 ---
 
-**Need Help?** Join our [Discord community](https://discord.gg/gVHPPK5U) or post in [r/GeminiCLI](https://reddit.com/r/GeminiCLI)
+**Need Help?** Join our [Discord community](https://discord.gg/Hm7dF3uCfG) or post in [r/GeminiCLI](https://reddit.com/r/GeminiCLI)

@@ -202,4 +202,4 @@ Roo Code supports multiple AI models. Configure your preferred model in Roo Code
 
 ---
 
-**Need Help?** Join our [Discord community](https://discord.gg/gVHPPK5U) or check [Roo Code issues](https://github.com/RooCodeInc/Roo-Code/issues)
+**Need Help?** Join our [Discord community](https://discord.gg/Hm7dF3uCfG) or check [Roo Code issues](https://github.com/RooCodeInc/Roo-Code/issues)
