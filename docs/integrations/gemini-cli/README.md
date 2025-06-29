@@ -50,12 +50,9 @@ gemini-cli auth login
 
 **Option A: Using Gemini CLI config (if supported):**
 ```bash
-gemini-cli config set mcp.servers.voice-mode '{
+gemini-cli config set mcpServers.voice-mode '{
   "command": "uvx",
-  "args": ["voice-mode"],
-  "env": {
-    "OPENAI_API_KEY": "your-openai-key"
-  }
+  "args": ["voice-mode"]
 }'
 ```
 
@@ -68,15 +65,14 @@ Find Gemini CLI's configuration file:
 Add Voice Mode configuration:
 ```json
 {
-  "mcp": {
-    "servers": {
-      "voice-mode": {
-        "command": "uvx",
-        "args": ["voice-mode"],
-        "env": {
-          "OPENAI_API_KEY": "your-openai-key"
-        }
-      }
+  "theme": "Dracula",
+  "selectedAuthType": "oauth-personal",
+  "mcpServers": {
+    "voice-mode": {
+      "command": "uvx",
+      "args": [
+        "voice-mode"
+      ]
     }
   }
 }
