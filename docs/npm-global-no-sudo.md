@@ -13,11 +13,13 @@ By default, npm installs global packages to `/usr/local`, which requires sudo ac
 
 We provide an automated setup script that handles all the configuration for you:
 
+**Option 1: Download and run directly**
 ```bash
-# Download and run the setup script
 curl -fsSL https://raw.githubusercontent.com/mbailey/voicemode/master/scripts/setup-npm-global.sh | bash
+```
 
-# Or if you've cloned the repository:
+**Option 2: Run from cloned repository**
+```bash
 ./scripts/setup-npm-global.sh
 ```
 
