@@ -10,7 +10,7 @@ Gemini CLI is Google's command-line interface for their Gemini AI models, offeri
 
 ## Prerequisites
 
-- [ ] Gemini CLI installed (`npm install -g @google/gemini-cli`)
+- [ ] Gemini CLI installed (`npm install -g @google/gemini-cli`) - [See npm setup guide to avoid sudo](../../npm-global-no-sudo.md)
 - [ ] Python 3.10 or higher
 - [ ] [uv](https://github.com/astral-sh/uv) package manager (`curl -LsSf https://astral.sh/uv/install.sh | sh`)
 - [ ] OpenAI API key (or compatible service for STT/TTS)
@@ -36,6 +36,8 @@ gemini-cli
 
 ### 1. Install Gemini CLI
 
+> **macOS Users**: To avoid using sudo with npm, see our [npm setup guide](../../npm-global-no-sudo.md)
+
 ```bash
 # Install globally via npm
 npm install -g @google/gemini-cli
@@ -60,8 +62,8 @@ gemini-cli config set mcp.servers.voice-mode '{
 **Option B: Manual configuration:**
 
 Find Gemini CLI's configuration file:
-- **macOS/Linux**: `~/.config/gemini-cli/config.json`
-- **Windows**: `%APPDATA%\gemini-cli\config.json`
+- **macOS/Linux**: `~/.gemini/settings.json`
+- **Windows**: `%USERPROFILE%\.gemini\settings.json`
 
 Add Voice Mode configuration:
 ```json

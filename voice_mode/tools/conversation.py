@@ -987,6 +987,8 @@ async def livekit_converse(message: str, room_name: str = "", timeout: float = 6
                 )
                 self.response = None
                 self.has_spoken = False
+                self.speech_start_time = None
+                self.min_speech_duration = 3.0  # Minimum 3 seconds of speech
             
             async def on_enter(self):
                 await asyncio.sleep(0.5)
@@ -994,9 +996,48 @@ async def livekit_converse(message: str, room_name: str = "", timeout: float = 6
                     await self.session.say(message, allow_interruptions=True)
                     self.has_spoken = True
             
+            async def on_user_speech_started(self):
+                """Track when user starts speaking"""
+                self.speech_start_time = time.time()
+                logger.debug("User started speaking")
+            
             async def on_user_turn_completed(self, chat_ctx, new_message):
                 if self.has_spoken and not self.response and new_message.content:
-                    self.response = new_message.content[0]
+                    content = new_message.content[0]
+                    
+                    # Check if speech duration was long enough
+                    if self.speech_start_time:
+                        speech_duration = time.time() - self.speech_start_time
+                        if speech_duration < self.min_speech_duration:
+                            logger.debug(f"Speech too short ({speech_duration:.1f}s < {self.min_speech_duration}s), ignoring")
+                            return
+                    
+                    # Filter out common ASR hallucinations
+                    content_lower = content.lower().strip()
+                    if content_lower in ['bye', 'bye.', 'goodbye', 'goodbye.', '...', 'um', 'uh', 'hmm', 'hm']:
+                        logger.debug(f"Filtered out ASR hallucination: '{content}'")
+                        return
+                    
+                    # Check if we have actual words (not just punctuation or numbers)
+                    words = content.split()
+                    has_real_words = any(word.isalpha() and len(word) > 1 for word in words)
+                    if not has_real_words:
+                        logger.debug(f"No real words detected in: '{content}'")
+                        return
+                    
+                    # Filter out excessive repetitions (e.g., "45, 45, 45, 45...")
+                    if len(words) > 5:
+                        # Check if last 5 words are all the same
+                        last_words = words[-5:]
+                        if len(set(last_words)) == 1:
+                            # Trim repetitive ending
+                            content = ' '.join(words[:-4])
+                            logger.debug(f"Trimmed repetitive ending from ASR output")
+                    
+                    # Ensure we have meaningful content
+                    if content.strip() and len(content.strip()) > 2:
+                        self.response = content
+                        logger.debug(f"Accepted response: '{content}'")
         
         # Connect and run
         token = api.AccessToken(LIVEKIT_API_KEY, LIVEKIT_API_SECRET)
@@ -1014,7 +1055,16 @@ async def livekit_converse(message: str, room_name: str = "", timeout: float = 6
             return "No participants in LiveKit room"
         
         agent = VoiceAgent()
-        vad = silero.VAD.load()
+        # Configure Silero VAD with less aggressive settings for better end-of-turn detection
+        vad = silero.VAD.load(
+            min_speech_duration=0.1,        # Slightly increased - require more speech to start
+            min_silence_duration=1.2,       # Increased to 1.2s - wait much longer before ending speech
+            prefix_padding_duration=0.5,    # Keep default - padding at speech start
+            max_buffered_speech=60.0,       # Keep default - max speech buffer
+            activation_threshold=0.35,      # Lowered to 0.35 - more sensitive to soft speech
+            sample_rate=16000,              # Standard sample rate
+            force_cpu=True                  # Use CPU for compatibility
+        )
         session = AgentSession(vad=vad)
         await session.start(room=room, agent=agent)
         
