@@ -550,7 +550,7 @@ Audio files are saved to: `~/voicemode_audio/` with timestamps in the filename.
 
 ### Community
 
-- **Discord**: [Join our community](https://discord.gg/gVHPPK5U)
+- **Discord**: [Join our community](https://discord.gg/Hm7dF3uCfG)
 - **Twitter/X**: [@getvoicemode](https://twitter.com/getvoicemode)
 - **YouTube**: [@getvoicemode](https://youtube.com/@getvoicemode)
 
