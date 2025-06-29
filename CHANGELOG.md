@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.6.0] - 2025-06-30
+
 ### Changed
 - Updated Discord link to new community server
 - Increased default listen duration to 45 seconds for better user experience
