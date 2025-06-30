@@ -1,6 +1,6 @@
 # Voice MCP Makefile
 
-.PHONY: help build-package build-dev test test-package publish-test publish release install dev-install clean build-voice-mode publish-voice-mode sync-tomls claude cursor
+.PHONY: help build-package build-dev test test-package publish-test publish release install dev-install clean build-voice-mode publish-voice-mode sync-tomls claude cursor docs docs-serve docs-build docs-deploy
 
 # Default target
 help:
@@ -32,6 +32,11 @@ help:
 	@echo "  build-voice-mode  - Build voice-mode package"
 	@echo "  publish-voice-mode - Publish voice-mode to PyPI"
 	@echo "  sync-tomls        - Sync pyproject.toml changes to pyproject-voice-mode.toml"
+	@echo ""
+	@echo "Documentation targets:"
+	@echo "  docs-serve    - Serve documentation locally (http://localhost:8000)"
+	@echo "  docs-build    - Build documentation site"
+	@echo "  docs-deploy   - Deploy to ReadTheDocs (requires auth)"
 	@echo ""
 	@echo "  help          - Show this help message"
 
@@ -284,3 +289,32 @@ cursor: cursor.rules
 	@echo "2. Cursor will automatically detect and use these rules"
 	@echo ""
 	@ls -la cursor.rules
+
+# Documentation targets
+docs-serve:
+	@echo "Starting documentation server at http://localhost:8000..."
+	@echo ""
+	@# Check if mkdocs is installed
+	@if ! command -v mkdocs >/dev/null 2>&1; then \
+		echo "Installing MkDocs and dependencies..."; \
+		uv pip install mkdocs mkdocs-material pymdown-extensions; \
+	fi
+	@echo "Press Ctrl+C to stop the server"
+	@mkdocs serve
+
+docs-build:
+	@echo "Building documentation site..."
+	@# Check if mkdocs is installed
+	@if ! command -v mkdocs >/dev/null 2>&1; then \
+		echo "Installing MkDocs and dependencies..."; \
+		uv pip install mkdocs mkdocs-material pymdown-extensions; \
+	fi
+	@mkdocs build
+	@echo "Documentation built to site/ directory"
+
+docs-deploy:
+	@echo "Deploying documentation to ReadTheDocs..."
+	@echo "Note: This requires ReadTheDocs authentication"
+	@# ReadTheDocs typically auto-builds from GitHub
+	@echo "Push to main branch to trigger ReadTheDocs build"
+	@echo "Or configure manual deployment in ReadTheDocs dashboard"

@@ -1,0 +1,110 @@
+site_name: Voice Mode
+site_url: https://voice-mode.readthedocs.io
+site_description: Natural voice conversations for AI assistants
+site_author: Voice Mode Team
+
+repo_name: mbailey/voicemode
+repo_url: https://github.com/mbailey/voicemode
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  palette:
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.expand
+    - navigation.indexes
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
+  icon:
+    repo: fontawesome/brands/github
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.details
+  - pymdownx.tabbed:
+      alternate_style: true
+  - admonition
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+plugins:
+  - search
+  - social
+
+nav:
+  - Home: README.md
+  - Getting Started:
+    - Installation: README.md#installation
+    - Quick Start: README.md#quick-start
+    - Configuration: configuration.md
+  - Integration Guides:
+    - integrations/README.md
+    - Claude Code: integrations/claude-code/README.md
+    - Claude Desktop: integrations/claude-desktop/README.md
+    - Gemini CLI: integrations/gemini-cli/README.md
+    - Cursor: integrations/cursor/README.md
+    - VS Code: integrations/vscode/README.md
+    - Cline: integrations/cline/README.md
+    - Continue: integrations/continue/README.md
+    - Windsurf: integrations/windsurf/README.md
+    - Zed: integrations/zed/README.md
+    - Roo Code: integrations/roo-code/README.md
+  - Local Services:
+    - Whisper.cpp: whisper.cpp.md
+    - Kokoro TTS: kokoro.md
+    - LiveKit: livekit/README.md
+  - Development:
+    - Local Development: local-development-uvx.md
+    - Migration Guide: migration-guide.md
+    - Audio Formats: audio-format-migration.md
+  - Troubleshooting:
+    - WSL2 Microphone: troubleshooting/wsl2-microphone-access.md
+  - API Reference:
+    - Tools: api-reference/tools.md
+    - Configuration: api-reference/configuration.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/mbailey/voicemode
+    - icon: fontawesome/brands/x-twitter
+      link: https://twitter.com/getvoicemode
+    - icon: fontawesome/brands/discord
+      link: https://discord.gg/Hm7dF3uCfG
+    - icon: fontawesome/brands/youtube
+      link: https://youtube.com/@getvoicemode
+
+copyright: Copyright &copy; 2024 Voice Mode - A Failmode Project
