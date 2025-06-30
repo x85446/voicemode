@@ -298,6 +298,8 @@ docs-serve:
 	@# Install docs dependencies using uv
 	@echo "Installing documentation dependencies..."
 	@uv pip install -e ".[docs]"
+	@# Process README for docs
+	@python scripts/process-readme-for-docs.py README.md docs/README_PROCESSED.md
 	@echo "Press Ctrl+C to stop the server"
 	@.venv/bin/mkdocs serve
 
@@ -306,6 +308,8 @@ docs-build:
 	@# Install docs dependencies using uv
 	@echo "Installing documentation dependencies..."
 	@uv pip install -e ".[docs]"
+	@# Process README for docs
+	@python scripts/process-readme-for-docs.py README.md docs/README_PROCESSED.md
 	@.venv/bin/mkdocs build
 	@echo "Documentation built to site/ directory"
 
@@ -314,6 +318,8 @@ docs-check:
 	@# Install docs dependencies using uv
 	@echo "Installing documentation dependencies..."
 	@uv pip install -e ".[docs]"
+	@# Process README for docs
+	@python scripts/process-readme-for-docs.py README.md docs/README_PROCESSED.md
 	@echo ""
 	@echo "Running strict documentation check..."
 	@.venv/bin/mkdocs build --strict

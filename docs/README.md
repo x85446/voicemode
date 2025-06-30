@@ -1,1 +1,1 @@
-../README.md
+--8<-- "docs/README_PROCESSED.md"

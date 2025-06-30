@@ -98,3 +98,6 @@ recover-voicemode-promote/
 
 # Documentation build output
 site/
+
+# Generated documentation files
+docs/README_PROCESSED.md
