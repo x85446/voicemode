@@ -57,12 +57,23 @@ See Voice Mode working with Google's Gemini CLI (their implementation of Claude 
 
 Once configured, try these prompts with Claude:
 
-- `"Let's have a voice conversation"`
-- `"Ask me about my day using voice"`
-- `"Tell me a joke"` (Claude will speak and wait for your response)
-- `"Say goodbye"` (Claude will speak without waiting)
+### 👨‍💻 Programming & Development
+- `"Let's debug this error together"` - Explain the issue verbally, paste code, and discuss solutions
+- `"Walk me through this code"` - Have Claude explain complex code while you ask questions
+- `"Let's brainstorm the architecture"` - Design systems through natural conversation
+- `"Help me write tests for this function"` - Describe requirements and iterate verbally
 
-The new `converse` function makes voice interactions more natural - it automatically waits for your response by default.
+### 💡 General Productivity  
+- `"Let's do a daily standup"` - Practice presentations or organize your thoughts
+- `"Interview me about [topic]"` - Prepare for interviews with back-and-forth Q&A
+- `"Be my rubber duck"` - Explain problems out loud to find solutions
+
+### 🎯 Voice Control Features
+- `"Read this error message"` (Claude speaks, then waits for your response)
+- `"Just give me a quick summary"` (Claude speaks without waiting)
+- Use `converse("message", wait_for_response=False)` for one-way announcements
+
+The `converse` function makes voice interactions natural - it automatically waits for your response by default, creating a real conversation flow.
 
 ## Supported Tools
 
