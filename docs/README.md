@@ -1,1 +1,0 @@
---8<-- "docs/README_PROCESSED.md"

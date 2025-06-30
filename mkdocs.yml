@@ -63,6 +63,9 @@ markdown_extensions:
 
 plugins:
   - search
+  - gen-files:
+      scripts:
+        - docs/gen_pages.py
   - social
   - git-revision-date-localized:
       enable_creation_date: true
