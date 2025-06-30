@@ -63,12 +63,16 @@ markdown_extensions:
 plugins:
   - search
   - social
+  - git-revision-date-localized:
+      enable_creation_date: true
+  - minify:
+      minify_html: true
 
 nav:
   - Home: README.md
   - Getting Started:
-    - Installation: README.md#installation
-    - Quick Start: README.md#quick-start
+    - Installation: README.md
+    - Quick Start: README.md
     - Configuration: configuration.md
   - Integration Guides:
     - integrations/README.md

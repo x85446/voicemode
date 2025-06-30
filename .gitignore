@@ -95,3 +95,6 @@ node_modules/
 *.orig
 social
 recover-voicemode-promote/
+
+# Documentation build output
+site/
