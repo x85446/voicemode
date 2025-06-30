@@ -9,6 +9,7 @@ edit_uri: edit/main/docs/
 
 theme:
   name: material
+  logo: assets/images/voicemode-logo-bigger.png
   palette:
     # Palette toggle for light mode
     - media: "(prefers-color-scheme: light)"
