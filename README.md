@@ -5,6 +5,7 @@
 [![PyPI Downloads](https://static.pepy.tech/badge/voice-mode)](https://pepy.tech/project/voice-mode)
 [![PyPI Downloads](https://static.pepy.tech/badge/voice-mode/month)](https://pepy.tech/project/voice-mode)
 [![PyPI Downloads](https://static.pepy.tech/badge/voice-mode/week)](https://pepy.tech/project/voice-mode)
+[![Documentation](https://readthedocs.org/projects/voice-mode/badge/?version=latest)](https://voice-mode.readthedocs.io/en/latest/?badge=latest)
 
 Natural voice conversations for AI assistants. Voice Mode brings human-like voice interactions to Claude, ChatGPT, and other LLMs through the Model Context Protocol (MCP).
 
@@ -522,6 +523,8 @@ Audio files are saved to: `~/voicemode_audio/` with timestamps in the filename.
 
 ## Documentation
 
+📚 **[Read the full documentation at voice-mode.readthedocs.io](https://voice-mode.readthedocs.io)**
+
 ### Getting Started
 - **[Integration Guides](docs/integrations/README.md)** - Step-by-step setup for all supported tools
 - **[Configuration Guide](docs/configuration.md)** - Complete environment variable reference
@@ -544,6 +547,7 @@ Audio files are saved to: `~/voicemode_audio/` with timestamps in the filename.
 ## Links
 
 - **Website**: [getvoicemode.com](https://getvoicemode.com)
+- **Documentation**: [voice-mode.readthedocs.io](https://voice-mode.readthedocs.io)
 - **GitHub**: [github.com/mbailey/voicemode](https://github.com/mbailey/voicemode)
 - **PyPI**: [pypi.org/project/voice-mode](https://pypi.org/project/voice-mode/)
 - **npm**: [npmjs.com/package/voicemode](https://www.npmjs.com/package/voicemode)
