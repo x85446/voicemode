@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Minimum listen duration control for voice responses
+  - New `min_listen_duration` parameter in `converse()` tool (default: 0.0)
+  - Prevents silence detection from stopping recording before minimum duration
+  - Useful for preventing premature cutoffs when users need thinking time
+  - Works alongside existing `listen_duration` (max) parameter
+  - Validates that min_listen_duration <= listen_duration
+  - Examples:
+    - Complex questions: 2-3 seconds minimum
+    - Open-ended prompts: 3-5 seconds minimum
+    - Quick responses: 0.5-1 second minimum
+
 ## [2.6.0] - 2025-06-30
 
 ### Changed

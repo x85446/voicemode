@@ -10,10 +10,11 @@
 
 ## The One Thing
 
-- [ ] [Create Screencast](./screencast-quickstart/README.md) - Make 2-minute quickstart video demonstrating voice-mode capabilities
+- [ ] [Claude.ai Web + LiveKit iOS Bridge](./claude-web-livekit-mobile-bridge.md) - Speak to Claude.ai through LiveKit iOS app
 
 ## High Priority
 
+- [ ] [Create Screencast](./screencast-quickstart/README.md) - Make 2-minute quickstart video demonstrating voice-mode
 - [ ] [Conversation Browser Improvements](./conversation-browser/README.md) - Group exchanges into conversations, better UI
 - [ ] [Context Prime Optimization](./context-prime-optimization/) - Make /context-prime command super fast
 - [ ] Enhance provider registry with cost/latency/privacy metadata
@@ -42,6 +43,11 @@
 - Consider download size as a provider property for local models
 - Add provider quality ratings based on user feedback
 - Support for provider-specific features (emotions, voice cloning, etc.)
+
+## Future Vision
+
+- [ ] [Streaming MCP with LiveKit for AI Conversations](./streaming-mcp-livekit-ai-conversations.md) - Enable natural AI-to-AI voice conversations using HTTP streaming
+- [ ] [Voice-Mode Streaming HTTP & OAuth for Web](./voice-mode-streaming-oauth-web.md) - Enable claude.ai web/mobile to connect to voice-mode
 
 ## Inbox (New Ideas to Review)
 
@@ -91,9 +97,13 @@
 - [x] Fixed health check endpoints for whisper.cpp and Kokoro
 - [x] Emotional TTS with cost controls (VOICE_ALLOW_EMOTIONS)
 - [x] Fixed OpenAI TTS client initialization bug
+- [x] Min/Max duration control for voice responses
+  - Added `min_listen_duration` parameter to prevent premature cutoffs
+  - [Implementation Details](./min-max-duration-control.md)
 
 ## Current Branches
 
 - `master` - Has unified status tool and auto-start
 - `feature/provider-registry` - Provider registry design docs
 - `feature/emotional-tts` - Emotional TTS implementation (merged fixes)
+- `feature/response-duration-min-max` - Min/max duration control (implemented)

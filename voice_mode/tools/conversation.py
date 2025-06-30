@@ -762,7 +762,7 @@ def record_audio(duration: float) -> np.ndarray:
             sys.stderr = original_stderr
 
 
-def record_audio_with_silence_detection(max_duration: float, disable_silence_detection: bool = False) -> np.ndarray:
+def record_audio_with_silence_detection(max_duration: float, disable_silence_detection: bool = False, min_duration: float = 0.0) -> np.ndarray:
     """Record audio from microphone with automatic silence detection.
     
     Uses WebRTC VAD to detect when the user stops speaking and automatically
@@ -771,6 +771,7 @@ def record_audio_with_silence_detection(max_duration: float, disable_silence_det
     Args:
         max_duration: Maximum recording duration in seconds
         disable_silence_detection: If True, disables silence detection and uses fixed duration recording
+        min_duration: Minimum recording duration before silence detection can stop (default: 0.0)
         
     Returns:
         Numpy array of recorded audio samples
@@ -780,8 +781,8 @@ def record_audio_with_silence_detection(max_duration: float, disable_silence_det
         f.write(f"[{time.time()}] record_audio_with_silence_detection called - VAD={VAD_AVAILABLE}, DISABLED={DISABLE_SILENCE_DETECTION}\n")
         f.flush()
     
-    logger.info(f"record_audio_with_silence_detection called - VAD_AVAILABLE={VAD_AVAILABLE}, DISABLE_SILENCE_DETECTION={DISABLE_SILENCE_DETECTION}")
-    print(f"DEBUG: record_audio_with_silence_detection - VAD={VAD_AVAILABLE}, DISABLED={DISABLE_SILENCE_DETECTION}", flush=True)
+    logger.info(f"record_audio_with_silence_detection called - VAD_AVAILABLE={VAD_AVAILABLE}, DISABLE_SILENCE_DETECTION={DISABLE_SILENCE_DETECTION}, min_duration={min_duration}")
+    print(f"DEBUG: record_audio_with_silence_detection - VAD={VAD_AVAILABLE}, DISABLED={DISABLE_SILENCE_DETECTION}, min_duration={min_duration}", flush=True)
     
     if not VAD_AVAILABLE:
         logger.warning("webrtcvad not available, falling back to fixed duration recording")
@@ -885,9 +886,11 @@ def record_audio_with_silence_detection(max_duration: float, disable_silence_det
                         recording_duration += chunk_duration_s
                         
                         # Check stop conditions
-                        if speech_detected and recording_duration >= MIN_RECORDING_DURATION:
+                        # Use the larger of MIN_RECORDING_DURATION (global) or min_duration (parameter)
+                        effective_min_duration = max(MIN_RECORDING_DURATION, min_duration)
+                        if speech_detected and recording_duration >= effective_min_duration:
                             if silence_duration_ms >= SILENCE_THRESHOLD_MS:
-                                logger.info(f"✓ Silence detected after {recording_duration:.1f}s, stopping recording")
+                                logger.info(f"✓ Silence detected after {recording_duration:.1f}s (min: {effective_min_duration:.1f}s), stopping recording")
                                 print(f"BREAKING: Silence detected after {recording_duration:.1f}s", flush=True)
                                 stop_recording = True
                         
@@ -1098,6 +1101,7 @@ async def converse(
     message: str,
     wait_for_response: bool = True,
     listen_duration: float = 30.0,
+    min_listen_duration: float = 0.0,
     transport: Literal["auto", "local", "livekit"] = "auto",
     room_name: str = "",
     timeout: float = 60.0,
@@ -1128,6 +1132,12 @@ async def converse(
                          - Stories or long explanations: 60 seconds
                          Always err on the side of longer duration - it's better to have 
                          silence at the end than to cut off the user mid-sentence.
+        min_listen_duration: Minimum time to record before silence detection can stop (default: 0.0)
+                             Useful for preventing premature cutoffs when users need thinking time.
+                             Examples:
+                             - Complex questions: 2-3 seconds
+                             - Open-ended prompts: 3-5 seconds  
+                             - Quick responses: 0.5-1 second
         transport: Transport method - "auto" (try LiveKit then local), "local" (direct mic), "livekit" (room-based)
         room_name: LiveKit room name (only for livekit transport, auto-discovered if empty)
         timeout: Maximum wait time for response in seconds (LiveKit only)
@@ -1167,6 +1177,16 @@ async def converse(
     Note: Emotional speech uses OpenAI's gpt-4o-mini-tts model and incurs API costs (~$0.02/minute)
     """
     logger.info(f"Converse: '{message[:50]}{'...' if len(message) > 50 else ''}' (wait_for_response: {wait_for_response})")
+    
+    # Validate duration parameters
+    if wait_for_response:
+        if min_listen_duration < 0:
+            return "❌ Error: min_listen_duration cannot be negative"
+        if listen_duration <= 0:
+            return "❌ Error: listen_duration must be positive"
+        if min_listen_duration > listen_duration:
+            logger.warning(f"min_listen_duration ({min_listen_duration}s) is greater than listen_duration ({listen_duration}s), using listen_duration as minimum")
+            min_listen_duration = listen_duration
     
     # Check if FFmpeg is available
     ffmpeg_available = getattr(voice_mode.config, 'FFMPEG_AVAILABLE', True)  # Default to True if not set
@@ -1378,9 +1398,9 @@ async def converse(
                         event_logger.log_event(event_logger.RECORDING_START)
                     
                     record_start = time.perf_counter()
-                    print(f"DEBUG: About to call record_audio_with_silence_detection with duration={listen_duration}, disable_silence_detection={disable_silence_detection}", flush=True)
+                    print(f"DEBUG: About to call record_audio_with_silence_detection with duration={listen_duration}, disable_silence_detection={disable_silence_detection}, min_duration={min_listen_duration}", flush=True)
                     audio_data = await asyncio.get_event_loop().run_in_executor(
-                        None, record_audio_with_silence_detection, listen_duration, disable_silence_detection
+                        None, record_audio_with_silence_detection, listen_duration, disable_silence_detection, min_listen_duration
                     )
                     timings['record'] = time.perf_counter() - record_start
                     

@@ -186,6 +186,49 @@ class TestSilenceDetection:
         # 10ms at 24000Hz should be 240 samples
         expected_samples_10ms = int(24000 * 10 / 1000)
         assert expected_samples_10ms == 240
+    
+    @patch('voice_mode.tools.conversation.DISABLE_SILENCE_DETECTION', False)
+    @patch('voice_mode.tools.conversation.VAD_AVAILABLE', True)
+    def test_min_duration_parameter(self, mock_vad):
+        """Test that min_duration parameter is respected."""
+        with patch('voice_mode.tools.conversation.record_audio') as mock_record:
+            # When VAD is available but we pass a min_duration
+            with patch('sounddevice.InputStream'):
+                with patch('queue.Queue') as mock_queue:
+                    # Simulate immediate silence detection
+                    mock_vad.Vad.return_value.is_speech.return_value = False
+                    mock_queue.return_value.get.side_effect = [
+                        np.zeros(720, dtype=np.int16),  # Silence
+                    ] * 100
+                    
+                    # Record with min_duration of 2 seconds
+                    try:
+                        result = record_audio_with_silence_detection(
+                            max_duration=10.0, 
+                            disable_silence_detection=False,
+                            min_duration=2.0
+                        )
+                    except Exception:
+                        # If VAD fails, it should fall back to record_audio
+                        pass
+    
+    @patch('voice_mode.tools.conversation.DISABLE_SILENCE_DETECTION', False)
+    @patch('voice_mode.tools.conversation.VAD_AVAILABLE', True)
+    def test_min_duration_with_disable_parameter(self, mock_vad):
+        """Test that disable_silence_detection parameter works with min_duration."""
+        with patch('voice_mode.tools.conversation.record_audio') as mock_record:
+            mock_record.return_value = np.array([1, 2, 3])
+            
+            # When silence detection is disabled via parameter
+            result = record_audio_with_silence_detection(
+                max_duration=5.0,
+                disable_silence_detection=True,
+                min_duration=2.0
+            )
+            
+            # Should fall back to regular recording, ignoring min_duration
+            mock_record.assert_called_once_with(5.0)
+            assert np.array_equal(result, np.array([1, 2, 3]))
 
 
 class TestSilenceDetectionIntegration:

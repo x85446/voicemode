@@ -177,4 +177,23 @@ The silence detection feature is implemented in:
 - Configuration in `voice_mode/config.py`
 - Tests in `tests/test_silence_detection.py`
 
-No API changes are required - the feature works transparently with the existing `converse()` function.
+### Programmatic Control
+
+The `converse()` function supports per-interaction control:
+
+```python
+# Disable silence detection for this interaction only
+await converse("Tell me a story", disable_silence_detection=True)
+
+# Set minimum recording duration to prevent premature cutoffs
+await converse(
+    "What's your philosophy on life?", 
+    min_listen_duration=2.0,  # Record at least 2 seconds
+    listen_duration=60.0      # Maximum 60 seconds
+)
+```
+
+Parameters:
+- `disable_silence_detection`: Override global setting for this interaction
+- `min_listen_duration`: Minimum recording time before silence detection can stop (default: 0.0)
+- `listen_duration`: Maximum recording time (existing parameter)
