@@ -15,7 +15,7 @@ Have a voice conversation - speak a message and optionally listen for response.
 | `message` | string | required | The message to speak |
 | `wait_for_response` | boolean | `true` | Whether to listen for a response after speaking |
 | `listen_duration` | number | `30.0` | Maximum time to listen for response in seconds |
-| `min_listen_duration` | number | `0.0` | Minimum time to record before silence detection can stop |
+| `min_listen_duration` | number | `1.0` | Minimum time to record before silence detection can stop |
 | `transport` | string | `"auto"` | Transport method: "auto", "local", or "livekit" |
 | `voice` | string | auto | TTS voice override (e.g., "nova", "alloy", "af_sky") |
 | `tts_provider` | string | auto | TTS provider: "openai" or "kokoro" |
@@ -36,7 +36,7 @@ Listen for speech and convert to text.
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `duration` | number | `5.0` | How long to listen in seconds |
-| `min_listen_duration` | number | `0.0` | Minimum time to record before silence detection |
+| `min_listen_duration` | number | `1.0` | Minimum time to record before silence detection |
 
 ### check_room_status
 
