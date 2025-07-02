@@ -222,6 +222,10 @@ async def text_to_speech(
                 metrics['generation'] = stream_metrics.generation_time
                 metrics['playback'] = stream_metrics.playback_time - stream_metrics.generation_time
                 
+                # Pass through audio path if it exists
+                if stream_metrics.audio_path:
+                    metrics['audio_path'] = stream_metrics.audio_path
+                
                 logger.info(f"✓ TTS streamed successfully - TTFA: {metrics['ttfa']:.3f}s")
                 
                 # Save debug files if needed (we'd need to capture the full audio)
@@ -254,10 +258,13 @@ async def text_to_speech(
                 logger.info(f"TTS debug audio saved to: {debug_path}")
         
         # Save audio file if audio saving is enabled
+        audio_path = None
         if save_audio and audio_dir:
             audio_path = save_debug_file(response_content, "tts", validated_format, audio_dir, True, conversation_id)
             if audio_path:
                 logger.info(f"TTS audio saved to: {audio_path}")
+                # Store audio path in metrics for the caller
+                metrics['audio_path'] = audio_path
         
         # Play audio
         playback_start = time.perf_counter()

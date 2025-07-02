@@ -12,6 +12,7 @@ ALWAYS read the following files at the start of any session:
 - docs/tasks/README.md # Current task list and recently completed work (take note of "The One Thing" - this is the most important task currently)
 - docs/tasks/implementation-notes.md # Important implementation decisions and fixes
 - docs/tasks/key-insights.md # Key learnings and design principles
+- INSIGHTS.md # Index of important insights and design decisions from development
 
 ## Context-Aware Loading
 

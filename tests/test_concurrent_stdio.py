@@ -103,7 +103,8 @@ class TestStdioProtection:
         original_stdout = sys.stdout
         original_stderr = sys.stderr
         
-        with patch('sounddevice.rec') as mock_rec:
+        with patch('voice_mode.tools.conversation.sd.rec') as mock_rec, \
+             patch('voice_mode.tools.conversation.sd.wait') as mock_wait:
             # Make recording fail
             mock_rec.side_effect = Exception("Recording failed")
             

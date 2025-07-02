@@ -1292,6 +1292,7 @@ async def converse(
                         conversation_logger = get_conversation_logger()
                         conversation_logger.log_tts(
                             text=message,
+                            audio_file=os.path.basename(tts_metrics.get('audio_path')) if tts_metrics.get('audio_path') else None,
                             model=tts_model,
                             voice=voice,
                             provider=tts_provider if tts_provider else 'openai',
@@ -1501,6 +1502,7 @@ async def converse(
                         # Log the TTS utterance
                         conversation_logger.log_tts(
                             text=message,
+                            audio_file=os.path.basename(tts_metrics.get('audio_path')) if tts_metrics.get('audio_path') else None,
                             model=tts_model,
                             voice=voice,
                             provider=tts_provider if tts_provider else 'openai',

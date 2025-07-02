@@ -425,6 +425,7 @@ HTML_TEMPLATE = """
             background: #fafafa;
             cursor: pointer;
             transition: all 0.2s;
+            position: relative;
         }
         .conversation:hover {
             background: #f0f0f0;
@@ -433,6 +434,63 @@ HTML_TEMPLATE = """
         .conversation.selected {
             background: #e3f2fd;
             border-color: #2196f3;
+        }
+        .play-button {
+            display: inline-block;
+            background: #4caf50;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin-right: 10px;
+            transition: background 0.2s;
+        }
+        .play-button:hover {
+            background: #45a049;
+        }
+        .play-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .play-button.playing {
+            background: #ff5722;
+        }
+        .conversation-checkbox {
+            margin-right: 10px;
+            cursor: pointer;
+        }
+        .select-all-container {
+            margin-bottom: 10px;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .play-all-button {
+            background: #2196f3;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background 0.2s;
+        }
+        .play-all-button:hover {
+            background: #1976d2;
+        }
+        .play-all-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .audio-controls {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
         }
         .metadata {
             font-size: 0.85em;
@@ -654,7 +712,16 @@ HTML_TEMPLATE = """
         </div>
         <div class="date-content">
             {% for conv in date_data.conversations %}
-            <div class="conversation-group" style="border: 2px solid #007bff; border-radius: 8px; padding: 15px; margin-bottom: 15px; background: #f0f8ff;">
+            {% set conv_idx = loop.index0 %}
+            <div class="conversation-group" id="conv-{{ conv_idx }}" style="border: 2px solid #007bff; border-radius: 8px; padding: 15px; margin-bottom: 15px; background: #f0f8ff;">
+                <div class="select-all-container">
+                    <input type="checkbox" class="select-all-checkbox" id="select-all-{{ conv_idx }}" 
+                           onchange="toggleSelectAll(this, {{ conv_idx }})" checked>
+                    <label for="select-all-{{ conv_idx }}">Select All</label>
+                    <button class="play-all-button" onclick="playConversation({{ conv_idx }})">
+                        <span class="play-icon">▶</span> Play Conversation
+                    </button>
+                </div>
                 <div style="font-weight: bold; color: #007bff; margin-bottom: 10px;">
                     Conversation ({{ conv.exchange_count }} exchanges) - {{ conv.project }}
                     <br>
@@ -666,15 +733,26 @@ HTML_TEMPLATE = """
                     {{ conv.summary }}
                 </div>
                 {% for exchange in conv.exchanges %}
-                <div class="conversation exchange" onclick="toggleExchange(this)" style="margin-left: 20px;">
-                    <div class="metadata">
+                {% set exchange_idx = loop.index0 %}
+                <div class="conversation exchange" data-audio-url="{% if exchange.audio_path %}/audio/{{ exchange.audio_path|basename }}{% endif %}" 
+                     data-conv-id="{{ conv_idx }}" data-exchange-id="{{ exchange_idx }}" style="margin-left: 20px;">
+                    <div class="audio-controls">
+                        <input type="checkbox" class="conversation-checkbox" id="checkbox-{{ conv_idx }}-{{ exchange_idx }}" checked
+                               onclick="event.stopPropagation()">
+                        {% if exchange.audio_path %}
+                        <button class="play-button" onclick="event.stopPropagation(); playAudio(this, '/audio/{{ exchange.audio_path|basename }}')">
+                            ▶ Play
+                        </button>
+                        {% endif %}
+                    </div>
+                    <div class="metadata" onclick="toggleExchange(this.parentElement)">
                         <span class="type-badge type-{{ exchange.type }}">{{ exchange.type|upper }}</span>
                         <strong>{{ exchange.metadata.file_timestamp|format_timestamp }}</strong>
                         {% if exchange.metadata.timing %}
                             | {{ exchange.metadata.timing }}
                         {% endif %}
                     </div>
-                    <div class="transcript-preview">
+                    <div class="transcript-preview" onclick="toggleExchange(this.parentElement)">
                         {{ exchange.transcript[:200] }}{% if exchange.transcript|length > 200 %}...{% endif %}
                     </div>
                     <div class="full-transcript">
@@ -697,6 +775,11 @@ HTML_TEMPLATE = """
     {% endif %}
     
     <script>
+        let currentAudio = null;
+        let currentButton = null;
+        let playlistQueue = [];
+        let isPlayingPlaylist = false;
+
         function toggleDateGroup(header) {
             const dateGroup = header.parentElement;
             dateGroup.classList.toggle('expanded');
@@ -723,6 +806,161 @@ HTML_TEMPLATE = """
             });
             // Toggle selected class on clicked element
             element.classList.toggle('selected');
+        }
+
+        function toggleSelectAll(checkbox, convId) {
+            const conversationGroup = document.getElementById('conv-' + convId);
+            const checkboxes = conversationGroup.querySelectorAll('.conversation-checkbox');
+            checkboxes.forEach(cb => {
+                cb.checked = checkbox.checked;
+            });
+        }
+
+        function playAudio(button, audioUrl) {
+            // If currently playing, stop it
+            if (currentAudio && currentButton === button) {
+                currentAudio.pause();
+                currentAudio = null;
+                currentButton = null;
+                button.innerHTML = '▶ Play';
+                button.classList.remove('playing');
+                return;
+            }
+
+            // Stop any currently playing audio
+            if (currentAudio) {
+                currentAudio.pause();
+                if (currentButton) {
+                    currentButton.innerHTML = '▶ Play';
+                    currentButton.classList.remove('playing');
+                }
+            }
+
+            // Create and play new audio
+            currentAudio = new Audio(audioUrl);
+            currentButton = button;
+            button.innerHTML = '⏸ Pause';
+            button.classList.add('playing');
+
+            currentAudio.play().catch(error => {
+                console.error('Error playing audio:', error);
+                button.innerHTML = '▶ Play';
+                button.classList.remove('playing');
+            });
+
+            currentAudio.onended = () => {
+                button.innerHTML = '▶ Play';
+                button.classList.remove('playing');
+                currentButton = null;
+                currentAudio = null;
+
+                // If playing a playlist, play next
+                if (isPlayingPlaylist && playlistQueue.length > 0) {
+                    playNextInPlaylist();
+                }
+            };
+        }
+
+        function playConversation(convId) {
+            const conversationGroup = document.getElementById('conv-' + convId);
+            const playButton = conversationGroup.querySelector('.play-all-button');
+            
+            // Stop any current playback
+            if (currentAudio) {
+                currentAudio.pause();
+                if (currentButton) {
+                    currentButton.innerHTML = '▶ Play';
+                    currentButton.classList.remove('playing');
+                }
+                currentAudio = null;
+                currentButton = null;
+            }
+
+            // Get all checked exchanges with audio
+            const exchanges = conversationGroup.querySelectorAll('.exchange');
+            playlistQueue = [];
+
+            exchanges.forEach(exchange => {
+                const checkbox = exchange.querySelector('.conversation-checkbox');
+                const audioUrl = exchange.getAttribute('data-audio-url');
+                
+                if (checkbox && checkbox.checked && audioUrl) {
+                    playlistQueue.push({
+                        url: audioUrl,
+                        button: exchange.querySelector('.play-button')
+                    });
+                }
+            });
+
+            if (playlistQueue.length === 0) {
+                alert('No audio files selected to play');
+                return;
+            }
+
+            // Start playing playlist
+            isPlayingPlaylist = true;
+            playButton.innerHTML = '⏸ Stop All';
+            playButton.onclick = () => stopPlaylist(convId);
+            
+            playNextInPlaylist();
+        }
+
+        function playNextInPlaylist() {
+            if (playlistQueue.length === 0) {
+                isPlayingPlaylist = false;
+                // Reset all play buttons
+                document.querySelectorAll('.play-all-button').forEach(btn => {
+                    btn.innerHTML = '<span class="play-icon">▶</span> Play Conversation';
+                    btn.onclick = function() { 
+                        const convId = this.closest('.conversation-group').id.replace('conv-', '');
+                        playConversation(convId);
+                    };
+                });
+                return;
+            }
+
+            const next = playlistQueue.shift();
+            if (next.button) {
+                playAudio(next.button, next.url);
+            } else {
+                // Play without button animation
+                currentAudio = new Audio(next.url);
+                currentAudio.play().catch(error => {
+                    console.error('Error playing audio:', error);
+                    if (playlistQueue.length > 0) {
+                        playNextInPlaylist();
+                    }
+                });
+
+                currentAudio.onended = () => {
+                    if (isPlayingPlaylist && playlistQueue.length > 0) {
+                        playNextInPlaylist();
+                    } else {
+                        isPlayingPlaylist = false;
+                    }
+                };
+            }
+        }
+
+        function stopPlaylist(convId) {
+            isPlayingPlaylist = false;
+            playlistQueue = [];
+            
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio = null;
+            }
+            
+            if (currentButton) {
+                currentButton.innerHTML = '▶ Play';
+                currentButton.classList.remove('playing');
+                currentButton = null;
+            }
+
+            const conversationGroup = document.getElementById('conv-' + convId);
+            const playButton = conversationGroup.querySelector('.play-all-button');
+            playButton.innerHTML = '<span class="play-icon">▶</span> Play Conversation';
+            playButton.onclick = () => playConversation(convId);
         }
         
         // Auto-expand today's conversations

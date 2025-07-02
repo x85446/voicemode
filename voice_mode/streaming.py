@@ -46,6 +46,7 @@ class StreamMetrics:
     buffer_underruns: int = 0
     chunks_received: int = 0
     chunks_played: int = 0
+    audio_path: Optional[str] = None  # Path to saved audio file
 
 
 class AudioStreamPlayer:
@@ -380,6 +381,8 @@ async def stream_pcm_audio(
                         audio_path = save_debug_file(wav_data, "tts", "wav", audio_dir, True, conversation_id)
                         if audio_path:
                             logger.info(f"TTS audio saved to: {audio_path}")
+                            # Store audio path in metrics for the caller
+                            metrics.audio_path = audio_path
             except Exception as e:
                 logger.error(f"Failed to save TTS audio: {e}")
         

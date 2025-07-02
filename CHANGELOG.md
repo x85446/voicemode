@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.1] - 2025-07-03
+
+### Fixed
+- Fixed failing test for stdio restoration on recording error
+- Added Flask to project dependencies for conversation browser script
+
 ## [2.7.0] - 2025-07-03
 
 ### Added
