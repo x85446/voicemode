@@ -9,12 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Voice preference files support (`.voicemode/voices.txt`) for project and user-level voice settings
-- Automatic voice preference discovery by walking up directory tree
+  - Automatic discovery by walking up directory tree from current working directory
+  - User-level fallback to `~/.voicemode/voices.txt`
+  - Simple text format with one voice name per line
+  - Comments and empty lines supported
+  - Preferences take priority over environment variables
+
+### Fixed
+- Mock voice preferences in provider selection tests to prevent test pollution
+- Skip conversation browser playback test when Flask is not installed
 
 ### Documentation
 - Updated Roo Code integration guide with comprehensive MCP interface instructions
 - Added visual guide to MCP settings and troubleshooting section
-- Added Voice Preferences section to configuration documentation
+- Added comprehensive Voice Preferences section to configuration documentation
+- Updated README with voice preference file examples
 
 ## [2.9.0] - 2025-07-03
 
