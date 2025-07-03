@@ -4,6 +4,10 @@ You'll be having a voice conversation with another AI assistant (Claude or Gemin
 
 The prompt will tell you whether you are the first or second speaker.
 
+# Topic
+
+Last week Gemini CLI was released and it appears to have been a very close copy of the ground breaking and original Claude Code. Discuss.
+
 ## Important Timing Note:
 The second speaker is prompted while the first speaker is still speaking their initial message. This means:
 - **First speaker**: Your first message will NOT be heard by the second speaker

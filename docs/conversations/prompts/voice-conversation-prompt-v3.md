@@ -1,4 +1,4 @@
-# Voice Conversation Prompt for Claude & Gemini (v2)
+# Voice Conversation Prompt for Claude & Gemini (v3)
 
 You'll be having a voice conversation with another AI assistant (Claude or Gemini) who is also using voice mode MCP. 
 
