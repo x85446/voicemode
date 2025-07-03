@@ -7,14 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Documentation
+- Updated Roo Code integration guide with comprehensive MCP interface instructions
+- Added visual guide to MCP settings and troubleshooting section
+
 ## [2.9.0] - 2025-07-03
 
 ### Added
 - Version logging on server startup for better debugging and support
-- Enhanced Roo Code integration documentation with detailed MCP setup instructions
-
-### Changed
-- Changed default `min_listen_duration` from 1.0 to 2.0 seconds to provide more time for users to think before responding
 
 ### Fixed
 - Cleaned up debug output by removing duplicate print statements
@@ -23,11 +23,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - audioop deprecation (already handled with audioop-lts for Python 3.13+)
   - pkg_resources deprecation in webrtcvad
 - Converted debug print statements to proper logger calls
-
-### Documentation
-- Updated Roo Code integration guide with comprehensive MCP interface instructions
-- Added visual guide to MCP settings and troubleshooting section
-- Updated silence detection documentation with new default min_listen_duration value
 
 ## [2.8.0] - 2025-07-03
 
