@@ -16,6 +16,12 @@ def find_voices_file() -> Optional[Path]:
     """
     Find the first voices.txt file by walking up the directory tree.
     
+    Looks for (in order):
+    1. voices.txt in current or parent directories
+    2. .voicemode/voices.txt in current or parent directories
+    3. ~/voices.txt in user home
+    4. ~/.voicemode/voices.txt in user home
+    
     Returns:
         Path to voices.txt file or None if not found
     """
@@ -24,10 +30,17 @@ def find_voices_file() -> Optional[Path]:
     
     # Walk up directory tree
     while True:
-        voices_file = current_dir / ".voicemode" / "voices.txt"
-        if voices_file.exists():
-            logger.info(f"Found voice preferences at: {voices_file}")
-            return voices_file
+        # Check for standalone voices.txt first
+        standalone_file = current_dir / "voices.txt"
+        if standalone_file.exists():
+            logger.info(f"Found voice preferences at: {standalone_file}")
+            return standalone_file
+            
+        # Then check .voicemode/voices.txt
+        voicemode_file = current_dir / ".voicemode" / "voices.txt"
+        if voicemode_file.exists():
+            logger.info(f"Found voice preferences at: {voicemode_file}")
+            return voicemode_file
         
         # Check if we've reached the root
         parent = current_dir.parent
@@ -35,11 +48,17 @@ def find_voices_file() -> Optional[Path]:
             break
         current_dir = parent
     
-    # Check user home directory
-    home_voices = Path.home() / ".voicemode" / "voices.txt"
-    if home_voices.exists():
-        logger.info(f"Found voice preferences at: {home_voices}")
-        return home_voices
+    # Check user home directory - standalone first
+    home_standalone = Path.home() / "voices.txt"
+    if home_standalone.exists():
+        logger.info(f"Found voice preferences at: {home_standalone}")
+        return home_standalone
+        
+    # Then .voicemode directory
+    home_voicemode = Path.home() / ".voicemode" / "voices.txt"
+    if home_voicemode.exists():
+        logger.info(f"Found voice preferences at: {home_voicemode}")
+        return home_voicemode
     
     logger.debug("No voice preferences file found")
     return None

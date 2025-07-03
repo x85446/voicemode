@@ -218,3 +218,74 @@ class TestVoicePreferences:
             assert "parent_voice" not in voices
         finally:
             os.chdir(original_cwd)
+    
+    def test_standalone_voices_file_precedence(self, tmp_path):
+        """Test that standalone voices.txt takes precedence over .voicemode/voices.txt."""
+        # Create both files in same directory
+        standalone_file = tmp_path / "voices.txt"
+        standalone_file.write_text("echo\nfable")
+        
+        voicemode_dir = tmp_path / ".voicemode"
+        voicemode_dir.mkdir()
+        voicemode_file = voicemode_dir / "voices.txt"
+        voicemode_file.write_text("nova\nalloy")
+        
+        original_cwd = os.getcwd()
+        try:
+            os.chdir(tmp_path)
+            
+            # Reset cache
+            import voice_mode.voice_preferences
+            voice_mode.voice_preferences._cached_preferences = None
+            voice_mode.voice_preferences._preferences_loaded = False
+            
+            # Should find standalone file first
+            found = find_voices_file()
+            assert found == standalone_file
+            
+            # Should load from standalone file
+            voices = load_voice_preferences()
+            assert voices == ["echo", "fable"]
+        finally:
+            os.chdir(original_cwd)
+    
+    def test_home_standalone_voices_file(self, tmp_path):
+        """Test finding standalone voices.txt in home directory."""
+        # Create a fake home directory
+        fake_home = tmp_path / "home"
+        fake_home.mkdir()
+        
+        # Create standalone file
+        standalone_file = fake_home / "voices.txt"
+        standalone_file.write_text("shimmer\nonyx")
+        
+        # Also create .voicemode version (should not be used)
+        voicemode_dir = fake_home / ".voicemode"
+        voicemode_dir.mkdir()
+        voicemode_file = voicemode_dir / "voices.txt"
+        voicemode_file.write_text("nova\nalloy")
+        
+        # Create a working directory
+        work_dir = tmp_path / "work"
+        work_dir.mkdir()
+        
+        original_cwd = os.getcwd()
+        try:
+            os.chdir(work_dir)
+            
+            # Mock Path.home() to return our fake home
+            with patch('pathlib.Path.home', return_value=fake_home):
+                # Reset cache
+                import voice_mode.voice_preferences
+                voice_mode.voice_preferences._cached_preferences = None
+                voice_mode.voice_preferences._preferences_loaded = False
+                
+                # Should find standalone file first
+                found = find_voices_file()
+                assert found == standalone_file
+                
+                # Should load from standalone file
+                voices = load_voice_preferences()
+                assert voices == ["shimmer", "onyx"]
+        finally:
+            os.chdir(original_cwd)

@@ -115,10 +115,16 @@ Voice Mode supports file-based voice preferences that allow you to set preferred
 
 ### Voice Preference Files
 
-Voice Mode looks for `.voicemode/voices.txt` files in the following order:
+Voice Mode looks for voice preference files in the following order:
 
-1. **Project-level**: Starting from the current directory, walks up looking for `.voicemode/voices.txt`
-2. **User-level**: Falls back to `~/.voicemode/voices.txt` if no project file is found
+1. **Project-level** (walks up from current directory):
+   - `voices.txt` (standalone file)
+   - `.voicemode/voices.txt` (in .voicemode directory)
+2. **User-level** (in home directory):
+   - `~/voices.txt` (standalone file)
+   - `~/.voicemode/voices.txt` (in .voicemode directory)
+
+The first file found is used. Standalone `voices.txt` files take precedence over those in `.voicemode` directories.
 
 ### File Format
 
@@ -146,21 +152,28 @@ Voice selection follows this priority order:
 
 ### Examples
 
-**Project-specific voices** (`/my-project/.voicemode/voices.txt`):
+**Simple project setup** (`/my-project/voices.txt`):
+```
+# Project prefers these voices
+nova
+shimmer
+```
+
+**Organized project setup** (`/my-project/.voicemode/voices.txt`):
 ```
 # Creative writing project - use expressive voices
 shimmer
 fable
 ```
 
-**User default voices** (`~/.voicemode/voices.txt`):
+**User default voices** (`~/voices.txt` or `~/.voicemode/voices.txt`):
 ```
 # My preferred voices
 af_sky  # Kokoro voice when available
 nova    # Fallback to OpenAI
 ```
 
-This allows teams to share voice preferences via version control while individual users can override with their own preferences.
+This allows teams to share voice preferences via version control while individual users can override with their own preferences. The standalone `voices.txt` option provides a simpler setup for projects that don't need a full `.voicemode` directory.
 
 ## Configuration Examples
 

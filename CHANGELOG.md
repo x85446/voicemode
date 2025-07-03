@@ -8,9 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Voice preference files support (`.voicemode/voices.txt`) for project and user-level voice settings
+- Voice preference files support for project and user-level voice settings
+  - Supports both standalone `voices.txt` and `.voicemode/voices.txt` files
   - Automatic discovery by walking up directory tree from current working directory
-  - User-level fallback to `~/.voicemode/voices.txt`
+  - User-level fallback to `~/voices.txt` or `~/.voicemode/voices.txt`
+  - Standalone files take precedence over .voicemode directory files
   - Simple text format with one voice name per line
   - Comments and empty lines supported
   - Preferences take priority over environment variables
