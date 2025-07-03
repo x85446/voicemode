@@ -36,6 +36,12 @@ class TestProviderTypeDetection:
 class TestVoiceFirstSelection:
     """Test the voice-first provider selection algorithm."""
     
+    @pytest.fixture(autouse=True)
+    def mock_voice_preferences(self):
+        """Mock voice preferences to avoid test pollution."""
+        with patch('voice_mode.providers.get_preferred_voices', return_value=[]):
+            yield
+    
     @pytest.fixture
     def mock_registry(self):
         """Create a mock provider registry with test data."""
