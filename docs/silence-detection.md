@@ -195,5 +195,5 @@ await converse(
 
 Parameters:
 - `disable_silence_detection`: Override global setting for this interaction
-- `min_listen_duration`: Minimum recording time before silence detection can stop (default: 0.0)
+- `min_listen_duration`: Minimum recording time before silence detection can stop (default: 2.0)
 - `listen_duration`: Maximum recording time (existing parameter)

@@ -1101,7 +1101,7 @@ async def converse(
     message: str,
     wait_for_response: bool = True,
     listen_duration: float = 30.0,
-    min_listen_duration: float = 1.0,
+    min_listen_duration: float = 2.0,
     transport: Literal["auto", "local", "livekit"] = "auto",
     room_name: str = "",
     timeout: float = 60.0,
@@ -1132,7 +1132,7 @@ async def converse(
                          - Stories or long explanations: 60 seconds
                          Always err on the side of longer duration - it's better to have 
                          silence at the end than to cut off the user mid-sentence.
-        min_listen_duration: Minimum time to record before silence detection can stop (default: 1.0)
+        min_listen_duration: Minimum time to record before silence detection can stop (default: 2.0)
                              Useful for preventing premature cutoffs when users need thinking time.
                              Examples:
                              - Complex questions: 2-3 seconds
