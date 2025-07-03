@@ -20,10 +20,17 @@ def main():
     """Run the VoiceMode MCP server."""
     import os
     import sys
+    import warnings
     from .config import setup_logging, EVENT_LOG_ENABLED, EVENT_LOG_DIR
     from .utils import initialize_event_logger
     from .utils.ffmpeg_check import check_ffmpeg, check_ffprobe, get_install_instructions
     from pathlib import Path
+    
+    # Suppress known deprecation warnings from dependencies
+    # These are upstream issues that don't affect functionality
+    warnings.filterwarnings("ignore", category=SyntaxWarning, module="pydub.utils")
+    warnings.filterwarnings("ignore", message="'audioop' is deprecated", category=DeprecationWarning)
+    warnings.filterwarnings("ignore", message="pkg_resources is deprecated", category=UserWarning)
     
     # For MCP mode (stdio transport), we need to let the server start
     # so the LLM can see error messages in tool responses
@@ -48,6 +55,10 @@ def main():
     
     # Set up logging
     logger = setup_logging()
+    
+    # Log version information
+    from .__version__ import __version__
+    logger.info(f"Starting VoiceMode v{__version__}")
     
     # Log FFmpeg status for MCP mode
     if not ffmpeg_available:

@@ -89,8 +89,7 @@ from voice_mode.utils import (
 
 logger = logging.getLogger("voice-mode")
 
-# Debug: Print silence detection config at module load time
-print(f"MODULE LOAD: DISABLE_SILENCE_DETECTION={DISABLE_SILENCE_DETECTION}", flush=True)
+# Log silence detection config at module load time
 logger.info(f"Module loaded with DISABLE_SILENCE_DETECTION={DISABLE_SILENCE_DETECTION}")
 
 # Track last session end time for measuring AI thinking time
@@ -782,7 +781,6 @@ def record_audio_with_silence_detection(max_duration: float, disable_silence_det
         f.flush()
     
     logger.info(f"record_audio_with_silence_detection called - VAD_AVAILABLE={VAD_AVAILABLE}, DISABLE_SILENCE_DETECTION={DISABLE_SILENCE_DETECTION}, min_duration={min_duration}")
-    print(f"DEBUG: record_audio_with_silence_detection - VAD={VAD_AVAILABLE}, DISABLED={DISABLE_SILENCE_DETECTION}, min_duration={min_duration}", flush=True)
     
     if not VAD_AVAILABLE:
         logger.warning("webrtcvad not available, falling back to fixed duration recording")
@@ -793,7 +791,6 @@ def record_audio_with_silence_detection(max_duration: float, disable_silence_det
             logger.info("Silence detection disabled for this interaction by request")
         else:
             logger.info("Silence detection disabled globally via VOICEMODE_DISABLE_SILENCE_DETECTION")
-        print(f"SILENCE DETECTION DISABLED: {DISABLE_SILENCE_DETECTION or disable_silence_detection}", flush=True)
         return record_audio(max_duration)
     
     logger.info(f"🎤 Recording with silence detection (max {max_duration}s)...")
@@ -891,7 +888,6 @@ def record_audio_with_silence_detection(max_duration: float, disable_silence_det
                         if speech_detected and recording_duration >= effective_min_duration:
                             if silence_duration_ms >= SILENCE_THRESHOLD_MS:
                                 logger.info(f"✓ Silence detected after {recording_duration:.1f}s (min: {effective_min_duration:.1f}s), stopping recording")
-                                print(f"BREAKING: Silence detected after {recording_duration:.1f}s", flush=True)
                                 stop_recording = True
                         
                         # Also stop if we haven't detected any speech after a grace period
@@ -1399,7 +1395,7 @@ async def converse(
                         event_logger.log_event(event_logger.RECORDING_START)
                     
                     record_start = time.perf_counter()
-                    print(f"DEBUG: About to call record_audio_with_silence_detection with duration={listen_duration}, disable_silence_detection={disable_silence_detection}, min_duration={min_listen_duration}", flush=True)
+                    logger.debug(f"About to call record_audio_with_silence_detection with duration={listen_duration}, disable_silence_detection={disable_silence_detection}, min_duration={min_listen_duration}")
                     audio_data = await asyncio.get_event_loop().run_in_executor(
                         None, record_audio_with_silence_detection, listen_duration, disable_silence_detection, min_listen_duration
                     )
