@@ -326,7 +326,12 @@ Add to your Zed settings.json:
 <details>
 <summary><strong>Roo Code</strong></summary>
 
-Add to your Roo Code MCP configuration:
+1. Open VS Code Settings (`Ctrl/Cmd + ,`)
+2. Search for "roo" in the settings search bar
+3. Find "Roo-veterinaryinc.roo-cline → settings → Mcp_settings.json"
+4. Click "Edit in settings.json"
+5. Add Voice Mode configuration:
+
 ```json
 {
   "mcpServers": {
