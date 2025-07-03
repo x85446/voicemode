@@ -7,9 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Voice preference files support (`.voicemode/voices.txt`) for project and user-level voice settings
+- Automatic voice preference discovery by walking up directory tree
+
 ### Documentation
 - Updated Roo Code integration guide with comprehensive MCP interface instructions
 - Added visual guide to MCP settings and troubleshooting section
+- Added Voice Preferences section to configuration documentation
 
 ## [2.9.0] - 2025-07-03
 

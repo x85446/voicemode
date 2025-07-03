@@ -109,6 +109,59 @@ When using voice-mode with MCP hosts (Claude Desktop, VS Code, etc.), it's impor
 - **OpenAI**: `alloy`, `nova`, `echo`, `fable`, `onyx`, `shimmer`
 - **Kokoro**: `af_sky`, `af_sarah`, `am_adam`, `af_nicole`, `am_michael`
 
+## Voice Preferences
+
+Voice Mode supports file-based voice preferences that allow you to set preferred voices per project or user. This provides a convenient way to maintain consistent voice settings without environment variables.
+
+### Voice Preference Files
+
+Voice Mode looks for `.voicemode/voices.txt` files in the following order:
+
+1. **Project-level**: Starting from the current directory, walks up looking for `.voicemode/voices.txt`
+2. **User-level**: Falls back to `~/.voicemode/voices.txt` if no project file is found
+
+### File Format
+
+The `voices.txt` file is a simple text file with one voice name per line:
+
+```
+# Preferred voices for this project
+af_sky
+nova
+alloy
+```
+
+- One voice name per line
+- Comments start with `#`
+- Empty lines are ignored
+- Voices are tried in order listed
+
+### Preference Priority
+
+Voice selection follows this priority order:
+
+1. **Voice preference files** (`.voicemode/voices.txt`)
+2. **Environment variable** (`VOICEMODE_TTS_VOICES`)
+3. **Built-in defaults** (`alloy`, `nova`, etc.)
+
+### Examples
+
+**Project-specific voices** (`/my-project/.voicemode/voices.txt`):
+```
+# Creative writing project - use expressive voices
+shimmer
+fable
+```
+
+**User default voices** (`~/.voicemode/voices.txt`):
+```
+# My preferred voices
+af_sky  # Kokoro voice when available
+nova    # Fallback to OpenAI
+```
+
+This allows teams to share voice preferences via version control while individual users can override with their own preferences.
+
 ## Configuration Examples
 
 ### Prioritize Local Kokoro TTS

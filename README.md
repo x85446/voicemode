@@ -416,6 +416,10 @@ export STT_BASE_URL="http://127.0.0.1:2022/v1"  # Local Whisper
 export TTS_BASE_URL="http://127.0.0.1:8880/v1"  # Local TTS
 export TTS_VOICE="alloy"                        # Voice selection
 
+# Or use voice preference files (see Configuration docs)
+# Project: /your-project/.voicemode/voices.txt
+# User: ~/.voicemode/voices.txt
+
 # LiveKit (for room-based communication)
 # See docs/livekit/ for setup guide
 export LIVEKIT_URL="wss://your-app.livekit.cloud"

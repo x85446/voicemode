@@ -11,6 +11,7 @@ from openai import AsyncOpenAI
 
 from .config import TTS_VOICES, TTS_MODELS, TTS_BASE_URLS, OPENAI_API_KEY
 from .provider_discovery import provider_registry, EndpointInfo
+from .voice_preferences import get_preferred_voices
 
 logger = logging.getLogger("voice-mode")
 
@@ -67,8 +68,14 @@ async def get_tts_client_and_voice(
         return client, selected_voice, selected_model, endpoint_info
     
     # Voice-first selection algorithm
+    # Get user preferences and prepend to system defaults
+    user_preferences = get_preferred_voices()
+    combined_voice_list = user_preferences + [v for v in TTS_VOICES if v not in user_preferences]
+    
     logger.info(f"TTS Provider Selection (voice-first)")
-    logger.info(f"  Preferred voices: {TTS_VOICES}")
+    if user_preferences:
+        logger.info(f"  User voice preferences: {user_preferences}")
+    logger.info(f"  Combined voice list: {combined_voice_list}")
     logger.info(f"  Preferred models: {TTS_MODELS}")
     logger.info(f"  Available endpoints: {TTS_BASE_URLS}")
     
@@ -95,7 +102,7 @@ async def get_tts_client_and_voice(
     
     # No specific voice requested - iterate through voice preferences
     logger.info("  No specific voice requested, checking voice preferences...")
-    for preferred_voice in TTS_VOICES:
+    for preferred_voice in combined_voice_list:
         logger.debug(f"  Looking for voice: {preferred_voice}")
         
         # Check each endpoint for this voice
@@ -285,8 +292,12 @@ def select_best_voice(provider: str, available_voices: Optional[List[str]] = Non
         else:
             available_voices = ["alloy", "nova", "echo", "fable", "onyx", "shimmer"]
     
+    # Get user preferences and prepend to system defaults
+    user_preferences = get_preferred_voices()
+    combined_voice_list = user_preferences + [v for v in TTS_VOICES if v not in user_preferences]
+    
     # Find first preferred voice that's available
-    for voice in TTS_VOICES:
+    for voice in combined_voice_list:
         if voice in available_voices:
             return voice
     

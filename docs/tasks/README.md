@@ -14,6 +14,7 @@
 
 ## High Priority
 
+- [ ] [Voice Preferences System](./voice-preferences-system.md) - Set default voices per project/user/machine
 - [ ] [Create Screencast](./screencast-quickstart/README.md) - Make 2-minute quickstart video demonstrating voice-mode
 - [ ] [Conversation Browser Improvements](./conversation-browser/README.md) - Group exchanges into conversations, better UI
 - [ ] [Context Prime Optimization](./context-prime-optimization/) - Make /context-prime command super fast
