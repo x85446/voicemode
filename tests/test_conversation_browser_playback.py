@@ -11,9 +11,17 @@ import tempfile
 import json
 from pathlib import Path
 from datetime import datetime
+import pytest
 
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# Check if Flask is available
+try:
+    import flask
+    HAS_FLASK = True
+except ImportError:
+    HAS_FLASK = False
 
 def create_test_environment():
     """Create a temporary test environment with sample data."""
@@ -84,6 +92,7 @@ def create_test_environment():
     
     return base_dir
 
+@pytest.mark.skipif(not HAS_FLASK, reason="Flask not installed (install with 'pip install voice-mode[scripts]')")
 def test_playback_ui():
     """Test that playback UI elements are rendered correctly."""
     # Create test environment
