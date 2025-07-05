@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.10.0] - 2025-07-06
 
 ### Added
+- All 67 Kokoro TTS voices now available for local text-to-speech
+  - Complete set of high-quality voices across multiple accents and languages
+  - Voices include various English accents (American, British, Australian, Indian, Nigerian, Scottish)
+  - Multiple voices per accent for variety (e.g., 9 American female, 13 American male voices)
+  - Support for international English speakers
+  - Automatically available when Kokoro TTS service is running
 - Voice preference files support for project and user-level voice settings
   - Supports both standalone `voices.txt` and `.voicemode/voices.txt` files
   - Automatic discovery by walking up directory tree from current working directory
