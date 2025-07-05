@@ -641,7 +641,7 @@ HTML_TEMPLATE = """
                         {{ conv.transcript }}
                         
                         {% if conv.audio_path %}
-                        <audio class="audio-player" controls>
+                        <audio class="audio-player" controls preload="none">
                             <source src="/audio/{{ conv.audio_path|basename }}" type="audio/mpeg">
                             Your browser does not support the audio element.
                         </audio>
@@ -759,7 +759,7 @@ HTML_TEMPLATE = """
                         {{ exchange.transcript }}
                         
                         {% if exchange.audio_path %}
-                        <audio class="audio-player" controls>
+                        <audio class="audio-player" controls preload="none">
                             <source src="/audio/{{ exchange.audio_path|basename }}" type="audio/mpeg">
                             Your browser does not support the audio element.
                         </audio>
