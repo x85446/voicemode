@@ -1127,6 +1127,19 @@ async def converse(
 ) -> str:
     """Have a voice conversation - speak a message and optionally listen for response.
     
+    🌍 LANGUAGE SUPPORT - ALWAYS SELECT APPROPRIATE VOICE FOR NON-ENGLISH TEXT:
+    When speaking non-English languages, you MUST specify the appropriate voice and provider:
+    - Spanish: voice="ef_dora" (or "em_alex"), tts_provider="kokoro"
+    - French: voice="ff_siwis", tts_provider="kokoro"
+    - Italian: voice="if_sara" (or "im_nicola"), tts_provider="kokoro"
+    - Portuguese: voice="pf_dora" (or "pm_alex"), tts_provider="kokoro"
+    - Chinese: voice="zf_xiaobei" (female) or "zm_yunjian" (male), tts_provider="kokoro"
+    - Japanese: voice="jf_alpha" (female) or "jm_kumo" (male), tts_provider="kokoro"
+    - Hindi: voice="hf_alpha" (female) or "hm_omega" (male), tts_provider="kokoro"
+    
+    ⚠️ IMPORTANT: Default voices (OpenAI) will speak non-English text with an American accent.
+    Always check the message content and select language-appropriate voices for natural pronunciation.
+    
     PRIVACY NOTICE: When wait_for_response is True, this tool will access your microphone
     to record audio for speech-to-text conversion. Audio is processed using the configured
     STT service and is not permanently stored. Do not use upper case except for acronyms as the TTS will spell these out.
@@ -1153,19 +1166,9 @@ async def converse(
         room_name: LiveKit room name (only for livekit transport, auto-discovered if empty)
         timeout: Maximum wait time for response in seconds (LiveKit only)
         voice: Override TTS voice - ONLY specify if user explicitly requests a specific voice
-               The system automatically selects the best available voice based on preferences.
+               OR when speaking non-English languages (see LANGUAGE SUPPORT section above).
                Examples: nova, shimmer (OpenAI); af_sky, af_sarah, am_adam (Kokoro)
                IMPORTANT: Never use 'coral' voice.
-               
-               Language-specific voice guidance:
-               - Spanish: Use ef_dora, em_alex, or em_santa (Kokoro only)
-               - French: Use ff_siwis (Kokoro only)
-               - Italian: Use if_sara or im_nicola (Kokoro only)
-               - Portuguese: Use pf_dora, pm_alex, or pm_santa (Kokoro only)
-               - Chinese: Use zf_* for female or zm_* for male voices (Kokoro only)
-               - Japanese: Use jf_* for female or jm_* for male voices (Kokoro only)
-               - Hindi: Use hf_* for female or hm_* for male voices (Kokoro only)
-               - For other languages: Use default voices (may have accent)
         tts_provider: TTS provider - ONLY specify if user explicitly requests or for failover testing
                       The system automatically selects based on availability and preferences.
         tts_model: TTS model - ONLY specify for specific features (e.g., gpt-4o-mini-tts for emotions)
@@ -1188,6 +1191,12 @@ async def converse(
         - Just speak without waiting: converse("Goodbye!", wait_for_response=False)
         - User requests specific voice: converse("Hello", voice="nova")  # Only when explicitly requested
         - Need HD quality: converse("High quality speech", tts_model="tts-1-hd")  # Only for specific features
+        
+    Language-Specific Examples (MUST specify voice & provider):
+        - Spanish: converse("¿Cómo estás?", voice="ef_dora", tts_provider="kokoro")
+        - French: converse("Bonjour!", voice="ff_siwis", tts_provider="kokoro")
+        - Italian: converse("Ciao!", voice="if_sara", tts_provider="kokoro")
+        - Chinese: converse("你好", voice="zf_xiaobei", tts_provider="kokoro")
         
     Emotional Speech (Requires OpenAI API):
         - Excitement: converse("We did it!", tts_model="gpt-4o-mini-tts", tts_instructions="Sound extremely excited and celebratory")
