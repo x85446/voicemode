@@ -6,7 +6,7 @@ ALWAYS read the following files at the start of any session:
 - README.md to understand the project
 - GLOSSARY.md to understand key terms and concepts used in the project
 - docs/tasks/README.md for an overview of work
-- .conventions/CONVENTIONS.md to understand the engineering conventions for this project
+- docs/conventions/CONVENTIONS.md to understand the engineering conventions for this project
 - .ai_docs/README.md to understand where to read and write information about external tools, libraries, protocols, etc
 - .repos.txt # List of 3rd party repos we may use
 - docs/tasks/README.md # Current task list and recently completed work (take note of "The One Thing" - this is the most important task currently)
@@ -18,17 +18,17 @@ ALWAYS read the following files at the start of any session:
 
 Load specific convention modules based on the current work context:
 
-- **Editing bash scripts**: Load `.conventions/core/principles.md` + `.conventions/languages/bash.md` + `.conventions/interfaces/cli.md`
-- **Python development**: Load `.conventions/core/principles.md` + `.conventions/languages/python.md` + `.conventions/interfaces/cli.md`
-- **Writing documentation**: Load `.conventions/core/principles.md` + `.conventions/core/documentation.md` + `.conventions/languages/markdown.md`
-- **General project work**: Load `CONVENTIONS.md` + `.conventions/core/project-structure.md`
+- **Editing bash scripts**: Load `docs/conventions/core/principles.md` + `.conventions/languages/bash.md` + `.conventions/interfaces/cli.md`
+- **Python development**: Load `docs/conventions/core/principles.md` + `.conventions/languages/python.md` + `.conventions/interfaces/cli.md`
+- **Writing documentation**: Load `docs/conventions/core/principles.md` + `.conventions/core/documentation.md` + `.conventions/languages/markdown.md`
+- **General project work**: Load docs/conventions.md` + `.conventions/core/project-structure.md`
 
 ## Override System
 
 Check for convention overrides in this order:
-1. `.conventions/` - Base conventions
-2. `.conventions-project/` - Project-specific overrides (if exists)
-3. `.conventions-local/` - Local personal overrides (if exists)
+1. `docs/conventions/` - Base conventions
+2. `docs/conventions-project/` - Project-specific overrides (if exists)
+3. `docs/conventions-local/` - Local personal overrides (if exists)
 
 Later files override earlier ones for the same convention.
 
