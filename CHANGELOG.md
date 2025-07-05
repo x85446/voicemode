@@ -9,6 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.11.0] - 2025-07-06
 
+### Added
+- Password protection for LiveKit voice assistant frontend
+  - Prevents unauthorized access to voice conversation interface
+  - Configurable via `LIVEKIT_ACCESS_PASSWORD` environment variable
+  - Includes `.env.local.example` template with secure defaults
+  - Password validation on API endpoint before token generation
+- Prominent language support guidance in conversation tool
+  - Clear language-specific voice recommendations for 8 languages
+  - Mandatory voice selection for non-English text
+  - Warning about American accent when using default voices
+  - Examples for Spanish, French, Italian, Portuguese, Chinese, Japanese, and Hindi
+
+### Changed
+- Updated convention paths from `.conventions/` to `docs/conventions/` in CLAUDE.md
+- Enhanced language voice selection documentation with explicit requirements
+
+### Documentation
+- Added Spanish voice conversation example demonstrating language-specific voice selection
+- Added blind community outreach contacts and resources for accessibility collaboration
+- Updated LiveKit frontend README with password protection instructions
+
 ## [2.10.0] - 2025-07-06
 
 ### Added
