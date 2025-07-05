@@ -103,8 +103,11 @@ Voice Mode works with your favorite AI coding assistants:
 <summary><strong>Ubuntu/Debian</strong></summary>
 
 ```bash
-sudo apt install python3-dev libasound2-dev libportaudio2 portaudio19-dev ffmpeg
+sudo apt update
+sudo apt install -y python3-dev libasound2-dev libasound2-plugins libportaudio2 portaudio19-dev ffmpeg pulseaudio pulseaudio-utils
 ```
+
+**Note for WSL2 users**: WSL2 requires additional audio packages (pulseaudio, libasound2-plugins) for microphone access. See our [WSL2 Microphone Access Guide](docs/troubleshooting/wsl2-microphone-access.md) if you encounter issues.
 </details>
 
 <details>

@@ -16,6 +16,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Simple text format with one voice name per line
   - Comments and empty lines supported
   - Preferences take priority over environment variables
+- New `check_audio_dependencies` MCP tool for diagnosing audio system setup
+  - Checks for required system packages on Linux/WSL
+  - Verifies PulseAudio status
+  - Provides platform-specific installation commands
+  - Helpful for troubleshooting audio initialization errors
+- Enhanced audio error handling with helpful diagnostics
+  - Detects missing system packages and suggests installation commands
+  - WSL-specific guidance for audio setup
+  - Better error messages when audio recording fails
 
 ### Fixed
 - Mock voice preferences in provider selection tests to prevent test pollution
@@ -26,6 +35,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added visual guide to MCP settings and troubleshooting section
 - Added comprehensive Voice Preferences section to configuration documentation
 - Updated README with voice preference file examples
+- Updated Ubuntu/Debian installation instructions to include all required audio packages (pulseaudio, libasound2-plugins)
+- Added WSL2-specific note in README pointing to detailed troubleshooting guide
 
 ## [2.9.0] - 2025-07-03
 

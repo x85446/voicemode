@@ -740,6 +740,13 @@ def record_audio(duration: float) -> np.ndarray:
         logger.error(f"Recording failed: {e}")
         logger.error(f"Audio config when error occurred - Sample rate: {SAMPLE_RATE}, Channels: {CHANNELS}")
         
+        # Import here to avoid circular imports
+        from voice_mode.utils.audio_diagnostics import get_audio_error_help
+        
+        # Get helpful error message
+        help_message = get_audio_error_help(e)
+        logger.error(f"\n{help_message}")
+        
         # Try to get more info about audio devices
         try:
             devices = sd.query_devices()
@@ -920,6 +927,14 @@ def record_audio_with_silence_detection(max_duration: float, disable_silence_det
                 
         except Exception as e:
             logger.error(f"Recording with VAD failed: {e}")
+            
+            # Import here to avoid circular imports
+            from voice_mode.utils.audio_diagnostics import get_audio_error_help
+            
+            # Get helpful error message
+            help_message = get_audio_error_help(e)
+            logger.error(f"\n{help_message}")
+            
             logger.info("Falling back to fixed duration recording")
             return record_audio(max_duration)
             
