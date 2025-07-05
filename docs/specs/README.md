@@ -4,8 +4,10 @@ This directory contains technical specifications, design documents, and architec
 
 ## 📚 Available Specifications
 
-### [Voice MCP Bigger Spec Review](./voice-mode-bigger-spec-review.md)
-A comprehensive analysis of specifications from the `voice-mode-bigger` repository, identifying which documents should be integrated into Voice Mode. This review covers Docker deployment, Kokoro integration, architectural decisions, and future enhancement opportunities.
+- [Conversation Logging JSONL](./conversation-logging-jsonl.md) - Specification for structured conversation logging
+- [Provider Endpoint Lists](./provider-endpoint-lists.md) - Managing multiple STT/TTS provider endpoints
+- [Streaming Audio Playback](./streaming-audio-playback.md) - Real-time audio streaming implementation
+- [Unified Event Logging](./unified-event-logging.md) - Comprehensive event logging system
 
 ## 🎯 Purpose
 
@@ -34,6 +36,5 @@ When adding new specifications:
 
 ## 🔗 Related Documentation
 
-- [Architecture Overview](../architecture/) - High-level system design
-- [Task Documentation](../tasks/) - Current development work
+- [Task Documentation](../tasks/README.md) - Current development work
 - [Configuration Guide](../configuration.md) - Setup instructions

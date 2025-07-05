@@ -5,8 +5,8 @@
 - [Task Management Guidelines](./TASK-MANAGEMENT.md) - How to manage tasks and documentation
 - [Implementation Notes](./implementation-notes.md) - Completed work and decisions
 - [Key Insights](./key-insights.md) - Important learnings and design principles
-- [Screencasts](./screencasts/) - Video production plans and scripts
-- [Screencast Quickstart](./screencast-quickstart/) - Quick video creation guide and runbook
+- [Screencasts](./screencasts/README.md) - Video production plans and scripts
+- [Screencast Quickstart](./screencast-quickstart/README.md) - Quick video creation guide and runbook
 
 ## The One Thing
 
@@ -17,7 +17,7 @@
 - [ ] [Voice Preferences System](./voice-preferences-system.md) - Set default voices per project/user/machine
 - [ ] [Create Screencast](./screencast-quickstart/README.md) - Make 2-minute quickstart video demonstrating voice-mode
 - [ ] [Conversation Browser Improvements](./conversation-browser/README.md) - Group exchanges into conversations, better UI
-- [ ] [Context Prime Optimization](./context-prime-optimization/) - Make /context-prime command super fast
+- [ ] Context Prime Optimization - Make /context-prime command super fast
 - [ ] Enhance provider registry with cost/latency/privacy metadata
 - [ ] Fix MCP timing issues with silence detection (VAD works in standalone but has delays through MCP)
 

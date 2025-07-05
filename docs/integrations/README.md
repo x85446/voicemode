@@ -70,5 +70,5 @@ Voice Mode adds these capabilities to your development tools:
 - 📚 Check the [main documentation](../../README.md)
 - 🔧 Review [configuration options](../configuration.md)
 - 💬 Join our [Discord community](https://discord.gg/Hm7dF3uCfG)
-- 🐛 See [troubleshooting guides](../troubleshooting/)
+- 🐛 See [troubleshooting guides](../troubleshooting/README.md)
 - 🔨 [Report issues or contribute improvements](https://github.com/mbailey/voicemode/issues)

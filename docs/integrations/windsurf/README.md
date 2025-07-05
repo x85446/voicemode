@@ -192,11 +192,11 @@ Combine Windsurf's AI capabilities with voice:
 ## See Also
 
 - 📚 [Voice Mode Documentation](../../README.md)
-- 🔧 [Configuration Reference](../configuration.md)
-- 🎤 [Local STT/TTS Setup](../whisper.md)
-- 🏠 [LiveKit Integration](../livekit/README.md)
+- 🔧 [Configuration Reference](../../configuration.md)
+- 🎤 [Local STT/TTS Setup](../../whisper.md)
+- 🏠 [LiveKit Integration](../../livekit/README.md)
 - 💬 [Windsurf Documentation](https://docs.codeium.com/windsurf)
-- 🐛 [Troubleshooting Guide](../troubleshooting/README.md)
+- 🐛 [Troubleshooting Guide](../../troubleshooting/README.md)
 - 💻 [Codeium Official Site](https://codeium.com/)
 
 ---

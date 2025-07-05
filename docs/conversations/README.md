@@ -54,7 +54,7 @@ The experiment follows structured prompts that ensure:
 - Dynamic listen durations with silence detection
 - Natural conversation flow and topic progression
 
-All conversation prompts are maintained in the [prompts directory](./prompts/) for easy reuse and version tracking.
+All conversation prompts are maintained in the [prompts directory](./prompts/README.md) for easy reuse and version tracking.
 
 ## Key Insights
 

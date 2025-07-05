@@ -186,11 +186,11 @@ Zed's high performance pairs well with Voice Mode:
 ## See Also
 
 - 📚 [Voice Mode Documentation](../../README.md)
-- 🔧 [Configuration Reference](../configuration.md)
-- 🎤 [Local STT/TTS Setup](../whisper.md)
-- 🏠 [LiveKit Integration](../livekit/README.md)
+- 🔧 [Configuration Reference](../../configuration.md)
+- 🎤 [Local STT/TTS Setup](../../whisper.md)
+- 🏠 [LiveKit Integration](../../livekit/README.md)
 - 💬 [Zed Context Servers](https://zed.dev/docs/context-servers)
-- 🐛 [Troubleshooting Guide](../troubleshooting/README.md)
+- 🐛 [Troubleshooting Guide](../../troubleshooting/README.md)
 - 💻 [Zed Official Docs](https://zed.dev/docs)
 
 ---

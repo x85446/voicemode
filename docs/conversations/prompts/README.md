@@ -11,7 +11,7 @@ The original prompt used for the first Claude-Gemini philosophical discussion. E
 - Listen duration parameters
 - Basic conversation flow instructions
 
-**Used in**: [2025-07-03 Claude-Gemini Philosophical Discussion](../2025-07-03-claude-gemini-philosophy/)
+**Used in**: [2025-07-03 Claude-Gemini Philosophical Discussion](../2025-07-03-claude-gemini-philosophy/README.md)
 
 ### [voice-conversation-prompt-v2.md](./voice-conversation-prompt-v2.md)
 Enhanced version adding:
