@@ -19,6 +19,8 @@ import type { ConnectionDetails } from "./api/connection-details/route";
 
 export default function Page() {
   const [room] = useState(new Room());
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
   const onConnectButtonClicked = useCallback(async () => {
     // Generate room connection details, including:
@@ -30,16 +32,30 @@ export default function Page() {
     // In real-world application, you would likely allow the user to specify their
     // own participant name, and possibly to choose from existing rooms to join.
 
+    setError("");
+    
     const url = new URL(
       process.env.NEXT_PUBLIC_CONN_DETAILS_ENDPOINT ?? "/api/connection-details",
       window.location.origin
     );
+    url.searchParams.set('password', password);
+    
     const response = await fetch(url.toString());
+    
+    if (!response.ok) {
+      if (response.status === 401) {
+        setError("Invalid password");
+      } else {
+        setError("Connection failed");
+      }
+      return;
+    }
+    
     const connectionDetailsData: ConnectionDetails = await response.json();
 
     await room.connect(connectionDetailsData.serverUrl, connectionDetailsData.participantToken);
     await room.localParticipant.setMicrophoneEnabled(true);
-  }, [room]);
+  }, [room, password]);
 
   useEffect(() => {
     room.on(RoomEvent.MediaDevicesError, onDeviceFailure);
@@ -53,14 +69,24 @@ export default function Page() {
     <main data-lk-theme="default" className="h-full grid content-center bg-[var(--lk-bg)]">
       <RoomContext.Provider value={room}>
         <div className="lk-room-container max-w-[1024px] w-[90vw] mx-auto max-h-[90vh]">
-          <SimpleVoiceAssistant onConnectButtonClicked={onConnectButtonClicked} />
+          <SimpleVoiceAssistant 
+            onConnectButtonClicked={onConnectButtonClicked}
+            password={password}
+            setPassword={setPassword}
+            error={error}
+          />
         </div>
       </RoomContext.Provider>
     </main>
   );
 }
 
-function SimpleVoiceAssistant(props: { onConnectButtonClicked: () => void }) {
+function SimpleVoiceAssistant(props: { 
+  onConnectButtonClicked: () => void;
+  password: string;
+  setPassword: (password: string) => void;
+  error: string;
+}) {
   const { state: agentState } = useVoiceAssistant();
 
   return (
@@ -75,15 +101,32 @@ function SimpleVoiceAssistant(props: { onConnectButtonClicked: () => void }) {
             transition={{ duration: 0.3, ease: [0.09, 1.04, 0.245, 1.055] }}
             className="grid items-center justify-center h-full"
           >
-            <motion.button
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3, delay: 0.1 }}
-              className="uppercase px-4 py-2 bg-white text-black rounded-md"
-              onClick={() => props.onConnectButtonClicked()}
-            >
-              Start a conversation
-            </motion.button>
+            <div className="flex flex-col items-center gap-4">
+              <input
+                type="password"
+                placeholder="Enter password"
+                value={props.password}
+                onChange={(e) => props.setPassword(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    props.onConnectButtonClicked();
+                  }
+                }}
+                className="px-4 py-2 bg-gray-800 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-white"
+              />
+              {props.error && (
+                <p className="text-red-500 text-sm">{props.error}</p>
+              )}
+              <motion.button
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3, delay: 0.1 }}
+                className="uppercase px-4 py-2 bg-white text-black rounded-md"
+                onClick={() => props.onConnectButtonClicked()}
+              >
+                Start a conversation
+              </motion.button>
+            </div>
           </motion.div>
         ) : (
           <motion.div

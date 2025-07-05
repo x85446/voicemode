@@ -1,10 +1,13 @@
 import { AccessToken, AccessTokenOptions, VideoGrant } from "livekit-server-sdk";
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 
 // NOTE: you are expected to define the following environment variables in `.env.local`:
 const API_KEY = process.env.LIVEKIT_API_KEY;
 const API_SECRET = process.env.LIVEKIT_API_SECRET;
 const LIVEKIT_URL = process.env.LIVEKIT_URL;
+
+// Password protection - set this in your .env.local file
+const ACCESS_PASSWORD = process.env.LIVEKIT_ACCESS_PASSWORD || "voicemode123";
 
 // don't cache the results
 export const revalidate = 0;
@@ -16,8 +19,17 @@ export type ConnectionDetails = {
   participantToken: string;
 };
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    // Check for password in query params or Authorization header
+    const url = new URL(request.url);
+    const password = url.searchParams.get('password') || 
+                    request.headers.get('x-access-password');
+    
+    if (password !== ACCESS_PASSWORD) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
+    
     if (LIVEKIT_URL === undefined) {
       throw new Error("LIVEKIT_URL is not defined");
     }

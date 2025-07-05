@@ -31,7 +31,17 @@ And open http://127.0.0.1:3000 in your browser.
 You'll also need an agent to speak with. Try our [Voice AI Quickstart](https://docs.livekit.io/start/voice-ai) for the easiest way to get started.
 
 > [!NOTE]
-> If you need to modify the LiveKit project credentials used, you can edit `.env.local` (copy from `.env.example` if you don't have one) to suit your needs.
+> If you need to modify the LiveKit project credentials used, you can edit `.env.local` (copy from `.env.local.example` if you don't have one) to suit your needs.
+
+## Password Protection
+
+This frontend now includes password protection to prevent unauthorized access. To configure:
+
+1. Copy `.env.local.example` to `.env.local`
+2. Set `LIVEKIT_ACCESS_PASSWORD` to your desired password
+3. Share this password only with authorized users
+
+Users will need to enter the password before they can start a conversation. The default password is `voicemode123` but you should change this for production use.
 
 ## Contributing
 
