@@ -76,3 +76,60 @@ converse("This is a secret",
 - Cost: ~$0.02/minute for emotional speech
 - Automatically uses gpt-4o-mini-tts when emotional instructions are provided
 """
+
+
+@mcp.prompt()
+async def language_voice_guide() -> str:
+    """Guide for selecting appropriate voices for different languages"""
+    return """To speak in different languages with voice-mode:
+
+**Language-Specific Voice Selection**:
+
+When speaking non-English languages, select an appropriate voice for natural pronunciation:
+
+**Spanish** (Kokoro only):
+- ef_dora: Spanish female voice - Clear and expressive
+- em_alex: Spanish male voice - Natural pronunciation
+- em_santa: Spanish male voice - Santa character
+
+Example:
+```python
+converse("¡Hola! ¿Cómo estás?", voice="ef_dora", tts_provider="kokoro")
+```
+
+**French** (Kokoro only):
+- ff_siwis: French female voice
+
+**Italian** (Kokoro only):
+- if_sara: Italian female voice
+- im_nicola: Italian male voice
+
+**Portuguese** (Kokoro only):
+- pf_dora: Portuguese female voice
+- pm_alex: Portuguese male voice
+- pm_santa: Portuguese male voice
+
+**Chinese** (Kokoro only):
+- Female voices: zf_xiaobei, zf_xiaoni, zf_xiaoxiao, zf_xiaoyi
+- Male voices: zm_yunjian, zm_yunxi, zm_yunxia, zm_yunyang
+
+**Japanese** (Kokoro only):
+- Female voices: jf_alpha, jf_gongitsune, jf_nezumi, jf_tebukuro
+- Male voice: jm_kumo
+
+**Hindi** (Kokoro only):
+- Female voices: hf_alpha, hf_beta
+- Male voices: hm_omega, hm_psi
+
+**Important Notes**:
+- Language-specific voices are only available with Kokoro
+- OpenAI voices (nova, shimmer, etc.) will speak with an English accent
+- Always use tts_provider="kokoro" when using language-specific voices
+- Kokoro must be running locally or accessible at configured endpoint
+
+**Auto-Selection Tip**:
+Let the LLM detect the language and automatically select an appropriate voice:
+- If the message contains Spanish text → use Spanish voice
+- If the message contains French text → use French voice
+- And so on for other languages
+"""

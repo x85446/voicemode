@@ -1156,6 +1156,16 @@ async def converse(
                The system automatically selects the best available voice based on preferences.
                Examples: nova, shimmer (OpenAI); af_sky, af_sarah, am_adam (Kokoro)
                IMPORTANT: Never use 'coral' voice.
+               
+               Language-specific voice guidance:
+               - Spanish: Use ef_dora, em_alex, or em_santa (Kokoro only)
+               - French: Use ff_siwis (Kokoro only)
+               - Italian: Use if_sara or im_nicola (Kokoro only)
+               - Portuguese: Use pf_dora, pm_alex, or pm_santa (Kokoro only)
+               - Chinese: Use zf_* for female or zm_* for male voices (Kokoro only)
+               - Japanese: Use jf_* for female or jm_* for male voices (Kokoro only)
+               - Hindi: Use hf_* for female or hm_* for male voices (Kokoro only)
+               - For other languages: Use default voices (may have accent)
         tts_provider: TTS provider - ONLY specify if user explicitly requests or for failover testing
                       The system automatically selects based on availability and preferences.
         tts_model: TTS model - ONLY specify for specific features (e.g., gpt-4o-mini-tts for emotions)
