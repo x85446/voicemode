@@ -173,28 +173,68 @@ async def list_tts_voices(provider: Optional[str] = None) -> str:
     
     # Kokoro voices
     if 'kokoro' in providers_to_check:
-        results.append("\n\n🎭 Kokoro Voices")
+        results.append("\n\n🎭 Kokoro Voices (67 voices available)")
         results.append("-" * 40)
         
-        # Default voice descriptions
-        kokoro_voice_descriptions = {
-            'af_sky': 'Female - Natural and expressive (recommended)',
-            'af_sarah': 'Female - Warm and friendly',
-            'am_adam': 'Male - Clear and professional',
-            'af_nicole': 'Female - Energetic and upbeat',
-            'am_michael': 'Male - Deep and authoritative',
-            'bf_emma': 'British Female - Sophisticated accent',
-            'bm_george': 'British Male - Distinguished accent'
-        }
-        
-        results.append("\n**Available Voices**:")
-        for voice, desc in kokoro_voice_descriptions.items():
-            results.append(f"  • {voice}: {desc}")
-        
-        results.append("\n**Voice Naming**:")
+        results.append("\n**Voice Naming Convention**:")
         results.append("  • af_ = American Female")
         results.append("  • am_ = American Male")
         results.append("  • bf_ = British Female")
         results.append("  • bm_ = British Male")
+        results.append("  • ef_ = Spanish Female")
+        results.append("  • em_ = Spanish Male")
+        results.append("  • ff_ = French Female")
+        results.append("  • hf_ = Hindi Female")
+        results.append("  • hm_ = Hindi Male")
+        results.append("  • if_ = Italian Female")
+        results.append("  • im_ = Italian Male")
+        results.append("  • jf_ = Japanese Female")
+        results.append("  • jm_ = Japanese Male")
+        results.append("  • pf_ = Portuguese Female")
+        results.append("  • pm_ = Portuguese Male")
+        results.append("  • zf_ = Chinese Female")
+        results.append("  • zm_ = Chinese Male")
+        
+        results.append("\n**Recommended Voices**:")
+        kokoro_recommended = {
+            'af_sky': 'American Female - Natural and expressive (default)',
+            'af_sarah': 'American Female - Warm and friendly',
+            'am_adam': 'American Male - Clear and professional',
+            'bf_emma': 'British Female - Sophisticated accent',
+            'bm_george': 'British Male - Distinguished accent',
+            'ef_dora': 'Spanish Female - Clear and expressive',
+            'em_alex': 'Spanish Male - Natural voice'
+        }
+        for voice, desc in kokoro_recommended.items():
+            results.append(f"  • {voice}: {desc}")
+        
+        results.append("\n**All Available Voices by Language**:")
+        
+        # American voices
+        results.append("\n  American Female (18 voices):")
+        results.append("    af_alloy, af_aoede, af_bella, af_heart, af_jadzia, af_jessica,")
+        results.append("    af_kore, af_nicole, af_nova, af_river, af_sarah, af_sky,")
+        results.append("    af_v0, af_v0bella, af_v0irulan, af_v0nicole, af_v0sarah, af_v0sky")
+        
+        results.append("\n  American Male (12 voices):")
+        results.append("    am_adam, am_echo, am_eric, am_fenrir, am_liam, am_michael,")
+        results.append("    am_onyx, am_puck, am_santa, am_v0adam, am_v0gurney, am_v0michael")
+        
+        # British voices
+        results.append("\n  British Female (5 voices):")
+        results.append("    bf_alice, bf_emma, bf_lily, bf_v0emma, bf_v0isabella")
+        
+        results.append("\n  British Male (6 voices):")
+        results.append("    bm_daniel, bm_fable, bm_george, bm_lewis, bm_v0george, bm_v0lewis")
+        
+        # Other languages
+        results.append("\n  Spanish (3 voices): ef_dora, em_alex, em_santa")
+        results.append("  French (1 voice): ff_siwis")
+        results.append("  Hindi (4 voices): hf_alpha, hf_beta, hm_omega, hm_psi")
+        results.append("  Italian (2 voices): if_sara, im_nicola")
+        results.append("  Japanese (5 voices): jf_alpha, jf_gongitsune, jf_nezumi, jf_tebukuro, jm_kumo")
+        results.append("  Portuguese (3 voices): pf_dora, pm_alex, pm_santa")
+        results.append("  Chinese (8 voices): zf_xiaobei, zf_xiaoni, zf_xiaoxiao, zf_xiaoyi,")
+        results.append("                      zm_yunjian, zm_yunxi, zm_yunxia, zm_yunyang")
     
     return "\n".join(results)
