@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Fixed TypeError in `refresh_provider_registry` tool that prevented TTS service detection (#6)
+  - Changed incorrect `url=` parameter to `base_url=` when creating EndpointInfo objects
+  - Added unit tests to prevent regression
+
 ## [2.11.0] - 2025-07-06
 
 ### Added
