@@ -11,7 +11,7 @@ Natural voice conversations for AI assistants. Voice Mode brings human-like voic
 
 ## 🖥️ Compatibility
 
-**Runs on:** Linux • macOS • Windows (WSL) | **Python:** 3.10+
+**Runs on:** Linux • macOS • Windows (WSL) • NixOS | **Python:** 3.10+
 
 ## ✨ Features
 
@@ -136,6 +136,19 @@ brew install portaudio ffmpeg
 Follow the Ubuntu/Debian instructions above within WSL.
 </details>
 
+<details>
+<summary><strong>NixOS</strong></summary>
+
+Voice Mode includes a flake.nix with all required dependencies. You can either:
+
+1. **Use the development shell** (temporary):
+```bash
+nix develop github:licht1stein/voicemode/nixos-flake-wrapper
+```
+
+2. **Install system-wide** (see Installation section below)
+</details>
+
 ### Quick Install
 
 ```bash
@@ -147,6 +160,9 @@ uvx voice-mode
 
 # Using pip
 pip install voice-mode
+
+# Using Nix (NixOS)
+nix run github:licht1stein/voicemode/nixos-flake-wrapper
 ```
 
 ### Configuration for AI Coding Assistants
@@ -380,6 +396,36 @@ pipx install voice-mode
 git clone https://github.com/mbailey/voicemode.git
 cd voicemode
 pip install -e .
+```
+</details>
+
+<details>
+<summary><strong>NixOS Installation Options</strong></summary>
+
+**1. Install with nix profile (user-wide):**
+```bash
+nix profile install github:licht1stein/voicemode/nixos-flake-wrapper
+```
+
+**2. Add to NixOS configuration (system-wide):**
+```nix
+# In /etc/nixos/configuration.nix
+environment.systemPackages = [
+  (builtins.getFlake "github:licht1stein/voicemode/nixos-flake-wrapper").packages.${pkgs.system}.default
+];
+```
+
+**3. Add to home-manager:**
+```nix
+# In home-manager configuration
+home.packages = [
+  (builtins.getFlake "github:licht1stein/voicemode/nixos-flake-wrapper").packages.${pkgs.system}.default
+];
+```
+
+**4. Run without installing:**
+```bash
+nix run github:licht1stein/voicemode/nixos-flake-wrapper
 ```
 </details>
 
