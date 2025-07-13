@@ -11,7 +11,7 @@ Natural voice conversations for AI assistants. Voice Mode brings human-like voic
 
 ## 🖥️ Compatibility
 
-**Runs on:** Linux • macOS • Windows (WSL) | **Python:** 3.10+
+**Runs on:** Linux • macOS • Windows (WSL) • NixOS | **Python:** 3.10+
 
 ## ✨ Features
 
@@ -136,17 +136,36 @@ brew install portaudio ffmpeg
 Follow the Ubuntu/Debian instructions above within WSL.
 </details>
 
+<details>
+<summary><strong>NixOS</strong></summary>
+
+Voice Mode includes a flake.nix with all required dependencies. You can either:
+
+1. **Use the development shell** (temporary):
+```bash
+nix develop github:mbailey/voicemode
+```
+
+2. **Install system-wide** (see Installation section below)
+</details>
+
 ### Quick Install
 
 ```bash
 # Using Claude Code (recommended)
 claude mcp add --scope user voice-mode uvx voice-mode
 
+# Using Claude Code with Nix (NixOS)
+claude mcp add voice-mode nix run github:mbailey/voicemode
+
 # Using UV
 uvx voice-mode
 
 # Using pip
 pip install voice-mode
+
+# Using Nix (NixOS)
+nix run github:mbailey/voicemode
 ```
 
 ### Configuration for AI Coding Assistants
@@ -380,6 +399,36 @@ pipx install voice-mode
 git clone https://github.com/mbailey/voicemode.git
 cd voicemode
 pip install -e .
+```
+</details>
+
+<details>
+<summary><strong>NixOS Installation Options</strong></summary>
+
+**1. Install with nix profile (user-wide):**
+```bash
+nix profile install github:mbailey/voicemode
+```
+
+**2. Add to NixOS configuration (system-wide):**
+```nix
+# In /etc/nixos/configuration.nix
+environment.systemPackages = [
+  (builtins.getFlake "github:mbailey/voicemode").packages.${pkgs.system}.default
+];
+```
+
+**3. Add to home-manager:**
+```nix
+# In home-manager configuration
+home.packages = [
+  (builtins.getFlake "github:mbailey/voicemode").packages.${pkgs.system}.default
+];
+```
+
+**4. Run without installing:**
+```bash
+nix run github:mbailey/voicemode
 ```
 </details>
 
