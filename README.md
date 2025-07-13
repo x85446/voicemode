@@ -143,7 +143,7 @@ Voice Mode includes a flake.nix with all required dependencies. You can either:
 
 1. **Use the development shell** (temporary):
 ```bash
-nix develop github:licht1stein/voicemode/nixos-flake-wrapper
+nix develop github:mbailey/voicemode
 ```
 
 2. **Install system-wide** (see Installation section below)
@@ -155,6 +155,9 @@ nix develop github:licht1stein/voicemode/nixos-flake-wrapper
 # Using Claude Code (recommended)
 claude mcp add --scope user voice-mode uvx voice-mode
 
+# Using Claude Code with Nix (NixOS)
+claude mcp add voice-mode nix run github:mbailey/voicemode
+
 # Using UV
 uvx voice-mode
 
@@ -162,7 +165,7 @@ uvx voice-mode
 pip install voice-mode
 
 # Using Nix (NixOS)
-nix run github:licht1stein/voicemode/nixos-flake-wrapper
+nix run github:mbailey/voicemode
 ```
 
 ### Configuration for AI Coding Assistants
@@ -404,14 +407,14 @@ pip install -e .
 
 **1. Install with nix profile (user-wide):**
 ```bash
-nix profile install github:licht1stein/voicemode/nixos-flake-wrapper
+nix profile install github:mbailey/voicemode
 ```
 
 **2. Add to NixOS configuration (system-wide):**
 ```nix
 # In /etc/nixos/configuration.nix
 environment.systemPackages = [
-  (builtins.getFlake "github:licht1stein/voicemode/nixos-flake-wrapper").packages.${pkgs.system}.default
+  (builtins.getFlake "github:mbailey/voicemode").packages.${pkgs.system}.default
 ];
 ```
 
@@ -419,13 +422,13 @@ environment.systemPackages = [
 ```nix
 # In home-manager configuration
 home.packages = [
-  (builtins.getFlake "github:licht1stein/voicemode/nixos-flake-wrapper").packages.${pkgs.system}.default
+  (builtins.getFlake "github:mbailey/voicemode").packages.${pkgs.system}.default
 ];
 ```
 
 **4. Run without installing:**
 ```bash
-nix run github:licht1stein/voicemode/nixos-flake-wrapper
+nix run github:mbailey/voicemode
 ```
 </details>
 
