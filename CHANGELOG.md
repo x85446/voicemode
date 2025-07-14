@@ -7,24 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.13.0] - 2025-07-15
+
+## [2.13.0] - 2025-07-14
+
 ### Added
-- Enhanced exchange logging with new metadata fields:
-  - STT audio filenames now properly linked in JSONL logs
-  - Transport type (local/livekit/speak-only) tracked for all exchanges
-  - Silence detection configuration logged for STT exchanges
-  - Split timing metrics between STT and TTS entries for accurate attribution
-- Updated exchange format to version 2 (backward compatible)
-- Scripts for viewing exchange logs:
-  - `scripts/tail-exchanges` - Simple colored tail with formatting
-  - `scripts/tail-exchanges-pretty` - Advanced viewer with filtering options
-  - `scripts/view-exchanges` - View last N exchanges without tailing
+- Unified CLI system with shared exchanges library
+  - New `voicemode` command with multiple subcommands (`show`, `tell`, `diagnose`, etc.)
+  - Centralized exchange processing library for consistent behavior across scripts
+  - Modular command architecture for easy extension
+- Enhanced exchange logging capabilities:
+  - STT entries logged even when no speech is detected for better debugging
+  - Real-time logging of both TTS and STT exchanges
+  - Split timing metrics between STT and TTS for accurate performance attribution
+  - Additional metadata in exchange logs for better analysis
+
+### Changed
+- Migrated all standalone scripts to use the unified CLI system
+  - Scripts now accessible as subcommands of the main `voicemode` command
+  - Consistent argument parsing and help documentation across all commands
+  - Improved code reuse through shared libraries
 
 ### Fixed
 - Fixed undefined `audio_path` variable in STT logging
 - Fixed incorrect hardcoded audio format in STT logs (now uses actual format)
-
-### Documentation
-- Updated conversation-logging-jsonl.md specification for version 2 schema
 
 ## [2.12.0] - 2025-07-06
 
