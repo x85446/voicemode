@@ -1162,8 +1162,8 @@ async def converse(
                          - Simple yes/no questions: 10 seconds
                          - Normal conversational responses: 20 seconds  
                          - Open-ended questions: 30 seconds (default)
-                         - Detailed explanations: 45 seconds
-                         - Stories or long explanations: 60 seconds
+                         - Detailed explanations: 100 seconds
+                         - Stories or long explanations: 300 seconds
                          Always err on the side of longer duration - it's better to have 
                          silence at the end than to cut off the user mid-sentence.
         min_listen_duration: Minimum time to record before silence detection can stop (default: 2.0)

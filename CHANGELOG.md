@@ -7,7 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [2.13.0] - 2025-07-15
+### Changed
+- Increased recommended listen durations in converse tool documentation
+  - Detailed explanations: 45s → 100s
+  - Stories or long explanations: 60s → 300s
+  - Provides more generous time for users giving longer responses
 
 ## [2.13.0] - 2025-07-14
 
