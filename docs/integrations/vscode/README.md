@@ -50,13 +50,14 @@ Create a `.vscode/mcp.json` file in your workspace root or user settings:
 
 ```json
 {
-  "mcpServers": {
+  "servers": {
     "voice-mode": {
       "command": "uvx",
       "args": ["voice-mode"],
       "env": {
         "OPENAI_API_KEY": "your-openai-key"
-      }
+      },
+      "type": "stdio"
     }
   }
 }

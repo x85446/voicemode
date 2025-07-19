@@ -79,6 +79,7 @@ When using voice-mode with MCP hosts (Claude Desktop, VS Code, etc.), it's impor
 | `VOICEMODE_AUTO_START_KOKORO` | `false` | Automatically start Kokoro TTS on startup | Provider |
 | `VOICEMODE_BASE_DIR` | `~/.voicemode` | Base directory for all voicemode data | Storage |
 | `VOICEMODE_DEBUG` | `false` | Enable debug logging (`true`, `trace` for verbose). Automatically enables all saving. | Debug |
+| `VOICEMODE_DEFAULT_LISTEN_DURATION` | `120.0` | Default listening duration in seconds for the converse tool | Audio |
 | `VOICEMODE_DISABLE_SILENCE_DETECTION` | `false` | Disable silence detection globally (useful for noisy environments) | Audio |
 | `VOICEMODE_EVENT_LOG_DIR` | `~/.voicemode/logs/events` | Directory for event log files | Logging |
 | `VOICEMODE_EVENT_LOG_ENABLED` | `true` | Enable structured event logging | Logging |

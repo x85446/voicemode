@@ -56,7 +56,8 @@ from voice_mode.config import (
     SILENCE_THRESHOLD_MS,
     MIN_RECORDING_DURATION,
     VAD_CHUNK_DURATION_MS,
-    INITIAL_SILENCE_GRACE_PERIOD
+    INITIAL_SILENCE_GRACE_PERIOD,
+    DEFAULT_LISTEN_DURATION
 )
 import voice_mode.config
 from voice_mode.providers import (
@@ -1121,7 +1122,7 @@ async def livekit_converse(message: str, room_name: str = "", timeout: float = 6
 async def converse(
     message: str,
     wait_for_response: bool = True,
-    listen_duration: float = 30.0,
+    listen_duration: float = DEFAULT_LISTEN_DURATION,
     min_listen_duration: float = 2.0,
     transport: Literal["auto", "local", "livekit"] = "auto",
     room_name: str = "",
@@ -1157,12 +1158,12 @@ async def converse(
     Args:
         message: The message to speak
         wait_for_response: Whether to listen for a response after speaking (default: True)
-        listen_duration: How long to listen for response in seconds (default: 30.0)
+        listen_duration: How long to listen for response in seconds (default: 120.0)
                          Recommended durations based on expected response:
                          - Simple yes/no questions: 10 seconds
-                         - Normal conversational responses: 20 seconds  
-                         - Open-ended questions: 30 seconds (default)
-                         - Detailed explanations: 100 seconds
+                         - Normal conversational responses: 30 seconds  
+                         - Open-ended questions: 60 seconds
+                         - Detailed explanations: 120 seconds (default)
                          - Stories or long explanations: 300 seconds
                          Always err on the side of longer duration - it's better to have 
                          silence at the end than to cut off the user mid-sentence.

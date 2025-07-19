@@ -1,4 +1,4 @@
-name: Test Voice MCP
+name: Test Voice Mode MCP
 
 on:
   push:

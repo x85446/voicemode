@@ -118,17 +118,16 @@ Ensure MCP support is enabled in VS Code settings:
 
 ### 5. Start Required Services
 
-Before using voice-mode in VS Code, ensure the required services are running:
+Before using voice-mode in VS Code, you may want to run local services:
 
-```bash
-# Start all services (LiveKit, Whisper, Kokoro)
-make dev
+### Optional: Local Speech Services
 
-# Or start individual services
-make livekit-start
-make whisper-start
-make kokoro-start
-```
+Voice Mode works with OpenAI by default, but you can run local services for privacy or offline use:
+
+- **Whisper.cpp** (STT): Install and run on port 2022 - [Instructions](https://github.com/ggerganov/whisper.cpp)
+- **Kokoro** (TTS): Install and run on port 8880 - [Instructions](https://huggingface.co/hexgrad/Kokoro-82M)
+
+Voice Mode will automatically detect and use these services when available, falling back to OpenAI if not found.
 
 ## Usage in VS Code
 

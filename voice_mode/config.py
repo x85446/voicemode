@@ -93,6 +93,9 @@ MIN_RECORDING_DURATION = float(os.getenv("VOICEMODE_MIN_RECORDING_DURATION", "0.
 VAD_CHUNK_DURATION_MS = 30  # VAD frame size (must be 10, 20, or 30ms)
 INITIAL_SILENCE_GRACE_PERIOD = float(os.getenv("VOICEMODE_INITIAL_SILENCE_GRACE_PERIOD", "4.0"))  # Give users 4s to start speaking
 
+# Default listen duration for converse tool
+DEFAULT_LISTEN_DURATION = float(os.getenv("VOICEMODE_DEFAULT_LISTEN_DURATION", "120.0"))  # Default 120s listening time
+
 # Audio format configuration
 AUDIO_FORMAT = os.getenv("VOICEMODE_AUDIO_FORMAT", "pcm").lower()
 TTS_AUDIO_FORMAT = os.getenv("VOICEMODE_TTS_AUDIO_FORMAT", "pcm").lower()  # Default to PCM for optimal streaming

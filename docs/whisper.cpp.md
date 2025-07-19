@@ -1,27 +1,64 @@
 # Whisper.cpp STT Setup
 
-Whisper.cpp is a local speech-to-text engine that provides an OpenAI-compatible API.
+Whisper.cpp is a local speech-to-text engine that provides an OpenAI-compatible API. Voice Mode can use it as an alternative to OpenAI's speech-to-text service.
 
-## Quick Start
+## How Voice Mode Uses Whisper
 
-1. Start Whisper service:
-   ```bash
-   make whisper-start
-   ```
+Voice Mode automatically checks for local STT services before falling back to OpenAI:
 
-2. Configure voice-mode to use local Whisper:
-   ```bash
-   export STT_BASE_URL=http://127.0.0.1:2022/v1
-   ```
+1. **First**: Checks for Whisper.cpp on `http://127.0.0.1:2022/v1`
+2. **Fallback**: Uses OpenAI API (requires `OPENAI_API_KEY`)
 
-3. Or add to `.mcp.json`:
-   ```json
-   "voice-mode": {
-     "env": {
-       "STT_BASE_URL": "http://127.0.0.1:2022/v1"
-     }
-   }
-   ```
+## Setting Up Whisper.cpp
+
+### Installation
+
+Install Whisper.cpp following the [official instructions](https://github.com/ggerganov/whisper.cpp).
+
+### Running the OpenAI-Compatible Server
+
+To run Whisper.cpp with an OpenAI-compatible API endpoint:
+
+```bash
+whisper-server \
+  --model base.en \
+  --host 127.0.0.1 \
+  --port 2022 \
+  --inference-path "/v1/audio/transcriptions" \
+  --threads 4 \
+  --processors 1 \
+  --convert \
+  --print-progress
+```
+
+Key options:
+- `--model`: Model to use (tiny, base, small, medium, large)
+- `--host`: Server host (default: 127.0.0.1)
+- `--port`: Server port (Voice Mode expects 2022)
+- `--inference-path`: OpenAI-compatible endpoint path
+- `--threads`: Number of threads for processing
+- `--processors`: Number of parallel processors
+- `--convert`: Convert audio to required format automatically
+- `--print-progress`: Show transcription progress
+
+Voice Mode will automatically detect and use it when running on port 2022!
+
+## Manual Configuration (Optional)
+
+To use a different Whisper endpoint or force its use:
+
+```bash
+export STT_BASE_URL=http://127.0.0.1:2022/v1
+```
+
+Or add to your MCP configuration:
+```json
+"voice-mode": {
+  "env": {
+    "STT_BASE_URL": "http://127.0.0.1:2022/v1"
+  }
+}
+```
 
 ## Model Selection
 
