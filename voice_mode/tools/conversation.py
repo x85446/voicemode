@@ -370,7 +370,16 @@ async def text_to_speech_with_failover(
     
     # All endpoints failed
     logger.error(f"All TTS endpoints failed. Last error: {last_error}")
-    return False, None, None
+    
+    # Create a config dict with error information
+    from voice_mode.config import TTS_BASE_URLS as CONFIG_TTS_BASE_URLS
+    error_config = {
+        'error': last_error,
+        'tried_urls': list(tried_urls),
+        'base_url': CONFIG_TTS_BASE_URLS[0] if CONFIG_TTS_BASE_URLS else 'https://api.openai.com/v1'
+    }
+    
+    return False, None, error_config
 
 
 async def speech_to_text(audio_data: np.ndarray, save_audio: bool = False, audio_dir: Optional[Path] = None, transport: str = "local") -> Optional[str]:
@@ -1451,7 +1460,16 @@ async def converse(
                             logger.error(f"Failed to log TTS to JSONL: {e}")
                     
                     if not tts_success:
-                        result = "Error: Could not speak message"
+                        # Check if we have config info that might indicate why it failed
+                        if tts_config and 'openai.com' in tts_config.get('base_url', ''):
+                            # Check if API key is missing for OpenAI
+                            from voice_mode.config import OPENAI_API_KEY
+                            if not OPENAI_API_KEY:
+                                result = "Error: Could not speak message. OpenAI API key is not set. Please set OPENAI_API_KEY environment variable or use local services (Kokoro TTS)."
+                            else:
+                                result = "Error: Could not speak message. TTS request to OpenAI failed. Please check your API key and network connection."
+                        else:
+                            result = "Error: Could not speak message. All TTS providers failed. Check that local services are running or set OPENAI_API_KEY for cloud fallback."
                         return result
                     
                     # Brief pause before listening

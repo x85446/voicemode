@@ -19,6 +19,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Stories or long explanations: 300s (unchanged)
   - Provides more generous time for users giving longer responses
 
+### Fixed
+- Improved error messages when OpenAI API key is missing to provide helpful guidance
+  - Now explicitly mentions need to set OPENAI_API_KEY or use local services
+  - Differentiates between missing API key and other connection failures
+
 ## [2.13.0] - 2025-07-14
 
 ### Added
