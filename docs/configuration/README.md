@@ -4,21 +4,36 @@ This directory contains configuration documentation for Voice Mode.
 
 ## Quick Links
 
-- **[Environment Variables](environment.md)** - Complete reference of all environment variables
-- **[MCP Configuration](../configuration.md)** - Detailed guide for configuring Voice Mode with MCP hosts
-- **[Integration Guides](../integrations/README.md)** - Platform-specific setup instructions
+- **[Environment Variables Example](voicemode.env.example)** - Environment variable reference showing defaults and examples
+- **[Voice Preferences](voice-preferences.md)** - File-based voice selection system
+- **[MCP Environment Precedence](mcp-env-precedence.md)** - How MCP handles environment variables
+- **[Integration Guides](../integrations/README.md)** - How to add Voice Mode MCP to your code editor
 
 ## Getting Started
 
+Voice Mode MCP has sensible defaults and only needs either:
+
+- An OpenAI API Key (easy)
+
+or
+
+- Local voice services with the following base urls:
+
+  - Whisper: http://localhost:2022/v1
+  - TTS:     http://localhost:8880/v1
+
 ### Minimal Configuration
 
-For OpenAI services, you'll need an API key:
+The easiest way to get started using Voice Mode MCP is with an [OpenAI API Key](platform.openai.com) for Speech recognitions and Text to Speech:
 
 ```bash
 export OPENAI_API_KEY="your-api-key"
 ```
 
-For local-only setups (Kokoro + Whisper), no API key is required!
+For local-only setups (Kokoro + Whisper), no API key is required however:
+
+- You need to setup and run these services
+- It's worth having an OpenAI API Key as a fallback when things fail.
 
 ### Common Configurations
 
@@ -57,4 +72,26 @@ By default, Voice Mode prioritizes privacy:
 - Transcriptions are NOT saved unless explicitly enabled
 - Only event logs are saved by default for debugging
 
-To change this behavior, see the [Environment Variables](environment.md) reference.
+To change this behavior, see the [Environment Variables Example](voicemode.env.example) file.
+
+## Using the Environment File
+
+1. Copy the example file to your home directory:
+   ```bash
+   cp voicemode.env.example ~/.voicemode.env
+   ```
+
+2. Edit the file and uncomment/modify the variables you need:
+   ```bash
+   vim ~/.voicemode.env  # or your preferred editor
+   ```
+
+3. Source the file in your shell:
+   ```bash
+   source ~/.voicemode.env
+   ```
+
+4. Or add it to your shell RC file for persistence:
+   ```bash
+   echo "source ~/.voicemode.env" >> ~/.bashrc  # or ~/.zshrc
+   ```

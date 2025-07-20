@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New `VOICEMODE_DEFAULT_LISTEN_DURATION` environment variable to customize default listening time (defaults to 120s)
 
 ### Changed
-- Changed default listen_duration parameter from 30s to 120s for more natural conversations
+- Changed default listen_duration parameter from 45s to 120s for more natural conversations
 - Updated recommended listen durations in converse tool documentation
   - Normal conversational responses: 20s → 30s
   - Open-ended questions: 30s → 60s
