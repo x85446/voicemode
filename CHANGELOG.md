@@ -18,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Detailed explanations: 100s → 120s (now the default)
   - Stories or long explanations: 300s (unchanged)
   - Provides more generous time for users giving longer responses
+- **BREAKING**: Voice preference files renamed from `voices.txt` to `.voices.txt`
+  - Now uses hidden files to avoid cluttering project directories
+  - Affects both standalone files and those in `.voicemode` directories
 
 ### Fixed
 - Improved error messages when OpenAI API key is missing to provide helpful guidance

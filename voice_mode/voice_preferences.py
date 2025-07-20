@@ -14,24 +14,24 @@ _preferences_loaded = False
 
 def find_voices_file() -> Optional[Path]:
     """
-    Find the first voices.txt file by walking up the directory tree.
+    Find the first .voices.txt file by walking up the directory tree.
     
     Looks for (in order):
-    1. voices.txt in current or parent directories
+    1. .voices.txt in current or parent directories
     2. .voicemode/voices.txt in current or parent directories
-    3. ~/voices.txt in user home
+    3. ~/.voices.txt in user home
     4. ~/.voicemode/voices.txt in user home
     
     Returns:
-        Path to voices.txt file or None if not found
+        Path to .voices.txt file or None if not found
     """
     # Start from current working directory
     current_dir = Path.cwd()
     
     # Walk up directory tree
     while True:
-        # Check for standalone voices.txt first
-        standalone_file = current_dir / "voices.txt"
+        # Check for standalone .voices.txt first
+        standalone_file = current_dir / ".voices.txt"
         if standalone_file.exists():
             logger.info(f"Found voice preferences at: {standalone_file}")
             return standalone_file
@@ -49,7 +49,7 @@ def find_voices_file() -> Optional[Path]:
         current_dir = parent
     
     # Check user home directory - standalone first
-    home_standalone = Path.home() / "voices.txt"
+    home_standalone = Path.home() / ".voices.txt"
     if home_standalone.exists():
         logger.info(f"Found voice preferences at: {home_standalone}")
         return home_standalone
@@ -66,7 +66,7 @@ def find_voices_file() -> Optional[Path]:
 
 def load_voice_preferences() -> List[str]:
     """
-    Load voice preferences from voices.txt file.
+    Load voice preferences from .voices.txt file.
     
     Returns:
         List of voice names in preference order, or empty list if no file found
