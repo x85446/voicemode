@@ -20,16 +20,9 @@ import httpx
 try:
     import webrtcvad
     VAD_AVAILABLE = True
-    with open('/tmp/voicemode_vad_import.txt', 'w') as f:
-        f.write(f"VAD import successful\n")
 except ImportError as e:
     webrtcvad = None
     VAD_AVAILABLE = False
-    with open('/tmp/voicemode_vad_import.txt', 'w') as f:
-        f.write(f"VAD import failed: {e}\n")
-        import sys
-        f.write(f"Python path: {sys.path}\n")
-        f.write(f"Python executable: {sys.executable}\n")
 
 from voice_mode.server import mcp
 from voice_mode.conversation_logger import get_conversation_logger
@@ -802,10 +795,6 @@ def record_audio_with_silence_detection(max_duration: float, disable_silence_det
     Returns:
         Numpy array of recorded audio samples
     """
-    # Write to file for debugging
-    with open('/tmp/voicemode_silence_debug.txt', 'a') as f:
-        f.write(f"[{time.time()}] record_audio_with_silence_detection called - VAD={VAD_AVAILABLE}, DISABLED={DISABLE_SILENCE_DETECTION}\n")
-        f.flush()
     
     logger.info(f"record_audio_with_silence_detection called - VAD_AVAILABLE={VAD_AVAILABLE}, DISABLE_SILENCE_DETECTION={DISABLE_SILENCE_DETECTION}, min_duration={min_duration}")
     
