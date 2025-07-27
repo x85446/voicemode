@@ -51,14 +51,6 @@ async def whisper_install(
         Installation status with paths and configuration details
     """
     try:
-        # Handle string inputs for boolean parameters (MCP compatibility)
-        if isinstance(use_gpu, str):
-            use_gpu = use_gpu.lower() in ('true', '1', 'yes', 'on')
-        if isinstance(force_reinstall, str):
-            force_reinstall = force_reinstall.lower() in ('true', '1', 'yes', 'on')
-        if isinstance(auto_enable, str):
-            auto_enable = auto_enable.lower() in ('true', '1', 'yes', 'on')
-        
         # Check for and migrate old installations
         migration_msg = auto_migrate_if_needed("whisper")
         
