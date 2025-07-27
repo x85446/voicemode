@@ -564,7 +564,7 @@ class TestKokoroFastAPIInstaller:
             # On Linux, it should have systemd service info
             assert result["service_status"] == "managed_by_systemd"
             assert "systemd_service" in result
-            assert result["systemd_service"].endswith("kokoro-fastapi-8880.service")
+            assert result["systemd_service"].endswith("voicemode-kokoro.service")
             assert result["systemd_enabled"] is True
     
     @pytest.mark.asyncio

@@ -116,7 +116,10 @@ class TestUnifiedServiceTool:
         mock_proc.terminate = MagicMock()
         mock_proc.wait = MagicMock()
         
-        with patch('voice_mode.tools.service.find_process_by_port', return_value=mock_proc):
+        # Mock platform and service files to force fallback to process termination
+        with patch('voice_mode.tools.service.find_process_by_port', return_value=mock_proc), \
+             patch('platform.system', return_value='Darwin'), \
+             patch('pathlib.Path.exists', return_value=False):  # No service files exist
             result = await service("kokoro", "stop")
             assert "✅" in result
             assert "stopped" in result
