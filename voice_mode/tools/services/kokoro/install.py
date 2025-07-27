@@ -278,11 +278,11 @@ async def kokoro_install(
             systemd_user_dir = os.path.expanduser("~/.config/systemd/user")
             os.makedirs(systemd_user_dir, exist_ok=True)
             
-            service_name = f"kokoro-fastapi-{port}.service"
+            service_name = "voicemode-kokoro.service"
             service_path = os.path.join(systemd_user_dir, service_name)
             
             service_content = f"""[Unit]
-Description=Kokoro FastAPI TTS Service on port {port}
+Description=VoiceMode Kokoro TTS Service
 After=network.target
 
 [Service]
@@ -291,8 +291,8 @@ ExecStart={start_script_path}
 Restart=on-failure
 RestartSec=10
 WorkingDirectory={install_dir}
-StandardOutput=append:{os.path.join(voicemode_dir, f'kokoro-fastapi-{port}.log')}
-StandardError=append:{os.path.join(voicemode_dir, f'kokoro-fastapi-{port}.error.log')}
+StandardOutput=append:{os.path.join(voicemode_dir, 'kokoro.log')}
+StandardError=append:{os.path.join(voicemode_dir, 'kokoro.error.log')}
 Environment="PATH=/usr/local/bin:/usr/bin:/bin:/home/m/.local/bin"
 
 [Install]
