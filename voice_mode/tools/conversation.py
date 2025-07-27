@@ -213,9 +213,9 @@ async def get_stt_config(provider: Optional[str] = None):
         
         return {
             'client': client,
-            'base_url': endpoint_info.url,
+            'base_url': endpoint_info.base_url,
             'model': selected_model,
-            'provider': endpoint_info.url  # For logging
+            'provider': endpoint_info.base_url  # For logging
         }
     except Exception as e:
         logger.error(f"Failed to get STT client: {e}")
