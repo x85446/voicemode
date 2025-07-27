@@ -5,7 +5,7 @@
 set -e
 
 # Reattach stdin to terminal for interactive prompts when run via curl | bash
-exec < /dev/tty
+[ -t 0 ] || exec </dev/tty # reattach keyboard to STDIN
 
 # Colors for output
 RED='\033[0;31m'
