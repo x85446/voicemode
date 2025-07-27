@@ -165,37 +165,20 @@ check_python() {
     fi
 }
 
-install_voicemode() {
-    if confirm_action "Install Voice Mode Python package"; then
-        print_step "Installing Voice Mode..."
-        
-        # Ask user if they want beta version
-        echo "Which version would you like to install?"
-        echo "1) Stable (recommended)"
-        echo "2) Beta (latest features)"
-        read -p "Enter choice (1 or 2): " version_choice
-        
-        case $version_choice in
-            2)
-                print_step "Installing Voice Mode beta from TestPyPI..."
-                pip3 install --index-url https://test.pypi.org/simple/ voice-mode
-                ;;
-            *)
-                print_step "Installing Voice Mode stable version..."
-                pip3 install voice-mode
-                ;;
-        esac
-        
-        # Verify installation
-        if command -v voice-mode >/dev/null 2>&1; then
-            local vm_version=$(voice-mode --version 2>/dev/null || echo "unknown")
-            print_success "Voice Mode installed successfully: $vm_version"
-        else
-            print_error "Voice Mode installation failed"
-        fi
-    else
-        print_error "Voice Mode is required for this installer. Installation aborted."
-    fi
+show_installation_instructions() {
+    print_step "Voice Mode Installation Instructions"
+    echo ""
+    echo "Your system is now ready for Voice Mode! Choose your installation method:"
+    echo ""
+    echo "Option 1: Install via uvx (recommended for MCP usage)"
+    echo "  uvx voice-mode"
+    echo ""
+    echo "Option 2: Install stable version via pip"
+    echo "  pip3 install voice-mode"
+    echo ""
+    echo "Option 3: Install beta version via pip (latest features)"
+    echo "  pip3 install --index-url https://test.pypi.org/simple/ voice-mode"
+    echo ""
 }
 
 setup_claude_integration() {
@@ -268,19 +251,21 @@ main() {
     
     check_python
     
-    # Install dependencies and Voice Mode
+    # Install dependencies
     install_system_dependencies
-    install_voicemode
+    
+    # Show installation instructions instead of installing
+    show_installation_instructions
     
     # Optional Claude integration
     setup_claude_integration
     
     echo ""
-    print_success "🎉 Voice Mode installation complete!"
+    print_success "🎉 System setup complete!"
     echo ""
     echo "Next steps:"
-    echo "1. Set your OpenAI API key: export OPENAI_API_KEY='your-key'"
-    echo "2. Test voice mode: voice-mode --help"
+    echo "1. Install Voice Mode using one of the methods shown above"
+    echo "2. Set your OpenAI API key: export OPENAI_API_KEY='your-key'"
     echo "3. Configure with Claude: claude mcp add voice-mode -- uvx voice-mode"
     echo ""
     echo "For more information, visit: https://github.com/mbailey/voicemode"
