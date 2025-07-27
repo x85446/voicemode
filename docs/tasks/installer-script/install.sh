@@ -218,78 +218,48 @@ setup_local_npm() {
     print_success "Local npm configuration complete"
 }
 
-show_installation_instructions() {
-    print_step "Voice Mode Installation Instructions"
-    echo ""
-    echo "Your system is now ready for Voice Mode! Choose your installation method:"
-    echo ""
-    echo "Option 1: Install via uvx (recommended for MCP usage)"
-    echo "  uvx voice-mode"
-    echo ""
-    echo "Option 2: Install stable version via pip"
-    echo "  pip3 install voice-mode"
-    echo ""
-    echo "Option 3: Install beta version via pip (latest features)"
-    echo "  pip3 install --index-url https://test.pypi.org/simple/ voice-mode"
-    echo ""
+configure_claude_voicemode() {
+    if command -v claude >/dev/null 2>&1; then
+        if confirm_action "Configure Voice Mode with Claude Code (adds MCP server)"; then
+            print_step "Configuring Voice Mode with Claude Code..."
+            
+            if claude mcp add --scope user voice-mode -- uvx voice-mode; then
+                print_success "Voice Mode configured with Claude Code"
+                echo ""
+                echo "🎉 Setup complete! You can now use voice commands in Claude Code:"
+                echo "  claude converse"
+                echo ""
+                echo "Voice Mode will automatically install local speech services if needed."
+            else
+                print_error "Failed to configure Voice Mode with Claude Code"
+            fi
+        else
+            print_step "Skipping Voice Mode configuration"
+            echo "You can configure it later with:"
+            echo "  claude mcp add --scope user voice-mode -- uvx voice-mode"
+        fi
+    else
+        print_warning "Claude Code not found. Please install it first to use Voice Mode."
+    fi
 }
 
-setup_claude_integration() {
-    print_step "Checking for Claude Code..."
-    
-    if command -v claude >/dev/null 2>&1; then
-        print_success "Claude Code found"
-        
-        echo "Would you like to configure Voice Mode with Claude Code? (y/n)"
-        read -p "Enter choice: " claude_choice
-        
-        case $claude_choice in
-            [Yy]*)
-                print_step "Configuring Claude Code integration..."
-                
-                # Check if user has OPENAI_API_KEY
-                if [ -z "$OPENAI_API_KEY" ]; then
-                    print_warning "OPENAI_API_KEY not set in environment"
-                    echo "Please set your OpenAI API key:"
-                    echo "export OPENAI_API_KEY='your-api-key-here'"
-                    echo ""
-                    echo "Then configure Voice Mode with Claude:"
-                    echo "claude mcp add voice-mode -- uvx voice-mode"
-                else
-                    # Add MCP server with API key
-                    claude mcp add voice-mode --env OPENAI_API_KEY="$OPENAI_API_KEY" -- uvx voice-mode
-                    print_success "Claude Code integration configured"
-                fi
-                ;;
-            *)
-                print_step "Skipping Claude Code integration"
-                ;;
-        esac
-    else
-        print_warning "Claude Code not found"
-        echo "Would you like to install Claude Code? (y/n)"
-        read -p "Enter choice: " install_claude
-        
-        case $install_claude in
-            [Yy]*)
-                print_step "Installing Claude Code..."
-                if command -v npm >/dev/null 2>&1; then
-                    npm install -g @anthropic-ai/claude-code
-                    print_success "Claude Code installed"
-                    
-                    echo "Please set your OpenAI API key and run:"
-                    echo "claude mcp add voice-mode -- uvx voice-mode"
-                else
-                    print_error "npm not found. Please install Node.js first."
-                fi
-                ;;
-            *)
-                print_step "Skipping Claude Code installation"
-                echo "You can install it later with:"
-                echo "npm install -g @anthropic-ai/claude-code"
-                ;;
-        esac
+install_claude_if_needed() {
+    if ! command -v claude >/dev/null 2>&1; then
+        if confirm_action "Install Claude Code (required for Voice Mode)"; then
+            print_step "Installing Claude Code..."
+            if command -v npm >/dev/null 2>&1; then
+                npm install -g @anthropic-ai/claude-code
+                print_success "Claude Code installed"
+            else
+                print_error "npm not found. Please install Node.js first."
+                return 1
+            fi
+        else
+            print_warning "Claude Code is required for Voice Mode. Skipping configuration."
+            return 1
+        fi
     fi
+    return 0
 }
 
 main() {
@@ -316,19 +286,11 @@ main() {
         setup_local_npm
     fi
     
-    # Show installation instructions instead of installing
-    show_installation_instructions
+    # Install Claude Code if needed, then configure Voice Mode
+    if install_claude_if_needed; then
+        configure_claude_voicemode
+    fi
     
-    # Optional Claude integration
-    setup_claude_integration
-    
-    echo ""
-    print_success "🎉 System setup complete!"
-    echo ""
-    echo "Next steps:"
-    echo "1. Install Voice Mode using one of the methods shown above"
-    echo "2. Set your OpenAI API key: export OPENAI_API_KEY='your-key'"
-    echo "3. Configure with Claude: claude mcp add voice-mode -- uvx voice-mode"
     echo ""
     echo "For more information, visit: https://github.com/mbailey/voicemode"
 }
