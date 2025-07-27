@@ -123,27 +123,52 @@ install_homebrew() {
     fi
 }
 
-install_system_dependencies() {
-    if confirm_action "Install system dependencies (portaudio, ffmpeg) via Homebrew"; then
-        print_step "Installing system dependencies..."
-        
-        # Update Homebrew
-        brew update
-        
-        # Install required packages
-        local packages=("portaudio" "ffmpeg")
-        
-        for package in "${packages[@]}"; do
-            if brew list "$package" >/dev/null 2>&1; then
-                print_success "$package is already installed"
-            else
-                print_step "Installing $package..."
-                brew install "$package"
-                print_success "$package installed"
-            fi
-        done
+check_system_dependencies() {
+    print_step "Checking system dependencies..."
+    
+    local packages=("node" "portaudio" "ffmpeg")
+    local missing_packages=()
+    
+    for package in "${packages[@]}"; do
+        if brew list "$package" >/dev/null 2>&1; then
+            print_success "$package is already installed"
+        else
+            missing_packages+=("$package")
+        fi
+    done
+    
+    if [ ${#missing_packages[@]} -eq 0 ]; then
+        print_success "All system dependencies are already installed"
+        return 0
     else
-        print_warning "Skipping system dependencies. Voice Mode may not work properly without them."
+        echo "Missing packages: ${missing_packages[*]}"
+        return 1
+    fi
+}
+
+install_system_dependencies() {
+    if ! check_system_dependencies; then
+        if confirm_action "Install missing system dependencies via Homebrew"; then
+            print_step "Installing system dependencies..."
+            
+            # Update Homebrew
+            brew update
+            
+            # Install required packages
+            local packages=("node" "portaudio" "ffmpeg")
+            
+            for package in "${packages[@]}"; do
+                if brew list "$package" >/dev/null 2>&1; then
+                    print_success "$package is already installed"
+                else
+                    print_step "Installing $package..."
+                    brew install "$package"
+                    print_success "$package installed"
+                fi
+            done
+        else
+            print_warning "Skipping system dependencies. Voice Mode may not work properly without them."
+        fi
     fi
 }
 
@@ -163,6 +188,34 @@ check_python() {
     else
         print_error "Python 3 not found. Please install Python 3 first."
     fi
+}
+
+setup_local_npm() {
+    print_step "Setting up local npm configuration..."
+    
+    # Set up npm to use local directory (no sudo required)
+    mkdir -p "$HOME/.npm-global"
+    npm config set prefix "$HOME/.npm-global"
+    
+    # Add to PATH for current session
+    export PATH="$HOME/.npm-global/bin:$PATH"
+    
+    # Add to shell profile if not already there
+    local shell_profile=""
+    if [[ "$SHELL" == *"zsh"* ]]; then
+        shell_profile="$HOME/.zshrc"
+    elif [[ "$SHELL" == *"bash"* ]]; then
+        shell_profile="$HOME/.bash_profile"
+    fi
+    
+    if [ -n "$shell_profile" ] && [ -f "$shell_profile" ]; then
+        if ! grep -q "\.npm-global/bin" "$shell_profile"; then
+            echo 'export PATH="$HOME/.npm-global/bin:$PATH"' >> "$shell_profile"
+            print_success "Added npm global bin to PATH in $shell_profile"
+        fi
+    fi
+    
+    print_success "Local npm configuration complete"
 }
 
 show_installation_instructions() {
@@ -220,11 +273,15 @@ setup_claude_integration() {
         case $install_claude in
             [Yy]*)
                 print_step "Installing Claude Code..."
-                npm install -g @anthropic-ai/claude-code
-                print_success "Claude Code installed"
-                
-                echo "Please set your OpenAI API key and run:"
-                echo "claude mcp add voice-mode -- uvx voice-mode"
+                if command -v npm >/dev/null 2>&1; then
+                    npm install -g @anthropic-ai/claude-code
+                    print_success "Claude Code installed"
+                    
+                    echo "Please set your OpenAI API key and run:"
+                    echo "claude mcp add voice-mode -- uvx voice-mode"
+                else
+                    print_error "npm not found. Please install Node.js first."
+                fi
                 ;;
             *)
                 print_step "Skipping Claude Code installation"
@@ -253,6 +310,11 @@ main() {
     
     # Install dependencies
     install_system_dependencies
+    
+    # Set up npm for non-root usage
+    if command -v npm >/dev/null 2>&1; then
+        setup_local_npm
+    fi
     
     # Show installation instructions instead of installing
     show_installation_instructions
