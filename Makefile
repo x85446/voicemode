@@ -192,16 +192,16 @@ CLAUDE.md: CLAUDE.md.in GLOSSARY.md docs/tasks/README.md docs/tasks/key-insights
 	@# Start with the template
 	@cp CLAUDE.md.in CLAUDE.md.tmp
 	@# Replace timestamp
-	@sed -i "s/@TIMESTAMP@/$$(date -u +%Y-%m-%dT%H:%M:%SZ)/g" CLAUDE.md.tmp
+	@sed -i.bak "s/@TIMESTAMP@/$$(date -u +%Y-%m-%dT%H:%M:%SZ)/g" CLAUDE.md.tmp && rm CLAUDE.md.tmp.bak
 	@# Process @include directives
 	@while grep -q "@include " CLAUDE.md.tmp; do \
 		file=$$(grep -m1 "@include " CLAUDE.md.tmp | sed 's/.*@include //'); \
 		if [ -f "$$file" ]; then \
-			sed -i "/@include $$file/r $$file" CLAUDE.md.tmp; \
-			sed -i "/@include $$file/d" CLAUDE.md.tmp; \
+			sed -i.bak "/@include $$file/r $$file" CLAUDE.md.tmp && rm CLAUDE.md.tmp.bak; \
+			sed -i.bak "/@include $$file/d" CLAUDE.md.tmp && rm CLAUDE.md.tmp.bak; \
 		else \
 			echo "Warning: Could not find $$file"; \
-			sed -i "s|@include $$file|[File not found: $$file]|" CLAUDE.md.tmp; \
+			sed -i.bak "s|@include $$file|[File not found: $$file]|" CLAUDE.md.tmp && rm CLAUDE.md.tmp.bak; \
 		fi; \
 	done
 	@# Process @include-section directives (file, pattern, lines)
@@ -212,10 +212,10 @@ CLAUDE.md: CLAUDE.md.in GLOSSARY.md docs/tasks/README.md docs/tasks/key-insights
 		lines=$$(echo "$$line" | awk '{print $$4}'); \
 		if [ -f "$$file" ]; then \
 			grep -A $$lines "$$pattern" "$$file" > include.tmp || true; \
-			sed -i "/@include-section $$file/r include.tmp" CLAUDE.md.tmp; \
+			sed -i.bak "/@include-section $$file/r include.tmp" CLAUDE.md.tmp && rm CLAUDE.md.tmp.bak; \
 			rm -f include.tmp; \
 		fi; \
-		sed -i "/@include-section $$file/d" CLAUDE.md.tmp; \
+		sed -i.bak "/@include-section $$file/d" CLAUDE.md.tmp && rm CLAUDE.md.tmp.bak; \
 	done
 	@mv CLAUDE.md.tmp CLAUDE.md
 	@echo "✅ CLAUDE.md generated successfully!"
@@ -226,16 +226,16 @@ cursor.rules: cursor.rules.in GLOSSARY.md docs/tasks/README.md
 	@# Start with the template
 	@cp cursor.rules.in cursor.rules.tmp
 	@# Replace timestamp
-	@sed -i "s/@TIMESTAMP@/$$(date -u +%Y-%m-%dT%H:%M:%SZ)/g" cursor.rules.tmp
+	@sed -i.bak "s/@TIMESTAMP@/$$(date -u +%Y-%m-%dT%H:%M:%SZ)/g" cursor.rules.tmp && rm cursor.rules.tmp.bak
 	@# Process @include directives
 	@while grep -q "@include " cursor.rules.tmp; do \
 		file=$$(grep -m1 "@include " cursor.rules.tmp | sed 's/.*@include //'); \
 		if [ -f "$$file" ]; then \
-			sed -i "/@include $$file/r $$file" cursor.rules.tmp; \
-			sed -i "/@include $$file/d" cursor.rules.tmp; \
+			sed -i.bak "/@include $$file/r $$file" cursor.rules.tmp && rm cursor.rules.tmp.bak; \
+			sed -i.bak "/@include $$file/d" cursor.rules.tmp && rm cursor.rules.tmp.bak; \
 		else \
 			echo "Warning: Could not find $$file"; \
-			sed -i "s|@include $$file|[File not found: $$file]|" cursor.rules.tmp; \
+			sed -i.bak "s|@include $$file|[File not found: $$file]|" cursor.rules.tmp && rm cursor.rules.tmp.bak; \
 		fi; \
 	done
 	@# Process @include-section directives
@@ -246,10 +246,10 @@ cursor.rules: cursor.rules.in GLOSSARY.md docs/tasks/README.md
 		lines=$$(echo "$$line" | awk '{print $$4}'); \
 		if [ -f "$$file" ]; then \
 			grep -A $$lines "$$pattern" "$$file" > include.tmp || true; \
-			sed -i "/@include-section $$file/r include.tmp" cursor.rules.tmp; \
+			sed -i.bak "/@include-section $$file/r include.tmp" cursor.rules.tmp && rm cursor.rules.tmp.bak; \
 			rm -f include.tmp; \
 		fi; \
-		sed -i "/@include-section $$file/d" cursor.rules.tmp; \
+		sed -i.bak "/@include-section $$file/d" cursor.rules.tmp && rm cursor.rules.tmp.bak; \
 	done
 	@mv cursor.rules.tmp cursor.rules
 	@echo "✅ cursor.rules generated successfully!"
