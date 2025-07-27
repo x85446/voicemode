@@ -4,6 +4,9 @@
 
 set -e
 
+# Reattach stdin to terminal for interactive prompts when run via curl | bash
+exec < /dev/tty
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
