@@ -16,8 +16,8 @@ logger = logging.getLogger("voice-mode")
 @mcp.tool()
 async def download_model(
     model: Union[str, List[str]] = "large-v2",
-    force_download: bool = False,
-    skip_core_ml: bool = False
+    force_download: Union[bool, str] = False,
+    skip_core_ml: Union[bool, str] = False
 ) -> str:
     """Download Whisper model(s) with optional Core ML conversion.
     

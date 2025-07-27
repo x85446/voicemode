@@ -5,7 +5,7 @@ import logging
 import os
 import time
 import traceback
-from typing import Optional, Literal, Tuple, Dict
+from typing import Optional, Literal, Tuple, Dict, Union
 from pathlib import Path
 from datetime import datetime
 
@@ -1119,7 +1119,7 @@ async def livekit_converse(message: str, room_name: str = "", timeout: float = 6
 @mcp.tool()
 async def converse(
     message: str,
-    wait_for_response: bool = True,
+    wait_for_response: Union[bool, str] = True,
     listen_duration: float = DEFAULT_LISTEN_DURATION,
     min_listen_duration: float = 2.0,
     transport: Literal["auto", "local", "livekit"] = "auto",
@@ -1129,10 +1129,10 @@ async def converse(
     tts_provider: Optional[Literal["openai", "kokoro"]] = None,
     tts_model: Optional[str] = None,
     tts_instructions: Optional[str] = None,
-    audio_feedback: Optional[bool] = None,
+    audio_feedback: Optional[Union[bool, str]] = None,
     audio_feedback_style: Optional[str] = None,
     audio_format: Optional[str] = None,
-    disable_silence_detection: bool = False
+    disable_silence_detection: Union[bool, str] = False
 ) -> str:
     """Have a voice conversation - speak a message and optionally listen for response.
     

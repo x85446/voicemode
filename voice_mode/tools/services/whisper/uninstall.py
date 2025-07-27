@@ -6,7 +6,7 @@ import subprocess
 import platform
 import logging
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, Union
 
 from voice_mode.server import mcp
 from voice_mode.config import BASE_DIR
@@ -17,8 +17,8 @@ logger = logging.getLogger("voice-mode")
 
 @mcp.tool()
 async def whisper_uninstall(
-    remove_models: bool = False,
-    remove_all_data: bool = False
+    remove_models: Union[bool, str] = False,
+    remove_all_data: Union[bool, str] = False
 ) -> Dict[str, Any]:
     """Uninstall whisper.cpp and optionally remove models and data.
     

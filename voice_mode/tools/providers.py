@@ -1,7 +1,7 @@
 """Provider management tools for voice-mode."""
 
 import logging
-from typing import Optional, Dict, Any
+from typing import Optional, Union, Dict, Any
 
 from voice_mode.server import mcp
 from voice_mode.provider_discovery import provider_registry
@@ -14,7 +14,7 @@ logger = logging.getLogger("voice-mode")
 async def refresh_provider_registry(
     service_type: Optional[str] = None,
     base_url: Optional[str] = None,
-    optimistic: bool = True
+    optimistic: Union[bool, str] = True
 ) -> str:
     """Manually refresh health checks for voice provider endpoints.
     
