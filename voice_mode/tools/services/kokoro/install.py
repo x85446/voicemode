@@ -213,7 +213,11 @@ async def kokoro_install(
             launchagents_dir = os.path.expanduser("~/Library/LaunchAgents")
             os.makedirs(launchagents_dir, exist_ok=True)
             
-            plist_name = f"com.voicemode.kokoro-{port}.plist"
+            # Create log directory
+            log_dir = os.path.join(voicemode_dir, 'logs', 'kokoro')
+            os.makedirs(log_dir, exist_ok=True)
+            
+            plist_name = "com.voicemode.kokoro.plist"
             plist_path = os.path.join(launchagents_dir, plist_name)
             
             plist_content = f"""<?xml version="1.0" encoding="UTF-8"?>
@@ -221,7 +225,7 @@ async def kokoro_install(
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.voicemode.kokoro-{port}</string>
+    <string>com.voicemode.kokoro</string>
     <key>ProgramArguments</key>
     <array>
         <string>{start_script_path}</string>
@@ -233,9 +237,9 @@ async def kokoro_install(
     <key>KeepAlive</key>
     <true/>
     <key>StandardOutPath</key>
-    <string>{os.path.join(voicemode_dir, f'kokoro-{port}.log')}</string>
+    <string>{os.path.join(voicemode_dir, 'logs', 'kokoro', 'kokoro.log')}</string>
     <key>StandardErrorPath</key>
-    <string>{os.path.join(voicemode_dir, f'kokoro-{port}.error.log')}</string>
+    <string>{os.path.join(voicemode_dir, 'logs', 'kokoro', 'kokoro.error.log')}</string>
     <key>EnvironmentVariables</key>
     <dict>
         <key>PATH</key>
