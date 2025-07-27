@@ -193,29 +193,8 @@ check_python() {
 install_uvx() {
     if ! command -v uvx >/dev/null 2>&1; then
         if confirm_action "Install UV/UVX (required for Voice Mode)"; then
-            print_step "Installing UV/UVX..."
-            curl -LsSf https://astral.sh/uv/install.sh | sh
-            
-            # Source the environment to make uvx available in current session
-            if [[ -f "$HOME/.cargo/env" ]]; then
-                source "$HOME/.cargo/env"
-            fi
-            
-            # Add to shell profile if not already there
-            local shell_profile=""
-            if [[ "$SHELL" == *"zsh"* ]]; then
-                shell_profile="$HOME/.zprofile"
-            elif [[ "$SHELL" == *"bash"* ]]; then
-                shell_profile="$HOME/.bash_profile"
-            fi
-            
-            if [ -n "$shell_profile" ] && [ -f "$shell_profile" ]; then
-                if ! grep -q "cargo/env" "$shell_profile"; then
-                    echo 'source "$HOME/.cargo/env"' >> "$shell_profile"
-                    print_success "Added UV to shell profile: $shell_profile"
-                fi
-            fi
-            
+            print_step "Installing UV/UVX via pip..."
+            pip3 install uv
             print_success "UV/UVX installed successfully"
         else
             print_error "UV/UVX is required for Voice Mode. Installation aborted."
