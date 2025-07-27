@@ -82,40 +82,66 @@ check_homebrew() {
     fi
 }
 
+confirm_action() {
+    local action="$1"
+    echo ""
+    echo "About to: $action"
+    read -p "Continue? (y/n): " choice
+    case $choice in
+        [Yy]*) return 0 ;;
+        *) 
+            echo "Skipping: $action"
+            return 1 
+            ;;
+    esac
+}
+
 install_homebrew() {
     if [ "$HOMEBREW_INSTALLED" = false ]; then
-        print_step "Installing Homebrew..."
-        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-        
-        # Add Homebrew to PATH for current session
-        if [[ "$ARCH" == "arm64" ]]; then
-            eval "$(/opt/homebrew/bin/brew shellenv)"
+        if confirm_action "Install Homebrew (this will also install Xcode Command Line Tools)"; then
+            print_step "Installing Homebrew..."
+            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+            
+            # Add Homebrew to PATH for current session
+            if [[ "$ARCH" == "arm64" ]]; then
+                eval "$(/opt/homebrew/bin/brew shellenv)"
+            else
+                eval "$(/usr/local/bin/brew shellenv)"
+            fi
+            
+            print_success "Homebrew installed successfully"
+            
+            # Update the status variables since Homebrew installs Xcode tools
+            HOMEBREW_INSTALLED=true
+            XCODE_TOOLS_INSTALLED=true
         else
-            eval "$(/usr/local/bin/brew shellenv)"
+            print_error "Homebrew is required for Voice Mode dependencies. Installation aborted."
         fi
-        
-        print_success "Homebrew installed successfully"
     fi
 }
 
 install_system_dependencies() {
-    print_step "Installing system dependencies..."
-    
-    # Update Homebrew
-    brew update
-    
-    # Install required packages
-    local packages=("portaudio" "ffmpeg")
-    
-    for package in "${packages[@]}"; do
-        if brew list "$package" >/dev/null 2>&1; then
-            print_success "$package is already installed"
-        else
-            print_step "Installing $package..."
-            brew install "$package"
-            print_success "$package installed"
-        fi
-    done
+    if confirm_action "Install system dependencies (portaudio, ffmpeg) via Homebrew"; then
+        print_step "Installing system dependencies..."
+        
+        # Update Homebrew
+        brew update
+        
+        # Install required packages
+        local packages=("portaudio" "ffmpeg")
+        
+        for package in "${packages[@]}"; do
+            if brew list "$package" >/dev/null 2>&1; then
+                print_success "$package is already installed"
+            else
+                print_step "Installing $package..."
+                brew install "$package"
+                print_success "$package installed"
+            fi
+        done
+    else
+        print_warning "Skipping system dependencies. Voice Mode may not work properly without them."
+    fi
 }
 
 check_python() {
@@ -137,31 +163,35 @@ check_python() {
 }
 
 install_voicemode() {
-    print_step "Installing Voice Mode..."
-    
-    # Ask user if they want beta version
-    echo "Which version would you like to install?"
-    echo "1) Stable (recommended)"
-    echo "2) Beta (latest features)"
-    read -p "Enter choice (1 or 2): " version_choice
-    
-    case $version_choice in
-        2)
-            print_step "Installing Voice Mode beta from TestPyPI..."
-            pip3 install --index-url https://test.pypi.org/simple/ voice-mode
-            ;;
-        *)
-            print_step "Installing Voice Mode stable version..."
-            pip3 install voice-mode
-            ;;
-    esac
-    
-    # Verify installation
-    if command -v voice-mode >/dev/null 2>&1; then
-        local vm_version=$(voice-mode --version 2>/dev/null || echo "unknown")
-        print_success "Voice Mode installed successfully: $vm_version"
+    if confirm_action "Install Voice Mode Python package"; then
+        print_step "Installing Voice Mode..."
+        
+        # Ask user if they want beta version
+        echo "Which version would you like to install?"
+        echo "1) Stable (recommended)"
+        echo "2) Beta (latest features)"
+        read -p "Enter choice (1 or 2): " version_choice
+        
+        case $version_choice in
+            2)
+                print_step "Installing Voice Mode beta from TestPyPI..."
+                pip3 install --index-url https://test.pypi.org/simple/ voice-mode
+                ;;
+            *)
+                print_step "Installing Voice Mode stable version..."
+                pip3 install voice-mode
+                ;;
+        esac
+        
+        # Verify installation
+        if command -v voice-mode >/dev/null 2>&1; then
+            local vm_version=$(voice-mode --version 2>/dev/null || echo "unknown")
+            print_success "Voice Mode installed successfully: $vm_version"
+        else
+            print_error "Voice Mode installation failed"
+        fi
     else
-        print_error "Voice Mode installation failed"
+        print_error "Voice Mode is required for this installer. Installation aborted."
     fi
 }
 
@@ -226,10 +256,13 @@ main() {
     
     # Pre-flight checks
     detect_os
-    check_xcode_tools
-    install_xcode_tools
     check_homebrew
-    install_homebrew
+    
+    # Skip Xcode tools check if Homebrew will handle it
+    if [ "$HOMEBREW_INSTALLED" = false ]; then
+        install_homebrew  # This installs Xcode tools automatically
+    fi
+    
     check_python
     
     # Install dependencies and Voice Mode
