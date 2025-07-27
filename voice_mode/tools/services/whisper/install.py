@@ -8,7 +8,7 @@ import shutil
 import json
 import logging
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Union
 import asyncio
 import aiohttp
 
@@ -28,9 +28,9 @@ logger = logging.getLogger("voice-mode")
 async def whisper_install(
     install_dir: Optional[str] = None,
     model: str = "large-v2",
-    use_gpu: Optional[bool] = None,
-    force_reinstall: bool = False,
-    auto_enable: Optional[bool] = None,
+    use_gpu: Optional[Union[bool, str]] = None,
+    force_reinstall: Union[bool, str] = False,
+    auto_enable: Optional[Union[bool, str]] = None,
     version: str = "latest"
 ) -> Dict[str, Any]:
     """
@@ -51,6 +51,14 @@ async def whisper_install(
         Installation status with paths and configuration details
     """
     try:
+        # Handle string inputs for boolean parameters (MCP compatibility)
+        if isinstance(use_gpu, str):
+            use_gpu = use_gpu.lower() in ('true', '1', 'yes', 'on')
+        if isinstance(force_reinstall, str):
+            force_reinstall = force_reinstall.lower() in ('true', '1', 'yes', 'on')
+        if isinstance(auto_enable, str):
+            auto_enable = auto_enable.lower() in ('true', '1', 'yes', 'on')
+        
         # Check for and migrate old installations
         migration_msg = auto_migrate_if_needed("whisper")
         

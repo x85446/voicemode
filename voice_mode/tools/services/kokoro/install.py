@@ -7,7 +7,7 @@ import subprocess
 import shutil
 import logging
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Union
 import asyncio
 import aiohttp
 
@@ -27,10 +27,10 @@ async def kokoro_install(
     install_dir: Optional[str] = None,
     models_dir: Optional[str] = None,
     port: int = 8880,
-    auto_start: bool = True,
-    install_models: bool = True,
-    force_reinstall: bool = False,
-    auto_enable: Optional[bool] = None,
+    auto_start: Union[bool, str] = True,
+    install_models: Union[bool, str] = True,
+    force_reinstall: Union[bool, str] = False,
+    auto_enable: Optional[Union[bool, str]] = None,
     version: str = "latest"
 ) -> Dict[str, Any]:
     """
@@ -54,6 +54,16 @@ async def kokoro_install(
         Installation status with service configuration details
     """
     try:
+        # Handle string inputs for boolean parameters (MCP compatibility)
+        if isinstance(auto_start, str):
+            auto_start = auto_start.lower() in ('true', '1', 'yes', 'on')
+        if isinstance(install_models, str):
+            install_models = install_models.lower() in ('true', '1', 'yes', 'on')
+        if isinstance(force_reinstall, str):
+            force_reinstall = force_reinstall.lower() in ('true', '1', 'yes', 'on')
+        if isinstance(auto_enable, str):
+            auto_enable = auto_enable.lower() in ('true', '1', 'yes', 'on')
+        
         # Check for and migrate old installations
         migration_msg = auto_migrate_if_needed("kokoro")
         
