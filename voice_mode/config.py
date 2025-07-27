@@ -15,6 +15,12 @@ from datetime import datetime
 
 # ==================== ENVIRONMENT CONFIGURATION ====================
 
+# Helper function to parse boolean environment variables
+def env_bool(env_var: str, default: bool = False) -> bool:
+    """Parse boolean from environment variable."""
+    value = os.getenv(env_var, "").lower()
+    return value in ("true", "1", "yes", "on") if value else default
+
 # Base directory for all voicemode data
 BASE_DIR = Path(os.getenv("VOICEMODE_BASE_DIR", str(Path.home() / ".voicemode")))
 
@@ -42,6 +48,9 @@ AUDIO_FEEDBACK_ENABLED = os.getenv("VOICEMODE_AUDIO_FEEDBACK", "true").lower() i
 
 # Local provider preference configuration
 PREFER_LOCAL = os.getenv("VOICEMODE_PREFER_LOCAL", "true").lower() in ("true", "1", "yes", "on")
+
+# Always try local providers (don't mark them as permanently unavailable)
+ALWAYS_TRY_LOCAL = os.getenv("VOICEMODE_ALWAYS_TRY_LOCAL", "true").lower() in ("true", "1", "yes", "on")
 
 # Auto-start configuration
 AUTO_START_KOKORO = os.getenv("VOICEMODE_AUTO_START_KOKORO", "").lower() in ("true", "1", "yes", "on")
@@ -73,6 +82,27 @@ TTS_MODELS = parse_comma_list("VOICEMODE_TTS_MODELS", "tts-1,tts-1-hd,gpt-4o-min
 LIVEKIT_URL = os.getenv("LIVEKIT_URL", "ws://127.0.0.1:7880")
 LIVEKIT_API_KEY = os.getenv("LIVEKIT_API_KEY", "devkey")
 LIVEKIT_API_SECRET = os.getenv("LIVEKIT_API_SECRET", "secret")
+
+# ==================== WHISPER CONFIGURATION ====================
+
+# Whisper-specific configuration
+WHISPER_MODEL = os.getenv("VOICEMODE_WHISPER_MODEL", "large-v2")
+WHISPER_PORT = int(os.getenv("VOICEMODE_WHISPER_PORT", "2022"))
+WHISPER_LANGUAGE = os.getenv("VOICEMODE_WHISPER_LANGUAGE", "auto")
+WHISPER_MODEL_PATH = os.getenv("VOICEMODE_WHISPER_MODEL_PATH", str(BASE_DIR / "models" / "whisper"))
+
+# ==================== KOKORO CONFIGURATION ====================
+
+# Kokoro-specific configuration
+KOKORO_PORT = int(os.getenv("VOICEMODE_KOKORO_PORT", "8880"))
+KOKORO_MODELS_DIR = os.getenv("VOICEMODE_KOKORO_MODELS_DIR", str(BASE_DIR / "models" / "kokoro"))
+KOKORO_CACHE_DIR = os.getenv("VOICEMODE_KOKORO_CACHE_DIR", str(BASE_DIR / "cache" / "kokoro"))
+KOKORO_DEFAULT_VOICE = os.getenv("VOICEMODE_KOKORO_DEFAULT_VOICE", "af_sky")
+
+# ==================== SERVICE MANAGEMENT CONFIGURATION ====================
+
+# Auto-enable services after installation
+SERVICE_AUTO_ENABLE = env_bool("VOICEMODE_SERVICE_AUTO_ENABLE", False)
 
 # ==================== AUDIO CONFIGURATION ====================
 

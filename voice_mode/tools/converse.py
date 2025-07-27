@@ -5,7 +5,7 @@ import logging
 import os
 import time
 import traceback
-from typing import Optional, Literal, Tuple, Dict
+from typing import Optional, Literal, Tuple, Dict, Union
 from pathlib import Path
 from datetime import datetime
 
@@ -419,7 +419,7 @@ async def speech_to_text_with_failover(
                 'client': client,
                 'model': selected_model,
                 'base_url': endpoint_info.base_url if endpoint_info else base_url,
-                'provider': 'whisper-local' if '127.0.0.1' in base_url or '127.0.0.1' in base_url else 'openai-whisper'
+                'provider': 'whisper-local' if '127.0.0.1' in base_url or 'localhost' in base_url else 'openai-whisper'
             }
             
             logger.info(f"Attempting STT with {stt_config['provider']} at {stt_config['base_url']}")
@@ -522,7 +522,7 @@ async def _speech_to_text_internal(
         # Determine provider from base URL (simple heuristic)
         provider = stt_config.get('provider', 'openai-whisper')
         # Check if using local Whisper endpoint
-        if stt_config.get('base_url') and ("127.0.0.1" in stt_config['base_url'] or "127.0.0.1" in stt_config['base_url']):
+        if stt_config.get('base_url') and ("127.0.0.1" in stt_config['base_url'] or "localhost" in stt_config['base_url']):
             provider = "whisper-local"
         
         # Validate format for provider
@@ -1119,7 +1119,7 @@ async def livekit_converse(message: str, room_name: str = "", timeout: float = 6
 @mcp.tool()
 async def converse(
     message: str,
-    wait_for_response: bool = True,
+    wait_for_response: Union[bool, str] = True,
     listen_duration: float = DEFAULT_LISTEN_DURATION,
     min_listen_duration: float = 2.0,
     transport: Literal["auto", "local", "livekit"] = "auto",
@@ -1129,10 +1129,10 @@ async def converse(
     tts_provider: Optional[Literal["openai", "kokoro"]] = None,
     tts_model: Optional[str] = None,
     tts_instructions: Optional[str] = None,
-    audio_feedback: Optional[bool] = None,
+    audio_feedback: Optional[Union[bool, str]] = None,
     audio_feedback_style: Optional[str] = None,
     audio_format: Optional[str] = None,
-    disable_silence_detection: bool = False
+    disable_silence_detection: Union[bool, str] = False
 ) -> str:
     """Have a voice conversation - speak a message and optionally listen for response.
     
@@ -1676,115 +1676,3 @@ async def converse(
 
 
 
-@mcp.tool()
-async def voice_registry() -> str:
-    """Get the current voice provider registry showing all discovered endpoints.
-    
-    Returns a formatted view of all TTS and STT endpoints with their:
-    - Health status
-    - Available models
-    - Available voices (TTS only)
-    - Response times
-    - Last health check time
-    
-    This allows the LLM to see what voice services are currently available.
-    """
-    # Ensure registry is initialized
-    await provider_registry.initialize()
-    
-    # Get registry data
-    registry_data = provider_registry.get_registry_for_llm()
-    
-    # Format the output
-    lines = ["Voice Provider Registry", "=" * 50, ""]
-    
-    # TTS Endpoints
-    lines.append("TTS Endpoints:")
-    lines.append("-" * 30)
-    
-    for url, info in registry_data["tts"].items():
-        status = "✅" if info["healthy"] else "❌"
-        lines.append(f"\n{status} {url}")
-        
-        if info["healthy"]:
-            lines.append(f"   Models: {', '.join(info['models']) if info['models'] else 'none detected'}")
-            lines.append(f"   Voices: {', '.join(info['voices']) if info['voices'] else 'none detected'}")
-            if info["response_time_ms"]:
-                lines.append(f"   Response Time: {info['response_time_ms']:.0f}ms")
-        else:
-            if info.get("error"):
-                lines.append(f"   Error: {info['error']}")
-        
-        lines.append(f"   Last Check: {info['last_check']}")
-    
-    # STT Endpoints
-    lines.append("\n\nSTT Endpoints:")
-    lines.append("-" * 30)
-    
-    for url, info in registry_data["stt"].items():
-        status = "✅" if info["healthy"] else "❌"
-        lines.append(f"\n{status} {url}")
-        
-        if info["healthy"]:
-            lines.append(f"   Models: {', '.join(info['models']) if info['models'] else 'none detected'}")
-            if info["response_time_ms"]:
-                lines.append(f"   Response Time: {info['response_time_ms']:.0f}ms")
-        else:
-            if info.get("error"):
-                lines.append(f"   Error: {info['error']}")
-        
-        lines.append(f"   Last Check: {info['last_check']}")
-    
-    return "\n".join(lines)
-
-
-async def voice_chat(
-    initial_message: Optional[str] = None,
-    max_turns: int = 10,
-    listen_duration: float = 15.0,
-    voice: Optional[str] = None,
-    tts_provider: Optional[Literal["openai", "kokoro"]] = None
-) -> str:
-    """Start an interactive voice chat session.
-    
-    PRIVACY NOTICE: This tool will access your microphone for the duration
-    of the chat session. Say "goodbye", "exit", or "end chat" to stop.
-    
-    Args:
-        initial_message: Optional greeting to start the conversation
-        max_turns: Maximum number of conversation turns (default: 10)
-        listen_duration: How long to listen each turn in seconds (default: 15.0)
-        voice: Override TTS voice
-        tts_provider: TTS provider to use - "openai" or "kokoro"
-    
-    Returns:
-        Summary of the conversation
-    
-    Note: This is a simplified version. The full voice-chat command provides
-    a more interactive experience with the LLM handling the conversation flow.
-    """
-    transcript = []
-    
-    # Start with initial message if provided
-    if initial_message:
-        result = await converse(
-            message=initial_message,
-            wait_for_response=True,
-            listen_duration=listen_duration,
-            voice=voice,
-            tts_provider=tts_provider
-        )
-        transcript.append(f"Assistant: {initial_message}")
-        if "Voice response:" in result:
-            user_response = result.split("Voice response:")[1].split("|")[0].strip()
-            transcript.append(f"User: {user_response}")
-            
-            # Check for exit phrases
-            exit_phrases = ["goodbye", "exit", "end chat", "stop", "quit"]
-            if any(phrase in user_response.lower() for phrase in exit_phrases):
-                return "\n".join(transcript) + "\n\nChat ended by user."
-    
-    # Continue conversation for remaining turns
-    turns_remaining = max_turns - (1 if initial_message else 0)
-    
-    return f"Voice chat started. Use the converse tool in a loop to continue the conversation.\n\nTranscript so far:\n" + "\n".join(transcript)
