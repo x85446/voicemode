@@ -281,10 +281,7 @@ main() {
     # Install dependencies
     install_system_dependencies
     
-    # Set up npm for non-root usage
-    if command -v npm >/dev/null 2>&1; then
-        setup_local_npm
-    fi
+    # Note: Homebrew's npm works for global installs without custom prefix setup
     
     # Install Claude Code if needed, then configure Voice Mode
     if install_claude_if_needed; then
