@@ -114,14 +114,49 @@
 ### Prerequisites
 - [ ] Fresh macOS system (or new user account)
 - [ ] Xcode Command Line Tools: `xcode-select --install`
-- [ ] Homebrew: `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`
 - [ ] No existing voice-mode installation
+
+### Testing Environment Options
+
+#### Option 1: Dedicated Test User (Recommended)
+Create a separate user account for isolated testing:
+```bash
+# Create test user
+sudo dscl . -create /Users/voicetest
+sudo dscl . -create /Users/voicetest UserShell /bin/bash
+sudo dscl . -create /Users/voicetest RealName "Voice Mode Test"
+sudo dscl . -create /Users/voicetest UniqueID 1001
+sudo dscl . -create /Users/voicetest PrimaryGroupID 20
+sudo dscl . -create /Users/voicetest NFSHomeDirectory /Users/voicetest
+sudo dscl . -passwd /Users/voicetest testpass123
+sudo createhomedir -c -u voicetest
+
+# Make admin for testing
+sudo dscl . -append /Groups/admin GroupMembership voicetest
+
+# Switch to test user
+su - voicetest
+
+# Install Homebrew fresh for this user
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+#### Option 2: Standalone uv Installation
+Skip Homebrew entirely and use standalone tools:
+```bash
+# Install uv without Homebrew
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Note: This approach may require manual installation of system dependencies
+```
 
 ### Installation Testing
 1. **Initial setup**
    ```bash
-   # Install uv
+   # Install uv (if using Homebrew)
    brew install uv
+   # OR use standalone (if avoiding Homebrew)
+   curl -LsSf https://astral.sh/uv/install.sh | sh
    
    # Clone and setup
    git clone <repo>
