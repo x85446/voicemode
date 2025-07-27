@@ -213,9 +213,9 @@ async def get_stt_config(provider: Optional[str] = None):
         
         return {
             'client': client,
-            'base_url': endpoint_info.url,
+            'base_url': endpoint_info.base_url,
             'model': selected_model,
-            'provider': endpoint_info.url  # For logging
+            'provider': endpoint_info.base_url  # For logging
         }
     except Exception as e:
         logger.error(f"Failed to get STT client: {e}")
@@ -419,7 +419,7 @@ async def speech_to_text_with_failover(
                 'client': client,
                 'model': selected_model,
                 'base_url': endpoint_info.base_url if endpoint_info else base_url,
-                'provider': 'whisper-local' if '127.0.0.1' in base_url or '127.0.0.1' in base_url else 'openai-whisper'
+                'provider': 'whisper-local' if '127.0.0.1' in base_url or 'localhost' in base_url else 'openai-whisper'
             }
             
             logger.info(f"Attempting STT with {stt_config['provider']} at {stt_config['base_url']}")
@@ -522,7 +522,7 @@ async def _speech_to_text_internal(
         # Determine provider from base URL (simple heuristic)
         provider = stt_config.get('provider', 'openai-whisper')
         # Check if using local Whisper endpoint
-        if stt_config.get('base_url') and ("127.0.0.1" in stt_config['base_url'] or "127.0.0.1" in stt_config['base_url']):
+        if stt_config.get('base_url') and ("127.0.0.1" in stt_config['base_url'] or "localhost" in stt_config['base_url']):
             provider = "whisper-local"
         
         # Validate format for provider
