@@ -126,7 +126,7 @@ install_homebrew() {
 check_system_dependencies() {
     print_step "Checking system dependencies..."
     
-    local packages=("node" "portaudio" "ffmpeg")
+    local packages=("node" "portaudio" "ffmpeg" "cmake")
     local missing_packages=()
     
     for package in "${packages[@]}"; do
@@ -155,7 +155,7 @@ install_system_dependencies() {
             brew update
             
             # Install required packages
-            local packages=("node" "portaudio" "ffmpeg")
+            local packages=("node" "portaudio" "ffmpeg" "cmake")
             
             for package in "${packages[@]}"; do
                 if brew list "$package" >/dev/null 2>&1; then
