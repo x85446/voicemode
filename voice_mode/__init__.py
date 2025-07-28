@@ -7,4 +7,4 @@ This package provides MCP servers for voice interactions through multiple transp
 - Configurable OpenAI-compatible STT/TTS services
 """
 
-from .__version__ import __version__
+from .version import __version__

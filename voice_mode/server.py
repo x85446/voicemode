@@ -57,7 +57,7 @@ def main():
     logger = setup_logging()
     
     # Log version information
-    from .__version__ import __version__
+    from .version import __version__
     logger.info(f"Starting VoiceMode v{__version__}")
     
     # Log FFmpeg status for MCP mode
