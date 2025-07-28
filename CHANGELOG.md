@@ -42,6 +42,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - No performance penalty as connection failures are instant
 
 ### Changed
+- **Major project structure reorganization**
+  - Moved external dependencies to `external/` directory
+    - `bin/livekit-admin-mcp` → `external/livekit-admin-mcp/`
+    - `livekit/` → `external/livekit-voice-assistant/`
+  - Moved development docs to `docs/development/`
+    - `DUAL_PACKAGE_NAMES.md`, `TESTING-CHECKLIST.md`
+    - `insights/` → `docs/development/insights/`
+  - Moved test files from root to `tests/` directory
+  - Merged `config-examples/` into `docs/integrations/`
+  - Removed directories moved to shadow repository: `assets/`, `notebooks/`, `npm-voicemode/`
+  - Cleaned up root directory following Python best practices
 - Renamed `conversation.py` to `converse.py` for consistency
 - Reorganized service directory structure for better maintainability
 - Consolidated service management prompts and documentation
