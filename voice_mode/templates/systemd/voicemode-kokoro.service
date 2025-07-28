@@ -10,6 +10,8 @@ After=network.target
 Type=simple
 WorkingDirectory={KOKORO_DIR}
 ExecStart={START_SCRIPT}
+# Wait for service to be ready by checking health endpoint
+ExecStartPost=/bin/sh -c 'while ! curl -sf http://127.0.0.1:{KOKORO_PORT}/health >/dev/null 2>&1; do echo "Waiting for Kokoro to be ready..."; sleep 1; done; echo "Kokoro is ready!"'
 Restart=always
 RestartSec=10
 
