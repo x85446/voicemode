@@ -251,6 +251,7 @@ async def environment_variables() -> str:
     config_vars = [
         # Core Settings
         ("VOICEMODE_BASE_DIR", "Base directory for all voicemode data"),
+        ("VOICEMODE_MODELS_DIR", "Directory for all models (defaults to $VOICEMODE_BASE_DIR/models)"),
         ("VOICEMODE_DEBUG", "Enable debug mode (true/false)"),
         ("VOICEMODE_SAVE_ALL", "Save all audio and transcriptions (true/false)"),
         ("VOICEMODE_SAVE_AUDIO", "Save audio files (true/false)"),
