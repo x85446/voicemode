@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Installer improvements**
+  - Improved output formatting when Voice Mode is already configured
+  - Fixed installer test that was failing due to complex mock setup
+
+### Changed
+- **CI/CD improvements**
+  - GitHub release notes now feature universal installer as primary installation method
+  - Manual installation methods (pip, claude mcp) moved to subsection
+
 ## [2.17.2] - 2025-07-29
 
 ### Added
