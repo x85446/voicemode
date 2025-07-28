@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Universal installer script** for automatic setup
+  - Single command installation: `curl -O https://getvoicemode.com/install.sh && bash install.sh`
+  - Cross-platform support: Linux (Ubuntu/Fedora), macOS, and Windows WSL
+  - Automatic dependency installation (Node.js, audio libraries, etc.)
+  - Claude Code installation and Voice Mode MCP configuration
+  - WSL2-specific audio setup and troubleshooting guidance
+  - Symlink in project root for easy access: `./install.sh`
+- **Centralized GPU detection utility**
+  - Unified GPU detection across platforms (Metal, CUDA, ROCm)
+  - Automatic selection of GPU vs CPU scripts for services
+  - Intelligent fallback when specific scripts are missing
+- **Service robustness improvements**
+  - Systemd services now use `Restart=on-failure` instead of `Restart=always`
+  - Added `RestartPreventExitStatus=127` to prevent restart loops when executables are missing
+  - Services fail cleanly when installation directory is moved or deleted
+
+### Changed
+- **Installation improvements**
+  - Installer now detects `ffmpeg` by command presence on Fedora (handles RPM Fusion installs)
+  - Fixed installer exiting early due to `dnf check-update` exit codes
+  - Automatic fallback for older Claude Code versions without `--scope` flag support
+  - Better handling of existing Voice Mode configurations
+- **Documentation updates**
+  - README now emphasizes Claude Code and AI code editors as primary audience
+  - Quick Start section leads with automatic installer
+  - Clarified that OpenAI API key is optional (local services available)
+  - Added clear explanation of free, open-source alternatives
+
+### Fixed
+- **Configuration directory creation**
+  - Removed redundant `config/` directory creation (config stored in `.voicemode.env`)
+  - Fixed issue where services created unexpected directory structures
+- **Claude Code compatibility**
+  - Fixed `claude mcp list` and `claude mcp add` for versions without `--scope` support
+  - Installer now works with all Claude Code versions
+
+### Developer
+- Added comprehensive tests for GPU detection and missing script scenarios
+- Updated service file versions to 1.1.1 with improved systemd configuration
+
 ## [2.17.1] - 2025-07-29
 
 ## [2.17.0] - 2025-07-29
