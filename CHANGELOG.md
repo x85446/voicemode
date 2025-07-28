@@ -7,17 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 🎯 Major Voice Activity Detection Improvement
+- **Dramatically improved silence detection accuracy** by fixing audio resampling bug
+  - VAD was receiving corrupted audio due to improper downsampling from 24kHz to 16kHz
+  - Now uses proper signal resampling instead of simple truncation
+  - Results in significantly better speech/silence detection and fewer false positives
+  - Background noise (fans, traffic) is now properly filtered out
+
 ### Added
+- Development version detection with git info for better debugging
+- Service file update capability for systemd/launchd services
+- Complete service health check implementation
+  - Services can report readiness status
+  - Better failover decisions based on actual service health
+- Enhanced service management with unified `service` tool
+- Auto-installation of cmake dependency for whisper.cpp on macOS
 - Simple failover mode for provider selection
   - New `VOICEMODE_SIMPLE_FAILOVER` environment variable (default: true)
   - Try each endpoint in order without health checks
   - Immediate failover on connection refused errors
   - No performance penalty as connection failures are instant
-  
+
+### Changed
+- Renamed `conversation.py` to `converse.py` for consistency
+- Reorganized service directory structure for better maintainability
+- Consolidated service management prompts and documentation
+- Separated MCP templates and data from resources
+
 ### Fixed
+- Fixed `wait_for_response=false` being ignored in converse tool
+  - Added proper string-to-boolean conversion for MCP parameters
 - Fixed provider failover issues when local services are stopped
   - Previously, stopping a service (like Kokoro) would cause "All TTS providers failed" errors
   - Now correctly fails over to next available endpoint (e.g., OpenAI)
+- Removed unnecessary soundfile dependency from simple failover
+- Fixed various import issues with TTS_VOICES and TTS_MODELS
 
 ## [2.16.0] - 2025-07-28
 
