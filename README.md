@@ -26,8 +26,8 @@ Natural voice conversations for AI assistants. Voice Mode brings human-like voic
 
 **All you need to get started:**
 
-1. **🔑 OpenAI API Key** (or compatible service) - for speech-to-text and text-to-speech
-2. **🎤 Computer with microphone and speakers** OR **☁️ LiveKit server** ([LiveKit Cloud](https://docs.livekit.io/home/cloud/) or [self-hosted](https://github.com/livekit/livekit))
+1. **🎤 Computer with microphone and speakers** OR **☁️ LiveKit server** ([LiveKit Cloud](https://docs.livekit.io/home/cloud/) or [self-hosted](https://github.com/livekit/livekit))
+2. **🔑 OpenAI API Key** (optional) - Voice Mode can install free, open-source transcription and text-to-speech services locally
 
 ## Quick Start
 
@@ -49,7 +49,11 @@ This installer will:
 
 After installation, just run:
 ```bash
+# With OpenAI API (cloud-based, requires API key)
 export OPENAI_API_KEY=your-openai-key
+claude converse
+
+# Or use free local services (Voice Mode will offer to install them)
 claude converse
 ```
 
