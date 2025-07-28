@@ -1,6 +1,6 @@
-# Service Health Checks
+# Service Health Checks and Updates
 
-Voice Mode services now include health check functionality to ensure services are fully ready before reporting as started.
+Voice Mode services now include health check functionality to ensure services are fully ready before reporting as started, and service file update capabilities to keep your service configurations current.
 
 ## How It Works
 
@@ -64,6 +64,52 @@ Both Whisper and Kokoro services provide `/health` endpoints:
 
 These endpoints return 200 OK when the service is ready to handle requests.
 
+## Service File Updates
+
+Voice Mode tracks service file versions and can update them when improvements are available.
+
+### Checking Version Status
+
+```bash
+# Check service status including version info
+voice-mode service kokoro status
+```
+
+Output shows both application and service file versions:
+```
+✅ Kokoro is running
+   PID: 12345
+   Port: 8880
+   CPU: 2.3%
+   Memory: 1024.5 MB
+   Uptime: 1h 23m 45s
+   Service files: v1.0.0 (v1.1.0 available)
+   💡 Run 'service kokoro update-service-files' to update
+```
+
+### Updating Service Files
+
+```bash
+# Update service files to latest version
+voice-mode service kokoro update-service-files
+```
+
+This will:
+1. Backup existing service files
+2. Apply the latest templates with your current configuration
+3. Reload systemd/launchctl if needed
+4. Preserve your service state (running/stopped)
+
+### What Gets Updated
+
+- **systemd**: Unit file with latest directives and health checks
+- **launchd**: Property list and wrapper scripts
+
+Service files use semantic versioning:
+- **Major**: Breaking changes requiring manual intervention
+- **Minor**: New features (like health checks)
+- **Patch**: Bug fixes and improvements
+
 ## Troubleshooting
 
 If a service fails to become ready:
@@ -81,3 +127,10 @@ If a service fails to become ready:
    - Port already in use
    - Model files not found
    - Insufficient memory for model loading
+
+### Update Issues
+
+If service file update fails:
+- Check for backup files: `~/.config/systemd/user/*.backup.*`
+- Manually restore: `mv voicemode-kokoro.backup.1.0.0 voicemode-kokoro.service`
+- Reload daemon: `systemctl --user daemon-reload`
