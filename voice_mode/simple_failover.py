@@ -27,6 +27,9 @@ async def simple_tts_failover(
     Returns:
         Tuple of (success, metrics, config)
     """
+    logger.info(f"simple_tts_failover called with: text='{text[:50]}...', voice={voice}, model={model}")
+    logger.info(f"kwargs: {kwargs}")
+    
     from .core import text_to_speech
     from .conversation_logger import get_conversation_logger
     
@@ -37,6 +40,7 @@ async def simple_tts_failover(
     conversation_id = conversation_logger.conversation_id
     
     # Try each TTS endpoint in order
+    logger.info(f"simple_tts_failover: Starting with TTS_BASE_URLS = {TTS_BASE_URLS}")
     for base_url in TTS_BASE_URLS:
         try:
             logger.info(f"Trying TTS endpoint: {base_url}")
@@ -77,7 +81,10 @@ async def simple_tts_failover(
                 
         except Exception as e:
             last_error = str(e)
-            logger.debug(f"TTS failed for {base_url}: {e}")
+            logger.error(f"TTS failed for {base_url}: {e}")
+            logger.error(f"Exception type: {type(e).__name__}")
+            if hasattr(e, '__dict__'):
+                logger.error(f"Exception attributes: {e.__dict__}")
             # Continue to next endpoint
             continue
     
