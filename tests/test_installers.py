@@ -65,7 +65,7 @@ class TestWhisperCppInstaller:
             
             result = await install_whisper_cpp()
             
-            assert result["install_path"] == os.path.expanduser("~/.voicemode/whisper.cpp")
+            assert result["install_path"] == os.path.expanduser("~/.voicemode/services/whisper")
     
     @pytest.mark.asyncio
     async def test_custom_installation_path(self):
@@ -115,7 +115,7 @@ class TestWhisperCppInstaller:
         """Test behavior when whisper.cpp is already installed"""
         def mock_exists(path):
             # First check is for install_dir
-            if path.endswith("/.voicemode/whisper.cpp"):
+            if path.endswith("/.voicemode/services/whisper"):
                 return True
             # Second check is for main executable
             if path.endswith("/main"):
@@ -351,7 +351,7 @@ class TestKokoroFastAPIInstaller:
             result = await install_kokoro_fastapi()
             
             assert result["success"] is True
-            assert result["install_path"] == os.path.expanduser("~/.voicemode/kokoro-fastapi")
+            assert result["install_path"] == os.path.expanduser("~/.voicemode/services/kokoro")
             # Note: models_path is not returned by the installer anymore
     
     @pytest.mark.asyncio
