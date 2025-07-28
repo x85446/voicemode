@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.17.2] - 2025-07-29
+
 ### Added
 - **Universal installer script** for automatic setup
   - Single command installation: `curl -O https://getvoicemode.com/install.sh && bash install.sh`
