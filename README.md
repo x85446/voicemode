@@ -126,7 +126,7 @@ sudo dnf install python3-devel alsa-lib-devel portaudio-devel ffmpeg
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
 # Install dependencies
-brew install portaudio ffmpeg
+brew install portaudio ffmpeg cmake
 ```
 </details>
 
