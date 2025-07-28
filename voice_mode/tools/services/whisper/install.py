@@ -59,7 +59,7 @@ async def whisper_install(
         os.makedirs(voicemode_dir, exist_ok=True)
         
         if install_dir is None:
-            install_dir = os.path.join(voicemode_dir, "whisper.cpp")
+            install_dir = os.path.join(voicemode_dir, "services", "whisper")
         else:
             install_dir = os.path.expanduser(install_dir)
         
@@ -326,6 +326,10 @@ exec "$SERVER_BIN" \\
             launchagents_dir = os.path.expanduser("~/Library/LaunchAgents")
             os.makedirs(launchagents_dir, exist_ok=True)
             
+            # Create log directory
+            log_dir = os.path.join(voicemode_dir, 'logs', 'whisper')
+            os.makedirs(log_dir, exist_ok=True)
+            
             plist_name = "com.voicemode.whisper.plist"
             plist_path = os.path.join(launchagents_dir, plist_name)
             
@@ -346,9 +350,9 @@ exec "$SERVER_BIN" \\
     <key>KeepAlive</key>
     <true/>
     <key>StandardOutPath</key>
-    <string>{os.path.join(voicemode_dir, 'logs', 'whisper.out.log')}</string>
+    <string>{os.path.join(voicemode_dir, 'logs', 'whisper', 'whisper.out.log')}</string>
     <key>StandardErrorPath</key>
-    <string>{os.path.join(voicemode_dir, 'logs', 'whisper.err.log')}</string>
+    <string>{os.path.join(voicemode_dir, 'logs', 'whisper', 'whisper.err.log')}</string>
     <key>EnvironmentVariables</key>
     <dict>
         <key>PATH</key>
@@ -409,6 +413,10 @@ exec "$SERVER_BIN" \\
             systemd_user_dir = os.path.expanduser("~/.config/systemd/user")
             os.makedirs(systemd_user_dir, exist_ok=True)
             
+            # Create log directory
+            log_dir = os.path.join(voicemode_dir, 'logs', 'whisper')
+            os.makedirs(log_dir, exist_ok=True)
+            
             service_name = "voicemode-whisper.service"
             service_path = os.path.join(systemd_user_dir, service_name)
             
@@ -422,8 +430,8 @@ ExecStart={start_script_path}
 Restart=on-failure
 RestartSec=10
 WorkingDirectory={install_dir}
-StandardOutput=append:{os.path.join(voicemode_dir, 'logs', 'whisper.out.log')}
-StandardError=append:{os.path.join(voicemode_dir, 'logs', 'whisper.err.log')}
+StandardOutput=append:{os.path.join(voicemode_dir, 'logs', 'whisper', 'whisper.out.log')}
+StandardError=append:{os.path.join(voicemode_dir, 'logs', 'whisper', 'whisper.err.log')}
 Environment="PATH=/usr/local/bin:/usr/bin:/bin:/usr/local/cuda/bin"
 Environment="VOICEMODE_WHISPER_MODEL={model}"
 

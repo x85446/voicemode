@@ -13,7 +13,8 @@ def find_whisper_server() -> Optional[str]:
     """Find the whisper-server binary."""
     # Check common installation paths
     paths_to_check = [
-        Path.home() / ".voicemode" / "whisper.cpp" / "build" / "bin" / "whisper-server",
+        Path.home() / ".voicemode" / "services" / "whisper" / "build" / "bin" / "whisper-server",  # New location
+        Path.home() / ".voicemode" / "whisper.cpp" / "build" / "bin" / "whisper-server",  # Legacy location
         Path.home() / ".voicemode" / "whisper.cpp" / "whisper-server",
         Path.home() / ".voicemode" / "whisper.cpp" / "server",
         Path("/usr/local/bin/whisper-server"),

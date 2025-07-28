@@ -110,14 +110,20 @@ async def whisper_uninstall(
                         errors.append(f"Failed to remove {service_path}: {e}")
         
         # 3. Remove whisper.cpp installation
-        whisper_dir = BASE_DIR / "whisper.cpp"
-        if whisper_dir.exists():
-            try:
-                shutil.rmtree(whisper_dir)
-                removed_items.append(f"Removed whisper.cpp installation: {whisper_dir}")
-                logger.info(f"Removed {whisper_dir}")
-            except Exception as e:
-                errors.append(f"Failed to remove {whisper_dir}: {e}")
+        # Check new location first, then legacy location
+        whisper_dirs = [
+            BASE_DIR / "services" / "whisper",  # New location
+            BASE_DIR / "whisper.cpp"  # Legacy location
+        ]
+        
+        for whisper_dir in whisper_dirs:
+            if whisper_dir.exists():
+                try:
+                    shutil.rmtree(whisper_dir)
+                    removed_items.append(f"Removed whisper.cpp installation: {whisper_dir}")
+                    logger.info(f"Removed {whisper_dir}")
+                except Exception as e:
+                    errors.append(f"Failed to remove {whisper_dir}: {e}")
         
         # 4. Optionally remove models
         if remove_models:
@@ -134,13 +140,18 @@ async def whisper_uninstall(
         if remove_all_data:
             # Remove logs
             log_files = [
-                BASE_DIR / "logs" / "whisper.out.log",
-                BASE_DIR / "logs" / "whisper.err.log",
+                BASE_DIR / "logs" / "whisper" / "whisper.out.log",  # New location
+                BASE_DIR / "logs" / "whisper" / "whisper.err.log",  # New location
+                BASE_DIR / "logs" / "whisper.out.log",  # Legacy location
+                BASE_DIR / "logs" / "whisper.err.log",  # Legacy location
                 BASE_DIR / "whisper-server.log",
                 BASE_DIR / "whisper-server.stdout.log",
                 BASE_DIR / "whisper-server.stderr.log",
                 BASE_DIR / "whisper-server.error.log"
             ]
+            
+            # Also remove the whisper logs directory if empty
+            whisper_log_dir = BASE_DIR / "logs" / "whisper"
             
             for log_file in log_files:
                 if log_file.exists():

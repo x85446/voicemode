@@ -62,7 +62,7 @@ async def kokoro_install(
         os.makedirs(voicemode_dir, exist_ok=True)
         
         if install_dir is None:
-            install_dir = os.path.join(voicemode_dir, "kokoro-fastapi")
+            install_dir = os.path.join(voicemode_dir, "services", "kokoro")
         else:
             install_dir = os.path.expanduser(install_dir)
             
@@ -282,6 +282,10 @@ async def kokoro_install(
             systemd_user_dir = os.path.expanduser("~/.config/systemd/user")
             os.makedirs(systemd_user_dir, exist_ok=True)
             
+            # Create log directory
+            log_dir = os.path.join(voicemode_dir, 'logs', 'kokoro')
+            os.makedirs(log_dir, exist_ok=True)
+            
             service_name = "voicemode-kokoro.service"
             service_path = os.path.join(systemd_user_dir, service_name)
             
@@ -295,8 +299,8 @@ ExecStart={start_script_path}
 Restart=on-failure
 RestartSec=10
 WorkingDirectory={install_dir}
-StandardOutput=append:{os.path.join(voicemode_dir, 'kokoro.log')}
-StandardError=append:{os.path.join(voicemode_dir, 'kokoro.error.log')}
+StandardOutput=append:{os.path.join(voicemode_dir, 'logs', 'kokoro', 'kokoro.log')}
+StandardError=append:{os.path.join(voicemode_dir, 'logs', 'kokoro', 'kokoro.error.log')}
 Environment="PATH=/usr/local/bin:/usr/bin:/bin:/home/m/.local/bin"
 
 [Install]

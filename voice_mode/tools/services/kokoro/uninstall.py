@@ -119,14 +119,20 @@ async def kokoro_uninstall(
                     errors.append(f"Failed to remove {service_path}: {e}")
         
         # 3. Remove kokoro-fastapi installation
-        kokoro_dir = BASE_DIR / "kokoro-fastapi"
-        if kokoro_dir.exists():
-            try:
-                shutil.rmtree(kokoro_dir)
-                removed_items.append(f"Removed kokoro-fastapi installation: {kokoro_dir}")
-                logger.info(f"Removed {kokoro_dir}")
-            except Exception as e:
-                errors.append(f"Failed to remove {kokoro_dir}: {e}")
+        # Check new location first, then legacy location
+        kokoro_dirs = [
+            BASE_DIR / "services" / "kokoro",  # New location
+            BASE_DIR / "kokoro-fastapi"  # Legacy location
+        ]
+        
+        for kokoro_dir in kokoro_dirs:
+            if kokoro_dir.exists():
+                try:
+                    shutil.rmtree(kokoro_dir)
+                    removed_items.append(f"Removed kokoro-fastapi installation: {kokoro_dir}")
+                    logger.info(f"Removed {kokoro_dir}")
+                except Exception as e:
+                    errors.append(f"Failed to remove {kokoro_dir}: {e}")
         
         # 4. Optionally remove models
         if remove_models:

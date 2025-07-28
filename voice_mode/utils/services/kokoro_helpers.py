@@ -9,7 +9,8 @@ def find_kokoro_fastapi() -> Optional[str]:
     """Find the kokoro-fastapi installation directory."""
     # Check common installation paths
     paths_to_check = [
-        Path.home() / ".voicemode" / "kokoro-fastapi",
+        Path.home() / ".voicemode" / "services" / "kokoro",  # New location
+        Path.home() / ".voicemode" / "kokoro-fastapi",  # Legacy location
         Path.home() / "kokoro-fastapi",
         Path("/opt/kokoro-fastapi"),
     ]
