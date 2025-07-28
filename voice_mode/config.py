@@ -52,6 +52,9 @@ PREFER_LOCAL = os.getenv("VOICEMODE_PREFER_LOCAL", "true").lower() in ("true", "
 # Always try local providers (don't mark them as permanently unavailable)
 ALWAYS_TRY_LOCAL = os.getenv("VOICEMODE_ALWAYS_TRY_LOCAL", "true").lower() in ("true", "1", "yes", "on")
 
+# Use simple failover without health checks
+SIMPLE_FAILOVER = os.getenv("VOICEMODE_SIMPLE_FAILOVER", "true").lower() in ("true", "1", "yes", "on")
+
 # Auto-start configuration
 AUTO_START_KOKORO = os.getenv("VOICEMODE_AUTO_START_KOKORO", "").lower() in ("true", "1", "yes", "on")
 

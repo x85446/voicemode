@@ -53,6 +53,11 @@ export VOICEMODE_TTS_BASE_URLS="http://127.0.0.1:8880/v1"
 export VOICEMODE_STT_BASE_URLS="http://127.0.0.1:2022/v1"
 ```
 
+**Enable simple failover (recommended):**
+```bash
+export VOICEMODE_SIMPLE_FAILOVER=true  # Try endpoints in order without health checks
+```
+
 **Configure Whisper for faster performance:**
 ```bash
 export VOICEMODE_WHISPER_MODEL=base  # Smaller, faster model

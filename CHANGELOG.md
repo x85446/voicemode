@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Simple failover mode for provider selection
+  - New `VOICEMODE_SIMPLE_FAILOVER` environment variable (default: true)
+  - Try each endpoint in order without health checks
+  - Immediate failover on connection refused errors
+  - No performance penalty as connection failures are instant
+  
+### Fixed
+- Fixed provider failover issues when local services are stopped
+  - Previously, stopping a service (like Kokoro) would cause "All TTS providers failed" errors
+  - Now correctly fails over to next available endpoint (e.g., OpenAI)
+
 ## [2.16.0] - 2025-07-28
 
 ### Added
