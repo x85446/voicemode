@@ -2,7 +2,7 @@
   "mcpServers": {
     "livekit-admin-mcp": {
       "type": "stdio",
-      "command": "./external/livekit-admin-mcp/livekit-admin-mcp",
+      "command": "./vendor/livekit-admin-mcp/livekit-admin-mcp",
       "args": [],
       "env": {}
     },

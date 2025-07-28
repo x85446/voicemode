@@ -43,9 +43,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - **Major project structure reorganization**
-  - Moved external dependencies to `external/` directory
-    - `bin/livekit-admin-mcp` → `external/livekit-admin-mcp/`
-    - `livekit/` → `external/livekit-voice-assistant/`
+  - Moved external dependencies to `vendor/` directory (industry standard naming)
+    - `bin/livekit-admin-mcp` → `vendor/livekit-admin-mcp/`
+    - `livekit/` → `vendor/livekit-voice-assistant/`
   - Moved development docs to `docs/development/`
     - `DUAL_PACKAGE_NAMES.md`, `TESTING-CHECKLIST.md`
     - `insights/` → `docs/development/insights/`
