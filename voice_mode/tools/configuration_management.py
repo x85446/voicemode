@@ -10,9 +10,8 @@ import logging
 
 logger = logging.getLogger("voice-mode")
 
-# Configuration file paths
-USER_CONFIG_PATH = Path.home() / ".voicemode.env"
-PROJECT_CONFIG_PATH = Path.cwd() / ".voicemode.env"
+# Configuration file path (user-level only for security)
+USER_CONFIG_PATH = Path.home() / ".voicemode" / ".voicemode.env"
 
 
 def parse_env_file(file_path: Path) -> Dict[str, str]:
@@ -104,13 +103,12 @@ def write_env_file(file_path: Path, config: Dict[str, str], preserve_comments: b
 
 
 @mcp.tool()
-async def update_config(key: str, value: str, scope: str = "user") -> str:
+async def update_config(key: str, value: str) -> str:
     """Update a configuration value in the voicemode.env file.
     
     Args:
         key: The configuration key to update (e.g., 'VOICEMODE_TTS_VOICES')
         value: The new value for the configuration
-        scope: Where to save the config - 'user' (~/.voicemode.env) or 'project' (./.voicemode.env)
     
     Returns:
         Confirmation message with the updated configuration
@@ -119,8 +117,8 @@ async def update_config(key: str, value: str, scope: str = "user") -> str:
     if not re.match(r'^[A-Z_]+$', key):
         return f"❌ Invalid key format: {key}. Keys must be uppercase with underscores only."
     
-    # Determine which config file to use
-    config_path = USER_CONFIG_PATH if scope == "user" else PROJECT_CONFIG_PATH
+    # Use user config path
+    config_path = USER_CONFIG_PATH
     
     try:
         # Read existing configuration
@@ -162,6 +160,7 @@ async def list_config_keys() -> str:
     config_keys = [
         ("Core Configuration", [
             ("VOICEMODE_BASE_DIR", "Base directory for all voicemode data (default: ~/.voicemode)"),
+            ("VOICEMODE_MODELS_DIR", "Directory for all models (default: $VOICEMODE_BASE_DIR/models)"),
             ("VOICEMODE_DEBUG", "Enable debug mode (true/false)"),
             ("VOICEMODE_SAVE_ALL", "Save all audio and transcriptions (true/false)"),
             ("VOICEMODE_SAVE_AUDIO", "Save audio files (true/false)"),
@@ -207,6 +206,6 @@ async def list_config_keys() -> str:
             lines.append(f"    {description}")
         lines.append("")
     
-    lines.append("💡 Usage: update_config(key='VOICEMODE_TTS_VOICES', value='af_sky,nova', scope='user')")
+    lines.append("💡 Usage: update_config(key='VOICEMODE_TTS_VOICES', value='af_sky,nova')")
     
     return "\n".join(lines)
