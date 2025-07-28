@@ -30,6 +30,41 @@ from .utils import (
 logger = logging.getLogger("voicemode")
 
 
+def get_audio_path(filename: str, base_dir: Path, timestamp: Optional[datetime] = None) -> Path:
+    """Get full audio path with year/month structure for a given filename.
+    
+    Args:
+        filename: Just the filename (e.g., "20250728_123456_789_abc123_tts.wav")
+        base_dir: Base audio directory
+        timestamp: Optional timestamp to determine year/month. If not provided, 
+                   will be extracted from filename or use current date.
+        
+    Returns:
+        Full path with year/month structure
+    """
+    # Try to extract date from filename if timestamp not provided
+    if timestamp is None:
+        try:
+            # Extract YYYYMMDD from filename like "20250728_123456_789_abc123_tts.wav"
+            date_str = filename.split('_')[0]
+            if len(date_str) == 8 and date_str.isdigit():
+                year = int(date_str[:4])
+                month = int(date_str[4:6])
+                timestamp = datetime(year, month, 1)
+        except (IndexError, ValueError):
+            pass
+    
+    # Fall back to current date if still no timestamp
+    if timestamp is None:
+        timestamp = datetime.now()
+    
+    # Build path with year/month structure
+    year_dir = base_dir / str(timestamp.year)
+    month_dir = year_dir / f"{timestamp.month:02d}"
+    
+    return month_dir / filename
+
+
 def get_debug_filename(prefix: str, extension: str, conversation_id: Optional[str] = None) -> str:
     """Generate debug filename with timestamp and optional conversation ID.
     
@@ -71,8 +106,16 @@ def save_debug_file(data: bytes, prefix: str, extension: str, debug_dir: Path, d
         return None
     
     try:
+        # Get current date for directory structure
+        now = datetime.now()
+        year_dir = debug_dir / str(now.year)
+        month_dir = year_dir / f"{now.month:02d}"
+        
+        # Create year/month directory structure
+        month_dir.mkdir(parents=True, exist_ok=True)
+        
         filename = get_debug_filename(prefix, extension, conversation_id)
-        filepath = debug_dir / filename
+        filepath = month_dir / filename
         
         with open(filepath, 'wb') as f:
             f.write(data)
