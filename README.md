@@ -7,7 +7,7 @@
 [![PyPI Downloads](https://static.pepy.tech/badge/voice-mode/week)](https://pepy.tech/project/voice-mode)
 [![Documentation](https://readthedocs.org/projects/voice-mode/badge/?version=latest)](https://voice-mode.readthedocs.io/en/latest/?badge=latest)
 
-Natural voice conversations for AI assistants. Voice Mode brings human-like voice interactions to Claude, ChatGPT, and other LLMs through the Model Context Protocol (MCP).
+Natural voice conversations for AI assistants. Voice Mode brings human-like voice interactions to Claude Code, AI code editors through the Model Context Protocol (MCP).
 
 ## 🖥️ Compatibility
 
