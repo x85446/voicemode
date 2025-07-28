@@ -58,6 +58,12 @@ export OPENAI_API_KEY="your-openai-key"
 }
 ```
 
+**Example Configuration Files:**
+- [`uvx.json`](./uvx.json) - Using uvx (recommended)
+- [`pip-install.json`](./pip-install.json) - Using pip installation
+- [`python-m.json`](./python-m.json) - Using python -m
+- [`livekit.json`](./livekit.json) - With LiveKit support
+
 ### 3. Restart Claude Desktop
 
 After saving the configuration, restart Claude Desktop for changes to take effect.

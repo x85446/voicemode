@@ -10,7 +10,7 @@ This directory contains key insights and learnings from developing and using Voi
 
 ## Insights
 
-### [MCP Tools vs Raw Commands](insights/mcp-tools-vs-commands.md)
+### [MCP Tools vs Raw Commands](./docs/development/insights/mcp-tools-vs-commands.md)
 Why dedicated MCP tools provide better trust, safety, and consistency compared to ad-hoc command execution.
 
 ---
