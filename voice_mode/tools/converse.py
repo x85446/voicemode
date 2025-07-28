@@ -69,6 +69,7 @@ from voice_mode.core import (
     cleanup as cleanup_clients,
     save_debug_file,
     get_debug_filename,
+    get_audio_path,
     play_chime_start,
     play_chime_end
 )
@@ -190,7 +191,8 @@ async def get_tts_config(provider: Optional[str] = None, voice: Optional[str] = 
             'model': selected_model,
             'voice': selected_voice,
             'instructions': instructions,
-            'provider': endpoint_info.base_url  # For logging
+            'provider': endpoint_info.base_url,  # For logging
+            'provider_type': endpoint_info.provider_type
         }
     except Exception as e:
         logger.error(f"Failed to get TTS client: {e}")
@@ -200,7 +202,8 @@ async def get_tts_config(provider: Optional[str] = None, voice: Optional[str] = 
             'base_url': 'https://api.openai.com/v1',  # Fallback to OpenAI
             'model': model or 'tts-1',
             'voice': voice or 'alloy',
-            'instructions': instructions
+            'instructions': instructions,
+            'provider_type': 'openai'
         }
 
 
@@ -217,7 +220,8 @@ async def get_stt_config(provider: Optional[str] = None):
             'client': client,
             'base_url': endpoint_info.base_url,
             'model': selected_model,
-            'provider': endpoint_info.base_url  # For logging
+            'provider': endpoint_info.base_url,  # For logging
+            'provider_type': endpoint_info.provider_type
         }
     except Exception as e:
         logger.error(f"Failed to get STT client: {e}")
@@ -226,7 +230,8 @@ async def get_stt_config(provider: Optional[str] = None):
             'client_key': 'stt',
             'base_url': 'https://api.openai.com/v1',  # Fallback to OpenAI
             'model': 'whisper-1',
-            'provider': 'openai-whisper'
+            'provider': 'openai-whisper',
+            'provider_type': 'openai'
         }
 
 
@@ -457,11 +462,14 @@ async def speech_to_text_with_failover(
                 logger.warning(f"No STT client available for {base_url}")
                 continue
             
+            from voice_mode.provider_discovery import detect_provider_type
+            
             stt_config = {
                 'client': client,
                 'model': selected_model,
                 'base_url': endpoint_info.base_url if endpoint_info else base_url,
-                'provider': 'whisper-local' if '127.0.0.1' in base_url or 'localhost' in base_url else 'openai-whisper'
+                'provider': 'whisper-local' if '127.0.0.1' in base_url or 'localhost' in base_url else 'openai-whisper',
+                'provider_type': detect_provider_type(endpoint_info.base_url if endpoint_info else base_url)
             }
             
             logger.info(f"Attempting STT with {stt_config['provider']} at {stt_config['base_url']}")
@@ -651,13 +659,17 @@ async def _speech_to_text_internal(
                         duration_ms=int(duration * 1000) if duration else None,
                         model=stt_config.get('model'),
                         provider=stt_config.get('provider', 'openai'),
+                        provider_url=stt_config.get('base_url'),
+                        provider_type=stt_config.get('provider_type'),
                         audio_format=export_format,  # Use actual format from conversion
                         transport=transport,
                         silence_detection={
                             "enabled": not DISABLE_SILENCE_DETECTION,
                             "vad_aggressiveness": VAD_AGGRESSIVENESS,
                             "silence_threshold_ms": SILENCE_THRESHOLD_MS
-                        }
+                        },
+                        # Add timing metrics if available
+                        transcription_time=stt_duration if 'stt_duration' in locals() else None
                     )
                 except Exception as e:
                     logger.error(f"Failed to log STT to JSONL: {e}")
@@ -1386,12 +1398,18 @@ async def converse(
                         conversation_logger.log_tts(
                             text=message,
                             audio_file=os.path.basename(tts_metrics.get('audio_path')) if tts_metrics.get('audio_path') else None,
-                            model=tts_model,
-                            voice=voice,
-                            provider=tts_provider if tts_provider else 'openai',
+                            model=tts_config.get('model') if tts_config else tts_model,
+                            voice=tts_config.get('voice') if tts_config else voice,
+                            provider=tts_config.get('provider') if tts_config else (tts_provider if tts_provider else 'openai'),
+                            provider_url=tts_config.get('base_url') if tts_config else None,
+                            provider_type=tts_config.get('provider_type') if tts_config else None,
                             timing=timing_str,
                             audio_format=audio_format,
-                            transport="speak-only"
+                            transport="speak-only",
+                            # Add timing metrics
+                            time_to_first_audio=tts_metrics.get('ttfa') if tts_metrics else None,
+                            generation_time=tts_metrics.get('generation') if tts_metrics else None,
+                            playback_time=tts_metrics.get('playback') if tts_metrics else None
                         )
                     except Exception as e:
                         logger.error(f"Failed to log TTS to JSONL: {e}")
@@ -1492,12 +1510,19 @@ async def converse(
                             conversation_logger.log_tts(
                                 text=message,
                                 audio_file=os.path.basename(tts_metrics.get('audio_path')) if tts_metrics and tts_metrics.get('audio_path') else None,
-                                model=tts_model,
-                                voice=voice,
-                                provider=tts_provider if tts_provider else 'openai',
+                                model=tts_config.get('model') if tts_config else tts_model,
+                                voice=tts_config.get('voice') if tts_config else voice,
+                                provider=tts_config.get('provider') if tts_config else (tts_provider if tts_provider else 'openai'),
+                                provider_url=tts_config.get('base_url') if tts_config else None,
+                                provider_type=tts_config.get('provider_type') if tts_config else None,
                                 timing=tts_timing_str,
                                 audio_format=audio_format,
-                                transport=transport
+                                transport=transport,
+                                # Add timing metrics
+                                time_to_first_audio=timings.get('ttfa') if timings else None,
+                                generation_time=timings.get('tts_gen') if timings else None,
+                                playback_time=timings.get('tts_play') if timings else None,
+                                total_turnaround_time=timings.get('total') if timings else None
                             )
                         except Exception as e:
                             logger.error(f"Failed to log TTS to JSONL: {e}")
@@ -1580,10 +1605,15 @@ async def converse(
                         stt_timing_str = ", ".join(stt_timing_parts) if stt_timing_parts else None
                         
                         conversation_logger = get_conversation_logger()
+                        # Get STT config for provider info
+                        stt_config = await get_stt_config()
+                        
                         conversation_logger.log_stt(
                             text=response_text if response_text else "[no speech detected]",
-                            model='whisper-1',  # Default STT model
-                            provider='openai',
+                            model=stt_config.get('model', 'whisper-1'),
+                            provider=stt_config.get('provider', 'openai'),
+                            provider_url=stt_config.get('base_url'),
+                            provider_type=stt_config.get('provider_type'),
                             audio_format='mp3',
                             transport=transport,
                             timing=stt_timing_str,
@@ -1591,7 +1621,10 @@ async def converse(
                                 "enabled": not (DISABLE_SILENCE_DETECTION or disable_silence_detection),
                                 "vad_aggressiveness": VAD_AGGRESSIVENESS,
                                 "silence_threshold_ms": SILENCE_THRESHOLD_MS
-                            }
+                            },
+                            # Add timing metrics
+                            transcription_time=timings.get('stt'),
+                            total_turnaround_time=None  # Will be calculated and added later
                         )
                     except Exception as e:
                         logger.error(f"Failed to log STT to JSONL: {e}")
