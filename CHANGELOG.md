@@ -37,6 +37,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Fixed `wait_for_response=false` being ignored in converse tool
   - Added proper string-to-boolean conversion for MCP parameters
+- Fixed critical TTS failover issue when Kokoro is stopped
+  - Simple failover now maps Kokoro voices to OpenAI-compatible voices
+  - af_sky → nova, af_alloy → alloy, etc.
+  - Prevents "Failed to speak message" errors when primary TTS is unavailable
 - Fixed provider failover issues when local services are stopped
   - Previously, stopping a service (like Kokoro) would cause "All TTS providers failed" errors
   - Now correctly fails over to next available endpoint (e.g., OpenAI)
