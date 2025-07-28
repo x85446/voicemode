@@ -4,6 +4,7 @@
 import asyncio
 import sys
 import os
+import pytest
 
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -14,6 +15,7 @@ os.environ['VOICEMODE_ALWAYS_TRY_LOCAL'] = 'true'
 from voice_mode.provider_discovery import ProviderRegistry, is_local_provider, detect_provider_type
 
 
+@pytest.mark.asyncio
 async def test_provider_resilience():
     """Test the provider resilience implementation."""
     print("Testing Provider Resilience Implementation")
