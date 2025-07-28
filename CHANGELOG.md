@@ -15,6 +15,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Background noise (fans, traffic) is now properly filtered out
 
 ### Added
+- **Automatic configuration file loading**
+  - Voice Mode now creates `~/.voicemode/.voicemode.env` on first run
+  - Template file includes all available settings with documentation
+  - Environment variables always take precedence over file settings
+  - Secure file permissions (0600) automatically set
+- **Enhanced conversation logs with provider tracking (Schema v3)**
+  - Added `provider_url` and `provider_type` fields to track which endpoint handled requests
+  - Added detailed timing metrics: TTFA, generation time, playback time, transcription time
+  - Moved conversation logs to `logs/conversations/` subdirectory for better organization
+- **Year/month directory structure for audio files**
+  - Audio files now saved in `audio/YYYY/MM/` structure to prevent flat directory issues
+  - Automatic date extraction from filenames
+  - Backward compatible with existing flat structure
 - Development version detection with git info for better debugging
 - Service file update capability for systemd/launchd services
 - Complete service health check implementation
@@ -33,6 +46,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reorganized service directory structure for better maintainability
 - Consolidated service management prompts and documentation
 - Separated MCP templates and data from resources
+- **Configuration management now uses user-level config only**
+  - Removed project-level `.voicemode.env` support for security
+  - All configuration stored in `~/.voicemode/.voicemode.env`
 
 ### Fixed
 - Fixed `wait_for_response=false` being ignored in converse tool
@@ -46,6 +62,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Now correctly fails over to next available endpoint (e.g., OpenAI)
 - Removed unnecessary soundfile dependency from simple failover
 - Fixed various import issues with TTS_VOICES and TTS_MODELS
+- **Fixed whisper model download tool**
+  - Now correctly checks `~/.voicemode/services/whisper/` installation path
+  - Support for both new and legacy whisper installation locations
+  - Fixed model type validation
 
 ## [2.16.0] - 2025-07-28
 
