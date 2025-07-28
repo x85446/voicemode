@@ -138,6 +138,19 @@ async def whisper_install(
             # Check for Homebrew
             if not shutil.which("brew"):
                 missing_deps.append("Homebrew (install from https://brew.sh)")
+            
+            # Check for cmake
+            if not shutil.which("cmake"):
+                # If homebrew is available, offer to install cmake automatically
+                if shutil.which("brew"):
+                    logger.info("cmake not found, attempting to install via homebrew...")
+                    try:
+                        subprocess.run(["brew", "install", "cmake"], check=True)
+                        logger.info("Successfully installed cmake")
+                    except subprocess.CalledProcessError:
+                        missing_deps.append("cmake (failed to install, please run: brew install cmake)")
+                else:
+                    missing_deps.append("cmake (run: brew install cmake)")
         
         elif is_linux:
             # Check for build essentials

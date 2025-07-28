@@ -29,6 +29,16 @@ This will:
 - Create a start script with environment variable support
 - Set up automatic startup (launchd on macOS, systemd on Linux)
 
+### Prerequisites
+
+**macOS**:
+- Xcode Command Line Tools (`xcode-select --install`)
+- Homebrew (https://brew.sh)
+- cmake (`brew install cmake`)
+
+**Linux**:
+- Build essentials (`sudo apt install build-essential` on Ubuntu/Debian)
+
 ### Manual Installation
 
 Alternatively, install Whisper.cpp following the [official instructions](https://github.com/ggerganov/whisper.cpp).
