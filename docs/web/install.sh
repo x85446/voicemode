@@ -389,7 +389,16 @@ setup_local_npm() {
 configure_claude_voicemode() {
     if command -v claude >/dev/null 2>&1; then
         # Check if voice-mode is already configured
-        if claude mcp list --scope user | grep -q "voice-mode"; then
+        # First try with --scope flag (newer versions)
+        if claude mcp list --scope user 2>/dev/null | grep -q "voice-mode"; then
+            print_success "Voice Mode is already configured with Claude Code"
+            echo ""
+            echo "🎉 Setup complete! You can now use voice commands in Claude Code:"
+            echo "  claude converse"
+            echo ""
+            echo "Voice Mode will automatically install local speech services if needed."
+        # Try without --scope flag (older versions)
+        elif claude mcp list 2>/dev/null | grep -q "voice-mode"; then
             print_success "Voice Mode is already configured with Claude Code"
             echo ""
             echo "🎉 Setup complete! You can now use voice commands in Claude Code:"
@@ -400,8 +409,17 @@ configure_claude_voicemode() {
             if confirm_action "Configure Voice Mode with Claude Code (adds MCP server)"; then
                 print_step "Configuring Voice Mode with Claude Code..."
                 
-                if claude mcp add --scope user voice-mode -- uvx voice-mode; then
+                # Try with --scope flag first (newer versions)
+                if claude mcp add --scope user voice-mode -- uvx voice-mode 2>/dev/null; then
                     print_success "Voice Mode configured with Claude Code"
+                    echo ""
+                    echo "🎉 Setup complete! You can now use voice commands in Claude Code:"
+                    echo "  claude converse"
+                    echo ""
+                    echo "Voice Mode will automatically install local speech services if needed."
+                # Fallback to without --scope flag (older versions)
+                elif claude mcp add voice-mode -- uvx voice-mode; then
+                    print_success "Voice Mode configured with Claude Code (global config)"
                     echo ""
                     echo "🎉 Setup complete! You can now use voice commands in Claude Code:"
                     echo "  claude converse"
@@ -413,7 +431,7 @@ configure_claude_voicemode() {
             else
                 print_step "Skipping Voice Mode configuration"
                 echo "You can configure it later with:"
-                echo "  claude mcp add --scope user voice-mode -- uvx voice-mode"
+                echo "  claude mcp add voice-mode -- uvx voice-mode"
             fi
         fi
     else
