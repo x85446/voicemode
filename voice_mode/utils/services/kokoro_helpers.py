@@ -1,8 +1,11 @@
 """Helper functions for kokoro service management."""
 
 import platform
+import subprocess
 from pathlib import Path
 from typing import Optional
+
+from voice_mode.utils.gpu_detection import has_gpu_support as _has_gpu_support
 
 
 def find_kokoro_fastapi() -> Optional[str]:
@@ -27,3 +30,11 @@ def find_kokoro_fastapi() -> Optional[str]:
                 return str(path)
     
     return None
+
+
+def has_gpu_support() -> bool:
+    """Check if the system has GPU support for Kokoro.
+    
+    This is a wrapper around the shared GPU detection utility.
+    """
+    return _has_gpu_support()

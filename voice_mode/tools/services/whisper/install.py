@@ -20,6 +20,7 @@ from voice_mode.utils.version_helpers import (
     checkout_version, is_version_installed
 )
 from voice_mode.utils.migration_helpers import auto_migrate_if_needed
+from voice_mode.utils.gpu_detection import detect_gpu
 
 logger = logging.getLogger("voice-mode")
 
@@ -107,21 +108,16 @@ async def whisper_install(
         
         # Auto-detect GPU if not specified
         if use_gpu is None:
-            if is_macos:
-                # macOS always has Metal support
-                use_gpu = True
-                gpu_type = "metal"
-            else:
-                # Check for NVIDIA GPU on Linux
-                try:
-                    subprocess.run(["nvidia-smi"], capture_output=True, check=True)
-                    use_gpu = True
-                    gpu_type = "cuda"
-                except:
-                    use_gpu = False
-                    gpu_type = "cpu"
+            use_gpu, gpu_type = detect_gpu()
+            logger.info(f"Auto-detected GPU: {gpu_type} (enabled: {use_gpu})")
         else:
-            gpu_type = "metal" if is_macos and use_gpu else ("cuda" if is_linux and use_gpu else "cpu")
+            # User specified whether to use GPU
+            if use_gpu:
+                # Get the detected GPU type
+                _, detected_type = detect_gpu()
+                gpu_type = detected_type if detected_type != "cpu" else ("metal" if is_macos else "cuda")
+            else:
+                gpu_type = "cpu"
         
         logger.info(f"Installing whisper.cpp on {system} with {gpu_type} support")
         

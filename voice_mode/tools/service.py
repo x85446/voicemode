@@ -16,7 +16,7 @@ from voice_mode.server import mcp
 from voice_mode.config import WHISPER_PORT, KOKORO_PORT, SERVICE_AUTO_ENABLE
 from voice_mode.utils.services.common import find_process_by_port
 from voice_mode.utils.services.whisper_helpers import find_whisper_server, find_whisper_model
-from voice_mode.utils.services.kokoro_helpers import find_kokoro_fastapi
+from voice_mode.utils.services.kokoro_helpers import find_kokoro_fastapi, has_gpu_support
 
 logger = logging.getLogger("voice-mode")
 
@@ -68,7 +68,26 @@ def get_service_config_vars(service_name: str) -> Dict[str, Any]:
         if platform.system() == "Darwin":
             start_script = Path(kokoro_dir) / "start-gpu_mac.sh"
         else:
-            start_script = Path(kokoro_dir) / "start.sh"
+            # On Linux, prefer GPU script if GPU is available, otherwise use CPU script
+            if has_gpu_support():
+                # Try GPU scripts first
+                possible_scripts = [
+                    Path(kokoro_dir) / "start-gpu.sh",
+                    Path(kokoro_dir) / "start.sh",  # fallback
+                    Path(kokoro_dir) / "start-cpu.sh"  # last resort
+                ]
+            else:
+                # No GPU, prefer CPU script
+                possible_scripts = [
+                    Path(kokoro_dir) / "start-cpu.sh",
+                    Path(kokoro_dir) / "start.sh",  # fallback
+                    Path(kokoro_dir) / "start-gpu.sh"  # might work with CPU fallback
+                ]
+            
+            for script in possible_scripts:
+                if script.exists():
+                    start_script = script
+                    break
         
         return {
             "KOKORO_DIR": str(kokoro_dir),
@@ -294,7 +313,27 @@ async def start_service(service_name: str) -> str:
         if platform.system() == "Darwin":
             start_script = Path(kokoro_dir) / "start-gpu_mac.sh"
         else:
-            start_script = Path(kokoro_dir) / "start.sh"
+            # On Linux, prefer GPU script if GPU is available, otherwise use CPU script
+            if has_gpu_support():
+                # Try GPU scripts first
+                possible_scripts = [
+                    Path(kokoro_dir) / "start-gpu.sh",
+                    Path(kokoro_dir) / "start.sh",  # fallback
+                    Path(kokoro_dir) / "start-cpu.sh"  # last resort
+                ]
+            else:
+                # No GPU, prefer CPU script
+                possible_scripts = [
+                    Path(kokoro_dir) / "start-cpu.sh",
+                    Path(kokoro_dir) / "start.sh",  # fallback
+                    Path(kokoro_dir) / "start-gpu.sh"  # might work with CPU fallback
+                ]
+            
+            start_script = None
+            for script in possible_scripts:
+                if script.exists():
+                    start_script = script
+                    break
         
         if not start_script.exists():
             return f"❌ Start script not found: {start_script}"
@@ -501,9 +540,31 @@ async def enable_service(service_name: str) -> str:
                 if not kokoro_dir:
                     return "❌ kokoro-fastapi not found. Please run kokoro_install first."
                 
-                start_script = Path(kokoro_dir) / "start.sh"
-                if not start_script.exists():
-                    return f"❌ Start script not found: {start_script}"
+                # On Linux, prefer GPU script if GPU is available, otherwise use CPU script
+                if has_gpu_support():
+                    # Try GPU scripts first
+                    possible_scripts = [
+                        Path(kokoro_dir) / "start-gpu.sh",
+                        Path(kokoro_dir) / "start.sh",  # fallback
+                        Path(kokoro_dir) / "start-cpu.sh"  # last resort
+                    ]
+                else:
+                    # No GPU, prefer CPU script
+                    possible_scripts = [
+                        Path(kokoro_dir) / "start-cpu.sh",
+                        Path(kokoro_dir) / "start.sh",  # fallback
+                        Path(kokoro_dir) / "start-gpu.sh"  # might work with CPU fallback
+                    ]
+                
+                start_script = None
+                for script in possible_scripts:
+                    if script.exists():
+                        start_script = script
+                        break
+                
+                if not start_script:
+                    gpu_status = "GPU detected" if has_gpu_support() else "No GPU detected"
+                    return f"❌ No start script found in {kokoro_dir}. {gpu_status}. Expected one of: start.sh, start-gpu.sh, or start-cpu.sh"
                 
                 content = template.format(
                     START_SCRIPT=start_script,
