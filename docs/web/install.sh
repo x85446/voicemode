@@ -397,9 +397,10 @@ configure_claude_voicemode() {
   if command -v claude >/dev/null 2>&1; then
     # Check if voice-mode is already configured
     if claude mcp list 2>/dev/null | grep -q "voice-mode"; then
-      print_success "Voice Mode is already configured with Claude Code"
+      print_success "Voice Mode is already configured in Claude Code"
       echo ""
-      echo "🎉 Setup complete! You can now use voice commands in Claude Code:"
+      echo "🎉 Setup complete! You can now use voice commands in Claude Code by running:"
+      echo ""
       echo "  claude converse"
       echo ""
       echo "Voice Mode will automatically install local speech services if needed."
@@ -506,4 +507,3 @@ main() {
 
 # Run main function
 main "$@"
-
