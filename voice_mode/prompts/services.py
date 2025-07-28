@@ -15,10 +15,7 @@ def whisper_prompt(action: str = "status") -> str:
     if action not in valid_actions:
         return f"Invalid action '{action}'. Use one of: {', '.join(valid_actions)}"
     
-    if action == "logs":
-        return f"Use the service tool with service_name='whisper' and action='logs' to view recent logs"
-    else:
-        return f"Use the service tool with service_name='whisper' and action='{action}'"
+    return f"Use the service tool with service_name='whisper' and action='{action}'"
 
 
 @mcp.prompt(name="kokoro")
@@ -33,7 +30,4 @@ def kokoro_prompt(action: str = "status") -> str:
     if action not in valid_actions:
         return f"Invalid action '{action}'. Use one of: {', '.join(valid_actions)}"
     
-    if action == "logs":
-        return f"Use the service tool with service_name='kokoro' and action='logs' to view recent logs"
-    else:
-        return f"Use the service tool with service_name='kokoro' and action='{action}'"
+    return f"Use the service tool with service_name='kokoro' and action='{action}'"

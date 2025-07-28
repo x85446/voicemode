@@ -36,12 +36,12 @@ async def kokoro_install(
     """
     Install and setup remsky/kokoro-fastapi TTS service using the simple 3-step approach.
     
-    1. Clones the repository to ~/.voicemode/kokoro-fastapi
+    1. Clones the repository to ~/.voicemode/services/kokoro
     2. Uses the appropriate start script (start-gpu_mac.sh on macOS)
     3. Installs a launchagent on macOS for automatic startup
     
     Args:
-        install_dir: Directory to install kokoro-fastapi (default: ~/.voicemode/kokoro-fastapi)
+        install_dir: Directory to install kokoro-fastapi (default: ~/.voicemode/services/kokoro)
         models_dir: Directory for Kokoro models (default: ~/.voicemode/kokoro-models) - not currently used
         port: Port to configure for the service (default: 8880)
         auto_start: Start the service after installation (ignored on macOS, uses launchd instead)
