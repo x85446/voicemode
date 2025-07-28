@@ -23,7 +23,7 @@ logger = logging.getLogger("voice-mode")
 
 def load_service_file_version(service_name: str, file_type: str) -> Optional[str]:
     """Load version information for a service file."""
-    versions_file = Path(__file__).parent.parent / "resources" / "versions.json"
+    versions_file = Path(__file__).parent.parent / "data" / "versions.json"
     if not versions_file.exists():
         return None
     
@@ -71,14 +71,14 @@ def get_installed_service_version(service_name: str) -> Optional[str]:
 
 
 def load_service_template(service_name: str) -> str:
-    """Load service file template from resources."""
+    """Load service file template from templates."""
     system = platform.system()
-    resources_dir = Path(__file__).parent.parent / "resources"
+    templates_dir = Path(__file__).parent.parent / "templates"
     
     if system == "Darwin":
-        template_path = resources_dir / "launchd" / f"com.voicemode.{service_name}.plist"
+        template_path = templates_dir / "launchd" / f"com.voicemode.{service_name}.plist"
     else:
-        template_path = resources_dir / "systemd" / f"voicemode-{service_name}.service"
+        template_path = templates_dir / "systemd" / f"voicemode-{service_name}.service"
     
     if not template_path.exists():
         raise FileNotFoundError(f"Service template not found: {template_path}")

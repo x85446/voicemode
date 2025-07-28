@@ -203,7 +203,7 @@ async def service_version(
 
 def get_service_files_version() -> Dict[str, str]:
     """Get version info for service files."""
-    versions_file = Path(__file__).parent.parent.parent / "resources" / "versions.json"
+    versions_file = Path(__file__).parent.parent.parent / "data" / "versions.json"
     if versions_file.exists():
         try:
             with open(versions_file) as f:
