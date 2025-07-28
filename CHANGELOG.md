@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.17.0] - 2025-07-29
+
 ### 🎯 Major Voice Activity Detection Improvement
 - **Dramatically improved silence detection accuracy** by fixing audio resampling bug
   - VAD was receiving corrupted audio due to improper downsampling from 24kHz to 16kHz
