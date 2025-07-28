@@ -12,8 +12,10 @@ ExecStart={WHISPER_BIN} --host 0.0.0.0 --port {WHISPER_PORT} --model {MODEL_FILE
 WorkingDirectory={WORKING_DIR}
 # Wait for service to be ready by checking health endpoint
 ExecStartPost=/bin/sh -c 'while ! curl -sf http://127.0.0.1:{WHISPER_PORT}/health >/dev/null 2>&1; do echo "Waiting for Whisper to be ready..."; sleep 1; done; echo "Whisper is ready!"'
-Restart=always
+Restart=on-failure
 RestartSec=10
+# Don't restart if the executable is missing
+RestartPreventExitStatus=127
 
 # Resource limits
 MemoryLimit=2G
