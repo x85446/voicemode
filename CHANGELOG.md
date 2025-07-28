@@ -55,10 +55,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Cleaned up root directory following Python best practices
   - Moved `testing/` to `docs/testing/` for manual testing procedures
   - Removed backup files (`.mcp.json-20250728`) and temporary files (`COMMIT-MESSAGE.txt`)
+  - Removed outdated `.env.example` from root (superseded by auto-generated config)
 - Renamed `conversation.py` to `converse.py` for consistency
 - Reorganized service directory structure for better maintainability
 - Consolidated service management prompts and documentation
 - Separated MCP templates and data from resources
+- **Improved configuration documentation**
+  - Added comprehensive configuration reference guide
+  - Documented auto-generation of `~/.voicemode/.voicemode.env`
+  - Clarified that environment variables take precedence over file settings
 - **Configuration management now uses user-level config only**
   - Removed project-level `.voicemode.env` support for security
   - All configuration stored in `~/.voicemode/.voicemode.env`
