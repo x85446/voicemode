@@ -40,12 +40,28 @@ jobs:
         echo "" >> $GITHUB_OUTPUT
         echo "## Installation" >> $GITHUB_OUTPUT
         echo "" >> $GITHUB_OUTPUT
-        echo "### PyPI" >> $GITHUB_OUTPUT
+        echo "### Universal Installer (Recommended)" >> $GITHUB_OUTPUT
+        echo "" >> $GITHUB_OUTPUT
+        echo "Install Claude Code with Voice Mode configured and ready to run on Linux, macOS, and Windows WSL:" >> $GITHUB_OUTPUT
+        echo "" >> $GITHUB_OUTPUT
+        echo '```bash' >> $GITHUB_OUTPUT
+        echo "curl -O https://getvoicemode.com/install.sh && bash install.sh" >> $GITHUB_OUTPUT
+        echo '```' >> $GITHUB_OUTPUT
+        echo "" >> $GITHUB_OUTPUT
+        echo "This installer will:" >> $GITHUB_OUTPUT
+        echo "- Install all system dependencies (Node.js, audio libraries, etc.)" >> $GITHUB_OUTPUT
+        echo "- Install Claude Code if not already installed" >> $GITHUB_OUTPUT
+        echo "- Configure Voice Mode as an MCP server" >> $GITHUB_OUTPUT
+        echo "- Set up your system for voice conversations" >> $GITHUB_OUTPUT
+        echo "" >> $GITHUB_OUTPUT
+        echo "### Manual Installation" >> $GITHUB_OUTPUT
+        echo "" >> $GITHUB_OUTPUT
+        echo "#### PyPI" >> $GITHUB_OUTPUT
         echo '```bash' >> $GITHUB_OUTPUT
         echo "pip install voice-mode==${{ steps.version.outputs.VERSION }}" >> $GITHUB_OUTPUT
         echo '```' >> $GITHUB_OUTPUT
         echo "" >> $GITHUB_OUTPUT
-        echo "### Claude Code" >> $GITHUB_OUTPUT
+        echo "#### Claude Code MCP" >> $GITHUB_OUTPUT
         echo '```bash' >> $GITHUB_OUTPUT
         echo "claude mcp add voice-mode uvx voice-mode" >> $GITHUB_OUTPUT
         echo '```' >> $GITHUB_OUTPUT
