@@ -53,6 +53,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Merged `config-examples/` into `docs/integrations/`
   - Removed directories moved to shadow repository: `assets/`, `notebooks/`, `npm-voicemode/`
   - Cleaned up root directory following Python best practices
+  - Moved `testing/` to `docs/testing/` for manual testing procedures
+  - Removed backup files (`.mcp.json-20250728`) and temporary files (`COMMIT-MESSAGE.txt`)
 - Renamed `conversation.py` to `converse.py` for consistency
 - Reorganized service directory structure for better maintainability
 - Consolidated service management prompts and documentation
