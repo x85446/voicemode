@@ -50,7 +50,9 @@ from voice_mode.config import (
     MIN_RECORDING_DURATION,
     VAD_CHUNK_DURATION_MS,
     INITIAL_SILENCE_GRACE_PERIOD,
-    DEFAULT_LISTEN_DURATION
+    DEFAULT_LISTEN_DURATION,
+    TTS_VOICES,
+    TTS_MODELS
 )
 import voice_mode.config
 from voice_mode.providers import (
@@ -243,6 +245,24 @@ async def text_to_speech_with_failover(
     Returns:
         Tuple of (success, tts_metrics, tts_config)
     """
+    from voice_mode.config import SIMPLE_FAILOVER
+    
+    # Use simple failover if enabled
+    if SIMPLE_FAILOVER:
+        from voice_mode.simple_failover import simple_tts_failover
+        return await simple_tts_failover(
+            text=message,
+            voice=voice or TTS_VOICES[0],
+            model=model or TTS_MODELS[0],
+            instructions=instructions,
+            audio_format=audio_format,
+            debug=DEBUG,
+            debug_dir=DEBUG_DIR if DEBUG else None,
+            save_audio=SAVE_AUDIO,
+            audio_dir=AUDIO_DIR if SAVE_AUDIO else None
+        )
+    
+    # Original implementation with health checks
     from voice_mode.provider_discovery import provider_registry
     
     # Track which URLs we've tried
@@ -393,8 +413,31 @@ async def speech_to_text_with_failover(
     Returns:
         Transcribed text or None if all endpoints fail
     """
+    from voice_mode.config import SIMPLE_FAILOVER, STT_BASE_URLS
+    
+    # Use simple failover if enabled
+    if SIMPLE_FAILOVER:
+        # Convert audio data to file for simple_stt_failover
+        import tempfile
+        import soundfile as sf
+        
+        with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as tmp_file:
+            sf.write(tmp_file.name, audio_data, SAMPLE_RATE)
+            tmp_file.flush()
+            
+            with open(tmp_file.name, 'rb') as audio_file:
+                from voice_mode.simple_failover import simple_stt_failover
+                result = await simple_stt_failover(
+                    audio_file=audio_file,
+                    model="whisper-1"
+                )
+            
+            # Clean up temp file
+            os.unlink(tmp_file.name)
+            return result
+    
+    # Original implementation with health checks
     from voice_mode.provider_discovery import provider_registry
-    from voice_mode.config import STT_BASE_URLS
     
     # Track which URLs we've tried
     tried_urls = set()
