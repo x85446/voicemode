@@ -44,11 +44,16 @@ def find_whisper_model() -> Optional[str]:
         for model_file in model_dir.glob("ggml-*.bin"):
             return str(model_file)
     
-    # Check default installation path
-    default_path = Path.home() / ".voicemode" / "whisper.cpp" / "models"
-    if default_path.exists():
-        for model_file in default_path.glob("ggml-*.bin"):
-            return str(model_file)
+    # Check default installation paths
+    default_paths = [
+        Path.home() / ".voicemode" / "services" / "whisper" / "models",
+        Path.home() / ".voicemode" / "whisper.cpp" / "models"  # legacy path
+    ]
+    
+    for default_path in default_paths:
+        if default_path.exists():
+            for model_file in default_path.glob("ggml-*.bin"):
+                return str(model_file)
     
     return None
 
@@ -89,10 +94,20 @@ async def download_whisper_model(
     if not download_script.exists():
         # Create the download script if it doesn't exist
         # This happens when downloading models to a custom directory
-        whisper_dir = Path.home() / ".voicemode" / "whisper.cpp"
-        original_script = whisper_dir / "models" / "download-ggml-model.sh"
+        # Check both possible whisper installation locations
+        whisper_dirs = [
+            Path.home() / ".voicemode" / "services" / "whisper",
+            Path.home() / ".voicemode" / "whisper.cpp"  # legacy
+        ]
         
-        if original_script.exists():
+        original_script = None
+        for whisper_dir in whisper_dirs:
+            script_path = whisper_dir / "models" / "download-ggml-model.sh"
+            if script_path.exists():
+                original_script = script_path
+                break
+        
+        if original_script:
             import shutil
             shutil.copy2(original_script, download_script)
             os.chmod(download_script, 0o755)

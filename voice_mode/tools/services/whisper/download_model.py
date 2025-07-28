@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Union, List
 
 from voice_mode.server import mcp
-from voice_mode.config import logger
+from voice_mode.config import logger, MODELS_DIR
 from voice_mode.utils.services.whisper_helpers import download_whisper_model, get_available_models
 
 logger = logging.getLogger("voice-mode")
@@ -60,16 +60,18 @@ async def download_model(
         download_model("large-v3", force_download=True)
     """
     try:
-        # Get model directory from environment or use default
-        models_dir = os.environ.get("VOICEMODE_WHISPER_MODEL_DIR")
-        if not models_dir:
-            models_dir = Path.home() / ".voicemode" / "whisper.cpp" / "models"
-        else:
-            models_dir = Path(models_dir)
+        # Get model directory from configuration
+        models_dir = MODELS_DIR / "whisper"
         
-        # Ensure whisper is installed
-        whisper_install_dir = Path.home() / ".voicemode" / "whisper.cpp"
-        if not whisper_install_dir.exists():
+        # Check both possible whisper installation locations
+        whisper_install_dir = Path.home() / ".voicemode" / "services" / "whisper"
+        legacy_install_dir = Path.home() / ".voicemode" / "whisper.cpp"
+        
+        if whisper_install_dir.exists():
+            actual_models_dir = whisper_install_dir / "models"
+        elif legacy_install_dir.exists():
+            actual_models_dir = legacy_install_dir / "models"
+        else:
             return json.dumps({
                 "success": False,
                 "error": "Whisper.cpp not installed. Please run whisper_install first."
@@ -103,7 +105,7 @@ async def download_model(
             logger.info(f"Processing model: {model_name}")
             result = await download_whisper_model(
                 model_name,
-                models_dir,
+                actual_models_dir,
                 force_download=force_download
             )
             
@@ -121,7 +123,7 @@ async def download_model(
         
         return json.dumps({
             "success": success_count > 0,
-            "models_directory": str(models_dir),
+            "models_directory": str(actual_models_dir),
             "total_requested": total_models,
             "successful_downloads": success_count,
             "failed_downloads": total_models - success_count,

@@ -24,8 +24,17 @@ async def list_whisper_models() -> str:
     and which one is currently being used by the whisper server.
     """
     try:
-        # Get whisper models directory
-        models_dir = Path.home() / ".voicemode/whisper.cpp/models"
+        # Get whisper models directory - check both locations
+        models_dirs = [
+            Path.home() / ".voicemode/services/whisper/models",
+            Path.home() / ".voicemode/whisper.cpp/models"  # legacy
+        ]
+        
+        models_dir = None
+        for dir_path in models_dirs:
+            if dir_path.exists():
+                models_dir = dir_path
+                break
         
         # List all model files
         models: List[Dict[str, Any]] = []
@@ -72,7 +81,7 @@ async def list_whisper_models() -> str:
         logger.error(f"Error listing whisper models: {e}")
         return json.dumps({
             "error": str(e),
-            "models_directory": str(Path.home() / ".voicemode/whisper.cpp/models"),
+            "models_directory": str(models_dir) if models_dir else "No models directory found",
             "installed_models": [],
             "total_models": 0
         }, indent=2)
