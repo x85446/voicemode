@@ -419,10 +419,9 @@ async def speech_to_text_with_failover(
     if SIMPLE_FAILOVER:
         # Convert audio data to file for simple_stt_failover
         import tempfile
-        import soundfile as sf
         
         with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as tmp_file:
-            sf.write(tmp_file.name, audio_data, SAMPLE_RATE)
+            write(tmp_file.name, SAMPLE_RATE, audio_data)
             tmp_file.flush()
             
             with open(tmp_file.name, 'rb') as audio_file:
