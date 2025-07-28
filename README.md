@@ -33,13 +33,29 @@ Natural voice conversations for AI assistants. Voice Mode brings human-like voic
 
 > 📖 **Using a different tool?** See our [Integration Guides](docs/integrations/README.md) for Cursor, VS Code, Gemini CLI, and more!
 
+### Automatic Installation (Recommended)
+
+Install Claude Code with Voice Mode configured and ready to run on Linux, macOS, and Windows WSL:
+
 ```bash
-npm install -g @anthropic-ai/claude-code
-curl -LsSf https://astral.sh/uv/install.sh | sh
-claude mcp add --scope user voice-mode uvx voice-mode
+curl -O https://getvoicemode.com/install.sh && bash install.sh
+```
+
+This installer will:
+- Install all system dependencies (Node.js, audio libraries, etc.)
+- Install Claude Code if not already installed
+- Configure Voice Mode as an MCP server
+- Set up your system for voice conversations
+
+After installation, just run:
+```bash
 export OPENAI_API_KEY=your-openai-key
 claude converse
 ```
+
+### Manual Installation
+
+For manual setup steps, see the [Claude Code Integration Guide](docs/integrations/claude-code/README.md).
 
 ## 🎬 Demo
 
