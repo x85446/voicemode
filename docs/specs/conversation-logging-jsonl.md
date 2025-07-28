@@ -8,6 +8,7 @@ A conversation-focused logging system for voice-mode that tracks all utterances 
 
 - **Version 1**: Initial schema with basic fields
 - **Version 2**: Added transport type and silence detection configuration (backward compatible)
+- **Version 3**: Added provider details and timing metrics (backward compatible)
 
 ## File Format
 
@@ -15,7 +16,7 @@ A conversation-focused logging system for voice-mode that tracks all utterances 
 - **Format**: JSON Lines (JSONL) - one JSON object per line
 - **Encoding**: UTF-8
 - **File naming**: `exchanges_YYYY-MM-DD.jsonl` (daily rotation)
-- **Location**: `~/.voicemode/logs/` directory
+- **Location**: `~/.voicemode/logs/conversations/` directory
 
 ### Schema
 
@@ -23,7 +24,7 @@ Each line represents a single utterance with the following structure:
 
 ```json
 {
-  "version": 2,
+  "version": 3,
   "timestamp": "2024-06-28T10:30:45.123Z",
   "conversation_id": "conv_20240628_103045_abc123",
   "type": "stt|tts",
@@ -37,13 +38,20 @@ Each line represents a single utterance with the following structure:
     "voice": "alloy",
     "timing": "ttfa 1.2s, tts_gen 2.3s, total 5.6s",
     "provider": "openai|kokoro|whisper",
+    "provider_url": "https://api.openai.com/v1",
+    "provider_type": "openai|kokoro|whisper",
     "audio_format": "mp3|pcm|wav",
     "transport": "local",
     "silence_detection": {
       "enabled": true,
       "vad_aggressiveness": 2,
       "silence_threshold_ms": 1000
-    }
+    },
+    "time_to_first_audio": 1.2,
+    "generation_time": 2.3,
+    "playback_time": 3.7,
+    "transcription_time": 1.5,
+    "total_turnaround_time": 5.6
   }
 }
 ```
@@ -78,6 +86,13 @@ Each line represents a single utterance with the following structure:
   - **enabled**: Whether silence detection was active
   - **vad_aggressiveness**: VAD aggressiveness level (0-3)
   - **silence_threshold_ms**: Silence threshold in milliseconds
+- **provider_url**: Full URL of the provider endpoint (e.g., "https://api.openai.com/v1") - v3+
+- **provider_type**: Provider type identifier (e.g., "openai", "kokoro", "whisper") - v3+
+- **time_to_first_audio**: Time to first audio in seconds (TTS only) - v3+
+- **generation_time**: Total generation time in seconds (TTS only) - v3+
+- **playback_time**: Audio playback duration in seconds (TTS only) - v3+
+- **transcription_time**: Time to transcribe in seconds (STT only) - v3+
+- **total_turnaround_time**: Total end-to-end time in seconds - v3+
 
 ## Conversation ID Generation
 

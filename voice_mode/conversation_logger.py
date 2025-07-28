@@ -20,16 +20,16 @@ from voice_mode.config import BASE_DIR
 class ConversationLogger:
     """Handles JSONL-based conversation logging."""
     
-    SCHEMA_VERSION = 2
+    SCHEMA_VERSION = 3
     CONVERSATION_GAP_MINUTES = 5
     
     def __init__(self, base_dir: Optional[Path] = None):
         """Initialize the conversation logger.
         
         Args:
-            base_dir: Base directory for logs. Defaults to ~/.voicemode/logs/
+            base_dir: Base directory for logs. Defaults to ~/.voicemode/logs/conversations/
         """
-        self.base_dir = base_dir or Path(BASE_DIR) / "logs"
+        self.base_dir = base_dir or Path(BASE_DIR) / "logs" / "conversations"
         self.base_dir.mkdir(parents=True, exist_ok=True)
         
         self.conversation_id = None
@@ -181,12 +181,17 @@ class ConversationLogger:
         metadata = {
             "model": kwargs.get("model"),
             "provider": kwargs.get("provider"),
+            "provider_url": kwargs.get("provider_url"),
+            "provider_type": kwargs.get("provider_type"),
             "language": kwargs.get("language"),
             "audio_format": kwargs.get("audio_format"),
             "transport": kwargs.get("transport"),
             "timing": kwargs.get("timing"),
             "silence_detection": kwargs.get("silence_detection"),
             "error": kwargs.get("error"),
+            # Timing metrics
+            "transcription_time": kwargs.get("transcription_time"),
+            "total_turnaround_time": kwargs.get("total_turnaround_time"),
         }
         
         self.log_utterance("stt", text, audio_file, duration_ms, metadata)
@@ -198,11 +203,18 @@ class ConversationLogger:
             "model": kwargs.get("model"),
             "voice": kwargs.get("voice"),
             "provider": kwargs.get("provider"),
+            "provider_url": kwargs.get("provider_url"),
+            "provider_type": kwargs.get("provider_type"),
             "audio_format": kwargs.get("audio_format"),
             "timing": kwargs.get("timing"),
             "transport": kwargs.get("transport"),
             "emotion": kwargs.get("emotion"),
             "error": kwargs.get("error"),
+            # Timing metrics
+            "time_to_first_audio": kwargs.get("time_to_first_audio"),
+            "generation_time": kwargs.get("generation_time"),
+            "playback_time": kwargs.get("playback_time"),
+            "total_turnaround_time": kwargs.get("total_turnaround_time"),
         }
         
         self.log_utterance("tts", text, audio_file, duration_ms, metadata)

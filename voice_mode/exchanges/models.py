@@ -15,6 +15,8 @@ class ExchangeMetadata:
     model: Optional[str] = None
     voice: Optional[str] = None
     provider: Optional[str] = None
+    provider_url: Optional[str] = None  # Full URL of the provider endpoint
+    provider_type: Optional[str] = None  # e.g., "openai", "local", "kokoro"
     timing: Optional[str] = None
     transport: Optional[str] = None
     audio_format: Optional[str] = None
@@ -22,6 +24,12 @@ class ExchangeMetadata:
     language: Optional[str] = None
     emotion: Optional[str] = None
     error: Optional[str] = None
+    # Detailed timing metrics
+    time_to_first_audio: Optional[float] = None  # TTFA in seconds
+    generation_time: Optional[float] = None  # Total generation time
+    playback_time: Optional[float] = None  # Playback duration
+    transcription_time: Optional[float] = None  # STT processing time
+    total_turnaround_time: Optional[float] = None  # Total end-to-end time
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'ExchangeMetadata':

@@ -27,7 +27,7 @@ class ExchangeReader:
             base_dir: Base directory for logs. Defaults to ~/.voicemode
         """
         self.base_dir = Path(base_dir) if base_dir else Path(BASE_DIR)
-        self.logs_dir = self.base_dir / "logs"
+        self.logs_dir = self.base_dir / "logs" / "conversations"
         
         # Ensure logs directory exists
         self.logs_dir.mkdir(parents=True, exist_ok=True)
