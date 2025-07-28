@@ -67,7 +67,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Support for both new and legacy whisper installation locations
   - Fixed model type validation
 
-## [2.16.0] - 2025-07-28
+## [2.16.0] - 2025-07-28 [YANKED]
 
 ### Added
 - Version management for whisper.cpp and kokoro-fastapi services
