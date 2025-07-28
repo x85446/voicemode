@@ -27,6 +27,11 @@ from collections import defaultdict
 
 from flask import Flask, render_template_string, jsonify, send_file, request
 
+# Import get_audio_path from voice_mode
+import sys
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from voice_mode.core import get_audio_path
+
 app = Flask(__name__)
 
 # Configuration
@@ -119,7 +124,7 @@ def read_jsonl_exchanges() -> List[Dict[str, Any]]:
         return exchanges
     
     # Read all JSONL files
-    for jsonl_file in sorted(LOGS_DIR.glob("exchanges_*.jsonl")):
+    for jsonl_file in sorted((LOGS_DIR / "conversations").glob("exchanges_*.jsonl")):
         try:
             with open(jsonl_file, 'r') as f:
                 for line in f:
@@ -1058,9 +1063,16 @@ def index():
 @app.route('/audio/<filename>')
 def serve_audio(filename):
     """Serve audio files."""
+    # Try new path structure first
+    audio_path = get_audio_path(filename, AUDIO_DIR)
+    if audio_path.exists():
+        return send_file(audio_path)
+    
+    # Fall back to flat structure for older files
     audio_path = AUDIO_DIR / filename
     if audio_path.exists():
         return send_file(audio_path)
+    
     return "Audio file not found", 404
 
 @app.route('/api/conversations')

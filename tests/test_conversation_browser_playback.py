@@ -77,7 +77,8 @@ def create_test_environment():
     ]
     
     # Write JSONL file
-    jsonl_path = base_dir / "logs" / "exchanges_20250702.jsonl"
+    jsonl_path = base_dir / "logs" / "conversations" / "exchanges_20250702.jsonl"
+    jsonl_path.parent.mkdir(parents=True, exist_ok=True)
     with open(jsonl_path, 'w') as f:
         for exchange in exchanges:
             f.write(json.dumps(exchange) + '\n')
