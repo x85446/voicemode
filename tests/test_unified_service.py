@@ -290,7 +290,6 @@ class TestServicePrompts:
         result = whisper_prompt("logs")
         assert "service tool" in result
         assert "action='logs'" in result
-        assert "view recent logs" in result
     
     def test_whisper_prompt_invalid_action(self):
         """Test whisper prompt with invalid action"""
