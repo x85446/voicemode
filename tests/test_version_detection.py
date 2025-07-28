@@ -10,7 +10,8 @@ from voice_mode.version import (
     get_git_commit_hash,
     is_git_repository,
     get_version,
-    __version__
+    __version__,
+    base_version
 )
 
 
@@ -62,7 +63,7 @@ def test_get_version_non_git():
         version = get_version()
         # Should return base version without dev suffix
         assert "-dev." not in version
-        assert version == "2.16.0"  # Current base version
+        assert version == base_version  # Use actual base version
 
 
 def test_get_version_git_with_commit():
@@ -73,7 +74,7 @@ def test_get_version_git_with_commit():
                 # Mock clean git status
                 mock_run.return_value = MagicMock(stdout='')
                 version = get_version()
-                assert version == "2.16.0-dev.abc1234"
+                assert version == f"{base_version}-dev.abc1234"
 
 
 def test_get_version_git_with_changes():
@@ -84,4 +85,4 @@ def test_get_version_git_with_changes():
                 # Mock dirty git status
                 mock_run.return_value = MagicMock(stdout='M some_file.py')
                 version = get_version()
-                assert version == "2.16.0-dev.abc1234-dirty"
+                assert version == f"{base_version}-dev.abc1234-dirty"
