@@ -4,7 +4,8 @@ This directory contains configuration documentation for Voice Mode.
 
 ## Quick Links
 
-- **[Environment Variables Example](voicemode.env.example)** - Environment variable reference showing defaults and examples
+- **[Configuration Reference](configuration-reference.md)** - Comprehensive list of all configuration options
+- **[Environment Variables Example](voicemode.env.example)** - Shell export format for sourcing in bash
 - **[Voice Preferences](voice-preferences.md)** - File-based voice selection system
 - **[MCP Environment Precedence](mcp-env-precedence.md)** - How MCP handles environment variables
 - **[Integration Guides](../integrations/README.md)** - How to add Voice Mode MCP to your code editor
@@ -103,26 +104,43 @@ By default, Voice Mode prioritizes privacy:
 - Transcriptions are NOT saved unless explicitly enabled
 - Only event logs are saved by default for debugging
 
-To change this behavior, see the [Environment Variables Example](voicemode.env.example) file.
+To change this behavior, see the [Configuration Reference](configuration-reference.md).
 
-## Using the Environment File
+## Configuration File
 
-1. Copy the example file to your home directory:
+Voice Mode automatically creates `~/.voicemode/.voicemode.env` on first run with basic settings. This file uses simple `KEY=value` format (not shell exports).
+
+### Using the Configuration File
+
+1. Run Voice Mode once to generate the default configuration:
    ```bash
-   cp voicemode.env.example ~/.voicemode.env
+   uvx voice-mode
    ```
 
-2. Edit the file and uncomment/modify the variables you need:
+2. Edit the generated configuration file:
    ```bash
-   vim ~/.voicemode.env  # or your preferred editor
+   vim ~/.voicemode/.voicemode.env  # or your preferred editor
    ```
 
-3. Source the file in your shell:
+3. The file will be automatically loaded on next run. Environment variables always take precedence over file settings.
+
+### Using Environment Variables
+
+You can also set configuration via environment variables:
+
+1. Set variables in your current shell:
    ```bash
-   source ~/.voicemode.env
+   export OPENAI_API_KEY="your-key"
+   export VOICEMODE_DEBUG=true
    ```
 
-4. Or add it to your shell RC file for persistence:
+2. Or use the shell export example file:
    ```bash
-   echo "source ~/.voicemode.env" >> ~/.bashrc  # or ~/.zshrc
+   cp docs/configuration/voicemode.env.example ~/.voicemode.env.sh
+   source ~/.voicemode.env.sh
+   ```
+
+3. Or add to your shell RC file for persistence:
+   ```bash
+   echo "export OPENAI_API_KEY='your-key'" >> ~/.bashrc  # or ~/.zshrc
    ```

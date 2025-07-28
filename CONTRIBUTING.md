@@ -34,9 +34,11 @@ Thank you for your interest in contributing to voice-mode! This guide will help 
 
 4. **Set up environment variables**
    ```bash
-   cp .env.example .env.local
-   # Edit .env.local with your API keys
+   # Set your API key
    export OPENAI_API_KEY=your-key-here
+   
+   # Voice Mode will auto-generate ~/.voicemode/.voicemode.env on first run
+   # You can edit this file to customize configuration
    ```
 
 ## Running Tests

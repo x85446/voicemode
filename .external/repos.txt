@@ -1,9 +1,0 @@
-https://github.com/openai/openai-python
-livekit/livekit
-remsky/Kokoro-FastAPI
-
-_:mbailey/awesome-mcp-servers
-_:mbailey/modelcontextprotocol-servers
-_:mbailey/voice-assistant-frontend
-_:mbailey/voice-assistant-swift
-ggml-org/whisper.cpp

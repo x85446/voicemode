@@ -17,11 +17,15 @@ Users must have already installed system dependencies following the instructions
 
 ## Configuration
 
-Copy `.env.example` to `.env` to customize test settings:
+Create a `.env` file to customize test settings:
 
 ```bash
-cp .env.example .env
-# Edit .env to customize TEST_USER, repository URL, etc.
+# Create .env file with your settings
+cat > .env <<EOF
+TEST_USER=testuser
+REPO_URL=https://github.com/mbailey/voicemode.git
+OPENAI_API_KEY=your-key-here
+EOF
 ```
 
 ## What Gets Tested
