@@ -915,10 +915,14 @@ def record_audio_with_silence_detection(max_duration: float, disable_silence_det
                         chunk_flat = chunk.flatten()
                         chunks.append(chunk_flat)
                         
-                        # For VAD, we need to provide exactly the right number of bytes
-                        # VAD expects 16kHz audio, so we'll take a subset of our 24kHz samples
-                        # This is a simple downsampling approach that works for VAD
-                        vad_chunk = chunk_flat[:vad_chunk_samples]
+                        # For VAD, we need to downsample from 24kHz to 16kHz
+                        # Use scipy's resample for proper downsampling
+                        from scipy import signal
+                        # Calculate the number of samples we need after resampling
+                        resampled_length = int(len(chunk_flat) * vad_sample_rate / SAMPLE_RATE)
+                        vad_chunk = signal.resample(chunk_flat, resampled_length)
+                        # Take exactly the number of samples VAD expects
+                        vad_chunk = vad_chunk[:vad_chunk_samples].astype(np.int16)
                         chunk_bytes = vad_chunk.tobytes()
                         
                         # Check if chunk contains speech
@@ -1257,6 +1261,14 @@ async def converse(
         
     Note: Emotional speech uses OpenAI's gpt-4o-mini-tts model and incurs API costs (~$0.02/minute)
     """
+    # Convert string booleans to actual booleans
+    if isinstance(wait_for_response, str):
+        wait_for_response = wait_for_response.lower() in ('true', '1', 'yes', 'on')
+    if isinstance(disable_silence_detection, str):
+        disable_silence_detection = disable_silence_detection.lower() in ('true', '1', 'yes', 'on')
+    if isinstance(audio_feedback, str):
+        audio_feedback = audio_feedback.lower() in ('true', '1', 'yes', 'on')
+    
     logger.info(f"Converse: '{message[:50]}{'...' if len(message) > 50 else ''}' (wait_for_response: {wait_for_response})")
     
     # Validate duration parameters

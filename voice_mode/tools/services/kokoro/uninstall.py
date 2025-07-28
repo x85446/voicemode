@@ -62,8 +62,7 @@ async def kokoro_uninstall(
                     # Unload if loaded
                     subprocess.run(
                         ["launchctl", "unload", str(plist_path)],
-                        capture_output=True,
-                        stderr=subprocess.DEVNULL
+                        capture_output=True
                     )
                     # Remove file
                     plist_path.unlink()
@@ -101,13 +100,11 @@ async def kokoro_uninstall(
                     # Stop and disable service
                     subprocess.run(
                         ["systemctl", "--user", "stop", "voicemode-kokoro.service"],
-                        capture_output=True,
-                        stderr=subprocess.DEVNULL
+                        capture_output=True
                     )
                     subprocess.run(
                         ["systemctl", "--user", "disable", "voicemode-kokoro.service"],
-                        capture_output=True,
-                        stderr=subprocess.DEVNULL
+                        capture_output=True
                     )
                     # Remove file
                     service_path.unlink()
