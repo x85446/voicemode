@@ -49,6 +49,28 @@ async def simple_tts_failover(
             provider_type = detect_provider_type(base_url)
             api_key = OPENAI_API_KEY if provider_type == "openai" else (OPENAI_API_KEY or "dummy-key-for-local")
             
+            # Select appropriate voice for this provider
+            if provider_type == "openai":
+                # Map Kokoro voices to OpenAI equivalents, or use OpenAI default
+                openai_voices = ["alloy", "echo", "fable", "nova", "onyx", "shimmer"]
+                if voice in openai_voices:
+                    selected_voice = voice
+                else:
+                    # Map common Kokoro voices to OpenAI equivalents
+                    voice_mapping = {
+                        "af_sky": "nova",
+                        "af_sarah": "nova", 
+                        "af_alloy": "alloy",
+                        "am_adam": "onyx",
+                        "am_echo": "echo",
+                        "am_onyx": "onyx",
+                        "bm_fable": "fable"
+                    }
+                    selected_voice = voice_mapping.get(voice, "alloy")  # Default to alloy
+                    logger.info(f"Mapped voice {voice} to {selected_voice} for OpenAI")
+            else:
+                selected_voice = voice  # Use original voice for Kokoro
+            
             client = AsyncOpenAI(
                 api_key=api_key,
                 base_url=base_url,
@@ -63,7 +85,7 @@ async def simple_tts_failover(
                 text=text,
                 openai_clients=openai_clients,
                 tts_model=model,
-                tts_voice=voice,
+                tts_voice=selected_voice,
                 tts_base_url=base_url,
                 conversation_id=conversation_id,
                 **kwargs
@@ -73,10 +95,10 @@ async def simple_tts_failover(
                 config = {
                     'base_url': base_url,
                     'provider': provider_type,
-                    'voice': voice,
+                    'voice': selected_voice,  # Return the voice actually used
                     'model': model
                 }
-                logger.info(f"TTS succeeded with {base_url}")
+                logger.info(f"TTS succeeded with {base_url} using voice {selected_voice}")
                 return True, metrics, config
                 
         except Exception as e:
