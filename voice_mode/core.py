@@ -162,7 +162,8 @@ async def text_to_speech(
     client_key: str = 'tts',
     instructions: Optional[str] = None,
     audio_format: Optional[str] = None,
-    conversation_id: Optional[str] = None
+    conversation_id: Optional[str] = None,
+    speed: Optional[float] = None
 ) -> tuple[bool, Optional[dict]]:
     """Convert text to speech and play it.
     
@@ -231,6 +232,11 @@ async def text_to_speech(
         if instructions and tts_model == "gpt-4o-mini-tts":
             request_params["instructions"] = instructions
             logger.debug(f"TTS instructions: {instructions}")
+        
+        # Add speed parameter if provided
+        if speed is not None:
+            request_params["speed"] = speed
+            logger.info(f"  • Speed: {speed}x")
         
         # Track generation time
         generation_start = time.perf_counter()

@@ -242,7 +242,8 @@ async def text_to_speech_with_failover(
     model: Optional[str] = None,
     instructions: Optional[str] = None,
     audio_format: Optional[str] = None,
-    initial_provider: Optional[str] = None
+    initial_provider: Optional[str] = None,
+    speed: Optional[float] = None
 ) -> Tuple[bool, Optional[dict], Optional[dict]]:
     """
     Text to speech with automatic failover to next available endpoint.
@@ -264,7 +265,8 @@ async def text_to_speech_with_failover(
             debug=DEBUG,
             debug_dir=DEBUG_DIR if DEBUG else None,
             save_audio=SAVE_AUDIO,
-            audio_dir=AUDIO_DIR if SAVE_AUDIO else None
+            audio_dir=AUDIO_DIR if SAVE_AUDIO else None,
+            speed=speed
         )
     
     # Original implementation with health checks
@@ -307,7 +309,8 @@ async def text_to_speech_with_failover(
                     client_key=client_key,
                     instructions=tts_config.get('instructions'),
                     audio_format=audio_format,
-                    conversation_id=conversation_id
+                    conversation_id=conversation_id,
+                    speed=speed
                 )
                 
                 # Clean up temporary client
@@ -366,7 +369,8 @@ async def text_to_speech_with_failover(
                 client_key=client_key,
                 instructions=tts_config.get('instructions'),
                 audio_format=audio_format,
-                conversation_id=conversation_id
+                conversation_id=conversation_id,
+                speed=speed
             )
             
             # Clean up temporary client
@@ -1190,7 +1194,8 @@ async def converse(
     audio_feedback: Optional[Union[bool, str]] = None,
     audio_feedback_style: Optional[str] = None,
     audio_format: Optional[str] = None,
-    disable_silence_detection: Union[bool, str] = False
+    disable_silence_detection: Union[bool, str] = False,
+    speed: Optional[float] = None
 ) -> str:
     """Have a voice conversation - speak a message and optionally listen for response.
     
@@ -1249,6 +1254,9 @@ async def converse(
                                    Silence detection automatically stops recording after detecting silence. 
                                    Disable if user reports being cut off, in noisy environments, or for 
                                    use cases like dictation where pauses are expected.
+        speed: Speech rate/speed for TTS playback (default: None uses normal speed)
+               Values: 0.25 to 4.0 (0.5 = half speed, 2.0 = double speed)
+               Currently supported by Kokoro TTS. OpenAI may support in the future.
         If wait_for_response is False: Confirmation that message was spoken
         If wait_for_response is True: The voice response received (or error/timeout message)
     
@@ -1272,6 +1280,12 @@ async def converse(
         - Humor: converse("That's hilarious!", tts_model="gpt-4o-mini-tts", tts_instructions="Sound amused and playful")
         
     Note: Emotional speech uses OpenAI's gpt-4o-mini-tts model and incurs API costs (~$0.02/minute)
+    
+    Speed Control Examples (Kokoro):
+        - Normal speed: converse("This is normal speed")
+        - Faster speech: converse("This is faster speech", speed=1.5)
+        - Double speed: converse("This is double speed", speed=2.0)
+        - Slower speech: converse("This is slower speech", speed=0.8)
     """
     # Convert string booleans to actual booleans
     if isinstance(wait_for_response, str):
@@ -1358,7 +1372,8 @@ async def converse(
                         model=tts_model,
                         instructions=tts_instructions,
                         audio_format=audio_format,
-                        initial_provider=tts_provider
+                        initial_provider=tts_provider,
+                        speed=speed
                     )
                     
                 # Include timing info if available
@@ -1483,7 +1498,8 @@ async def converse(
                         model=tts_model,
                         instructions=tts_instructions,
                         audio_format=audio_format,
-                        initial_provider=tts_provider
+                        initial_provider=tts_provider,
+                        speed=speed
                     )
                     
                     # Add TTS sub-metrics
