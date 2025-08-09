@@ -7,7 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [2.17.3] - 2025-08-07
+### Added
+- **TTS speed control**
+  - New `speed` parameter in converse tool for controlling speech rate (0.25 to 4.0)
+  - Currently supported by Kokoro TTS and any OpenAI-compatible services that support speed
+  - Examples: 0.5 = half speed, 2.0 = double speed
+  - Based on user request in issue #15
 
 ## [2.17.3] - 2025-08-07
 
