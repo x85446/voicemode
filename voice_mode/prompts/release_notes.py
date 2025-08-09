@@ -58,6 +58,9 @@ def parse_changelog(changelog_path: Path, max_versions: int = 5) -> str:
                 'content': '\n'.join(current_content).strip()
             })
         
+        # Reverse to show oldest first (newest last)
+        versions.reverse()
+        
         # Format the output
         output = []
         for version in versions:
