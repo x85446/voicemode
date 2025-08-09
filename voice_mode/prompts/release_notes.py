@@ -73,10 +73,6 @@ def release_notes_prompt(versions: str = "5") -> str:
     
     result = '\n'.join(output).strip()
     
-    # Format as a nice message
-    return f"""Voice Mode Release Notes
-=======================
-
-{result}
-
-For the complete changelog, see: https://github.com/mbailey/voicemode/blob/master/CHANGELOG.md"""
+    # Return just the changelog entries without header/footer
+    # to match Claude Code's clean output format
+    return result

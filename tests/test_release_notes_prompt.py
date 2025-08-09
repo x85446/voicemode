@@ -44,9 +44,9 @@ def test_release_notes_prompt_parses_changelog():
         assert "Feature A" in result
         assert "Updated something" in result
         
-        # Check formatting
-        assert "Voice Mode Release Notes" in result
-        assert "https://github.com/mbailey/voicemode" in result
+        # Check clean output (no header/footer)
+        assert "Voice Mode Release Notes" not in result
+        assert "https://github.com/mbailey/voicemode" not in result
 
 
 def test_release_notes_prompt_handles_missing_changelog():
