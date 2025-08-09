@@ -426,23 +426,55 @@ async def speech_to_text_with_failover(
     
     # Use simple failover if enabled
     if SIMPLE_FAILOVER:
-        # Convert audio data to file for simple_stt_failover
         import tempfile
+        from voice_mode.conversation_logger import get_conversation_logger
+        from voice_mode.core import save_debug_file, get_debug_filename
         
-        with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as tmp_file:
-            write(tmp_file.name, SAMPLE_RATE, audio_data)
-            tmp_file.flush()
+        # Determine if we should save the file permanently or use a temp file
+        if save_audio and audio_dir:
+            # Save directly to final location
+            conversation_logger = get_conversation_logger()
+            conversation_id = conversation_logger.conversation_id
             
-            with open(tmp_file.name, 'rb') as audio_file:
+            # Create year/month directory structure
+            now = datetime.now()
+            year_dir = audio_dir / str(now.year)
+            month_dir = year_dir / f"{now.month:02d}"
+            month_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Generate filename and path
+            filename = get_debug_filename("stt", "wav", conversation_id)
+            wav_file_path = month_dir / filename
+            
+            # Write audio data directly to final location
+            write(str(wav_file_path), SAMPLE_RATE, audio_data)
+            logger.info(f"STT audio saved to: {wav_file_path}")
+            
+            # Use the saved file for STT
+            with open(wav_file_path, 'rb') as audio_file:
                 from voice_mode.simple_failover import simple_stt_failover
                 result = await simple_stt_failover(
                     audio_file=audio_file,
                     model="whisper-1"
                 )
-            
-            # Clean up temp file
-            os.unlink(tmp_file.name)
-            return result
+            # Don't delete - it's our saved audio file
+        else:
+            # Use temporary file that will be deleted
+            with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as tmp_file:
+                write(tmp_file.name, SAMPLE_RATE, audio_data)
+                tmp_file.flush()
+                
+                with open(tmp_file.name, 'rb') as audio_file:
+                    from voice_mode.simple_failover import simple_stt_failover
+                    result = await simple_stt_failover(
+                        audio_file=audio_file,
+                        model="whisper-1"
+                    )
+                
+                # Clean up temp file
+                os.unlink(tmp_file.name)
+        
+        return result
     
     # Original implementation with health checks
     from voice_mode.provider_discovery import provider_registry
