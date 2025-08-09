@@ -1256,7 +1256,7 @@ async def converse(
                                    use cases like dictation where pauses are expected.
         speed: Speech rate/speed for TTS playback (default: None uses normal speed)
                Values: 0.25 to 4.0 (0.5 = half speed, 2.0 = double speed)
-               Currently supported by Kokoro TTS. OpenAI may support in the future.
+               Supported by both OpenAI and Kokoro TTS providers.
         If wait_for_response is False: Confirmation that message was spoken
         If wait_for_response is True: The voice response received (or error/timeout message)
     
@@ -1281,11 +1281,13 @@ async def converse(
         
     Note: Emotional speech uses OpenAI's gpt-4o-mini-tts model and incurs API costs (~$0.02/minute)
     
-    Speed Control Examples (Kokoro):
+    Speed Control Examples:
         - Normal speed: converse("This is normal speed")
         - Faster speech: converse("This is faster speech", speed=1.5)
         - Double speed: converse("This is double speed", speed=2.0)
         - Slower speech: converse("This is slower speech", speed=0.8)
+        
+        Note: Speed control works with both OpenAI and Kokoro TTS providers
     """
     # Convert string booleans to actual booleans
     if isinstance(wait_for_response, str):
