@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **VAD aggressiveness control**
+  - New `vad_aggressiveness` parameter in converse tool for controlling Voice Activity Detection sensitivity (0-3)
+  - 0 = least aggressive filtering (more permissive), 3 = most aggressive (strict)
+  - Allows adapting to different environments: quiet rooms (0-1) vs noisy environments (2-3)
+  - Also configurable via VOICEMODE_VAD_AGGRESSIVENESS environment variable
+
+### Changed
+- **Improved VAD documentation**
+  - Clarified that aggressiveness controls how strictly VAD filters out non-speech
+  - Updated examples to better demonstrate appropriate use cases
+  - Fixed configuration documentation that had backwards descriptions
+
 ## [2.19.0] - 2025-08-10
 
 ## [2.18.0] - 2025-08-10
