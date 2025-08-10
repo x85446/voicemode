@@ -871,7 +871,7 @@ def record_audio(duration: float) -> np.ndarray:
             sys.stderr = original_stderr
 
 
-def record_audio_with_silence_detection(max_duration: float, disable_silence_detection: bool = False, min_duration: float = 0.0) -> np.ndarray:
+def record_audio_with_silence_detection(max_duration: float, disable_silence_detection: bool = False, min_duration: float = 0.0, vad_aggressiveness: Optional[int] = None) -> np.ndarray:
     """Record audio from microphone with automatic silence detection.
     
     Uses WebRTC VAD to detect when the user stops speaking and automatically
@@ -881,6 +881,7 @@ def record_audio_with_silence_detection(max_duration: float, disable_silence_det
         max_duration: Maximum recording duration in seconds
         disable_silence_detection: If True, disables silence detection and uses fixed duration recording
         min_duration: Minimum recording duration before silence detection can stop (default: 0.0)
+        vad_aggressiveness: VAD aggressiveness level (0-3). If None, uses VAD_AGGRESSIVENESS from config
         
     Returns:
         Numpy array of recorded audio samples
@@ -902,8 +903,9 @@ def record_audio_with_silence_detection(max_duration: float, disable_silence_det
     logger.info(f"🎤 Recording with silence detection (max {max_duration}s)...")
     
     try:
-        # Initialize VAD
-        vad = webrtcvad.Vad(VAD_AGGRESSIVENESS)
+        # Initialize VAD with provided aggressiveness or default
+        effective_vad_aggressiveness = vad_aggressiveness if vad_aggressiveness is not None else VAD_AGGRESSIVENESS
+        vad = webrtcvad.Vad(effective_vad_aggressiveness)
         
         # Calculate chunk size (must be 10, 20, or 30ms worth of samples)
         chunk_samples = int(SAMPLE_RATE * VAD_CHUNK_DURATION_MS / 1000)
@@ -932,7 +934,7 @@ def record_audio_with_silence_detection(max_duration: float, disable_silence_det
         original_stdout = sys.stdout
         original_stderr = sys.stderr
         
-        logger.debug(f"VAD config - Aggressiveness: {VAD_AGGRESSIVENESS}, "
+        logger.debug(f"VAD config - Aggressiveness: {effective_vad_aggressiveness} (param: {vad_aggressiveness}, default: {VAD_AGGRESSIVENESS}), "
                     f"Silence threshold: {SILENCE_THRESHOLD_MS}ms, "
                     f"Min duration: {MIN_RECORDING_DURATION}s, "
                     f"Initial grace period: {INITIAL_SILENCE_GRACE_PERIOD}s")
@@ -1227,7 +1229,8 @@ async def converse(
     audio_feedback_style: Optional[str] = None,
     audio_format: Optional[str] = None,
     disable_silence_detection: Union[bool, str] = False,
-    speed: Optional[float] = None
+    speed: Optional[float] = None,
+    vad_aggressiveness: Optional[int] = None
 ) -> str:
     """Have a voice conversation - speak a message and optionally listen for response.
     
@@ -1289,6 +1292,16 @@ async def converse(
         speed: Speech rate/speed for TTS playback (default: None uses normal speed)
                Values: 0.25 to 4.0 (0.5 = half speed, 2.0 = double speed)
                Supported by both OpenAI and Kokoro TTS providers.
+        vad_aggressiveness: Voice Activity Detection aggressiveness level (default: None uses VOICEMODE_VAD_AGGRESSIVENESS env var)
+                            Controls how strict the VAD is about filtering out non-speech audio.
+                            Values: 0-3 (integer)
+                            - 0: Least aggressive filtering - includes more audio, may include non-speech
+                            - 1: Slightly stricter filtering
+                            - 2: Balanced filtering (default) - good for most environments
+                            - 3: Most aggressive filtering - strict speech detection, may cut off soft speech
+                            
+                            Use lower values (0-1) in quiet environments to catch all speech
+                            Use higher values (2-3) in noisy environments to reduce false triggers
         If wait_for_response is False: Confirmation that message was spoken
         If wait_for_response is True: The voice response received (or error/timeout message)
     
@@ -1320,6 +1333,15 @@ async def converse(
         - Slower speech: converse("This is slower speech", speed=0.8)
         
         Note: Speed control works with both OpenAI and Kokoro TTS providers
+    
+    VAD Aggressiveness Examples:
+        - Quiet room, capture all speech: converse("Let's have a conversation", vad_aggressiveness=0)
+        - Normal home/office: converse("Tell me about your day")  # Uses default (2)
+        - Noisy cafe/outdoors: converse("Can you hear me?", vad_aggressiveness=3)
+        - Balance for most cases: converse("How are you?", vad_aggressiveness=2)
+        
+        Remember: Lower values (0-1) = more permissive, may detect non-speech as speech
+                 Higher values (2-3) = more strict, may miss soft speech or whispers
     """
     # Convert string booleans to actual booleans
     if isinstance(wait_for_response, str):
@@ -1330,6 +1352,11 @@ async def converse(
         audio_feedback = audio_feedback.lower() in ('true', '1', 'yes', 'on')
     
     logger.info(f"Converse: '{message[:50]}{'...' if len(message) > 50 else ''}' (wait_for_response: {wait_for_response})")
+    
+    # Validate vad_aggressiveness parameter
+    if vad_aggressiveness is not None:
+        if not isinstance(vad_aggressiveness, int) or vad_aggressiveness < 0 or vad_aggressiveness > 3:
+            return f"Error: vad_aggressiveness must be an integer between 0 and 3 (got {vad_aggressiveness})"
     
     # Validate duration parameters
     if wait_for_response:
@@ -1604,9 +1631,9 @@ async def converse(
                         event_logger.log_event(event_logger.RECORDING_START)
                     
                     record_start = time.perf_counter()
-                    logger.debug(f"About to call record_audio_with_silence_detection with duration={listen_duration}, disable_silence_detection={disable_silence_detection}, min_duration={min_listen_duration}")
+                    logger.debug(f"About to call record_audio_with_silence_detection with duration={listen_duration}, disable_silence_detection={disable_silence_detection}, min_duration={min_listen_duration}, vad_aggressiveness={vad_aggressiveness}")
                     audio_data = await asyncio.get_event_loop().run_in_executor(
-                        None, record_audio_with_silence_detection, listen_duration, disable_silence_detection, min_listen_duration
+                        None, record_audio_with_silence_detection, listen_duration, disable_silence_detection, min_listen_duration, vad_aggressiveness
                     )
                     timings['record'] = time.perf_counter() - record_start
                     
