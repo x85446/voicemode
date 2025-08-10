@@ -1,7 +1,7 @@
 # Voice Mode Kokoro aliases
 # Works on both macOS (launchctl) and Linux (systemctl)
 alias voicemode-kokoro-status='if [[ "$(uname)" == "Darwin" ]]; then launchctl list | grep com.voicemode.kokoro; else systemctl --user status voicemode-kokoro; fi'
-alias voicemode-kokoro-logs='tail -f ~/.voicemode/logs/kokoro.*.log'
+alias voicemode-kokoro-logs='tail -f ~/.voicemode/logs/kokoro/kokoro*.log'
 alias voicemode-kokoro-restart='if [[ "$(uname)" == "Darwin" ]]; then launchctl stop com.voicemode.kokoro && launchctl start com.voicemode.kokoro; else systemctl --user restart voicemode-kokoro; fi'
 alias voicemode-kokoro-stop='if [[ "$(uname)" == "Darwin" ]]; then launchctl stop com.voicemode.kokoro; else systemctl --user stop voicemode-kokoro; fi'
 alias voicemode-kokoro-start='if [[ "$(uname)" == "Darwin" ]]; then launchctl start com.voicemode.kokoro; else systemctl --user start voicemode-kokoro; fi'
@@ -17,7 +17,7 @@ alias voicemode-kokoro-health=kokoro-health
 # Voice Mode Whisper aliases
 # Works on both macOS (launchctl) and Linux (systemctl)
 alias voicemode-whisper-status='if [[ "$(uname)" == "Darwin" ]]; then launchctl list | grep com.voicemode.whisper; else systemctl --user status voicemode-whisper; fi'
-alias voicemode-whisper-logs='tail -f ~/.voicemode/logs/whisper.*.log'
+alias voicemode-whisper-logs='tail -f ~/.voicemode/logs/whisper/whisper*.log'
 alias voicemode-whisper-restart='if [[ "$(uname)" == "Darwin" ]]; then launchctl stop com.voicemode.whisper && launchctl start com.voicemode.whisper; else systemctl --user restart voicemode-whisper; fi'
 alias voicemode-whisper-stop='if [[ "$(uname)" == "Darwin" ]]; then launchctl stop com.voicemode.whisper; else systemctl --user stop voicemode-whisper; fi'
 alias voicemode-whisper-start='if [[ "$(uname)" == "Darwin" ]]; then launchctl start com.voicemode.whisper; else systemctl --user start voicemode-whisper; fi'
