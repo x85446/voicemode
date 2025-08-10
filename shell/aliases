@@ -1,0 +1,29 @@
+# Voice Mode Kokoro aliases
+# Works on both macOS (launchctl) and Linux (systemctl)
+alias voicemode-kokoro-status='if [[ "$(uname)" == "Darwin" ]]; then launchctl list | grep com.voicemode.kokoro; else systemctl --user status voicemode-kokoro; fi'
+alias voicemode-kokoro-logs='tail -f ~/.voicemode/logs/kokoro.*.log'
+alias voicemode-kokoro-restart='if [[ "$(uname)" == "Darwin" ]]; then launchctl stop com.voicemode.kokoro && launchctl start com.voicemode.kokoro; else systemctl --user restart voicemode-kokoro; fi'
+alias voicemode-kokoro-stop='if [[ "$(uname)" == "Darwin" ]]; then launchctl stop com.voicemode.kokoro; else systemctl --user stop voicemode-kokoro; fi'
+alias voicemode-kokoro-start='if [[ "$(uname)" == "Darwin" ]]; then launchctl start com.voicemode.kokoro; else systemctl --user start voicemode-kokoro; fi'
+
+# Enable/disable Kokoro service at boot/login
+alias voicemode-kokoro-enable='if [[ "$(uname)" == "Darwin" ]]; then launchctl load -w ~/Library/LaunchAgents/com.voicemode.kokoro.plist 2>/dev/null || echo "Already enabled or plist not found"; else systemctl --user enable voicemode-kokoro; fi'
+alias voicemode-kokoro-disable='if [[ "$(uname)" == "Darwin" ]]; then launchctl unload -w ~/Library/LaunchAgents/com.voicemode.kokoro.plist 2>/dev/null || echo "Already disabled or plist not found"; else systemctl --user disable voicemode-kokoro; fi'
+
+# Check if Kokoro is responding
+alias kokoro-health='curl -s http://127.0.0.1:8880/health | jq . || echo "Kokoro not responding on port 8880"'
+alias voicemode-kokoro-health=kokoro-health
+
+# Voice Mode Whisper aliases
+# Works on both macOS (launchctl) and Linux (systemctl)
+alias voicemode-whisper-status='if [[ "$(uname)" == "Darwin" ]]; then launchctl list | grep com.voicemode.whisper; else systemctl --user status voicemode-whisper; fi'
+alias voicemode-whisper-logs='tail -f ~/.voicemode/logs/whisper.*.log'
+alias voicemode-whisper-restart='if [[ "$(uname)" == "Darwin" ]]; then launchctl stop com.voicemode.whisper && launchctl start com.voicemode.whisper; else systemctl --user restart voicemode-whisper; fi'
+alias voicemode-whisper-stop='if [[ "$(uname)" == "Darwin" ]]; then launchctl stop com.voicemode.whisper; else systemctl --user stop voicemode-whisper; fi'
+alias voicemode-whisper-start='if [[ "$(uname)" == "Darwin" ]]; then launchctl start com.voicemode.whisper; else systemctl --user start voicemode-whisper; fi'
+alias voicemode-whisper-enable='if [[ "$(uname)" == "Darwin" ]]; then launchctl load -w ~/Library/LaunchAgents/com.voicemode.whisper.plist 2>/dev/null || echo "Already enabled or plist not found"; else systemctl --user enable voicemode-whisper; fi'
+alias voicemode-whisper-disable='if [[ "$(uname)" == "Darwin" ]]; then launchctl unload -w ~/Library/LaunchAgents/com.voicemode.whisper.plist 2>/dev/null || echo "Already disabled or plist not found"; else systemctl --user disable voicemode-whisper; fi'
+
+# Check if Whisper is responding
+alias whisper-health='curl -s http://127.0.0.1:8090/health | jq . || echo "Whisper not responding on port 8090"'
+alias voicemode-whisper-health=whisper-health
