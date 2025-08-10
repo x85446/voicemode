@@ -152,9 +152,12 @@ VOICEMODE_ENABLE_SILENCE_DETECTION=true
 
 # VAD Aggressiveness (0-3)
 # Default: 2
-# Higher values = more aggressive silence detection
-# 0: Least aggressive (good for noisy environments)
-# 3: Most aggressive (good for quiet environments)
+# Controls how strictly WebRTC VAD filters out non-speech audio
+# 0: Least aggressive filtering - more permissive, may include non-speech sounds
+# 1: Slightly stricter filtering
+# 2: Balanced filtering - good for most environments (default)
+# 3: Most aggressive filtering - very strict, may cut off soft speech
+# Use lower values (0-1) in quiet environments, higher values (2-3) in noisy environments
 VOICEMODE_VAD_AGGRESSIVENESS=2
 
 # Silence Threshold (milliseconds)

@@ -1293,11 +1293,15 @@ async def converse(
                Values: 0.25 to 4.0 (0.5 = half speed, 2.0 = double speed)
                Supported by both OpenAI and Kokoro TTS providers.
         vad_aggressiveness: Voice Activity Detection aggressiveness level (default: None uses VOICEMODE_VAD_AGGRESSIVENESS env var)
-                            Values: 0-3 (0 = least aggressive/most permissive, 3 = most aggressive/least permissive)
-                            Useful for adapting to different environments:
-                            - 0-1: Quiet environments, sensitive detection
-                            - 2: Balanced (default)
-                            - 3: Noisy environments, avoid false triggers
+                            Controls how strict the VAD is about filtering out non-speech audio.
+                            Values: 0-3 (integer)
+                            - 0: Least aggressive filtering - includes more audio, may include non-speech
+                            - 1: Slightly stricter filtering
+                            - 2: Balanced filtering (default) - good for most environments
+                            - 3: Most aggressive filtering - strict speech detection, may cut off soft speech
+                            
+                            Use lower values (0-1) in quiet environments to catch all speech
+                            Use higher values (2-3) in noisy environments to reduce false triggers
         If wait_for_response is False: Confirmation that message was spoken
         If wait_for_response is True: The voice response received (or error/timeout message)
     
@@ -1331,12 +1335,13 @@ async def converse(
         Note: Speed control works with both OpenAI and Kokoro TTS providers
     
     VAD Aggressiveness Examples:
-        - Quiet environment: converse("Let's have a conversation", vad_aggressiveness=1)
-        - Normal environment: converse("Tell me about your day")  # Uses default (2)
-        - Noisy environment: converse("Can you hear me?", vad_aggressiveness=3)
-        - Very sensitive: converse("Whisper mode", vad_aggressiveness=0)
+        - Quiet room, capture all speech: converse("Let's have a conversation", vad_aggressiveness=0)
+        - Normal home/office: converse("Tell me about your day")  # Uses default (2)
+        - Noisy cafe/outdoors: converse("Can you hear me?", vad_aggressiveness=3)
+        - Balance for most cases: converse("How are you?", vad_aggressiveness=2)
         
-        Note: Higher values reduce false triggers in noisy environments but may cut off soft speech
+        Remember: Lower values (0-1) = more permissive, may detect non-speech as speech
+                 Higher values (2-3) = more strict, may miss soft speech or whispers
     """
     # Convert string booleans to actual booleans
     if isinstance(wait_for_response, str):
