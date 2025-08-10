@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.20.0] - 2025-08-10
+
 ### Added
 - **VAD aggressiveness control**
   - New `vad_aggressiveness` parameter in converse tool for controlling Voice Activity Detection sensitivity (0-3)
@@ -21,6 +23,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Fixed configuration documentation that had backwards descriptions
 
 ## [2.19.0] - 2025-08-10
+
+### Added
+- **MCP prompt command: /release-notes**
+  - New command to display recent changelog entries directly in Claude Code
+  - Shows 5 most recent versions by default (configurable with parameter)
+  - Parses and formats CHANGELOG.md for easy reading
+  - Inspired by Claude Code's own /release-notes feature
+  - Includes comprehensive test coverage
+
+### Fixed
+- Release notes prompt now handles empty string parameters correctly
+- Command works properly with both source and installed packages
+- Changelog is now accessible as an MCP resource when package is installed
+
+### Changed
+- Release notes output format now matches Claude Code's clean, minimal style
+- Removed decorative headers and footers for cleaner terminal output
+- Release notes displayed in chronological order (oldest first)
 
 ## [2.18.0] - 2025-08-10
 
