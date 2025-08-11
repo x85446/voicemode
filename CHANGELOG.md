@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.20.1] - 2025-08-11
+
+### Fixed
+- **Speed parameter validation error** - Fixed MCP validation error when passing speed parameter as string
+  - Added type conversion from string to float for speed parameter
+  - Now properly handles speed values passed by MCP clients (e.g., via uvx)
+  - Added comprehensive validation and error messages for invalid speed values
+
 ## [2.20.0] - 2025-08-10
 
 ### Added

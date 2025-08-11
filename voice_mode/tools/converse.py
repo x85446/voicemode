@@ -1351,6 +1351,18 @@ async def converse(
     if isinstance(audio_feedback, str):
         audio_feedback = audio_feedback.lower() in ('true', '1', 'yes', 'on')
     
+    # Convert string speed to float
+    if speed is not None and isinstance(speed, str):
+        try:
+            speed = float(speed)
+        except ValueError:
+            return f"❌ Error: speed must be a number (got '{speed}')"
+    
+    # Validate speed parameter range
+    if speed is not None:
+        if not (0.25 <= speed <= 4.0):
+            return f"❌ Error: speed must be between 0.25 and 4.0 (got {speed})"
+    
     logger.info(f"Converse: '{message[:50]}{'...' if len(message) > 50 else ''}' (wait_for_response: {wait_for_response})")
     
     # Validate vad_aggressiveness parameter
