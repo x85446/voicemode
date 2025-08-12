@@ -7,7 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Late update to changelog for release 2.21.0
+
 ## [2.21.0] - 2025-08-13
+
+### Added
+- **CLI service commands** - New subcommands for managing Whisper and Kokoro services
+  - `voice-mode service whisper start/stop/status/restart/enable/disable/logs`
+  - `voice-mode service kokoro start/stop/status/restart/enable/disable/logs`
+  - `voice-mode service whisper update-service-files` - Update systemd/launchd service files
+  - `voice-mode service kokoro update-service-files` - Update systemd/launchd service files
+  - Unified interface for controlling both STT and TTS services
+  - Direct access to service management without needing MCP client
+  - Consistent behavior across Linux (systemd) and macOS (launchd)
 
 ## [2.20.1] - 2025-08-11
 
