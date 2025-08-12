@@ -231,6 +231,14 @@ KOKORO_MODELS_DIR = os.getenv("VOICEMODE_KOKORO_MODELS_DIR", str(BASE_DIR / "mod
 KOKORO_CACHE_DIR = os.getenv("VOICEMODE_KOKORO_CACHE_DIR", str(BASE_DIR / "cache" / "kokoro"))
 KOKORO_DEFAULT_VOICE = os.getenv("VOICEMODE_KOKORO_DEFAULT_VOICE", "af_sky")
 
+# ==================== LIVEKIT CONFIGURATION ====================
+
+# LiveKit-specific configuration
+LIVEKIT_PORT = int(os.getenv("VOICEMODE_LIVEKIT_PORT", "7880"))
+LIVEKIT_URL = os.getenv("LIVEKIT_URL", f"ws://localhost:{LIVEKIT_PORT}")
+LIVEKIT_API_KEY = os.getenv("LIVEKIT_API_KEY", "devkey")
+LIVEKIT_API_SECRET = os.getenv("LIVEKIT_API_SECRET", "secret")
+
 # ==================== SERVICE MANAGEMENT CONFIGURATION ====================
 
 # Auto-enable services after installation

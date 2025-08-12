@@ -41,6 +41,12 @@ def whisper():
     pass
 
 
+@voice_mode_main_cli.group()
+def livekit():
+    """Manage LiveKit RTC service."""
+    pass
+
+
 # Import service functions
 from voice_mode.tools.service import (
     status_service, start_service, stop_service, restart_service,
@@ -53,6 +59,8 @@ from voice_mode.tools.services.kokoro.uninstall import kokoro_uninstall
 from voice_mode.tools.services.whisper.install import whisper_install
 from voice_mode.tools.services.whisper.uninstall import whisper_uninstall
 from voice_mode.tools.services.whisper.download_model import download_model
+from voice_mode.tools.services.livekit.install import livekit_install
+from voice_mode.tools.services.livekit.uninstall import livekit_uninstall
 
 # Import configuration management functions
 from voice_mode.tools.configuration_management import update_config, list_config_keys
@@ -436,6 +444,136 @@ def download_model_cmd(model, force, skip_core_ml):
                     click.echo(f"   - {m}")
     except json.JSONDecodeError:
         click.echo(result)
+
+
+# LiveKit service commands
+@livekit.command()
+def status():
+    """Show LiveKit service status."""
+    result = asyncio.run(status_service("livekit"))
+    click.echo(result)
+
+
+@livekit.command()
+def start():
+    """Start LiveKit service."""
+    result = asyncio.run(start_service("livekit"))
+    click.echo(result)
+
+
+@livekit.command()
+def stop():
+    """Stop LiveKit service."""
+    result = asyncio.run(stop_service("livekit"))
+    click.echo(result)
+
+
+@livekit.command()
+def restart():
+    """Restart LiveKit service."""
+    result = asyncio.run(restart_service("livekit"))
+    click.echo(result)
+
+
+@livekit.command()
+def enable():
+    """Enable LiveKit service to start at boot/login."""
+    result = asyncio.run(enable_service("livekit"))
+    click.echo(result)
+
+
+@livekit.command()
+def disable():
+    """Disable LiveKit service from starting at boot/login."""
+    result = asyncio.run(disable_service("livekit"))
+    click.echo(result)
+
+
+@livekit.command()
+@click.option('--lines', '-n', default=50, help='Number of log lines to show')
+def logs(lines):
+    """View LiveKit service logs."""
+    result = asyncio.run(view_logs("livekit", lines))
+    click.echo(result)
+
+
+@livekit.command()
+def update():
+    """Update LiveKit service files to the latest version."""
+    result = asyncio.run(update_service_files("livekit"))
+    
+    if result.get("success"):
+        click.echo("✅ LiveKit service files updated successfully")
+        if result.get("message"):
+            click.echo(f"   {result['message']}")
+    else:
+        click.echo(f"❌ {result.get('message', 'Update failed')}")
+
+
+@livekit.command()
+@click.option('--install-dir', help='Directory to install LiveKit')
+@click.option('--port', default=7880, help='Port for LiveKit server (default: 7880)')
+@click.option('--force', '-f', is_flag=True, help='Force reinstall even if already installed')
+@click.option('--version', default='latest', help='Version to install (default: latest)')
+@click.option('--auto-enable/--no-auto-enable', default=None, help='Enable service at boot/login')
+def install(install_dir, port, force, version, auto_enable):
+    """Install LiveKit server with development configuration."""
+    result = asyncio.run(livekit_install.fn(
+        install_dir=install_dir,
+        port=port,
+        force_reinstall=force,
+        version=version,
+        auto_enable=auto_enable
+    ))
+    
+    if result.get('success'):
+        if result.get('already_installed'):
+            click.echo(f"✅ LiveKit already installed at {result['install_path']}")
+            click.echo(f"   Version: {result.get('version', 'unknown')}")
+        else:
+            click.echo("✅ LiveKit installed successfully!")
+            click.echo(f"   Version: {result.get('version', 'unknown')}")
+            click.echo(f"   Install path: {result['install_path']}")
+            click.echo(f"   Config: {result['config_path']}")
+            click.echo(f"   Port: {result['port']}")
+            click.echo(f"   URL: {result['url']}")
+            click.echo(f"   Dev credentials: {result['dev_key']} / {result['dev_secret']}")
+            
+            if result.get('service_installed'):
+                click.echo("   Service installed")
+                if result.get('service_enabled'):
+                    click.echo("   Service enabled (will start at boot/login)")
+    else:
+        click.echo(f"❌ Installation failed: {result.get('error', 'Unknown error')}")
+        if result.get('details'):
+            click.echo(f"   Details: {result['details']}")
+
+
+@livekit.command()
+@click.option('--remove-config', is_flag=True, help='Also remove LiveKit configuration files')
+@click.option('--remove-all-data', is_flag=True, help='Remove all LiveKit data including logs')
+@click.confirmation_option(prompt='Are you sure you want to uninstall LiveKit?')
+def uninstall(remove_config, remove_all_data):
+    """Uninstall LiveKit server and optionally remove configuration and data."""
+    result = asyncio.run(livekit_uninstall.fn(
+        remove_config=remove_config,
+        remove_all_data=remove_all_data
+    ))
+    
+    if result.get('success'):
+        click.echo("✅ LiveKit uninstalled successfully!")
+        
+        if result.get('removed_items'):
+            click.echo("\n📦 Removed:")
+            for item in result['removed_items']:
+                click.echo(f"   ✓ {item}")
+                
+        if result.get('warnings'):
+            click.echo("\n⚠️  Warnings:")
+            for warning in result['warnings']:
+                click.echo(f"   - {warning}")
+    else:
+        click.echo(f"❌ Uninstall failed: {result.get('error', 'Unknown error')}")
 
 
 # Configuration management group

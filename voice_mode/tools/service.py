@@ -13,7 +13,7 @@ from typing import Literal, Optional, Dict, Any
 import psutil
 
 from voice_mode.server import mcp
-from voice_mode.config import WHISPER_PORT, KOKORO_PORT, SERVICE_AUTO_ENABLE
+from voice_mode.config import WHISPER_PORT, KOKORO_PORT, LIVEKIT_PORT, SERVICE_AUTO_ENABLE
 from voice_mode.utils.services.common import find_process_by_port
 from voice_mode.utils.services.whisper_helpers import find_whisper_server, find_whisper_model
 from voice_mode.utils.services.kokoro_helpers import find_kokoro_fastapi, has_gpu_support
@@ -58,7 +58,7 @@ def get_service_config_vars(service_name: str) -> Dict[str, Any]:
             "WORKING_DIR": str(working_dir),
             "LOG_DIR": os.path.join(voicemode_dir, "logs", "whisper"),
         }
-    else:  # kokoro
+    elif service_name == "kokoro":
         kokoro_dir = find_kokoro_fastapi()
         if not kokoro_dir:
             kokoro_dir = os.path.join(voicemode_dir, "services", "kokoro")
@@ -94,6 +94,18 @@ def get_service_config_vars(service_name: str) -> Dict[str, Any]:
             "KOKORO_PORT": str(KOKORO_PORT),
             "START_SCRIPT": str(start_script) if start_script and start_script.exists() else "",
             "LOG_DIR": os.path.join(voicemode_dir, "logs", "kokoro"),
+        }
+    else:  # livekit
+        livekit_dir = os.path.join(voicemode_dir, "services", "livekit")
+        livekit_bin = os.path.join(livekit_dir, "livekit-server")
+        config_file = os.path.join(livekit_dir, "livekit.yaml")
+        
+        return {
+            "LIVEKIT_BIN": str(livekit_bin),
+            "LIVEKIT_PORT": str(LIVEKIT_PORT),
+            "CONFIG_FILE": str(config_file),
+            "WORKING_DIR": str(livekit_dir),
+            "LOG_DIR": os.path.join(voicemode_dir, "logs", "livekit"),
         }
 
 
@@ -143,7 +155,13 @@ def load_service_template(service_name: str) -> str:
 
 async def status_service(service_name: str) -> str:
     """Get status of a service."""
-    port = WHISPER_PORT if service_name == "whisper" else KOKORO_PORT
+    if service_name == "whisper":
+        port = WHISPER_PORT
+    elif service_name == "kokoro":
+        port = KOKORO_PORT
+    else:  # livekit
+        port = LIVEKIT_PORT
+    
     proc = find_process_by_port(port)
     
     if not proc:
@@ -233,7 +251,12 @@ async def status_service(service_name: str) -> str:
 async def start_service(service_name: str) -> str:
     """Start a service."""
     # Check if already running
-    port = WHISPER_PORT if service_name == "whisper" else KOKORO_PORT
+    if service_name == "whisper":
+        port = WHISPER_PORT
+    elif service_name == "kokoro":
+        port = KOKORO_PORT
+    else:  # livekit
+        port = LIVEKIT_PORT
     if find_process_by_port(port):
         return f"{service_name.capitalize()} is already running on port {port}"
     
@@ -370,7 +393,12 @@ async def start_service(service_name: str) -> str:
 
 async def stop_service(service_name: str) -> str:
     """Stop a service."""
-    port = WHISPER_PORT if service_name == "whisper" else KOKORO_PORT
+    if service_name == "whisper":
+        port = WHISPER_PORT
+    elif service_name == "kokoro":
+        port = KOKORO_PORT
+    else:  # livekit
+        port = LIVEKIT_PORT
     system = platform.system()
     
     # Check if managed by service manager
@@ -681,7 +709,13 @@ async def update_service_files(service_name: str) -> str:
             plist_path = Path.home() / "Library" / "LaunchAgents" / f"com.voicemode.{service_name}.plist"
             
             # Check if service is running
-            was_running = find_process_by_port(WHISPER_PORT if service_name == "whisper" else KOKORO_PORT) is not None
+            if service_name == "whisper":
+                port = WHISPER_PORT
+            elif service_name == "kokoro":
+                port = KOKORO_PORT
+            else:  # livekit
+                port = LIVEKIT_PORT
+            was_running = find_process_by_port(port) is not None
             
             if was_running:
                 # Unload the service first
@@ -818,16 +852,16 @@ async def view_logs(service_name: str, lines: Optional[int] = None) -> str:
 
 @mcp.tool()
 async def service(
-    service_name: Literal["whisper", "kokoro"],
+    service_name: Literal["whisper", "kokoro", "livekit"],
     action: Literal["status", "start", "stop", "restart", "enable", "disable", "logs", "update-service-files"] = "status",
     lines: Optional[int] = None
 ) -> str:
     """Unified service management tool for voice mode services.
     
-    Manage Whisper (STT) and Kokoro (TTS) services with a single tool.
+    Manage Whisper (STT), Kokoro (TTS), and LiveKit (RTC) services with a single tool.
     
     Args:
-        service_name: The service to manage ("whisper" or "kokoro")
+        service_name: The service to manage ("whisper", "kokoro", or "livekit")
         action: The action to perform (default: "status")
             - status: Show if service is running and resource usage
             - start: Start the service
