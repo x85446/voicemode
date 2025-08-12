@@ -298,7 +298,9 @@ async def livekit_install(
             installed_version = "unknown"
         
         # Create configuration
-        config_path = install_path / "livekit.yaml"
+        config_dir = Path(voicemode_dir) / "config"
+        config_dir.mkdir(parents=True, exist_ok=True)
+        config_path = config_dir / "livekit.yaml"
         create_livekit_config(config_path, port)
         
         # Create log directory

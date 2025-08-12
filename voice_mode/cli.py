@@ -61,6 +61,7 @@ from voice_mode.tools.services.whisper.uninstall import whisper_uninstall
 from voice_mode.tools.services.whisper.download_model import download_model
 from voice_mode.tools.services.livekit.install import livekit_install
 from voice_mode.tools.services.livekit.uninstall import livekit_uninstall
+from voice_mode.tools.services.livekit.frontend import livekit_frontend_start, livekit_frontend_stop, livekit_frontend_status
 
 # Import configuration management functions
 from voice_mode.tools.configuration_management import update_config, list_config_keys
@@ -574,6 +575,65 @@ def uninstall(remove_config, remove_all_data):
                 click.echo(f"   - {warning}")
     else:
         click.echo(f"❌ Uninstall failed: {result.get('error', 'Unknown error')}")
+
+
+# LiveKit frontend subcommands
+@livekit.group()
+def frontend():
+    """Manage LiveKit Voice Assistant Frontend."""
+    pass
+
+
+@frontend.command("start")
+@click.option('--port', default=3000, help='Port to run frontend on (default: 3000)')
+@click.option('--host', default='127.0.0.1', help='Host to bind to (default: 127.0.0.1)')
+def frontend_start(port, host):
+    """Start the LiveKit Voice Assistant Frontend."""
+    result = asyncio.run(livekit_frontend_start.fn(port=port, host=host))
+    
+    if result.get('success'):
+        click.echo("✅ LiveKit Frontend started successfully!")
+        click.echo(f"   URL: {result['url']}")
+        click.echo(f"   Password: {result['password']}")
+        click.echo(f"   PID: {result['pid']}")
+        click.echo(f"   Directory: {result['directory']}")
+    else:
+        click.echo(f"❌ Failed to start frontend: {result.get('error', 'Unknown error')}")
+
+
+@frontend.command("stop")
+def frontend_stop():
+    """Stop the LiveKit Voice Assistant Frontend."""
+    result = asyncio.run(livekit_frontend_stop.fn())
+    
+    if result.get('success'):
+        click.echo(f"✅ {result['message']}")
+    else:
+        click.echo(f"❌ Failed to stop frontend: {result.get('error', 'Unknown error')}")
+
+
+@frontend.command("status")
+def frontend_status():
+    """Check status of the LiveKit Voice Assistant Frontend."""
+    result = asyncio.run(livekit_frontend_status.fn())
+    
+    if 'error' in result:
+        click.echo(f"❌ Error: {result['error']}")
+        return
+    
+    if result.get('running'):
+        click.echo("✅ Frontend is running")
+        click.echo(f"   PID: {result['pid']}")
+        click.echo(f"   URL: {result['url']}")
+    else:
+        click.echo("❌ Frontend is not running")
+    
+    click.echo(f"   Directory: {result.get('directory', 'Not found')}")
+    
+    if result.get('configuration'):
+        click.echo("   Configuration:")
+        for key, value in result['configuration'].items():
+            click.echo(f"     {key}: {value}")
 
 
 # Configuration management group

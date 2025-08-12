@@ -96,16 +96,15 @@ def get_service_config_vars(service_name: str) -> Dict[str, Any]:
             "LOG_DIR": os.path.join(voicemode_dir, "logs", "kokoro"),
         }
     else:  # livekit
-        livekit_dir = os.path.join(voicemode_dir, "services", "livekit")
-        livekit_bin = os.path.join(livekit_dir, "livekit-server")
-        config_file = os.path.join(livekit_dir, "livekit.yaml")
+        livekit_bin = "/opt/homebrew/bin/livekit-server" if platform.system() == "Darwin" else "/usr/local/bin/livekit-server"
+        config_file = os.path.join(voicemode_dir, "config", "livekit.yaml")
         
         return {
-            "LIVEKIT_BIN": str(livekit_bin),
+            "LIVEKIT_BIN": livekit_bin,
             "LIVEKIT_PORT": str(LIVEKIT_PORT),
-            "CONFIG_FILE": str(config_file),
-            "WORKING_DIR": str(livekit_dir),
+            "CONFIG_FILE": config_file,
             "LOG_DIR": os.path.join(voicemode_dir, "logs", "livekit"),
+            "WORKING_DIR": voicemode_dir,
         }
 
 
@@ -155,13 +154,7 @@ def load_service_template(service_name: str) -> str:
 
 async def status_service(service_name: str) -> str:
     """Get status of a service."""
-    if service_name == "whisper":
-        port = WHISPER_PORT
-    elif service_name == "kokoro":
-        port = KOKORO_PORT
-    else:  # livekit
-        port = LIVEKIT_PORT
-    
+    port = WHISPER_PORT if service_name == "whisper" else KOKORO_PORT if service_name == "kokoro" else LIVEKIT_PORT
     proc = find_process_by_port(port)
     
     if not proc:
@@ -251,12 +244,7 @@ async def status_service(service_name: str) -> str:
 async def start_service(service_name: str) -> str:
     """Start a service."""
     # Check if already running
-    if service_name == "whisper":
-        port = WHISPER_PORT
-    elif service_name == "kokoro":
-        port = KOKORO_PORT
-    else:  # livekit
-        port = LIVEKIT_PORT
+    port = WHISPER_PORT if service_name == "whisper" else KOKORO_PORT if service_name == "kokoro" else LIVEKIT_PORT
     if find_process_by_port(port):
         return f"{service_name.capitalize()} is already running on port {port}"
     
@@ -326,7 +314,7 @@ async def start_service(service_name: str) -> str:
         # Start whisper-server
         cmd = [str(whisper_bin), "--host", "0.0.0.0", "--port", str(port), "--model", str(model_file)]
         
-    else:  # kokoro
+    elif service_name == "kokoro":
         # Find kokoro installation
         kokoro_dir = find_kokoro_fastapi()
         if not kokoro_dir:
@@ -363,6 +351,19 @@ async def start_service(service_name: str) -> str:
         
         cmd = [str(start_script)]
     
+    else:  # livekit
+        # Find LiveKit binary
+        livekit_bin = "/opt/homebrew/bin/livekit-server" if platform.system() == "Darwin" else "/usr/local/bin/livekit-server"
+        if not Path(livekit_bin).exists():
+            return "❌ LiveKit server not found. Please run 'voice-mode livekit install' first."
+        
+        # Create config directory if it doesn't exist
+        config_dir = Path.home() / ".voicemode" / "config"
+        config_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Run in dev mode
+        cmd = [livekit_bin, "--dev"]
+    
     try:
         # Start the process
         process = subprocess.Popen(
@@ -393,12 +394,7 @@ async def start_service(service_name: str) -> str:
 
 async def stop_service(service_name: str) -> str:
     """Stop a service."""
-    if service_name == "whisper":
-        port = WHISPER_PORT
-    elif service_name == "kokoro":
-        port = KOKORO_PORT
-    else:  # livekit
-        port = LIVEKIT_PORT
+    port = WHISPER_PORT if service_name == "whisper" else KOKORO_PORT if service_name == "kokoro" else LIVEKIT_PORT
     system = platform.system()
     
     # Check if managed by service manager
@@ -506,7 +502,7 @@ async def enable_service(service_name: str) -> str:
                     LOG_DIR=logs_dir,
                     WORKING_DIR=Path(whisper_bin).parent
                 )
-            else:  # kokoro
+            elif service_name == "kokoro":
                 kokoro_dir = find_kokoro_fastapi()
                 if not kokoro_dir:
                     return "❌ kokoro-fastapi not found. Please run kokoro_install first."
@@ -520,6 +516,21 @@ async def enable_service(service_name: str) -> str:
                     KOKORO_DIR=kokoro_dir,
                     KOKORO_PORT=KOKORO_PORT,
                     LOG_DIR=logs_dir
+                )
+            else:  # livekit
+                # Use livekit binary path and config
+                livekit_bin = "/opt/homebrew/bin/livekit-server" if platform.system() == "Darwin" else "/usr/local/bin/livekit-server"
+                config_file = Path.home() / ".voicemode" / "config" / "livekit.yaml"
+                
+                if not Path(livekit_bin).exists():
+                    return "❌ LiveKit server not found. Please run 'voice-mode livekit install' first."
+                
+                content = template.format(
+                    LIVEKIT_BIN=livekit_bin,
+                    LIVEKIT_PORT=LIVEKIT_PORT,
+                    CONFIG_FILE=config_file,
+                    LOG_DIR=logs_dir,
+                    WORKING_DIR=Path.home() / ".voicemode"
                 )
             
             # Create directories
@@ -563,7 +574,7 @@ async def enable_service(service_name: str) -> str:
                     MODEL_FILE=model_file,
                     WORKING_DIR=Path(whisper_bin).parent
                 )
-            else:  # kokoro
+            elif service_name == "kokoro":
                 kokoro_dir = find_kokoro_fastapi()
                 if not kokoro_dir:
                     return "❌ kokoro-fastapi not found. Please run kokoro_install first."
@@ -598,6 +609,21 @@ async def enable_service(service_name: str) -> str:
                     START_SCRIPT=start_script,
                     KOKORO_DIR=kokoro_dir,
                     KOKORO_PORT=KOKORO_PORT
+                )
+            else:  # livekit
+                # Use livekit binary path and config
+                livekit_bin = "/usr/local/bin/livekit-server"
+                config_file = Path.home() / ".voicemode" / "config" / "livekit.yaml"
+                
+                if not Path(livekit_bin).exists():
+                    return "❌ LiveKit server not found. Please run 'voice-mode livekit install' first."
+                
+                content = template.format(
+                    LIVEKIT_BIN=livekit_bin,
+                    LIVEKIT_PORT=LIVEKIT_PORT,
+                    CONFIG_FILE=config_file,
+                    LOG_DIR=Path.home() / ".voicemode" / "logs",
+                    WORKING_DIR=Path.home() / ".voicemode"
                 )
             
             # Write service file
@@ -709,13 +735,7 @@ async def update_service_files(service_name: str) -> str:
             plist_path = Path.home() / "Library" / "LaunchAgents" / f"com.voicemode.{service_name}.plist"
             
             # Check if service is running
-            if service_name == "whisper":
-                port = WHISPER_PORT
-            elif service_name == "kokoro":
-                port = KOKORO_PORT
-            else:  # livekit
-                port = LIVEKIT_PORT
-            was_running = find_process_by_port(port) is not None
+            was_running = find_process_by_port(WHISPER_PORT if service_name == "whisper" else KOKORO_PORT) is not None
             
             if was_running:
                 # Unload the service first
@@ -858,7 +878,7 @@ async def service(
 ) -> str:
     """Unified service management tool for voice mode services.
     
-    Manage Whisper (STT), Kokoro (TTS), and LiveKit (RTC) services with a single tool.
+    Manage Whisper (STT) and Kokoro (TTS) services with a single tool.
     
     Args:
         service_name: The service to manage ("whisper", "kokoro", or "livekit")
@@ -900,3 +920,64 @@ async def service(
         return await update_service_files(service_name)
     else:
         return f"❌ Unknown action: {action}"
+
+
+async def install_service(service_name: str) -> Dict[str, Any]:
+    """Install service files for a service."""
+    try:
+        system = platform.system()
+        config_vars = get_service_config_vars(service_name)
+        
+        # Load template
+        template_content = load_service_template(service_name)
+        
+        # Replace placeholders
+        for key, value in config_vars.items():
+            template_content = template_content.replace(f"{{{key}}}", str(value))
+        
+        if system == "Darwin":
+            # Install launchd plist
+            plist_path = Path.home() / "Library" / "LaunchAgents" / f"com.voicemode.{service_name}.plist"
+            plist_path.parent.mkdir(parents=True, exist_ok=True)
+            plist_path.write_text(template_content)
+            return {"success": True, "service_file": str(plist_path)}
+        else:
+            # Install systemd service
+            service_path = Path.home() / ".config" / "systemd" / "user" / f"voicemode-{service_name}.service"
+            service_path.parent.mkdir(parents=True, exist_ok=True)
+            service_path.write_text(template_content)
+            
+            # Reload systemd
+            subprocess.run(["systemctl", "--user", "daemon-reload"], capture_output=True)
+            return {"success": True, "service_file": str(service_path)}
+            
+    except Exception as e:
+        logger.error(f"Error installing service {service_name}: {e}")
+        return {"success": False, "error": str(e)}
+
+
+async def uninstall_service(service_name: str) -> Dict[str, Any]:
+    """Remove service files for a service."""
+    try:
+        system = platform.system()
+        
+        if system == "Darwin":
+            plist_path = Path.home() / "Library" / "LaunchAgents" / f"com.voicemode.{service_name}.plist"
+            if plist_path.exists():
+                plist_path.unlink()
+                return {"success": True, "message": f"Removed {plist_path}"}
+            else:
+                return {"success": True, "message": "Service file not found"}
+        else:
+            service_path = Path.home() / ".config" / "systemd" / "user" / f"voicemode-{service_name}.service"
+            if service_path.exists():
+                service_path.unlink()
+                # Reload systemd
+                subprocess.run(["systemctl", "--user", "daemon-reload"], capture_output=True)
+                return {"success": True, "message": f"Removed {service_path}"}
+            else:
+                return {"success": True, "message": "Service file not found"}
+                
+    except Exception as e:
+        logger.error(f"Error uninstalling service {service_name}: {e}")
+        return {"success": False, "error": str(e)}

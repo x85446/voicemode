@@ -10,8 +10,6 @@ After=network.target
 Type=simple
 ExecStart={LIVEKIT_BIN} --config {CONFIG_FILE}
 WorkingDirectory={WORKING_DIR}
-# Wait for service to be ready by checking health endpoint
-ExecStartPost=/bin/sh -c 'while ! curl -sf http://127.0.0.1:{LIVEKIT_PORT}/health >/dev/null 2>&1; do echo "Waiting for LiveKit to be ready..."; sleep 1; done; echo "LiveKit is ready!"'
 Restart=on-failure
 RestartSec=10
 # Don't restart if the executable is missing
