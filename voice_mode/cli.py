@@ -61,7 +61,7 @@ from voice_mode.tools.services.whisper.uninstall import whisper_uninstall
 from voice_mode.tools.services.whisper.download_model import download_model
 from voice_mode.tools.services.livekit.install import livekit_install
 from voice_mode.tools.services.livekit.uninstall import livekit_uninstall
-from voice_mode.tools.services.livekit.frontend import livekit_frontend_start, livekit_frontend_stop, livekit_frontend_status, livekit_frontend_open
+from voice_mode.tools.services.livekit.frontend import livekit_frontend_start, livekit_frontend_stop, livekit_frontend_status, livekit_frontend_open, livekit_frontend_logs, livekit_frontend_install
 
 # Import configuration management functions
 from voice_mode.tools.configuration_management import update_config, list_config_keys
@@ -584,6 +584,32 @@ def frontend():
     pass
 
 
+@frontend.command("install")
+@click.option('--auto-enable/--no-auto-enable', default=None, help='Enable service after installation (default: from config)')
+def frontend_install(auto_enable):
+    """Install and setup LiveKit Voice Assistant Frontend."""
+    result = asyncio.run(livekit_frontend_install.fn(auto_enable=auto_enable))
+    
+    if result.get('success'):
+        click.echo("✅ LiveKit Frontend setup completed!")
+        click.echo(f"   Frontend directory: {result['frontend_dir']}")
+        click.echo(f"   Log directory: {result['log_dir']}")
+        click.echo(f"   Node.js available: {result['node_available']}")
+        if result.get('node_path'):
+            click.echo(f"   Node.js path: {result['node_path']}")
+        click.echo(f"   Service installed: {result['service_installed']}")
+        click.echo(f"   Service enabled: {result['service_enabled']}")
+        click.echo(f"   URL: {result['url']}")
+        click.echo(f"   Password: {result['password']}")
+        
+        if result.get('service_enabled'):
+            click.echo("\n💡 Frontend service is enabled and will start automatically at boot/login")
+        else:
+            click.echo("\n💡 Run 'voice-mode livekit frontend enable' to start automatically at boot/login")
+    else:
+        click.echo(f"❌ Frontend installation failed: {result.get('error', 'Unknown error')}")
+
+
 @frontend.command("start")
 @click.option('--port', default=3000, help='Port to run frontend on (default: 3000)')
 @click.option('--host', default='127.0.0.1', help='Host to bind to (default: 127.0.0.1)')
@@ -658,6 +684,114 @@ def frontend_open():
             click.echo(f"   💡 {result['hint']}")
     else:
         click.echo(f"❌ Failed to open frontend: {result.get('error', 'Unknown error')}")
+
+
+@frontend.command("logs")
+@click.option("--lines", "-n", default=50, help="Number of lines to show (default: 50)")
+@click.option("--follow", "-f", is_flag=True, help="Follow log output (tail -f)")
+def frontend_logs(lines, follow):
+    """View LiveKit Voice Assistant Frontend logs.
+    
+    Shows the last N lines of frontend logs. Use --follow to tail the logs.
+    """
+    if follow:
+        # For following, run tail -f directly
+        result = asyncio.run(livekit_frontend_logs.fn(follow=True))
+        if result.get('success'):
+            click.echo(f"📂 Log file: {result['log_file']}")
+            click.echo("🔄 Following logs (press Ctrl+C to stop)...")
+            try:
+                subprocess.run(["tail", "-f", result['log_file']])
+            except KeyboardInterrupt:
+                click.echo("\n✅ Stopped following logs")
+        else:
+            click.echo(f"❌ Error: {result.get('error', 'Unknown error')}")
+    else:
+        # Show last N lines
+        result = asyncio.run(livekit_frontend_logs.fn(lines=lines, follow=False))
+        if result.get('success'):
+            click.echo(f"📂 Log file: {result['log_file']}")
+            click.echo(f"📄 Showing last {result['lines_shown']} lines:")
+            click.echo("─" * 60)
+            click.echo(result['logs'])
+        else:
+            click.echo(f"❌ Error: {result.get('error', 'Unknown error')}")
+
+
+@frontend.command("enable")
+def frontend_enable():
+    """Enable frontend service to start automatically at boot/login."""
+    result = asyncio.run(enable_service("frontend"))
+    if result.get('success'):
+        click.echo(f"✅ {result['message']}")
+    else:
+        click.echo(f"❌ Error: {result.get('error', 'Unknown error')}")
+
+
+@frontend.command("disable")
+def frontend_disable():
+    """Disable frontend service from starting automatically."""
+    result = asyncio.run(disable_service("frontend"))
+    if result.get('success'):
+        click.echo(f"✅ {result['message']}")
+    else:
+        click.echo(f"❌ Error: {result.get('error', 'Unknown error')}")
+
+
+@frontend.command("build")
+@click.option('--force', '-f', is_flag=True, help='Force rebuild even if build exists')
+def frontend_build(force):
+    """Build frontend for production (requires Node.js)."""
+    import subprocess
+    from pathlib import Path
+    
+    frontend_dir = Path(__file__).parent / "frontend"
+    if not frontend_dir.exists():
+        click.echo("❌ Frontend directory not found")
+        return
+    
+    build_dir = frontend_dir / ".next"
+    if build_dir.exists() and not force:
+        click.echo("✅ Frontend already built. Use --force to rebuild.")
+        click.echo(f"   Build directory: {build_dir}")
+        return
+    
+    click.echo("🔨 Building frontend for production...")
+    
+    # Check Node.js availability
+    try:
+        subprocess.run(["node", "--version"], capture_output=True, check=True)
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        click.echo("❌ Node.js not found. Please install Node.js to build the frontend.")
+        return
+    
+    # Change to frontend directory and build
+    import os
+    original_cwd = os.getcwd()
+    try:
+        os.chdir(frontend_dir)
+        
+        # Install dependencies if needed
+        if not (frontend_dir / "node_modules").exists():
+            click.echo("📦 Installing dependencies...")
+            subprocess.run(["npm", "install"], check=True)
+        
+        # Build with production settings
+        click.echo("🏗️  Building standalone production version...")
+        env = os.environ.copy()
+        env["BUILD_STANDALONE"] = "true"
+        subprocess.run(["npm", "run", "build:standalone"], check=True, env=env)
+        
+        click.echo("✅ Frontend built successfully!")
+        click.echo(f"   Build directory: {build_dir}")
+        click.echo("   Frontend will now start in production mode.")
+        
+    except subprocess.CalledProcessError as e:
+        click.echo(f"❌ Build failed: {e}")
+    except Exception as e:
+        click.echo(f"❌ Unexpected error: {e}")
+    finally:
+        os.chdir(original_cwd)
 
 
 # Configuration management group

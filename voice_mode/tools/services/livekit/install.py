@@ -314,11 +314,16 @@ async def livekit_install(
         if not service_result["success"]:
             logger.warning(f"Service installation failed: {service_result.get('error', 'Unknown error')}")
         
-        # Enable service if requested
+        # Enable service if requested (auto-enable by default)
+        service_enabled = False
         if auto_enable and service_result["success"]:
             enable_result = await enable_service("livekit")
-            if not enable_result["success"]:
-                logger.warning(f"Service enable failed: {enable_result.get('error', 'Unknown error')}")
+            # enable_service returns a string message, not a dict
+            if isinstance(enable_result, str) and "✅" in enable_result:
+                service_enabled = True
+                logger.info(f"LiveKit service auto-enabled: {enable_result}")
+            else:
+                logger.warning(f"Service enable failed: {enable_result}")
         
         return {
             "success": True,
@@ -332,7 +337,8 @@ async def livekit_install(
             "dev_secret": "secret",
             "url": f"ws://localhost:{port}",
             "service_installed": service_result["success"],
-            "service_enabled": auto_enable and service_result["success"],
+            "service_enabled": service_enabled,
+            "auto_enable": auto_enable,
             "message": f"LiveKit {installed_version} installed successfully in dev mode"
         }
         

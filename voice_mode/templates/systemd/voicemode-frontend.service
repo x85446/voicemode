@@ -1,0 +1,26 @@
+[Unit]
+Description=VoiceMode LiveKit Frontend
+Documentation=https://github.com/mbailey/voicemode
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+WorkingDirectory={FRONTEND_DIR}
+Environment=NODE_ENV=development
+Environment=PORT={PORT}
+Environment=HOST=127.0.0.1
+ExecStartPre=/bin/bash -c 'cd {FRONTEND_DIR} && npm install'
+ExecStart=/bin/bash -c 'cd {FRONTEND_DIR} && exec npm run dev'
+StandardOutput=journal
+StandardError=journal
+Restart=always
+RestartSec=10
+KillMode=mixed
+TimeoutStopSec=30
+
+# Logging
+SyslogIdentifier=voicemode-frontend
+
+[Install]
+WantedBy=default.target

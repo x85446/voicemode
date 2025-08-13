@@ -95,7 +95,7 @@ def get_service_config_vars(service_name: str) -> Dict[str, Any]:
             "START_SCRIPT": str(start_script) if start_script and start_script.exists() else "",
             "LOG_DIR": os.path.join(voicemode_dir, "logs", "kokoro"),
         }
-    else:  # livekit
+    elif service_name == "livekit":
         livekit_bin = "/opt/homebrew/bin/livekit-server" if platform.system() == "Darwin" else "/usr/local/bin/livekit-server"
         config_file = os.path.join(voicemode_dir, "config", "livekit.yaml")
         
@@ -105,6 +105,35 @@ def get_service_config_vars(service_name: str) -> Dict[str, Any]:
             "CONFIG_FILE": config_file,
             "LOG_DIR": os.path.join(voicemode_dir, "logs", "livekit"),
             "WORKING_DIR": voicemode_dir,
+        }
+    else:  # frontend
+        # Get frontend directory
+        from voice_mode.tools.services.livekit.frontend import find_frontend_dir
+        
+        frontend_dir = find_frontend_dir()
+        if not frontend_dir:
+            raise RuntimeError("Frontend directory not found")
+        
+        # Find node binary
+        node_bin = "/usr/local/bin/node"
+        possible_node_paths = [
+            "/usr/local/bin/node",
+            "/opt/homebrew/bin/node", 
+            "/usr/bin/node",
+        ]
+        
+        for node_path in possible_node_paths:
+            if Path(node_path).exists():
+                node_bin = node_path
+                break
+        
+        return {
+            "FRONTEND_DIR": str(frontend_dir),
+            "NODE_BIN": node_bin,
+            "NODE_PATH": str(Path(node_bin).parent),
+            "PORT": "3000",
+            "LOG_DIR": os.path.join(voicemode_dir, "logs", "frontend"),
+            "WORKING_DIR": str(frontend_dir),
         }
 
 
@@ -154,7 +183,14 @@ def load_service_template(service_name: str) -> str:
 
 async def status_service(service_name: str) -> str:
     """Get status of a service."""
-    port = WHISPER_PORT if service_name == "whisper" else KOKORO_PORT if service_name == "kokoro" else LIVEKIT_PORT
+    if service_name == "whisper":
+        port = WHISPER_PORT
+    elif service_name == "kokoro":
+        port = KOKORO_PORT
+    elif service_name == "livekit":
+        port = LIVEKIT_PORT
+    else:  # frontend
+        port = 3000
     proc = find_process_by_port(port)
     
     if not proc:
@@ -244,7 +280,14 @@ async def status_service(service_name: str) -> str:
 async def start_service(service_name: str) -> str:
     """Start a service."""
     # Check if already running
-    port = WHISPER_PORT if service_name == "whisper" else KOKORO_PORT if service_name == "kokoro" else LIVEKIT_PORT
+    if service_name == "whisper":
+        port = WHISPER_PORT
+    elif service_name == "kokoro":
+        port = KOKORO_PORT
+    elif service_name == "livekit":
+        port = LIVEKIT_PORT
+    else:  # frontend
+        port = 3000
     if find_process_by_port(port):
         return f"{service_name.capitalize()} is already running on port {port}"
     
@@ -394,7 +437,14 @@ async def start_service(service_name: str) -> str:
 
 async def stop_service(service_name: str) -> str:
     """Stop a service."""
-    port = WHISPER_PORT if service_name == "whisper" else KOKORO_PORT if service_name == "kokoro" else LIVEKIT_PORT
+    if service_name == "whisper":
+        port = WHISPER_PORT
+    elif service_name == "kokoro":
+        port = KOKORO_PORT
+    elif service_name == "livekit":
+        port = LIVEKIT_PORT
+    else:  # frontend
+        port = 3000
     system = platform.system()
     
     # Check if managed by service manager
@@ -517,7 +567,7 @@ async def enable_service(service_name: str) -> str:
                     KOKORO_PORT=KOKORO_PORT,
                     LOG_DIR=logs_dir
                 )
-            else:  # livekit
+            elif service_name == "livekit":
                 # Use livekit binary path and config
                 livekit_bin = "/opt/homebrew/bin/livekit-server" if platform.system() == "Darwin" else "/usr/local/bin/livekit-server"
                 config_file = Path.home() / ".voicemode" / "config" / "livekit.yaml"
@@ -531,6 +581,19 @@ async def enable_service(service_name: str) -> str:
                     CONFIG_FILE=config_file,
                     LOG_DIR=logs_dir,
                     WORKING_DIR=Path.home() / ".voicemode"
+                )
+            else:  # frontend
+                # Import frontend helper
+                from voice_mode.tools.services.livekit.frontend import find_frontend_dir
+                
+                frontend_dir = find_frontend_dir()
+                if not frontend_dir:
+                    return "❌ Frontend directory not found"
+                
+                content = template.format(
+                    FRONTEND_DIR=str(frontend_dir),
+                    PORT="3000",
+                    LOG_DIR=logs_dir
                 )
             
             # Create directories
@@ -610,7 +673,7 @@ async def enable_service(service_name: str) -> str:
                     KOKORO_DIR=kokoro_dir,
                     KOKORO_PORT=KOKORO_PORT
                 )
-            else:  # livekit
+            elif service_name == "livekit":
                 # Use livekit binary path and config
                 livekit_bin = "/usr/local/bin/livekit-server"
                 config_file = Path.home() / ".voicemode" / "config" / "livekit.yaml"
@@ -624,6 +687,18 @@ async def enable_service(service_name: str) -> str:
                     CONFIG_FILE=config_file,
                     LOG_DIR=Path.home() / ".voicemode" / "logs",
                     WORKING_DIR=Path.home() / ".voicemode"
+                )
+            else:  # frontend
+                # Import frontend helper
+                from voice_mode.tools.services.livekit.frontend import find_frontend_dir
+                
+                frontend_dir = find_frontend_dir()
+                if not frontend_dir:
+                    return "❌ Frontend directory not found"
+                
+                content = template.format(
+                    FRONTEND_DIR=str(frontend_dir),
+                    PORT="3000"
                 )
             
             # Write service file
@@ -872,7 +947,7 @@ async def view_logs(service_name: str, lines: Optional[int] = None) -> str:
 
 @mcp.tool()
 async def service(
-    service_name: Literal["whisper", "kokoro", "livekit"],
+    service_name: Literal["whisper", "kokoro", "livekit", "frontend"],
     action: Literal["status", "start", "stop", "restart", "enable", "disable", "logs", "update-service-files"] = "status",
     lines: Optional[int] = None
 ) -> str:

@@ -1271,7 +1271,7 @@ async def converse(
                              - Quick responses: 0.5-1 second
         transport: Transport method - "auto" (try LiveKit then local), "local" (direct mic), "livekit" (room-based)
         room_name: LiveKit room name (only for livekit transport, auto-discovered if empty)
-        timeout: Maximum wait time for response in seconds (LiveKit only)
+        timeout: Maximum wait time for response in seconds (LiveKit only) - DEPRECATED: Use listen_duration instead
         voice: Override TTS voice - ONLY specify if user explicitly requests a specific voice
                OR when speaking non-English languages (see LANGUAGE SUPPORT section above).
                Examples: nova, shimmer (OpenAI); af_sky, af_sarah, am_adam (Kokoro)
@@ -1538,7 +1538,8 @@ async def converse(
         
         if transport == "livekit":
             # For LiveKit, use the existing function but with the message parameter
-            livekit_result = await livekit_converse(message, room_name, timeout)
+            # Use listen_duration instead of timeout for consistent behavior
+            livekit_result = await livekit_converse(message, room_name, listen_duration)
             
             # Track LiveKit interaction (simplified since we don't have detailed timing)
             success = not livekit_result.startswith("Error:") and not livekit_result.startswith("No ")
