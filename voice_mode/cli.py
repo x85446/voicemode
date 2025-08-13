@@ -61,7 +61,7 @@ from voice_mode.tools.services.whisper.uninstall import whisper_uninstall
 from voice_mode.tools.services.whisper.download_model import download_model
 from voice_mode.tools.services.livekit.install import livekit_install
 from voice_mode.tools.services.livekit.uninstall import livekit_uninstall
-from voice_mode.tools.services.livekit.frontend import livekit_frontend_start, livekit_frontend_stop, livekit_frontend_status
+from voice_mode.tools.services.livekit.frontend import livekit_frontend_start, livekit_frontend_stop, livekit_frontend_status, livekit_frontend_open
 
 # Import configuration management functions
 from voice_mode.tools.configuration_management import update_config, list_config_keys
@@ -634,6 +634,24 @@ def frontend_status():
         click.echo("   Configuration:")
         for key, value in result['configuration'].items():
             click.echo(f"     {key}: {value}")
+
+
+@frontend.command("open")
+def frontend_open():
+    """Open the LiveKit Voice Assistant Frontend in your browser.
+    
+    Starts the frontend if not already running, then opens it in the default browser.
+    """
+    result = asyncio.run(livekit_frontend_open.fn())
+    
+    if result.get('success'):
+        click.echo("✅ Frontend opened in browser!")
+        click.echo(f"   URL: {result['url']}")
+        click.echo(f"   Password: {result['password']}")
+        if result.get('hint'):
+            click.echo(f"   💡 {result['hint']}")
+    else:
+        click.echo(f"❌ Failed to open frontend: {result.get('error', 'Unknown error')}")
 
 
 # Configuration management group

@@ -231,3 +231,75 @@ async def livekit_frontend_status() -> Dict[str, Any]:
     except Exception as e:
         logger.error(f"Error checking frontend status: {e}")
         return {"error": str(e)}
+
+
+@mcp.tool()
+async def livekit_frontend_open() -> Dict[str, Any]:
+    """Open the LiveKit voice assistant frontend in the default browser.
+    
+    Starts the frontend if not already running, then opens it in the browser.
+    
+    Returns:
+        Dictionary with status and URL
+    """
+    try:
+        # Check if frontend is running
+        status = await livekit_frontend_status.fn()
+        
+        if not status.get("running"):
+            # Start the frontend first
+            logger.info("Frontend not running, starting it first...")
+            start_result = await livekit_frontend_start.fn()
+            if not start_result.get("success"):
+                return {
+                    "success": False,
+                    "error": f"Failed to start frontend: {start_result.get('error', 'Unknown error')}"
+                }
+            url = start_result.get("url", "http://127.0.0.1:3000")
+            password = start_result.get("password", "Check .env.local")
+            
+            # Wait a moment for it to fully start
+            await asyncio.sleep(3)
+        else:
+            url = status.get("url", "http://127.0.0.1:3000")
+            # Get password from env file
+            frontend_dir = find_frontend_dir()
+            password = "voicemode123"  # default
+            if frontend_dir:
+                env_file = frontend_dir / ".env.local"
+                if env_file.exists():
+                    with open(env_file) as f:
+                        for line in f:
+                            if line.startswith("LIVEKIT_ACCESS_PASSWORD="):
+                                password = line.strip().split("=", 1)[1]
+                                break
+        
+        # Open in browser
+        import webbrowser
+        import platform
+        
+        system = platform.system()
+        if system == "Darwin":
+            # macOS
+            subprocess.run(["open", url])
+        elif system == "Linux":
+            # Linux - try xdg-open first, then fallback to webbrowser
+            try:
+                subprocess.run(["xdg-open", url], check=True)
+            except:
+                webbrowser.open(url)
+        else:
+            # Windows or other
+            webbrowser.open(url)
+        
+        return {
+            "success": True,
+            "message": f"Opened frontend in browser",
+            "url": url,
+            "password": password,
+            "hint": "Use the password to access the voice assistant interface"
+        }
+        
+    except Exception as e:
+        logger.error(f"Error opening frontend: {e}")
+        return {"success": False, "error": str(e)}
