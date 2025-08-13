@@ -1060,18 +1060,31 @@ def record_audio_with_silence_detection(max_duration: float, disable_silence_det
 
 async def check_livekit_available() -> bool:
     """Check if LiveKit is available and has active rooms"""
+    start_time = time.time()
+    logger.debug("Starting LiveKit availability check")
+    
     try:
         from livekit import api
         
         api_url = LIVEKIT_URL.replace("ws://", "http://").replace("wss://", "https://")
         lk_api = api.LiveKitAPI(api_url, LIVEKIT_API_KEY, LIVEKIT_API_SECRET)
         
+        # Time the API call specifically
+        api_start = time.time()
         rooms = await lk_api.room.list_rooms(api.ListRoomsRequest())
-        active_rooms = [r for r in rooms.rooms if r.num_participants > 0]
+        api_duration = time.time() - api_start
         
-        return len(active_rooms) > 0
+        active_rooms = [r for r in rooms.rooms if r.num_participants > 0]
+        available = len(active_rooms) > 0
+        
+        total_duration = time.time() - start_time
+        logger.info(f"LiveKit availability check: {available} (API: {api_duration:.3f}s, total: {total_duration:.3f}s)")
+        
+        return available
         
     except Exception as e:
+        total_duration = time.time() - start_time
+        logger.info(f"LiveKit availability check failed: {e} (total: {total_duration:.3f}s)")
         logger.debug(f"LiveKit not available: {e}")
         return False
 
@@ -1529,12 +1542,17 @@ async def converse(
         # Otherwise, speak and then listen for response
         # Determine transport method
         if transport == "auto":
+            transport_start = time.time()
+            logger.debug("Starting transport auto-selection")
+            
             if await check_livekit_available():
                 transport = "livekit"
-                logger.info("Auto-selected LiveKit transport")
+                transport_duration = time.time() - transport_start
+                logger.info(f"Auto-selected LiveKit transport (selection took {transport_duration:.3f}s)")
             else:
                 transport = "local"
-                logger.info("Auto-selected local transport")
+                transport_duration = time.time() - transport_start
+                logger.info(f"Auto-selected local transport (selection took {transport_duration:.3f}s)")
         
         if transport == "livekit":
             # For LiveKit, use the existing function but with the message parameter
