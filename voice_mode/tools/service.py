@@ -583,18 +583,16 @@ async def enable_service(service_name: str) -> str:
                     WORKING_DIR=Path.home() / ".voicemode"
                 )
             else:  # frontend
-                # Import frontend helper
-                from voice_mode.tools.services.livekit.frontend import find_frontend_dir
-                
-                frontend_dir = find_frontend_dir()
-                if not frontend_dir:
+                # Get service config vars which includes all needed variables
+                config_vars = get_service_config_vars(service_name)
+                if "FRONTEND_DIR" not in config_vars:
                     return "❌ Frontend directory not found"
                 
-                content = template.format(
-                    FRONTEND_DIR=str(frontend_dir),
-                    PORT="3000",
-                    LOG_DIR=logs_dir
-                )
+                # Add log directory to config vars
+                config_vars["LOG_DIR"] = str(logs_dir)
+                
+                # Format template with all config vars
+                content = template.format(**config_vars)
             
             # Create directories
             plist_path.parent.mkdir(parents=True, exist_ok=True)
@@ -689,17 +687,13 @@ async def enable_service(service_name: str) -> str:
                     WORKING_DIR=Path.home() / ".voicemode"
                 )
             else:  # frontend
-                # Import frontend helper
-                from voice_mode.tools.services.livekit.frontend import find_frontend_dir
-                
-                frontend_dir = find_frontend_dir()
-                if not frontend_dir:
+                # Get service config vars which includes all needed variables
+                config_vars = get_service_config_vars(service_name)
+                if "FRONTEND_DIR" not in config_vars:
                     return "❌ Frontend directory not found"
                 
-                content = template.format(
-                    FRONTEND_DIR=str(frontend_dir),
-                    PORT="3000"
-                )
+                # Format template with all config vars
+                content = template.format(**config_vars)
             
             # Write service file
             service_path.parent.mkdir(parents=True, exist_ok=True)

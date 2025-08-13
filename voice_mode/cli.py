@@ -722,20 +722,16 @@ def frontend_logs(lines, follow):
 def frontend_enable():
     """Enable frontend service to start automatically at boot/login."""
     result = asyncio.run(enable_service("frontend"))
-    if result.get('success'):
-        click.echo(f"✅ {result['message']}")
-    else:
-        click.echo(f"❌ Error: {result.get('error', 'Unknown error')}")
+    # enable_service returns a string, not a dict
+    click.echo(result)
 
 
 @frontend.command("disable")
 def frontend_disable():
     """Disable frontend service from starting automatically."""
     result = asyncio.run(disable_service("frontend"))
-    if result.get('success'):
-        click.echo(f"✅ {result['message']}")
-    else:
-        click.echo(f"❌ Error: {result.get('error', 'Unknown error')}")
+    # disable_service returns a string, not a dict
+    click.echo(result)
 
 
 @frontend.command("build")
