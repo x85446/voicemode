@@ -89,6 +89,9 @@ docs/voicemode-brand/
 node_modules/
 .npm/
 
+# Next.js build artifacts
+.next/
+
 # Misc
 .cache/
 *.bak
