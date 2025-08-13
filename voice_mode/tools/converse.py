@@ -1114,8 +1114,13 @@ async def livekit_converse(message: str, room_name: str = "", timeout: float = 6
         # Get default providers from registry
         tts_config = await get_tts_config()
         stt_config = await get_stt_config()
-        tts_client = lk_openai.TTS(voice=tts_config['voice'], base_url=tts_config['base_url'], model=tts_config['model'])
-        stt_client = lk_openai.STT(base_url=stt_config['base_url'], model=stt_config['model'])
+        
+        # Use dummy API key for local services, real key for OpenAI
+        tts_api_key = OPENAI_API_KEY if tts_config.get('provider_type') == 'openai' else "dummy-key-for-local"
+        stt_api_key = OPENAI_API_KEY if stt_config.get('provider_type') == 'openai' else "dummy-key-for-local"
+        
+        tts_client = lk_openai.TTS(voice=tts_config['voice'], base_url=tts_config['base_url'], model=tts_config['model'], api_key=tts_api_key)
+        stt_client = lk_openai.STT(base_url=stt_config['base_url'], model=stt_config['model'], api_key=stt_api_key)
         
         # Create simple agent that speaks and listens
         class VoiceAgent(Agent):
