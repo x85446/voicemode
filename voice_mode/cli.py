@@ -598,7 +598,13 @@ def frontend_start(port, host):
         click.echo(f"   PID: {result['pid']}")
         click.echo(f"   Directory: {result['directory']}")
     else:
-        click.echo(f"❌ Failed to start frontend: {result.get('error', 'Unknown error')}")
+        error_msg = result.get('error', 'Unknown error')
+        click.echo(f"❌ Failed to start frontend: {error_msg}")
+        if "Cannot find module" in error_msg or "dependencies" in error_msg.lower():
+            click.echo("")
+            click.echo("💡 Try fixing dependencies with:")
+            click.echo("   ./bin/fix-frontend-deps.sh")
+            click.echo("   or manually: cd vendor/livekit-voice-assistant/voice-assistant-frontend && pnpm install")
 
 
 @frontend.command("stop")

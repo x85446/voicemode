@@ -74,39 +74,74 @@ async def livekit_frontend_start(
         except:
             pass
         
-        # Check if dependencies are installed
+        # Check if dependencies are installed and try to install if needed
         node_modules = frontend_dir / "node_modules"
-        if not node_modules.exists():
+        if not node_modules.exists() or not (node_modules / ".bin" / "next").exists():
             logger.info("Installing frontend dependencies...")
-            subprocess.run(
-                ["pnpm", "install"],
-                cwd=frontend_dir,
-                check=True
-            )
+            try:
+                result = subprocess.run(
+                    ["pnpm", "install"],
+                    cwd=frontend_dir,
+                    check=True,
+                    capture_output=True,
+                    text=True
+                )
+                logger.info("Dependencies installed successfully")
+            except subprocess.CalledProcessError as e:
+                logger.error(f"Failed to install dependencies: {e.stderr}")
+                return {
+                    "success": False,
+                    "error": f"Failed to install dependencies: {e.stderr}"
+                }
         
         # Start the frontend
         env = os.environ.copy()
         env["PORT"] = str(port)
         env["HOST"] = host
         
-        process = subprocess.Popen(
+        # Try pnpm dev first, fallback to npx if pnpm isn't available
+        start_commands = [
             ["pnpm", "dev"],
-            cwd=frontend_dir,
-            env=env,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
+            ["npx", "next", "dev"],
+            ["npm", "run", "dev"]
+        ]
         
-        # Wait a moment to check if it started
-        await asyncio.sleep(3)
+        process = None
+        last_error = None
         
-        if process.poll() is not None:
-            # Process exited
-            stderr = process.stderr.read().decode() if process.stderr else ""
+        for cmd in start_commands:
+            try:
+                logger.info(f"Trying to start frontend with: {' '.join(cmd)}")
+                process = subprocess.Popen(
+                    cmd,
+                    cwd=frontend_dir,
+                    env=env,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE
+                )
+                # Test if it started successfully
+                await asyncio.sleep(1)
+                if process.poll() is None:
+                    logger.info(f"Frontend started successfully with: {' '.join(cmd)}")
+                    break
+                else:
+                    stderr = process.stderr.read().decode() if process.stderr else ""
+                    last_error = stderr
+                    logger.warning(f"Command {' '.join(cmd)} failed: {stderr}")
+                    process = None
+            except Exception as e:
+                logger.warning(f"Failed to start with {' '.join(cmd)}: {e}")
+                last_error = str(e)
+                continue
+        
+        if process is None:
             return {
                 "success": False,
-                "error": f"Frontend failed to start: {stderr}"
+                "error": f"Failed to start frontend with any command. Last error: {last_error}"
             }
+        
+        # Wait a moment to check if it started (already checked above)
+        await asyncio.sleep(2)
         
         # Get .env.local settings
         env_file = frontend_dir / ".env.local"
