@@ -457,6 +457,129 @@ install_claude_if_needed() {
   return 0
 }
 
+# Service installation functions
+check_voice_mode_cli() {
+  local voice_mode_cmd
+  
+  # Try different ways to find voice-mode
+  if command -v voice-mode >/dev/null 2>&1; then
+    voice_mode_cmd="voice-mode"
+  elif command -v uvx >/dev/null 2>&1 && uvx voice-mode --help >/dev/null 2>&1; then
+    voice_mode_cmd="uvx voice-mode"
+  else
+    print_warning "voice-mode CLI not found in PATH"
+    return 1
+  fi
+  
+  echo "$voice_mode_cmd"
+  return 0
+}
+
+install_service() {
+  local service_name="$1"
+  local voice_mode_cmd="$2"
+  local description="$3"
+  
+  print_step "Installing $description..."
+  
+  # Use timeout to prevent hanging
+  if timeout 300 $voice_mode_cmd $service_name install --auto-enable; then
+    print_success "$description installed successfully"
+    return 0
+  else
+    local exit_code=$?
+    print_warning "$description installation failed (exit code: $exit_code)"
+    return 1
+  fi
+}
+
+install_all_services() {
+  local voice_mode_cmd="$1"
+  local success_count=0
+  local total_count=3
+  
+  print_step "Installing all Voice Mode services..."
+  
+  # Install each service independently
+  if install_service "whisper" "$voice_mode_cmd" "Whisper (Speech-to-Text)"; then
+    ((success_count++))
+  fi
+  
+  if install_service "kokoro" "$voice_mode_cmd" "Kokoro (Text-to-Speech)"; then
+    ((success_count++))
+  fi
+  
+  if install_service "livekit" "$voice_mode_cmd" "LiveKit (Real-time Communication)"; then
+    ((success_count++))
+  fi
+  
+  # Report results
+  echo ""
+  if [[ $success_count -eq $total_count ]]; then
+    print_success "All voice services installed successfully!"
+  elif [[ $success_count -gt 0 ]]; then
+    print_warning "$success_count of $total_count services installed successfully"
+    echo "   Check error messages above for failed installations"
+  else
+    print_error "No services were installed successfully"
+  fi
+}
+
+install_services_selective() {
+  local voice_mode_cmd="$1"
+  
+  if confirm_action "Install Whisper (Speech-to-Text)"; then
+    install_service "whisper" "$voice_mode_cmd" "Whisper"
+  fi
+  
+  if confirm_action "Install Kokoro (Text-to-Speech)"; then
+    install_service "kokoro" "$voice_mode_cmd" "Kokoro"
+  fi
+  
+  if confirm_action "Install LiveKit (Real-time Communication)"; then
+    install_service "livekit" "$voice_mode_cmd" "LiveKit"
+  fi
+}
+
+install_voice_services() {
+  # Check voice-mode CLI availability
+  local voice_mode_cmd
+  if ! voice_mode_cmd=$(check_voice_mode_cli); then
+    print_warning "Skipping service installation - voice-mode CLI not available"
+    return 1
+  fi
+  
+  echo ""
+  echo -e "${BLUE}🎤 Voice Mode Services${NC}"
+  echo ""
+  echo "Voice Mode can install local services for the best experience:"
+  echo "  • Whisper - Fast local speech-to-text (no cloud required)"
+  echo "  • Kokoro - Natural text-to-speech with multiple voices"
+  echo "  • LiveKit - Real-time voice communication server"
+  echo ""
+  echo "Benefits:"
+  echo "  • Privacy - All processing happens locally"
+  echo "  • Speed - No network latency"
+  echo "  • Reliability - Works offline"
+  echo ""
+  
+  # Quick mode or selective
+  read -p "Install all recommended services? [Y/n/s]: " choice
+  case $choice in
+    [Ss]*)
+      # Selective mode
+      install_services_selective "$voice_mode_cmd"
+      ;;
+    [Nn]*)
+      print_warning "Skipping service installation. Voice Mode will use cloud services."
+      ;;
+    *)
+      # Default: install all
+      install_all_services "$voice_mode_cmd"
+      ;;
+  esac
+}
+
 main() {
   echo -e "${BLUE}🎤 Voice Mode Universal Installer${NC}"
   echo "This installer will set up Voice Mode and its dependencies on your system."
@@ -464,6 +587,14 @@ main() {
 
   # Pre-flight checks
   detect_os
+  
+  # Early sudo caching for service installation
+  if command -v sudo >/dev/null 2>&1; then
+    print_step "Requesting administrator access for system configuration..."
+    if ! sudo -v; then
+      print_warning "Administrator access declined. Some features may not be available."
+    fi
+  fi
 
   # OS-specific setup
   if [[ "$OS" == "macos" ]]; then
@@ -488,6 +619,11 @@ main() {
   # Install Claude Code if needed, then configure Voice Mode
   if install_claude_if_needed; then
     configure_claude_voicemode
+    
+    # If Voice Mode was configured successfully, offer to install services
+    if command -v claude >/dev/null 2>&1 && claude mcp list 2>/dev/null | grep -q "voice-mode"; then
+      install_voice_services
+    fi
   fi
 
   # WSL-specific instructions
