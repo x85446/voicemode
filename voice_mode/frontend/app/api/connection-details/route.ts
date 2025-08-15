@@ -1,10 +1,11 @@
 import { AccessToken, AccessTokenOptions, VideoGrant } from "livekit-server-sdk";
 import { NextResponse, NextRequest } from "next/server";
 
-// NOTE: you are expected to define the following environment variables in `.env.local`:
-const API_KEY = process.env.LIVEKIT_API_KEY;
-const API_SECRET = process.env.LIVEKIT_API_SECRET;
-const LIVEKIT_URL = process.env.LIVEKIT_URL;
+// NOTE: Environment variables can be defined in `.env.local` or passed from voice-mode config
+const API_KEY = process.env.LIVEKIT_API_KEY || "devkey";
+const API_SECRET = process.env.LIVEKIT_API_SECRET || "secret";
+// TODO: Fix environment variable loading - hardcoded for now
+const LIVEKIT_URL = "wss://x1:8443"; // process.env.LIVEKIT_URL || "ws://localhost:7880";
 
 // Password protection - set this in your .env.local file
 const ACCESS_PASSWORD = process.env.LIVEKIT_ACCESS_PASSWORD || "voicemode123";
@@ -30,14 +31,16 @@ export async function GET(request: NextRequest) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
     
-    if (LIVEKIT_URL === undefined) {
-      throw new Error("LIVEKIT_URL is not defined");
+    // These checks are now optional since we have defaults
+    // but we can still validate they're not empty strings
+    if (!LIVEKIT_URL) {
+      throw new Error("LIVEKIT_URL is empty");
     }
-    if (API_KEY === undefined) {
-      throw new Error("LIVEKIT_API_KEY is not defined");
+    if (!API_KEY) {
+      throw new Error("LIVEKIT_API_KEY is empty");
     }
-    if (API_SECRET === undefined) {
-      throw new Error("LIVEKIT_API_SECRET is not defined");
+    if (!API_SECRET) {
+      throw new Error("LIVEKIT_API_SECRET is empty");
     }
 
     // Generate participant token
@@ -48,6 +51,10 @@ export async function GET(request: NextRequest) {
       roomName
     );
 
+    // Log the URL being used for debugging
+    console.log("LIVEKIT_URL from env:", process.env.LIVEKIT_URL);
+    console.log("Using LIVEKIT_URL:", LIVEKIT_URL);
+    
     // Return connection details
     const data: ConnectionDetails = {
       serverUrl: LIVEKIT_URL,
