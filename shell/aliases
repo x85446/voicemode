@@ -25,5 +25,5 @@ alias voicemode-whisper-enable='if [[ "$(uname)" == "Darwin" ]]; then launchctl 
 alias voicemode-whisper-disable='if [[ "$(uname)" == "Darwin" ]]; then launchctl unload -w ~/Library/LaunchAgents/com.voicemode.whisper.plist 2>/dev/null || echo "Already disabled or plist not found"; else systemctl --user disable voicemode-whisper; fi'
 
 # Check if Whisper is responding
-alias whisper-health='curl -s http://127.0.0.1:8090/health | jq . || echo "Whisper not responding on port 8090"'
+alias whisper-health='curl -s http://127.0.0.1:2022/health | jq . || echo "Whisper not responding on port 2022"'
 alias voicemode-whisper-health=whisper-health
