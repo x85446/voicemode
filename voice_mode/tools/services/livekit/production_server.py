@@ -152,10 +152,11 @@ class ProductionFrontendHandler(SimpleHTTPRequestHandler):
             params = parse_qs(query)
             password = params.get('password', [''])[0]
             
-            # Import the actual connection details handler
-            from voice_mode.frontend.app.api.connection_details.route import (
-                API_KEY, API_SECRET, LIVEKIT_URL, ACCESS_PASSWORD
-            )
+            # Get environment variables
+            API_KEY = os.environ.get("LIVEKIT_API_KEY", "devkey")
+            API_SECRET = os.environ.get("LIVEKIT_API_SECRET", "secret")
+            LIVEKIT_URL = os.environ.get("LIVEKIT_URL", "ws://localhost:7880")
+            ACCESS_PASSWORD = os.environ.get("LIVEKIT_ACCESS_PASSWORD", "voicemode123")
             
             # Check password
             if password != ACCESS_PASSWORD:

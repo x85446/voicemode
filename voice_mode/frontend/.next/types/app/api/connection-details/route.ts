@@ -1,4 +1,4 @@
-// File: /home/m/Code/github.com/mbailey/voicemode/git/worktrees/voicemode-livekit-service/voice_mode/frontend/app/api/connection-details/route.ts
+// File: /home/m/Code/github.com/ai-cora/agents/7/cora/git/worktrees/voicemode-livekit-service/voice_mode/frontend/app/api/connection-details/route.ts
 import * as entry from '../../../../../app/api/connection-details/route.js'
 import type { NextRequest } from 'next/server.js'
 

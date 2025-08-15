@@ -1,4 +1,4 @@
-// File: /home/m/Code/github.com/mbailey/voicemode/git/worktrees/voicemode-livekit-service/voice_mode/frontend/app/layout.tsx
+// File: /home/m/Code/github.com/ai-cora/agents/7/cora/git/worktrees/voicemode-livekit-service/voice_mode/frontend/app/layout.tsx
 import * as entry from '../../../app/layout.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

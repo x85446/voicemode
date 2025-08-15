@@ -25,6 +25,13 @@ async def start_production_server(frontend_dir: Path, port: int, host: str) -> D
         # Import here to avoid issues if the module doesn't exist
         from .production_server import ProductionFrontendServer
         
+        # Ensure LiveKit environment variables are set with defaults from config
+        from voice_mode import config
+        os.environ.setdefault("LIVEKIT_URL", config.LIVEKIT_URL)
+        os.environ.setdefault("LIVEKIT_API_KEY", config.LIVEKIT_API_KEY)
+        os.environ.setdefault("LIVEKIT_API_SECRET", config.LIVEKIT_API_SECRET)
+        os.environ.setdefault("LIVEKIT_ACCESS_PASSWORD", "voicemode123")
+        
         # Stop any existing server
         if _production_server:
             _production_server.stop()
@@ -109,21 +116,29 @@ def find_frontend_dir() -> Optional[Path]:
 
 @mcp.tool()
 async def livekit_frontend_start(
-    port: int = 3000,
-    host: str = "127.0.0.1"
+    port: int = None,
+    host: str = None
 ) -> Dict[str, Any]:
     """Start the LiveKit voice assistant frontend.
     
     Starts the Next.js frontend application for voice conversations with LiveKit.
     
     Args:
-        port: Port to run the frontend on (default: 3000)
-        host: Host to bind to (default: 127.0.0.1)
+        port: Port to run the frontend on (default: uses VOICEMODE_FRONTEND_PORT or 3000)
+        host: Host to bind to (default: uses VOICEMODE_FRONTEND_HOST or 127.0.0.1)
     
     Returns:
         Dictionary with start status and access URL
     """
     try:
+        # Import config to get defaults
+        from voice_mode import config
+        
+        # Use config defaults if not provided
+        if port is None:
+            port = config.FRONTEND_PORT
+        if host is None:
+            host = config.FRONTEND_HOST
         # Find frontend directory
         frontend_dir = find_frontend_dir()
         if not frontend_dir:
@@ -205,6 +220,13 @@ async def livekit_frontend_start(
         env = os.environ.copy()
         env["PORT"] = str(port)
         env["HOST"] = host
+        
+        # Ensure LiveKit environment variables are set with defaults from config
+        from voice_mode import config
+        env.setdefault("LIVEKIT_URL", config.LIVEKIT_URL)
+        env.setdefault("LIVEKIT_API_KEY", config.LIVEKIT_API_KEY)
+        env.setdefault("LIVEKIT_API_SECRET", config.LIVEKIT_API_SECRET)
+        env.setdefault("LIVEKIT_ACCESS_PASSWORD", "voicemode123")
         
         # Try pnpm dev first, fallback to npx if pnpm isn't available
         start_commands = [

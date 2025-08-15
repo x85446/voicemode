@@ -127,11 +127,15 @@ def get_service_config_vars(service_name: str) -> Dict[str, Any]:
                 node_bin = node_path
                 break
         
+        # Import config to get HOST and PORT values
+        from voice_mode.config import FRONTEND_HOST, FRONTEND_PORT
+        
         return {
             "FRONTEND_DIR": str(frontend_dir),
             "NODE_BIN": node_bin,
             "NODE_PATH": str(Path(node_bin).parent),
-            "PORT": "3000",
+            "PORT": str(FRONTEND_PORT),
+            "HOST": FRONTEND_HOST,
             "LOG_DIR": os.path.join(voicemode_dir, "logs", "frontend"),
             "WORKING_DIR": str(frontend_dir),
         }

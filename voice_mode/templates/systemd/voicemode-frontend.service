@@ -7,9 +7,10 @@ Wants=network.target
 [Service]
 Type=simple
 WorkingDirectory={FRONTEND_DIR}
+EnvironmentFile=%h/.voicemode/.voicemode.env
 Environment=NODE_ENV=development
 Environment=PORT={PORT}
-Environment=HOST=127.0.0.1
+Environment=HOST={HOST}
 ExecStartPre=/bin/bash -c 'cd {FRONTEND_DIR} && npm install'
 ExecStart=/bin/bash -c 'cd {FRONTEND_DIR} && exec npm run dev'
 StandardOutput=journal
