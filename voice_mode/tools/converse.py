@@ -1060,18 +1060,31 @@ def record_audio_with_silence_detection(max_duration: float, disable_silence_det
 
 async def check_livekit_available() -> bool:
     """Check if LiveKit is available and has active rooms"""
+    start_time = time.time()
+    logger.debug("Starting LiveKit availability check")
+    
     try:
         from livekit import api
         
         api_url = LIVEKIT_URL.replace("ws://", "http://").replace("wss://", "https://")
         lk_api = api.LiveKitAPI(api_url, LIVEKIT_API_KEY, LIVEKIT_API_SECRET)
         
+        # Time the API call specifically
+        api_start = time.time()
         rooms = await lk_api.room.list_rooms(api.ListRoomsRequest())
-        active_rooms = [r for r in rooms.rooms if r.num_participants > 0]
+        api_duration = time.time() - api_start
         
-        return len(active_rooms) > 0
+        active_rooms = [r for r in rooms.rooms if r.num_participants > 0]
+        available = len(active_rooms) > 0
+        
+        total_duration = time.time() - start_time
+        logger.info(f"LiveKit availability check: {available} (API: {api_duration:.3f}s, total: {total_duration:.3f}s)")
+        
+        return available
         
     except Exception as e:
+        total_duration = time.time() - start_time
+        logger.info(f"LiveKit availability check failed: {e} (total: {total_duration:.3f}s)")
         logger.debug(f"LiveKit not available: {e}")
         return False
 
@@ -1101,8 +1114,13 @@ async def livekit_converse(message: str, room_name: str = "", timeout: float = 6
         # Get default providers from registry
         tts_config = await get_tts_config()
         stt_config = await get_stt_config()
-        tts_client = lk_openai.TTS(voice=tts_config['voice'], base_url=tts_config['base_url'], model=tts_config['model'])
-        stt_client = lk_openai.STT(base_url=stt_config['base_url'], model=stt_config['model'])
+        
+        # Use dummy API key for local services, real key for OpenAI
+        tts_api_key = OPENAI_API_KEY if tts_config.get('provider_type') == 'openai' else "dummy-key-for-local"
+        stt_api_key = OPENAI_API_KEY if stt_config.get('provider_type') == 'openai' else "dummy-key-for-local"
+        
+        tts_client = lk_openai.TTS(voice=tts_config['voice'], base_url=tts_config['base_url'], model=tts_config['model'], api_key=tts_api_key)
+        stt_client = lk_openai.STT(base_url=stt_config['base_url'], model=stt_config['model'], api_key=stt_api_key)
         
         # Create simple agent that speaks and listens
         class VoiceAgent(Agent):
@@ -1271,7 +1289,7 @@ async def converse(
                              - Quick responses: 0.5-1 second
         transport: Transport method - "auto" (try LiveKit then local), "local" (direct mic), "livekit" (room-based)
         room_name: LiveKit room name (only for livekit transport, auto-discovered if empty)
-        timeout: Maximum wait time for response in seconds (LiveKit only)
+        timeout: Maximum wait time for response in seconds (LiveKit only) - DEPRECATED: Use listen_duration instead
         voice: Override TTS voice - ONLY specify if user explicitly requests a specific voice
                OR when speaking non-English languages (see LANGUAGE SUPPORT section above).
                Examples: nova, shimmer (OpenAI); af_sky, af_sarah, am_adam (Kokoro)
@@ -1529,16 +1547,22 @@ async def converse(
         # Otherwise, speak and then listen for response
         # Determine transport method
         if transport == "auto":
+            transport_start = time.time()
+            logger.debug("Starting transport auto-selection")
+            
             if await check_livekit_available():
                 transport = "livekit"
-                logger.info("Auto-selected LiveKit transport")
+                transport_duration = time.time() - transport_start
+                logger.info(f"Auto-selected LiveKit transport (selection took {transport_duration:.3f}s)")
             else:
                 transport = "local"
-                logger.info("Auto-selected local transport")
+                transport_duration = time.time() - transport_start
+                logger.info(f"Auto-selected local transport (selection took {transport_duration:.3f}s)")
         
         if transport == "livekit":
             # For LiveKit, use the existing function but with the message parameter
-            livekit_result = await livekit_converse(message, room_name, timeout)
+            # Use listen_duration instead of timeout for consistent behavior
+            livekit_result = await livekit_converse(message, room_name, listen_duration)
             
             # Track LiveKit interaction (simplified since we don't have detailed timing)
             success = not livekit_result.startswith("Error:") and not livekit_result.startswith("No ")

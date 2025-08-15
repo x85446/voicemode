@@ -1,0 +1,36 @@
+# LiveKit configuration with SSL
+# For local development with custom CA
+
+# Server settings
+port: 7880
+rtc:
+  port_range_start: 50000
+  port_range_end: 60000
+  tcp_port: 7881
+  use_external_ip: false
+
+# TLS Configuration
+tls:
+  cert: /home/m/dev/ca/certs/x1/cert.crt
+  key: /home/m/dev/ca/certs/x1/cert.key
+  # Enable TLS on main port
+  enabled: true
+
+# API keys for development
+keys:
+  devkey: secret
+
+# Logging
+logging:
+  level: info
+
+# WebRTC settings
+rtc_config:
+  tcp_remux_port: 7881
+
+# Room settings
+room:
+  auto_create: true
+  
+# Development mode features
+development: true

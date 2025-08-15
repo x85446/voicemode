@@ -94,6 +94,13 @@ voicemode = "voice_mode.cli:voice_mode"
 [tool.hatch.build.targets.wheel]
 packages = ["voice_mode"]
 
+[tool.hatch.build.hooks.custom]
+path = "build_hooks.py"
+
+[tool.hatch.build.targets.wheel.shared-data]
+# Include the entire frontend directory (source + built assets)
+"voice_mode/frontend" = "voice_mode/frontend"
+
 [tool.hatch.build.targets.sdist]
 include = [
   "/voice_mode",
