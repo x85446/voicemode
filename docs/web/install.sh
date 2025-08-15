@@ -336,6 +336,18 @@ install_uvx() {
       # Add UV to PATH for current session
       export PATH="$HOME/.local/bin:$PATH"
 
+      # Verify installation immediately
+      if ! command -v uvx >/dev/null 2>&1; then
+        print_error "UV/UVX installation failed - command not found after installation"
+        return 1
+      fi
+
+      # Test uvx actually works
+      if ! uvx --version >/dev/null 2>&1; then
+        print_error "UV/UVX installation failed - command not working"
+        return 1
+      fi
+
       # Add to shell profile if not already there
       local shell_profile=""
       if [[ "$SHELL" == *"zsh"* ]]; then
@@ -355,13 +367,19 @@ install_uvx() {
         fi
       fi
 
-      print_success "UV/UVX installed successfully"
+      print_success "UV/UVX installed and verified successfully"
     else
       print_error "UV/UVX is required for Voice Mode. Installation aborted."
       return 1
     fi
   else
     print_success "UV/UVX is already installed"
+    
+    # Even if already installed, verify it works
+    if ! uvx --version >/dev/null 2>&1; then
+      print_error "UV/UVX is installed but not working properly"
+      return 1
+    fi
   fi
 }
 
@@ -398,12 +416,7 @@ configure_claude_voicemode() {
     # Check if voice-mode is already configured
     if claude mcp list 2>/dev/null | grep -q "voice-mode"; then
       print_success "Voice Mode is already configured in Claude Code"
-      echo ""
-      echo "🎉 Setup complete! You can now use voice commands in Claude Code by running:"
-      echo ""
-      echo "  claude converse"
-      echo ""
-      echo "Voice Mode will automatically install local speech services if needed."
+      return 0
     else
       if confirm_action "Configure Voice Mode with Claude Code (adds MCP server)"; then
         print_step "Configuring Voice Mode with Claude Code..."
@@ -411,30 +424,25 @@ configure_claude_voicemode() {
         # Try with --scope flag first (newer versions)
         if claude mcp add --scope user voice-mode -- uvx voice-mode 2>/dev/null; then
           print_success "Voice Mode configured with Claude Code"
-          echo ""
-          echo "🎉 Setup complete! You can now use voice commands in Claude Code:"
-          echo "  claude converse"
-          echo ""
-          echo "Voice Mode will automatically install local speech services if needed."
+          return 0
         # Fallback to without --scope flag (older versions)
         elif claude mcp add voice-mode -- uvx voice-mode; then
           print_success "Voice Mode configured with Claude Code (global config)"
-          echo ""
-          echo "🎉 Setup complete! You can now use voice commands in Claude Code:"
-          echo "  claude converse"
-          echo ""
-          echo "Voice Mode will automatically install local speech services if needed."
+          return 0
         else
           print_error "Failed to configure Voice Mode with Claude Code"
+          return 1
         fi
       else
         print_step "Skipping Voice Mode configuration"
         echo "You can configure it later with:"
         echo "  claude mcp add voice-mode -- uvx voice-mode"
+        return 1
       fi
     fi
   else
     print_warning "Claude Code not found. Please install it first to use Voice Mode."
+    return 1
   fi
 }
 
@@ -459,20 +467,38 @@ install_claude_if_needed() {
 
 # Service installation functions
 check_voice_mode_cli() {
-  local voice_mode_cmd
+  # Always use uvx voice-mode since that's how MCP is configured
+  # This ensures consistency and works on fresh systems
   
-  # Try different ways to find voice-mode
-  if command -v voice-mode >/dev/null 2>&1; then
-    voice_mode_cmd="voice-mode"
-  elif command -v uvx >/dev/null 2>&1 && uvx voice-mode --help >/dev/null 2>&1; then
-    voice_mode_cmd="uvx voice-mode"
-  else
-    print_warning "voice-mode CLI not found in PATH"
+  # First check if uvx is available
+  if ! command -v uvx >/dev/null 2>&1; then
+    print_warning "uvx not found. Please ensure UV was installed correctly."
+    echo "  You may need to restart your shell or run: source ~/.bashrc"
     return 1
   fi
   
-  echo "$voice_mode_cmd"
-  return 0
+  # Test that uvx voice-mode actually works
+  print_step "Verifying Voice Mode CLI availability..."
+  if timeout 30 uvx voice-mode --version >/dev/null 2>&1; then
+    print_success "Voice Mode CLI is available"
+    echo "uvx voice-mode"
+    return 0
+  else
+    print_warning "Voice Mode CLI not working. It may need to be downloaded first."
+    echo "  The first run of uvx voice-mode will download and cache it."
+    echo "  This requires an internet connection."
+    
+    # Try to trigger the download
+    print_step "Attempting to download Voice Mode..."
+    if timeout 60 uvx voice-mode --help >/dev/null 2>&1; then
+      print_success "Voice Mode downloaded successfully"
+      echo "uvx voice-mode"
+      return 0
+    else
+      print_warning "Failed to download Voice Mode"
+      return 1
+    fi
+  fi
 }
 
 install_service() {
@@ -482,13 +508,31 @@ install_service() {
   
   print_step "Installing $description..."
   
-  # Use timeout to prevent hanging
-  if timeout 300 $voice_mode_cmd $service_name install --auto-enable; then
+  # Check if the service subcommand exists first
+  if ! timeout 30 $voice_mode_cmd $service_name --help >/dev/null 2>&1; then
+    print_warning "$description service command not available"
+    return 1
+  fi
+  
+  # Install with timeout and capture output
+  local temp_log=$(mktemp)
+  local install_success=false
+  
+  print_step "Running: $voice_mode_cmd $service_name install --auto-enable"
+  if timeout 600 $voice_mode_cmd $service_name install --auto-enable 2>&1 | tee "$temp_log"; then
+    install_success=true
+  fi
+  
+  # Check for specific success/failure indicators
+  if [[ "$install_success" == true ]] && ! grep -qi "error\|failed\|traceback" "$temp_log"; then
     print_success "$description installed successfully"
+    rm -f "$temp_log"
     return 0
   else
-    local exit_code=$?
-    print_warning "$description installation failed (exit code: $exit_code)"
+    print_warning "$description installation may have failed"
+    echo "Last few lines of output:"
+    tail -10 "$temp_log" | sed 's/^/  /'
+    rm -f "$temp_log"
     return 1
   fi
 }
@@ -541,13 +585,40 @@ install_services_selective() {
   fi
 }
 
-install_voice_services() {
+verify_voice_mode_after_mcp() {
+  print_step "Verifying Voice Mode CLI availability after MCP configuration..."
+  
+  # Give a moment for any caching to settle
+  sleep 2
+  
   # Check voice-mode CLI availability
   local voice_mode_cmd
   if ! voice_mode_cmd=$(check_voice_mode_cli); then
-    print_warning "Skipping service installation - voice-mode CLI not available"
+    print_warning "Voice Mode CLI not available yet. This could be due to:"
+    echo "  • PATH not updated in current shell"
+    echo "  • uvx cache not refreshed"
+    echo "  • Network connectivity issues"
+    echo ""
+    echo "You can install services manually later with:"
+    echo "  uvx voice-mode whisper install"
+    echo "  uvx voice-mode kokoro install"
+    echo "  uvx voice-mode livekit install"
     return 1
   fi
+  
+  print_success "Voice Mode CLI verified: $voice_mode_cmd"
+  return 0
+}
+
+install_voice_services() {
+  # Verify voice-mode CLI availability first
+  if ! verify_voice_mode_after_mcp; then
+    return 1
+  fi
+  
+  # Get the verified command
+  local voice_mode_cmd
+  voice_mode_cmd=$(check_voice_mode_cli)
   
   echo ""
   echo -e "${BLUE}🎤 Voice Mode Services${NC}"
@@ -561,6 +632,8 @@ install_voice_services() {
   echo "  • Privacy - All processing happens locally"
   echo "  • Speed - No network latency"
   echo "  • Reliability - Works offline"
+  echo ""
+  echo "Note: Service installation may take several minutes and requires internet access."
   echo ""
   
   # Quick mode or selective
@@ -618,11 +691,25 @@ main() {
 
   # Install Claude Code if needed, then configure Voice Mode
   if install_claude_if_needed; then
-    configure_claude_voicemode
-    
-    # If Voice Mode was configured successfully, offer to install services
-    if command -v claude >/dev/null 2>&1 && claude mcp list 2>/dev/null | grep -q "voice-mode"; then
+    if configure_claude_voicemode; then
+      # Voice Mode configured successfully
+      echo ""
+      echo "🎉 Voice Mode is ready! You can use voice commands with:"
+      echo "  claude converse"
+      echo ""
+      
+      # Offer to install services
       install_voice_services
+    else
+      print_warning "Voice Mode configuration was skipped or failed."
+      echo ""
+      echo "You can manually configure Voice Mode later with:"
+      echo "  claude mcp add voice-mode -- uvx voice-mode"
+      echo ""
+      echo "Then install services with:"
+      echo "  uvx voice-mode whisper install"
+      echo "  uvx voice-mode kokoro install"
+      echo "  uvx voice-mode livekit install"
     fi
   fi
 
