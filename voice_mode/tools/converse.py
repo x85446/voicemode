@@ -48,7 +48,7 @@ from voice_mode.config import (
     VAD_AGGRESSIVENESS,
     SILENCE_THRESHOLD_MS,
     MIN_RECORDING_DURATION,
-    NO_OP_TTS,
+    SKIP_TTS,
     VAD_CHUNK_DURATION_MS,
     INITIAL_SILENCE_GRACE_PERIOD,
     DEFAULT_LISTEN_DURATION,
@@ -1322,10 +1322,10 @@ async def converse(
                             
                             Use lower values (0-1) in quiet environments to catch all speech
                             Use higher values (2-3) in noisy environments to reduce false triggers
-        skip_tts: Skip text-to-speech and only show text (default: None uses VOICEMODE_NO_OP_TTS env var)
+        skip_tts: Skip text-to-speech and only show text (default: None uses VOICEMODE_SKIP_TTS env var)
                   When True: Skip TTS for faster response, text-only output
                   When False: Always use TTS regardless of environment setting
-                  When None: Follow VOICEMODE_NO_OP_TTS environment variable
+                  When None: Follow VOICEMODE_SKIP_TTS environment variable
                   Useful for rapid development iterations or when voice isn't needed
         If wait_for_response is False: Confirmation that message was spoken
         If wait_for_response is True: The voice response received (or error/timeout message)
@@ -1372,7 +1372,7 @@ async def converse(
         - Fast iteration mode: converse("Processing your request", skip_tts=True)  # Text only, no voice
         - Important announcement: converse("Warning: System will restart", skip_tts=False)  # Always use voice
         - Quick confirmation: converse("Done!", skip_tts=True, wait_for_response=False)  # Fast text-only
-        - Follow user preference: converse("Hello")  # Uses VOICEMODE_NO_OP_TTS setting
+        - Follow user preference: converse("Hello")  # Uses VOICEMODE_SKIP_TTS setting
     """
     # Convert string booleans to actual booleans
     if isinstance(wait_for_response, str):
@@ -1383,6 +1383,14 @@ async def converse(
         audio_feedback = audio_feedback.lower() in ('true', '1', 'yes', 'on')
     if skip_tts is not None and isinstance(skip_tts, str):
         skip_tts = skip_tts.lower() in ('true', '1', 'yes', 'on')
+    
+    # Determine whether to skip TTS
+    if skip_tts is not None:
+        # Parameter explicitly set, use it
+        should_skip_tts = skip_tts
+    else:
+        # Use global setting
+        should_skip_tts = SKIP_TTS
     
     # Convert string speed to float
     if speed is not None and isinstance(speed, str):
@@ -1472,7 +1480,7 @@ async def converse(
         if not wait_for_response:
             try:
                 async with audio_operation_lock:
-                    if NO_OP_TTS:
+                    if should_skip_tts:
                         # Skip TTS entirely
                         success = True
                         tts_metrics = {
@@ -1615,7 +1623,7 @@ async def converse(
                 async with audio_operation_lock:
                     # Speak the message
                     tts_start = time.perf_counter()
-                    if NO_OP_TTS:
+                    if should_skip_tts:
                         # Skip TTS entirely for faster response
                         tts_success = True
                         tts_metrics = {

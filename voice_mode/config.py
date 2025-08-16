@@ -175,8 +175,8 @@ SAVE_TRANSCRIPTIONS = SAVE_ALL or DEBUG or os.getenv("VOICEMODE_SAVE_TRANSCRIPTI
 # Audio feedback configuration
 AUDIO_FEEDBACK_ENABLED = os.getenv("VOICEMODE_AUDIO_FEEDBACK", "true").lower() in ("true", "1", "yes", "on")
 
-# No-op TTS configuration (skip text-to-speech for faster responses)
-NO_OP_TTS = os.getenv("VOICEMODE_NO_OP_TTS", "false").lower() in ("true", "1", "yes", "on")
+# Skip TTS configuration (skip text-to-speech for faster responses)
+SKIP_TTS = os.getenv("VOICEMODE_SKIP_TTS", "false").lower() in ("true", "1", "yes", "on")
 
 # Local provider preference configuration
 PREFER_LOCAL = os.getenv("VOICEMODE_PREFER_LOCAL", "true").lower() in ("true", "1", "yes", "on")
