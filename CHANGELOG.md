@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.23.0] - 2025-08-16
+
 ### Added
 - **`skip_tts` parameter** - Dynamic control over text-to-speech in converse tool
   - Add optional `skip_tts` parameter to override global `VOICEMODE_SKIP_TTS` setting
