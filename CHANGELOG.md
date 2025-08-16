@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Service status detection** - Correctly identify SSH-forwarded vs locally running services
+  - SSH processes listening on service ports are now recognized as port forwards
+  - Status command now shows 🔄 for forwarded services vs ✅ for local services
+  - Prevents confusion about where services are actually running
+
 ## [2.22.3] - 2025-08-16
 
 ## [2.23.0] - 2025-08-16
