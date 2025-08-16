@@ -14,7 +14,7 @@ import psutil
 
 from voice_mode.server import mcp
 from voice_mode.config import WHISPER_PORT, KOKORO_PORT, LIVEKIT_PORT, SERVICE_AUTO_ENABLE
-from voice_mode.utils.services.common import find_process_by_port
+from voice_mode.utils.services.common import find_process_by_port, check_service_status
 from voice_mode.utils.services.whisper_helpers import find_whisper_server, find_whisper_model
 from voice_mode.utils.services.kokoro_helpers import find_kokoro_fastapi, has_gpu_support
 
@@ -195,10 +195,16 @@ async def status_service(service_name: str) -> str:
         port = LIVEKIT_PORT
     else:  # frontend
         port = 3000
-    proc = find_process_by_port(port)
     
-    if not proc:
-        return f"{service_name.capitalize()} is not running on port {port}"
+    status, proc = check_service_status(port)
+    
+    if status == "not_available":
+        return f"❌ {service_name.capitalize()} is not available"
+    elif status == "forwarded":
+        return f"""🔄 {service_name.capitalize()} is available via port forwarding
+   Port: {port} (forwarded)
+   Local process: Not running
+   Remote: Accessible"""
     
     try:
         with proc.oneshot():
@@ -269,7 +275,7 @@ async def status_service(service_name: str) -> str:
         if extra_info_parts:
             extra_info = "\n   " + "\n   ".join(extra_info_parts)
         
-        return f"""✅ {service_name.capitalize()} is running
+        return f"""✅ {service_name.capitalize()} is running locally
    PID: {proc.pid}
    Port: {port}
    CPU: {cpu_percent:.1f}%
