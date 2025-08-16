@@ -8,8 +8,9 @@ import warnings
 import click
 from .server import main as voice_mode_main
 
-# Suppress known deprecation warnings for better CLI user experience
-# These can be shown with VOICEMODE_DEBUG=true or --debug flag
+# Suppress known deprecation warnings for better user experience
+# These apply to both CLI commands and MCP server operation
+# They can be shown with VOICEMODE_DEBUG=true or --debug flag
 if not os.environ.get('VOICEMODE_DEBUG', '').lower() in ('true', '1', 'yes'):
     # Suppress audioop deprecation warning from pydub
     warnings.filterwarnings('ignore', message='.*audioop.*deprecated.*', category=DeprecationWarning)
@@ -45,6 +46,7 @@ def voice_mode_main_cli(ctx, debug):
     
     if ctx.invoked_subcommand is None:
         # No subcommand - run MCP server
+        # Note: warnings are already suppressed at module level unless debug is enabled
         voice_mode_main()
 
 
