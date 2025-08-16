@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.22.2] - 2025-08-16
+
+### Fixed
+- **CLI deprecation warnings** - Suppress known warnings for cleaner output
+  - Hide audioop, pkg_resources, and psutil deprecation warnings by default
+  - Warnings can be shown with `VOICEMODE_DEBUG=true` or `--debug` flag
+  - Improves user experience when running CLI commands and MCP server
+  - Applies to both direct CLI usage and MCP server invocations
+
 ## [2.22.1] - 2025-08-16
 
 ### Fixed
@@ -21,10 +30,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Services now install correctly when warnings are present
   - Add `--help` and `--debug` flags for better troubleshooting
   - Support `DEBUG=true` environment variable
-- **CLI deprecation warnings** - Suppress known warnings for cleaner output
-  - Hide audioop, pkg_resources, and psutil deprecation warnings by default
-  - Warnings can be shown with `VOICEMODE_DEBUG=true` or `--debug` flag
-  - Improves user experience when running CLI commands
 
 ## [2.22.0] - 2025-08-16
 
