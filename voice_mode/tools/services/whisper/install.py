@@ -201,7 +201,8 @@ async def whisper_install(
         # Clean any previous build (only if Makefile exists)
         if os.path.exists("Makefile"):
             try:
-                subprocess.run(["make", "clean"], check=True)
+                subprocess.run(["make", "clean"], check=True, 
+                             capture_output=True, text=True)
             except subprocess.CalledProcessError:
                 logger.warning("Make clean failed, continuing anyway...")
         
@@ -216,14 +217,27 @@ async def whisper_install(
         # Get number of CPU cores for parallel build
         cpu_count = os.cpu_count() or 4
         
-        subprocess.run(["make", f"-j{cpu_count}"], env=build_env, check=True)
+        # Determine if we should show build output
+        debug_mode = os.environ.get("VOICEMODE_DEBUG", "").lower() in ("true", "1", "yes")
         
-        # Also build the server binary
-        logger.info("Building whisper-server...")
-        try:
-            subprocess.run(["make", "server"], env=build_env, check=True)
-        except subprocess.CalledProcessError:
-            logger.warning("Failed to build whisper-server, it may not be available in this version")
+        if debug_mode:
+            subprocess.run(["make", f"-j{cpu_count}"], env=build_env, check=True)
+        else:
+            # Suppress output unless there's an error
+            logger.info("Building whisper.cpp (this may take a few minutes)...")
+            try:
+                result = subprocess.run(["make", f"-j{cpu_count}"], env=build_env, 
+                                      capture_output=True, text=True, check=True)
+                logger.info("Build completed successfully")
+            except subprocess.CalledProcessError as e:
+                logger.error(f"Build failed: {e}")
+                if e.stdout:
+                    logger.error(f"Build output:\n{e.stdout}")
+                if e.stderr:
+                    logger.error(f"Build errors:\n{e.stderr}")
+                raise
+        
+        # Note: whisper-server is now built as part of the main build target
         
         # Download model using shared helper
         logger.info(f"Downloading default model: {model}")
@@ -283,12 +297,7 @@ fi
 
 echo "Starting whisper-server with model: $MODEL_NAME" >> "$LOG_FILE"
 
-# Check if whisper-server exists (it's in newer versions)
-if [ ! -f "$WHISPER_DIR/build/bin/whisper-server" ] && [ ! -f "$WHISPER_DIR/server" ]; then
-    echo "Building whisper-server..." >> "$LOG_FILE"
-    cd "$WHISPER_DIR"
-    make server >> "$LOG_FILE" 2>&1
-fi
+# Note: whisper-server is now built as part of the main build target
 
 # Determine server binary location
 if [ -f "$WHISPER_DIR/build/bin/whisper-server" ]; then
@@ -375,8 +384,8 @@ exec "$SERVER_BIN" \\
             
             if auto_enable:
                 logger.info("Auto-enabling whisper service...")
-                from voice_mode.tools.service import service
-                enable_result = await service("whisper", "enable")
+                from voice_mode.tools.service import enable_service
+                enable_result = await enable_service("whisper")
                 if "✅" in enable_result:
                     enable_message = " Service auto-enabled."
                 else:
@@ -458,8 +467,8 @@ WantedBy=default.target
             
             if auto_enable:
                 logger.info("Auto-enabling whisper service...")
-                from voice_mode.tools.service import service
-                enable_result = await service("whisper", "enable")
+                from voice_mode.tools.service import enable_service
+                enable_result = await enable_service("whisper")
                 if "✅" in enable_result:
                     enable_message = " Service auto-enabled."
                 else:

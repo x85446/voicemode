@@ -268,8 +268,8 @@ async def kokoro_install(
             
             if auto_enable:
                 logger.info("Auto-enabling kokoro service...")
-                from voice_mode.tools.service import service
-                enable_result = await service("kokoro", "enable")
+                from voice_mode.tools.service import enable_service
+                enable_result = await enable_service("kokoro")
                 if "✅" in enable_result:
                     enable_message = " Service auto-enabled."
                 else:
@@ -333,8 +333,8 @@ WantedBy=default.target
             
             if auto_enable:
                 logger.info("Auto-enabling kokoro service...")
-                from voice_mode.tools.service import service
-                enable_result = await service("kokoro", "enable")
+                from voice_mode.tools.service import enable_service
+                enable_result = await enable_service("kokoro")
                 if "✅" in enable_result:
                     enable_message = " Service auto-enabled."
                 else:
