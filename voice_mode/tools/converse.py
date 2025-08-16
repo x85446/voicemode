@@ -1248,7 +1248,8 @@ async def converse(
     audio_format: Optional[str] = None,
     disable_silence_detection: Union[bool, str] = False,
     speed: Optional[float] = None,
-    vad_aggressiveness: Optional[int] = None
+    vad_aggressiveness: Optional[int] = None,
+    skip_tts: Optional[Union[bool, str]] = None
 ) -> str:
     """Have a voice conversation - speak a message and optionally listen for response.
     
@@ -1320,6 +1321,11 @@ async def converse(
                             
                             Use lower values (0-1) in quiet environments to catch all speech
                             Use higher values (2-3) in noisy environments to reduce false triggers
+        skip_tts: Skip text-to-speech and only show text (default: None uses VOICEMODE_NO_OP_TTS env var)
+                  When True: Skip TTS for faster response, text-only output
+                  When False: Always use TTS regardless of environment setting
+                  When None: Follow VOICEMODE_NO_OP_TTS environment variable
+                  Useful for rapid development iterations or when voice isn't needed
         If wait_for_response is False: Confirmation that message was spoken
         If wait_for_response is True: The voice response received (or error/timeout message)
     
@@ -1360,6 +1366,12 @@ async def converse(
         
         Remember: Lower values (0-1) = more permissive, may detect non-speech as speech
                  Higher values (2-3) = more strict, may miss soft speech or whispers
+    
+    Skip TTS Examples:
+        - Fast iteration mode: converse("Processing your request", skip_tts=True)  # Text only, no voice
+        - Important announcement: converse("Warning: System will restart", skip_tts=False)  # Always use voice
+        - Quick confirmation: converse("Done!", skip_tts=True, wait_for_response=False)  # Fast text-only
+        - Follow user preference: converse("Hello")  # Uses VOICEMODE_NO_OP_TTS setting
     """
     # Convert string booleans to actual booleans
     if isinstance(wait_for_response, str):
@@ -1368,6 +1380,8 @@ async def converse(
         disable_silence_detection = disable_silence_detection.lower() in ('true', '1', 'yes', 'on')
     if isinstance(audio_feedback, str):
         audio_feedback = audio_feedback.lower() in ('true', '1', 'yes', 'on')
+    if skip_tts is not None and isinstance(skip_tts, str):
+        skip_tts = skip_tts.lower() in ('true', '1', 'yes', 'on')
     
     # Convert string speed to float
     if speed is not None and isinstance(speed, str):
