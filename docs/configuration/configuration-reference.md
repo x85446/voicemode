@@ -103,6 +103,12 @@ VOICEMODE_AUDIO_FEEDBACK=true
 # Default: whisper
 # Options: whisper, shout
 VOICE_MCP_FEEDBACK_STYLE=whisper
+
+# Skip Text-to-Speech
+# Default: false
+# When enabled: Skip TTS for faster text-only responses
+# Can be overridden per-call with skip_tts parameter in converse()
+VOICEMODE_SKIP_TTS=false
 ```
 
 ## Streaming Configuration

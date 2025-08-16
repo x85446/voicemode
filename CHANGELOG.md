@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **`skip_tts` parameter** - Dynamic control over text-to-speech in converse tool
+  - Add optional `skip_tts` parameter to override global `VOICEMODE_SKIP_TTS` setting
+  - When `True`: Skip TTS for faster text-only responses
+  - When `False`: Always use TTS regardless of environment setting
+  - When `None` (default): Follow `VOICEMODE_SKIP_TTS` environment variable
+  - Enables LLM to intelligently choose between voice and text-only responses
+- **`VOICEMODE_SKIP_TTS` environment variable** - Global TTS skip configuration
+  - Set to `true` for permanent text-only mode (faster responses)
+  - Can be overridden per-call with `skip_tts` parameter
+  - Useful for rapid development iterations or when voice isn't needed
+
 ### Fixed
 - **Service status detection** - Correctly identify SSH-forwarded vs locally running services
   - SSH processes listening on service ports are now recognized as port forwards
