@@ -4,6 +4,56 @@
 
 set -e
 
+# Parse command line arguments
+show_help() {
+  cat << EOF
+Voice Mode Universal Installer
+
+Usage: $0 [OPTIONS]
+
+Options:
+  -h, --help     Show this help message
+  -d, --debug    Enable debug output
+  
+Environment variables:
+  VOICEMODE_INSTALL_DEBUG=true    Enable debug output
+  DEBUG=true                      Enable debug output
+
+Examples:
+  # Normal installation
+  curl -sSf https://getvoicemode.com/install.sh | sh
+  
+  # Debug mode
+  VOICEMODE_INSTALL_DEBUG=true ./install.sh
+  ./install.sh --debug
+  
+EOF
+  exit 0
+}
+
+# Process arguments
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    -h|--help)
+      show_help
+      ;;
+    -d|--debug)
+      export VOICEMODE_INSTALL_DEBUG=true
+      shift
+      ;;
+    *)
+      echo "Unknown option: $1"
+      echo "Use --help for usage information"
+      exit 1
+      ;;
+  esac
+done
+
+# Support DEBUG=true as well as VOICEMODE_INSTALL_DEBUG=true
+if [[ "${DEBUG:-}" == "true" ]]; then
+  export VOICEMODE_INSTALL_DEBUG=true
+fi
+
 # Reattach stdin to terminal for interactive prompts when run via curl | bash
 [ -t 0 ] || exec </dev/tty # reattach keyboard to STDIN
 
@@ -470,32 +520,36 @@ check_voice_mode_cli() {
   # Always use uvx voice-mode since that's how MCP is configured
   # This ensures consistency and works on fresh systems
   
+  if [[ "${VOICEMODE_INSTALL_DEBUG:-}" == "true" ]]; then
+    echo "[DEBUG] Checking for voice-mode CLI availability..." >&2
+  fi
+  
   # First check if uvx is available
   if ! command -v uvx >/dev/null 2>&1; then
-    print_warning "uvx not found. Please ensure UV was installed correctly."
-    echo "  You may need to restart your shell or run: source ~/.bashrc"
+    print_warning "uvx not found. Please ensure UV was installed correctly." >&2
+    echo "  You may need to restart your shell or run: source ~/.bashrc" >&2
     return 1
   fi
   
   # Test that uvx voice-mode actually works
-  print_step "Verifying Voice Mode CLI availability..."
+  print_step "Verifying Voice Mode CLI availability..." >&2
   if timeout 30 uvx voice-mode --version >/dev/null 2>&1; then
-    print_success "Voice Mode CLI is available"
+    print_success "Voice Mode CLI is available" >&2
     echo "uvx voice-mode"
     return 0
   else
-    print_warning "Voice Mode CLI not working. It may need to be downloaded first."
-    echo "  The first run of uvx voice-mode will download and cache it."
-    echo "  This requires an internet connection."
+    print_warning "Voice Mode CLI not working. It may need to be downloaded first." >&2
+    echo "  The first run of uvx voice-mode will download and cache it." >&2
+    echo "  This requires an internet connection." >&2
     
     # Try to trigger the download
-    print_step "Attempting to download Voice Mode..."
+    print_step "Attempting to download Voice Mode..." >&2
     if timeout 60 uvx voice-mode --help >/dev/null 2>&1; then
-      print_success "Voice Mode downloaded successfully"
+      print_success "Voice Mode downloaded successfully" >&2
       echo "uvx voice-mode"
       return 0
     else
-      print_warning "Failed to download Voice Mode"
+      print_warning "Failed to download Voice Mode" >&2
       return 1
     fi
   fi
@@ -508,10 +562,40 @@ install_service() {
   
   print_step "Installing $description..."
   
+  # Debug mode check
+  if [[ "${VOICEMODE_INSTALL_DEBUG:-}" == "true" ]]; then
+    echo "[DEBUG] Checking service command: $voice_mode_cmd $service_name --help"
+  fi
+  
   # Check if the service subcommand exists first
-  if ! timeout 30 $voice_mode_cmd $service_name --help >/dev/null 2>&1; then
+  # Redirect stderr to stdout and check for the actual help output
+  # This handles cases where Python warnings are printed to stderr
+  local help_output
+  local help_exit_code
+  help_output=$(timeout 30 $voice_mode_cmd $service_name --help 2>&1 || true)
+  help_exit_code=$?
+  
+  if [[ "${VOICEMODE_INSTALL_DEBUG:-}" == "true" ]]; then
+    echo "[DEBUG] Help command exit code: $help_exit_code"
+    echo "[DEBUG] Help output length: ${#help_output} bytes"
+    echo "[DEBUG] First 500 chars of help output:"
+    echo "$help_output" | head -c 500
+    echo ""
+    echo "[DEBUG] Checking for 'Commands:' in output..."
+  fi
+  
+  if ! echo "$help_output" | grep -q "Commands:"; then
     print_warning "$description service command not available"
+    if [[ "${VOICEMODE_INSTALL_DEBUG:-}" == "true" ]]; then
+      echo "[DEBUG] 'Commands:' not found in help output"
+      echo "[DEBUG] Full help output:"
+      echo "$help_output"
+    fi
     return 1
+  fi
+  
+  if [[ "${VOICEMODE_INSTALL_DEBUG:-}" == "true" ]]; then
+    echo "[DEBUG] Service command check passed"
   fi
   
   # Install with timeout and capture output
@@ -657,6 +741,12 @@ main() {
   echo -e "${BLUE}🎤 Voice Mode Universal Installer${NC}"
   echo "This installer will set up Voice Mode and its dependencies on your system."
   echo ""
+  
+  # Check for debug mode
+  if [[ "${VOICEMODE_INSTALL_DEBUG:-}" == "true" ]]; then
+    echo -e "${YELLOW}[DEBUG MODE ENABLED]${NC}"
+    echo ""
+  fi
 
   # Pre-flight checks
   detect_os
