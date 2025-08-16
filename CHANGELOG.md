@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Service auto-enable error** - Fix 'FunctionTool' object is not callable
+  - Changed whisper and kokoro installers to use `enable_service` function instead of MCP tool
+  - Services can now be properly auto-enabled after installation
+- **Whisper build errors** - Remove obsolete make server command
+  - whisper-server is now built as part of the main build target
+  - Removed unnecessary build step that was causing errors
+- **Build output verbosity** - Suppress cmake/make output unless debugging
+  - Build output is now captured and only shown on errors
+  - Use VOICEMODE_DEBUG=true to see full build output
+  - Significantly cleaner installation experience
+
 ## [2.22.2] - 2025-08-16
 
 ### Fixed
