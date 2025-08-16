@@ -48,6 +48,7 @@ from voice_mode.config import (
     VAD_AGGRESSIVENESS,
     SILENCE_THRESHOLD_MS,
     MIN_RECORDING_DURATION,
+    NO_OP_TTS,
     VAD_CHUNK_DURATION_MS,
     INITIAL_SILENCE_GRACE_PERIOD,
     DEFAULT_LISTEN_DURATION,
@@ -1457,15 +1458,26 @@ async def converse(
         if not wait_for_response:
             try:
                 async with audio_operation_lock:
-                    success, tts_metrics, tts_config = await text_to_speech_with_failover(
-                        message=message,
-                        voice=voice,
-                        model=tts_model,
-                        instructions=tts_instructions,
-                        audio_format=audio_format,
-                        initial_provider=tts_provider,
-                        speed=speed
-                    )
+                    if NO_OP_TTS:
+                        # Skip TTS entirely
+                        success = True
+                        tts_metrics = {
+                            'ttfa': 0,
+                            'generation': 0,
+                            'playback': 0,
+                            'total': 0
+                        }
+                        tts_config = {'provider': 'no-op', 'voice': 'none'}
+                    else:
+                        success, tts_metrics, tts_config = await text_to_speech_with_failover(
+                            message=message,
+                            voice=voice,
+                            model=tts_model,
+                            instructions=tts_instructions,
+                            audio_format=audio_format,
+                            initial_provider=tts_provider,
+                            speed=speed
+                        )
                     
                 # Include timing info if available
                 timing_info = ""
@@ -1589,15 +1601,26 @@ async def converse(
                 async with audio_operation_lock:
                     # Speak the message
                     tts_start = time.perf_counter()
-                    tts_success, tts_metrics, tts_config = await text_to_speech_with_failover(
-                        message=message,
-                        voice=voice,
-                        model=tts_model,
-                        instructions=tts_instructions,
-                        audio_format=audio_format,
-                        initial_provider=tts_provider,
-                        speed=speed
-                    )
+                    if NO_OP_TTS:
+                        # Skip TTS entirely for faster response
+                        tts_success = True
+                        tts_metrics = {
+                            'ttfa': 0,
+                            'generation': 0,
+                            'playback': 0,
+                            'total': 0
+                        }
+                        tts_config = {'provider': 'no-op', 'voice': 'none'}
+                    else:
+                        tts_success, tts_metrics, tts_config = await text_to_speech_with_failover(
+                            message=message,
+                            voice=voice,
+                            model=tts_model,
+                            instructions=tts_instructions,
+                            audio_format=audio_format,
+                            initial_provider=tts_provider,
+                            speed=speed
+                        )
                     
                     # Add TTS sub-metrics
                     if tts_metrics:
