@@ -92,7 +92,12 @@ detect_os() {
   print_step "Detecting operating system..."
 
   # Check if running in WSL
-  if [[ -n "$WSL_DISTRO_NAME" ]] || grep -qi microsoft /proc/version 2>/dev/null; then
+  # More robust WSL detection to avoid false positives
+  if [[ -n "$WSL_DISTRO_NAME" ]] || [[ -n "$WSL_INTEROP" ]] || [[ -f "/proc/sys/fs/binfmt_misc/WSLInterop" ]]; then
+    IS_WSL=true
+    print_warning "Running in WSL2 - additional audio setup may be required"
+  elif grep -qi "microsoft.*WSL" /proc/version 2>/dev/null; then
+    # Only match if both "microsoft" AND "WSL" are present (case-insensitive)
     IS_WSL=true
     print_warning "Running in WSL2 - additional audio setup may be required"
   fi
