@@ -3,21 +3,46 @@ CLI entry points for voice-mode package.
 """
 import asyncio
 import sys
+import os
+import warnings
 import click
 from .server import main as voice_mode_main
+
+# Suppress known deprecation warnings for better CLI user experience
+# These can be shown with VOICEMODE_DEBUG=true or --debug flag
+if not os.environ.get('VOICEMODE_DEBUG', '').lower() in ('true', '1', 'yes'):
+    # Suppress audioop deprecation warning from pydub
+    warnings.filterwarnings('ignore', message='.*audioop.*deprecated.*', category=DeprecationWarning)
+    # Suppress pkg_resources deprecation warning from webrtcvad
+    warnings.filterwarnings('ignore', message='.*pkg_resources.*deprecated.*', category=UserWarning)
+    # Suppress psutil connections() deprecation warning
+    warnings.filterwarnings('ignore', message='.*connections.*deprecated.*', category=DeprecationWarning)
+    
+    # Also suppress INFO logging for CLI commands (but not for MCP server)
+    import logging
+    logging.getLogger("voice-mode").setLevel(logging.WARNING)
 
 
 # Service management CLI - runs MCP server by default, subcommands override
 @click.group(invoke_without_command=True)
 @click.version_option()
 @click.help_option('-h', '--help', help='Show this message and exit')
+@click.option('--debug', is_flag=True, help='Enable debug mode and show all warnings')
 @click.pass_context
-def voice_mode_main_cli(ctx):
+def voice_mode_main_cli(ctx, debug):
     """Voice Mode - MCP server and service management.
     
     Without arguments, starts the MCP server.
     With subcommands, executes service management operations.
     """
+    if debug:
+        # Re-enable warnings if debug flag is set
+        warnings.resetwarnings()
+        os.environ['VOICEMODE_DEBUG'] = 'true'
+        # Re-enable INFO logging
+        import logging
+        logging.getLogger("voice-mode").setLevel(logging.INFO)
+    
     if ctx.invoked_subcommand is None:
         # No subcommand - run MCP server
         voice_mode_main()
