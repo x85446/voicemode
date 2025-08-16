@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.23.0] - 2025-08-16
+
 ### Fixed
 - **Service auto-enable error** - Fix 'FunctionTool' object is not callable
   - Changed whisper and kokoro installers to use `enable_service` function instead of MCP tool
