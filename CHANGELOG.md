@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **VAD debugging mode** - Comprehensive debugging for Voice Activity Detection
+  - New `VOICEMODE_VAD_DEBUG` environment variable enables detailed VAD logging
+  - Shows real-time speech detection decisions, state transitions, and timing
+  - Helps diagnose issues where recording stops before speech or cuts off early
+  - Added test script `scripts/test-vad-enhancement.py` for VAD testing
+  - Documented in `docs/vad-debugging.md` with common issues and solutions
+
 ## [2.23.0] - 2025-08-16
 
 ### Added
@@ -28,8 +36,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Prevents confusion about where services are actually running
 
 ## [2.22.3] - 2025-08-16
-
-## [2.23.0] - 2025-08-16
 
 ### Fixed
 - **Service auto-enable error** - Fix 'FunctionTool' object is not callable
