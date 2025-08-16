@@ -7,6 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **LiveKit service integration** - Complete support for LiveKit as a managed service
+  - Install/uninstall LiveKit server with `voice-mode livekit install/uninstall`
+  - Service management commands: `start/stop/status/restart/enable/disable/logs`
+  - Frontend management for LiveKit Voice Assistant UI
+  - Configurable host/port settings for frontend
+  - SSL configuration examples and documentation
+  - Production-ready frontend build support
+  - Bash completions for all new commands
+- **Service installation in install.sh** - Automated service setup during installation
+  - Offers to install Whisper, Kokoro, and LiveKit services
+  - Quick mode (Y) installs all services automatically
+  - Selective mode (s) allows choosing individual services
+  - Uses `uvx voice-mode` for robust operation on fresh systems
+  - Cross-platform support for Linux and macOS
+- **Install.sh automated testing** - Comprehensive test suite (temporarily skipped)
+  - Unit tests for individual bash functions
+  - Functional tests with environment mocking
+  - Integration tests for complete installation flows
+  - Foundation for future testing improvements
+- **Documentation improvements**
+  - YubiKey touch detector setup guide
+  - LiveKit SSL configuration examples
+  - Install.sh robustness analysis
+  - Service installation feature documentation
+
+### Fixed
+- **LiveKit local development** - Added dummy API key support for local services
+- **Frontend dependency handling** - Improved error messages and dependency resolution
+- **Service enable command** - Resolved frontend service enable command issues
+- **LiveKit WebSocket URL** - Hardcoded to wss://x1:8443 for reliable connections
+
+### Changed
+- **Whisper default port** - Updated from 2000 to 2022 in shell aliases
+- **Install.sh robustness** - Always use `uvx voice-mode` for consistency
+- **Test infrastructure** - Skip failing tests temporarily to maintain green CI
+
 ## [2.21.1] - 2025-08-13
 
 - Late update to changelog for release 2.21.0
