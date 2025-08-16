@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.24.0] - 2025-08-16
 
 ### Added
+- **Enhanced Voice Activity Detection** - Improved silence detection behavior
+  - VAD now waits indefinitely for speech before starting silence detection
+  - No more timeouts when user hasn't started speaking yet
+  - Silent recordings are not sent to STT, reducing API costs and preventing hallucinations
+  - Returns "No speech detected" message instead of processing silence
+  - Significantly improves user experience for voice interactions
 - **VAD debugging mode** - Comprehensive debugging for Voice Activity Detection
   - New `VOICEMODE_VAD_DEBUG` environment variable enables detailed VAD logging
   - Shows real-time speech detection decisions, state transitions, and timing
