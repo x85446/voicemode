@@ -162,6 +162,7 @@ MODELS_DIR = Path(os.getenv("VOICEMODE_MODELS_DIR", str(BASE_DIR / "models")))
 # Debug configuration
 DEBUG = os.getenv("VOICEMODE_DEBUG", "").lower() in ("true", "1", "yes", "on")
 TRACE_DEBUG = os.getenv("VOICEMODE_DEBUG", "").lower() == "trace"
+VAD_DEBUG = os.getenv("VOICEMODE_VAD_DEBUG", "").lower() in ("true", "1", "yes", "on")
 DEBUG_DIR = LOGS_DIR / "debug"  # Debug files now go under logs
 
 # Master save-all configuration

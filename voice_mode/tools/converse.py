@@ -32,6 +32,7 @@ from voice_mode.config import (
     CHANNELS,
     DEBUG,
     DEBUG_DIR,
+    VAD_DEBUG,
     SAVE_AUDIO,
     AUDIO_DIR,
     OPENAI_API_KEY,
@@ -872,7 +873,7 @@ def record_audio(duration: float) -> np.ndarray:
             sys.stderr = original_stderr
 
 
-def record_audio_with_silence_detection(max_duration: float, disable_silence_detection: bool = False, min_duration: float = 0.0, vad_aggressiveness: Optional[int] = None) -> np.ndarray:
+def record_audio_with_silence_detection(max_duration: float, disable_silence_detection: bool = False, min_duration: float = 0.0, vad_aggressiveness: Optional[int] = None) -> Tuple[np.ndarray, bool]:
     """Record audio from microphone with automatic silence detection.
     
     Uses WebRTC VAD to detect when the user stops speaking and automatically
@@ -885,21 +886,25 @@ def record_audio_with_silence_detection(max_duration: float, disable_silence_det
         vad_aggressiveness: VAD aggressiveness level (0-3). If None, uses VAD_AGGRESSIVENESS from config
         
     Returns:
-        Numpy array of recorded audio samples
+        Tuple of (audio_data, speech_detected):
+            - audio_data: Numpy array of recorded audio samples
+            - speech_detected: Boolean indicating if speech was detected during recording
     """
     
     logger.info(f"record_audio_with_silence_detection called - VAD_AVAILABLE={VAD_AVAILABLE}, DISABLE_SILENCE_DETECTION={DISABLE_SILENCE_DETECTION}, min_duration={min_duration}")
     
     if not VAD_AVAILABLE:
         logger.warning("webrtcvad not available, falling back to fixed duration recording")
-        return record_audio(max_duration)
+        # For fallback, assume speech is present since we can't detect
+        return (record_audio(max_duration), True)
     
     if DISABLE_SILENCE_DETECTION or disable_silence_detection:
         if disable_silence_detection:
             logger.info("Silence detection disabled for this interaction by request")
         else:
             logger.info("Silence detection disabled globally via VOICEMODE_DISABLE_SILENCE_DETECTION")
-        return record_audio(max_duration)
+        # For fallback, assume speech is present since we can't detect
+        return (record_audio(max_duration), True)
     
     logger.info(f"🎤 Recording with silence detection (max {max_duration}s)...")
     
@@ -940,6 +945,16 @@ def record_audio_with_silence_detection(max_duration: float, disable_silence_det
                     f"Min duration: {MIN_RECORDING_DURATION}s, "
                     f"Initial grace period: {INITIAL_SILENCE_GRACE_PERIOD}s")
         
+        if VAD_DEBUG:
+            logger.info(f"[VAD_DEBUG] Starting VAD recording with config:")
+            logger.info(f"[VAD_DEBUG]   max_duration: {max_duration}s")
+            logger.info(f"[VAD_DEBUG]   min_duration: {min_duration}s")
+            logger.info(f"[VAD_DEBUG]   effective_min_duration: {max(MIN_RECORDING_DURATION, min_duration)}s")
+            logger.info(f"[VAD_DEBUG]   VAD aggressiveness: {effective_vad_aggressiveness}")
+            logger.info(f"[VAD_DEBUG]   Silence threshold: {SILENCE_THRESHOLD_MS}ms")
+            logger.info(f"[VAD_DEBUG]   Sample rate: {SAMPLE_RATE}Hz (VAD using {vad_sample_rate}Hz)")
+            logger.info(f"[VAD_DEBUG]   Chunk duration: {VAD_CHUNK_DURATION_MS}ms")
+        
         def audio_callback(indata, frames, time, status):
             """Callback for continuous audio stream"""
             if status:
@@ -979,35 +994,53 @@ def record_audio_with_silence_detection(max_duration: float, disable_silence_det
                         # Check if chunk contains speech
                         try:
                             is_speech = vad.is_speech(chunk_bytes, vad_sample_rate)
+                            if VAD_DEBUG:
+                                # Log VAD decision every 500ms for less spam
+                                if int(recording_duration * 1000) % 500 == 0:
+                                    rms = np.sqrt(np.mean(chunk.astype(float)**2))
+                                    logger.info(f"[VAD_DEBUG] t={recording_duration:.1f}s: speech={is_speech}, RMS={rms:.0f}, state={'WAITING' if not speech_detected else 'ACTIVE'}")
                         except Exception as vad_e:
                             logger.warning(f"VAD error: {vad_e}, treating as speech")
                             is_speech = True
                         
-                        if is_speech:
-                            if not speech_detected:
-                                logger.debug("Speech detected, recording...")
-                            speech_detected = True
-                            silence_duration_ms = 0
+                        # State machine for speech detection
+                        if not speech_detected:
+                            # WAITING_FOR_SPEECH state
+                            if is_speech:
+                                logger.info("🎤 Speech detected, starting active recording")
+                                if VAD_DEBUG:
+                                    logger.info(f"[VAD_DEBUG] STATE CHANGE: WAITING_FOR_SPEECH -> SPEECH_ACTIVE at t={recording_duration:.1f}s")
+                                speech_detected = True
+                                silence_duration_ms = 0
+                            # No timeout in this state - just keep waiting
+                            # The only exit is speech detection or max_duration
                         else:
-                            silence_duration_ms += VAD_CHUNK_DURATION_MS
-                            if speech_detected and silence_duration_ms % 200 == 0:  # Log every 200ms
-                                logger.debug(f"Silence: {silence_duration_ms}ms")
+                            # We have detected speech at some point
+                            if is_speech:
+                                # SPEECH_ACTIVE state - reset silence counter
+                                silence_duration_ms = 0
+                            else:
+                                # SILENCE_AFTER_SPEECH state - accumulate silence
+                                silence_duration_ms += VAD_CHUNK_DURATION_MS
+                                if VAD_DEBUG and silence_duration_ms % 100 == 0:  # More frequent logging in debug mode
+                                    logger.info(f"[VAD_DEBUG] Accumulating silence: {silence_duration_ms}/{SILENCE_THRESHOLD_MS}ms, t={recording_duration:.1f}s")
+                                elif silence_duration_ms % 200 == 0:  # Log every 200ms
+                                    logger.debug(f"Silence: {silence_duration_ms}ms")
+                                
+                                # Check if we should stop due to silence threshold
+                                # Use the larger of MIN_RECORDING_DURATION (global) or min_duration (parameter)
+                                effective_min_duration = max(MIN_RECORDING_DURATION, min_duration)
+                                if recording_duration >= effective_min_duration and silence_duration_ms >= SILENCE_THRESHOLD_MS:
+                                    logger.info(f"✓ Silence threshold reached after {recording_duration:.1f}s of recording")
+                                    if VAD_DEBUG:
+                                        logger.info(f"[VAD_DEBUG] STOP: silence_duration={silence_duration_ms}ms >= threshold={SILENCE_THRESHOLD_MS}ms")
+                                        logger.info(f"[VAD_DEBUG] STOP: recording_duration={recording_duration:.1f}s >= min_duration={effective_min_duration}s")
+                                    stop_recording = True
+                                elif VAD_DEBUG and recording_duration < effective_min_duration:
+                                    if int(recording_duration * 1000) % 500 == 0:  # Log every 500ms
+                                        logger.info(f"[VAD_DEBUG] Min duration not met: {recording_duration:.1f}s < {effective_min_duration}s")
                         
                         recording_duration += chunk_duration_s
-                        
-                        # Check stop conditions
-                        # Use the larger of MIN_RECORDING_DURATION (global) or min_duration (parameter)
-                        effective_min_duration = max(MIN_RECORDING_DURATION, min_duration)
-                        if speech_detected and recording_duration >= effective_min_duration:
-                            if silence_duration_ms >= SILENCE_THRESHOLD_MS:
-                                logger.info(f"✓ Silence detected after {recording_duration:.1f}s (min: {effective_min_duration:.1f}s), stopping recording")
-                                stop_recording = True
-                        
-                        # Also stop if we haven't detected any speech after a grace period
-                        # Give user time to start speaking
-                        if not speech_detected and recording_duration >= INITIAL_SILENCE_GRACE_PERIOD:
-                            logger.info(f"No speech detected after {INITIAL_SILENCE_GRACE_PERIOD}s grace period, stopping recording")
-                            stop_recording = True
                             
                     except queue.Empty:
                         # No audio data available, continue waiting
@@ -1019,17 +1052,26 @@ def record_audio_with_silence_detection(max_duration: float, disable_silence_det
             # Concatenate all chunks
             if chunks:
                 full_recording = np.concatenate(chunks)
-                logger.info(f"✓ Recorded {len(full_recording)} samples ({recording_duration:.1f}s)")
+                
+                if not speech_detected:
+                    logger.info(f"✓ Recording completed ({recording_duration:.1f}s) - No speech detected")
+                    if VAD_DEBUG:
+                        logger.info(f"[VAD_DEBUG] FINAL STATE: No speech was ever detected during recording")
+                else:
+                    logger.info(f"✓ Recorded {len(full_recording)} samples ({recording_duration:.1f}s) with speech")
+                    if VAD_DEBUG:
+                        logger.info(f"[VAD_DEBUG] FINAL STATE: Speech was detected, recording complete")
                 
                 if DEBUG:
                     # Calculate RMS for debug
                     rms = np.sqrt(np.mean(full_recording.astype(float) ** 2))
                     logger.debug(f"Recording stats - RMS: {rms:.2f}, Speech detected: {speech_detected}")
                 
-                return full_recording
+                # Return tuple: (audio_data, speech_detected)
+                return (full_recording, speech_detected)
             else:
                 logger.warning("No audio chunks recorded")
-                return np.array([])
+                return (np.array([]), False)
                 
         except Exception as e:
             logger.error(f"Recording with VAD failed: {e}")
@@ -1042,7 +1084,8 @@ def record_audio_with_silence_detection(max_duration: float, disable_silence_det
             logger.error(f"\n{help_message}")
             
             logger.info("Falling back to fixed duration recording")
-            return record_audio(max_duration)
+            # For fallback, assume speech is present since we can't detect
+            return (record_audio(max_duration), True)
             
         finally:
             # Restore stdio
@@ -1056,7 +1099,8 @@ def record_audio_with_silence_detection(max_duration: float, disable_silence_det
     except Exception as e:
         logger.error(f"VAD initialization failed: {e}")
         logger.info("Falling back to fixed duration recording")
-        return record_audio(max_duration)
+        # For fallback, assume speech is present since we can't detect
+        return (record_audio(max_duration), True)
 
 
 async def check_livekit_available() -> bool:
@@ -1713,7 +1757,7 @@ async def converse(
                     
                     record_start = time.perf_counter()
                     logger.debug(f"About to call record_audio_with_silence_detection with duration={listen_duration}, disable_silence_detection={disable_silence_detection}, min_duration={min_listen_duration}, vad_aggressiveness={vad_aggressiveness}")
-                    audio_data = await asyncio.get_event_loop().run_in_executor(
+                    audio_data, speech_detected = await asyncio.get_event_loop().run_in_executor(
                         None, record_audio_with_silence_detection, listen_duration, disable_silence_detection, min_listen_duration, vad_aggressiveness
                     )
                     timings['record'] = time.perf_counter() - record_start
@@ -1736,14 +1780,27 @@ async def converse(
                         result = "Error: Could not record audio"
                         return result
                     
-                    # Convert to text
-                    # Log STT start
-                    if event_logger:
-                        event_logger.log_event(event_logger.STT_START)
-                    
-                    stt_start = time.perf_counter()
-                    response_text = await speech_to_text(audio_data, SAVE_AUDIO, AUDIO_DIR if SAVE_AUDIO else None, transport)
-                    timings['stt'] = time.perf_counter() - stt_start
+                    # Check if no speech was detected
+                    if not speech_detected:
+                        logger.info("No speech detected during recording - skipping STT processing")
+                        response_text = None
+                        timings['stt'] = 0.0
+                        
+                        # Still save the audio if configured
+                        if SAVE_AUDIO and AUDIO_DIR:
+                            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                            audio_path = os.path.join(AUDIO_DIR, f"no_speech_{timestamp}.wav")
+                            write(audio_path, SAMPLE_RATE, audio_data)
+                            logger.debug(f"Saved no-speech audio to: {audio_path}")
+                    else:
+                        # Convert to text
+                        # Log STT start
+                        if event_logger:
+                            event_logger.log_event(event_logger.STT_START)
+                        
+                        stt_start = time.perf_counter()
+                        response_text = await speech_to_text(audio_data, SAVE_AUDIO, AUDIO_DIR if SAVE_AUDIO else None, transport)
+                        timings['stt'] = time.perf_counter() - stt_start
                     
                     # Log STT complete
                     if event_logger:
