@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.22.1] - 2025-08-16
 
+## [2.22.1] - 2025-08-16
+
 ### Fixed
 - **Package size reduction** - Exclude unnecessary files from wheel distribution
   - Exclude `__pycache__`, `node_modules`, `.next/cache` directories
