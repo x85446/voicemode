@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Exclude test files, logs, and build artifacts
   - Remove overly broad shared-data section that included entire frontend
   - Significantly reduces installed package size
+- **Install.sh service detection** - Fix service command availability check
+  - Handle Python deprecation warnings that were causing false negatives
+  - Check for actual help output content instead of just exit code
+  - Services now install correctly when warnings are present
 
 ## [2.22.0] - 2025-08-16
 
