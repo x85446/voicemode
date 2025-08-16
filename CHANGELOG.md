@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.22.1] - 2025-08-16
+
 ### Fixed
 - **Package size reduction** - Exclude unnecessary files from wheel distribution
   - Exclude `__pycache__`, `node_modules`, `.next/cache` directories
@@ -17,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Handle Python deprecation warnings that were causing false negatives
   - Check for actual help output content instead of just exit code
   - Services now install correctly when warnings are present
+  - Add `--help` and `--debug` flags for better troubleshooting
+  - Support `DEBUG=true` environment variable
 - **CLI deprecation warnings** - Suppress known warnings for cleaner output
   - Hide audioop, pkg_resources, and psutil deprecation warnings by default
   - Warnings can be shown with `VOICEMODE_DEBUG=true` or `--debug` flag
