@@ -108,6 +108,7 @@ include = [
   "/LICENSE",
   "/pyproject.toml",
   "/CHANGELOG.md",
+  "/build_hooks.py",
 ]
 exclude = [
   "**/__pycache__",
