@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.25.0] - 2025-08-18
+
+### Fixed
+- **uvx command refresh flag** - Add --refresh flag to all uvx commands in installer
+  - Ensures latest version is always fetched when running voice-mode commands
+  - Fixes issues with cached old versions being used
+  - Applies to service installation, uninstallation, and status commands
+- **Performance optimization** - Significantly improved help command performance
+  - Lazy load heavy imports (numpy, scipy, webrtcvad) only when needed
+  - Help command now runs 10x faster (from ~1.5s to ~0.15s)
+  - Faster MCP server startup time for better user experience
+- **Config path expansion** - Fixed tilde expansion for user home directories
+  - Configuration paths now properly expand `~` to user home directory
+  - Fixes issues with paths like `~/Models/kokoro` not being found
+  - Added comprehensive tests for path expansion functionality
+- **Frontend imports** - Corrected import statements to use single module
+  - Fixed import errors in livekit frontend commands
+  - All frontend commands now properly import from frontend module
+
 ## [2.24.0] - 2025-08-16
 
 ### Added
