@@ -477,11 +477,11 @@ configure_claude_voicemode() {
         print_step "Configuring Voice Mode with Claude Code..."
 
         # Try with --scope flag first (newer versions)
-        if claude mcp add --scope user voice-mode -- uvx voice-mode 2>/dev/null; then
+        if claude mcp add --scope user voice-mode -- uvx --refresh voice-mode 2>/dev/null; then
           print_success "Voice Mode configured with Claude Code"
           return 0
         # Fallback to without --scope flag (older versions)
-        elif claude mcp add voice-mode -- uvx voice-mode; then
+        elif claude mcp add voice-mode -- uvx --refresh voice-mode; then
           print_success "Voice Mode configured with Claude Code (global config)"
           return 0
         else
@@ -491,7 +491,7 @@ configure_claude_voicemode() {
       else
         print_step "Skipping Voice Mode configuration"
         echo "You can configure it later with:"
-        echo "  claude mcp add voice-mode -- uvx voice-mode"
+        echo "  claude mcp add voice-mode -- uvx --refresh voice-mode"
         return 1
       fi
     fi
@@ -538,7 +538,7 @@ check_voice_mode_cli() {
   
   # Test that uvx voice-mode actually works
   print_step "Verifying Voice Mode CLI availability..." >&2
-  if timeout 30 uvx voice-mode --version >/dev/null 2>&1; then
+  if timeout 30 uvx --refresh voice-mode --version >/dev/null 2>&1; then
     print_success "Voice Mode CLI is available" >&2
     echo "uvx voice-mode"
     return 0
@@ -549,7 +549,7 @@ check_voice_mode_cli() {
     
     # Try to trigger the download
     print_step "Attempting to download Voice Mode..." >&2
-    if timeout 60 uvx voice-mode --help >/dev/null 2>&1; then
+    if timeout 60 uvx --refresh voice-mode --help >/dev/null 2>&1; then
       print_success "Voice Mode downloaded successfully" >&2
       echo "uvx voice-mode"
       return 0
@@ -689,9 +689,9 @@ verify_voice_mode_after_mcp() {
     echo "  • Network connectivity issues"
     echo ""
     echo "You can install services manually later with:"
-    echo "  uvx voice-mode whisper install"
-    echo "  uvx voice-mode kokoro install"
-    echo "  uvx voice-mode livekit install"
+    echo "  uvx --refresh voice-mode whisper install"
+    echo "  uvx --refresh voice-mode kokoro install"
+    echo "  uvx --refresh voice-mode livekit install"
     return 1
   fi
   
@@ -799,12 +799,12 @@ main() {
       print_warning "Voice Mode configuration was skipped or failed."
       echo ""
       echo "You can manually configure Voice Mode later with:"
-      echo "  claude mcp add voice-mode -- uvx voice-mode"
+      echo "  claude mcp add voice-mode -- uvx --refresh voice-mode"
       echo ""
       echo "Then install services with:"
-      echo "  uvx voice-mode whisper install"
-      echo "  uvx voice-mode kokoro install"
-      echo "  uvx voice-mode livekit install"
+      echo "  uvx --refresh voice-mode whisper install"
+      echo "  uvx --refresh voice-mode kokoro install"
+      echo "  uvx --refresh voice-mode livekit install"
     fi
   fi
 
