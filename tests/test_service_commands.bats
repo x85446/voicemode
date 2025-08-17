@@ -172,3 +172,17 @@ setup() {
     
     return 0
 }
+
+@test "livekit frontend commands don't crash with import errors" {
+    # Test that frontend commands at least have proper imports
+    run $VOICE_MODE livekit frontend --help
+    
+    # Should show help, not crash with import errors
+    if [[ "$output" == *"NameError"* ]] || [[ "$output" == *"ImportError"* ]]; then
+        echo "Frontend commands have import errors:"
+        echo "$output"
+        return 1
+    fi
+    
+    return 0
+}
