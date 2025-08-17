@@ -111,17 +111,17 @@ detect_os() {
     OS="fedora"
     ARCH=$(uname -m)
     local fedora_version=$(cat /etc/fedora-release | grep -oP '\d+' | head -1)
-    print_success "Detected Fedora $fedora_version on $ARCH${IS_WSL:+ (WSL2)}"
+    print_success "Detected Fedora $fedora_version on $ARCH$([[ "$IS_WSL" == "true" ]] && echo " (WSL2)" || echo "")"
   elif [[ -f /etc/os-release ]]; then
     source /etc/os-release
     if [[ "$ID" == "ubuntu" ]] || [[ "$ID_LIKE" == *"ubuntu"* ]]; then
       OS="ubuntu"
       ARCH=$(uname -m)
-      print_success "Detected Ubuntu $VERSION_ID on $ARCH${IS_WSL:+ (WSL2)}"
+      print_success "Detected Ubuntu $VERSION_ID on $ARCH$([[ "$IS_WSL" == "true" ]] && echo " (WSL2)" || echo "")"
     elif [[ "$ID" == "fedora" ]]; then
       OS="fedora"
       ARCH=$(uname -m)
-      print_success "Detected Fedora $VERSION_ID on $ARCH${IS_WSL:+ (WSL2)}"
+      print_success "Detected Fedora $VERSION_ID on $ARCH$([[ "$IS_WSL" == "true" ]] && echo " (WSL2)" || echo "")"
     else
       print_error "Unsupported Linux distribution: $ID. Currently only Ubuntu and Fedora are supported."
     fi
