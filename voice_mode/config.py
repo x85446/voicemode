@@ -149,15 +149,24 @@ def env_bool(env_var: str, default: bool = False) -> bool:
     value = os.getenv(env_var, "").lower()
     return value in ("true", "1", "yes", "on") if value else default
 
+# Helper function to expand paths with tilde
+def expand_path(path_str: str) -> Path:
+    """Expand tilde and environment variables in path strings."""
+    # First expand any environment variables
+    expanded = os.path.expandvars(path_str)
+    # Then expand tilde
+    expanded = os.path.expanduser(expanded)
+    return Path(expanded)
+
 # Base directory for all voicemode data
-BASE_DIR = Path(os.getenv("VOICEMODE_BASE_DIR", str(Path.home() / ".voicemode")))
+BASE_DIR = expand_path(os.getenv("VOICEMODE_BASE_DIR", str(Path.home() / ".voicemode")))
 
 # Unified directory structure
 AUDIO_DIR = BASE_DIR / "audio"
 TRANSCRIPTIONS_DIR = BASE_DIR / "transcriptions"
 LOGS_DIR = BASE_DIR / "logs"
 # CONFIG_DIR = BASE_DIR / "config"  # Removed - config stored in .voicemode.env file instead
-MODELS_DIR = Path(os.getenv("VOICEMODE_MODELS_DIR", str(BASE_DIR / "models")))
+MODELS_DIR = expand_path(os.getenv("VOICEMODE_MODELS_DIR", str(BASE_DIR / "models")))
 
 # Debug configuration
 DEBUG = os.getenv("VOICEMODE_DEBUG", "").lower() in ("true", "1", "yes", "on")
@@ -221,14 +230,14 @@ LIVEKIT_API_SECRET = os.getenv("LIVEKIT_API_SECRET", "secret")
 WHISPER_MODEL = os.getenv("VOICEMODE_WHISPER_MODEL", "large-v2")
 WHISPER_PORT = int(os.getenv("VOICEMODE_WHISPER_PORT", "2022"))
 WHISPER_LANGUAGE = os.getenv("VOICEMODE_WHISPER_LANGUAGE", "auto")
-WHISPER_MODEL_PATH = os.getenv("VOICEMODE_WHISPER_MODEL_PATH", str(BASE_DIR / "models" / "whisper"))
+WHISPER_MODEL_PATH = expand_path(os.getenv("VOICEMODE_WHISPER_MODEL_PATH", str(BASE_DIR / "models" / "whisper")))
 
 # ==================== KOKORO CONFIGURATION ====================
 
 # Kokoro-specific configuration
 KOKORO_PORT = int(os.getenv("VOICEMODE_KOKORO_PORT", "8880"))
-KOKORO_MODELS_DIR = os.getenv("VOICEMODE_KOKORO_MODELS_DIR", str(BASE_DIR / "models" / "kokoro"))
-KOKORO_CACHE_DIR = os.getenv("VOICEMODE_KOKORO_CACHE_DIR", str(BASE_DIR / "cache" / "kokoro"))
+KOKORO_MODELS_DIR = expand_path(os.getenv("VOICEMODE_KOKORO_MODELS_DIR", str(BASE_DIR / "models" / "kokoro")))
+KOKORO_CACHE_DIR = expand_path(os.getenv("VOICEMODE_KOKORO_CACHE_DIR", str(BASE_DIR / "cache" / "kokoro")))
 KOKORO_DEFAULT_VOICE = os.getenv("VOICEMODE_KOKORO_DEFAULT_VOICE", "af_sky")
 
 # ==================== SERVICE MANAGEMENT CONFIGURATION ====================
