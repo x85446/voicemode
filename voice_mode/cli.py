@@ -89,6 +89,7 @@ def status():
 @kokoro.command()
 def start():
     """Start Kokoro service."""
+    from voice_mode.tools.service import start_service
     result = asyncio.run(start_service("kokoro"))
     click.echo(result)
 
@@ -96,6 +97,7 @@ def start():
 @kokoro.command()
 def stop():
     """Stop Kokoro service."""
+    from voice_mode.tools.service import stop_service
     result = asyncio.run(stop_service("kokoro"))
     click.echo(result)
 
@@ -103,6 +105,7 @@ def stop():
 @kokoro.command()
 def restart():
     """Restart Kokoro service."""
+    from voice_mode.tools.service import restart_service
     result = asyncio.run(restart_service("kokoro"))
     click.echo(result)
 
@@ -110,6 +113,7 @@ def restart():
 @kokoro.command()
 def enable():
     """Enable Kokoro service to start at boot/login."""
+    from voice_mode.tools.service import enable_service
     result = asyncio.run(enable_service("kokoro"))
     click.echo(result)
 
@@ -117,6 +121,7 @@ def enable():
 @kokoro.command()
 def disable():
     """Disable Kokoro service from starting at boot/login."""
+    from voice_mode.tools.service import disable_service
     result = asyncio.run(disable_service("kokoro"))
     click.echo(result)
 
@@ -125,6 +130,7 @@ def disable():
 @click.option('--lines', '-n', default=50, help='Number of log lines to show')
 def logs(lines):
     """View Kokoro service logs."""
+    from voice_mode.tools.service import view_logs
     result = asyncio.run(view_logs("kokoro", lines))
     click.echo(result)
 
@@ -132,6 +138,7 @@ def logs(lines):
 @kokoro.command("update-service-files")
 def kokoro_update_service_files():
     """Update Kokoro service files to latest version."""
+    from voice_mode.tools.service import update_service_files
     result = asyncio.run(update_service_files("kokoro"))
     click.echo(result)
 
@@ -206,6 +213,7 @@ def install(install_dir, port, force, version, auto_enable):
 @click.confirmation_option(prompt='Are you sure you want to uninstall Kokoro?')
 def uninstall(remove_models, remove_all_data):
     """Uninstall kokoro-fastapi service and optionally remove data."""
+    from voice_mode.tools.services.kokoro.uninstall import kokoro_uninstall
     result = asyncio.run(kokoro_uninstall.fn(
         remove_models=remove_models,
         remove_all_data=remove_all_data
@@ -239,6 +247,7 @@ def uninstall(remove_models, remove_all_data):
 @whisper.command()
 def status():
     """Show Whisper service status."""
+    from voice_mode.tools.service import status_service
     result = asyncio.run(status_service("whisper"))
     click.echo(result)
 
@@ -246,6 +255,7 @@ def status():
 @whisper.command()
 def start():
     """Start Whisper service."""
+    from voice_mode.tools.service import start_service
     result = asyncio.run(start_service("whisper"))
     click.echo(result)
 
@@ -253,6 +263,7 @@ def start():
 @whisper.command()
 def stop():
     """Stop Whisper service."""
+    from voice_mode.tools.service import stop_service
     result = asyncio.run(stop_service("whisper"))
     click.echo(result)
 
@@ -260,6 +271,7 @@ def stop():
 @whisper.command()
 def restart():
     """Restart Whisper service."""
+    from voice_mode.tools.service import restart_service
     result = asyncio.run(restart_service("whisper"))
     click.echo(result)
 
@@ -267,6 +279,7 @@ def restart():
 @whisper.command()
 def enable():
     """Enable Whisper service to start at boot/login."""
+    from voice_mode.tools.service import enable_service
     result = asyncio.run(enable_service("whisper"))
     click.echo(result)
 
@@ -274,6 +287,7 @@ def enable():
 @whisper.command()
 def disable():
     """Disable Whisper service from starting at boot/login."""
+    from voice_mode.tools.service import disable_service
     result = asyncio.run(disable_service("whisper"))
     click.echo(result)
 
@@ -282,6 +296,7 @@ def disable():
 @click.option('--lines', '-n', default=50, help='Number of log lines to show')
 def logs(lines):
     """View Whisper service logs."""
+    from voice_mode.tools.service import view_logs
     result = asyncio.run(view_logs("whisper", lines))
     click.echo(result)
 
@@ -289,6 +304,7 @@ def logs(lines):
 @whisper.command("update-service-files")
 def whisper_update_service_files():
     """Update Whisper service files to latest version."""
+    from voice_mode.tools.service import update_service_files
     result = asyncio.run(update_service_files("whisper"))
     click.echo(result)
 
@@ -329,6 +345,7 @@ def health():
 @click.option('--auto-enable/--no-auto-enable', default=None, help='Enable service at boot/login')
 def install(install_dir, model, use_gpu, force, version, auto_enable):
     """Install whisper.cpp STT service with automatic system detection."""
+    from voice_mode.tools.services.whisper.install import whisper_install
     result = asyncio.run(whisper_install.fn(
         install_dir=install_dir,
         model=model,
@@ -373,6 +390,7 @@ def install(install_dir, model, use_gpu, force, version, auto_enable):
 @click.confirmation_option(prompt='Are you sure you want to uninstall Whisper?')
 def uninstall(remove_models, remove_all_data):
     """Uninstall whisper.cpp and optionally remove models and data."""
+    from voice_mode.tools.services.whisper.uninstall import whisper_uninstall
     result = asyncio.run(whisper_uninstall.fn(
         remove_models=remove_models,
         remove_all_data=remove_all_data
@@ -416,6 +434,7 @@ def download_model_cmd(model, force, skip_core_ml):
     medium, medium.en, large-v1, large-v2, large-v3, large-v3-turbo
     """
     import json
+    from voice_mode.tools.services.whisper.download_model import download_model
     result = asyncio.run(download_model.fn(
         model=model,
         force_download=force,
@@ -457,6 +476,7 @@ def download_model_cmd(model, force, skip_core_ml):
 @livekit.command()
 def status():
     """Show LiveKit service status."""
+    from voice_mode.tools.service import status_service
     result = asyncio.run(status_service("livekit"))
     click.echo(result)
 
@@ -464,6 +484,7 @@ def status():
 @livekit.command()
 def start():
     """Start LiveKit service."""
+    from voice_mode.tools.service import start_service
     result = asyncio.run(start_service("livekit"))
     click.echo(result)
 
@@ -471,6 +492,7 @@ def start():
 @livekit.command()
 def stop():
     """Stop LiveKit service."""
+    from voice_mode.tools.service import stop_service
     result = asyncio.run(stop_service("livekit"))
     click.echo(result)
 
@@ -478,6 +500,7 @@ def stop():
 @livekit.command()
 def restart():
     """Restart LiveKit service."""
+    from voice_mode.tools.service import restart_service
     result = asyncio.run(restart_service("livekit"))
     click.echo(result)
 
@@ -485,6 +508,7 @@ def restart():
 @livekit.command()
 def enable():
     """Enable LiveKit service to start at boot/login."""
+    from voice_mode.tools.service import enable_service
     result = asyncio.run(enable_service("livekit"))
     click.echo(result)
 
@@ -492,6 +516,7 @@ def enable():
 @livekit.command()
 def disable():
     """Disable LiveKit service from starting at boot/login."""
+    from voice_mode.tools.service import disable_service
     result = asyncio.run(disable_service("livekit"))
     click.echo(result)
 
@@ -500,6 +525,7 @@ def disable():
 @click.option('--lines', '-n', default=50, help='Number of log lines to show')
 def logs(lines):
     """View LiveKit service logs."""
+    from voice_mode.tools.service import view_logs
     result = asyncio.run(view_logs("livekit", lines))
     click.echo(result)
 
@@ -507,6 +533,7 @@ def logs(lines):
 @livekit.command()
 def update():
     """Update LiveKit service files to the latest version."""
+    from voice_mode.tools.service import update_service_files
     result = asyncio.run(update_service_files("livekit"))
     
     if result.get("success"):
@@ -525,6 +552,7 @@ def update():
 @click.option('--auto-enable/--no-auto-enable', default=None, help='Enable service at boot/login')
 def install(install_dir, port, force, version, auto_enable):
     """Install LiveKit server with development configuration."""
+    from voice_mode.tools.services.livekit.install import livekit_install
     result = asyncio.run(livekit_install.fn(
         install_dir=install_dir,
         port=port,
@@ -562,6 +590,7 @@ def install(install_dir, port, force, version, auto_enable):
 @click.confirmation_option(prompt='Are you sure you want to uninstall LiveKit?')
 def uninstall(remove_config, remove_all_data):
     """Uninstall LiveKit server and optionally remove configuration and data."""
+    from voice_mode.tools.services.livekit.uninstall import livekit_uninstall
     result = asyncio.run(livekit_uninstall.fn(
         remove_config=remove_config,
         remove_all_data=remove_all_data
@@ -594,6 +623,7 @@ def frontend():
 @click.option('--auto-enable/--no-auto-enable', default=None, help='Enable service after installation (default: from config)')
 def frontend_install(auto_enable):
     """Install and setup LiveKit Voice Assistant Frontend."""
+    from voice_mode.tools.services.livekit.frontend_install import livekit_frontend_install
     result = asyncio.run(livekit_frontend_install.fn(auto_enable=auto_enable))
     
     if result.get('success'):
@@ -621,6 +651,7 @@ def frontend_install(auto_enable):
 @click.option('--host', default='127.0.0.1', help='Host to bind to (default: 127.0.0.1)')
 def frontend_start(port, host):
     """Start the LiveKit Voice Assistant Frontend."""
+    from voice_mode.tools.services.livekit.frontend_start import livekit_frontend_start
     result = asyncio.run(livekit_frontend_start.fn(port=port, host=host))
     
     if result.get('success'):
@@ -642,6 +673,7 @@ def frontend_start(port, host):
 @frontend.command("stop")
 def frontend_stop():
     """Stop the LiveKit Voice Assistant Frontend."""
+    from voice_mode.tools.services.livekit.frontend_stop import livekit_frontend_stop
     result = asyncio.run(livekit_frontend_stop.fn())
     
     if result.get('success'):
@@ -653,6 +685,7 @@ def frontend_stop():
 @frontend.command("status")
 def frontend_status():
     """Check status of the LiveKit Voice Assistant Frontend."""
+    from voice_mode.tools.services.livekit.frontend_status import livekit_frontend_status
     result = asyncio.run(livekit_frontend_status.fn())
     
     if 'error' in result:
@@ -680,6 +713,7 @@ def frontend_open():
     
     Starts the frontend if not already running, then opens it in the default browser.
     """
+    from voice_mode.tools.services.livekit.frontend_open import livekit_frontend_open
     result = asyncio.run(livekit_frontend_open.fn())
     
     if result.get('success'):
@@ -702,11 +736,13 @@ def frontend_logs(lines, follow):
     """
     if follow:
         # For following, run tail -f directly
+        from voice_mode.tools.services.livekit.frontend_logs import livekit_frontend_logs
         result = asyncio.run(livekit_frontend_logs.fn(follow=True))
         if result.get('success'):
             click.echo(f"📂 Log file: {result['log_file']}")
             click.echo("🔄 Following logs (press Ctrl+C to stop)...")
             try:
+                import subprocess
                 subprocess.run(["tail", "-f", result['log_file']])
             except KeyboardInterrupt:
                 click.echo("\n✅ Stopped following logs")
@@ -714,6 +750,7 @@ def frontend_logs(lines, follow):
             click.echo(f"❌ Error: {result.get('error', 'Unknown error')}")
     else:
         # Show last N lines
+        from voice_mode.tools.services.livekit.frontend_logs import livekit_frontend_logs
         result = asyncio.run(livekit_frontend_logs.fn(lines=lines, follow=False))
         if result.get('success'):
             click.echo(f"📂 Log file: {result['log_file']}")
@@ -727,6 +764,7 @@ def frontend_logs(lines, follow):
 @frontend.command("enable")
 def frontend_enable():
     """Enable frontend service to start automatically at boot/login."""
+    from voice_mode.tools.service import enable_service
     result = asyncio.run(enable_service("frontend"))
     # enable_service returns a string, not a dict
     click.echo(result)
@@ -735,6 +773,7 @@ def frontend_enable():
 @frontend.command("disable")
 def frontend_disable():
     """Disable frontend service from starting automatically."""
+    from voice_mode.tools.service import disable_service
     result = asyncio.run(disable_service("frontend"))
     # disable_service returns a string, not a dict
     click.echo(result)
@@ -806,6 +845,7 @@ def config():
 @config.command("list")
 def config_list():
     """List all configuration keys with their descriptions."""
+    from voice_mode.tools.configuration_management import list_config_keys
     result = asyncio.run(list_config_keys.fn())
     click.echo(result)
 
@@ -852,6 +892,7 @@ def config_get(key):
 @click.argument('value')
 def config_set(key, value):
     """Set a configuration value."""
+    from voice_mode.tools.configuration_management import update_config
     result = asyncio.run(update_config.fn(key, value))
     click.echo(result)
 
@@ -866,6 +907,7 @@ def diag():
 @diag.command()
 def info():
     """Show voice-mode installation information."""
+    from voice_mode.tools.diagnostics import voice_mode_info
     result = asyncio.run(voice_mode_info.fn())
     click.echo(result)
 
@@ -873,6 +915,7 @@ def info():
 @diag.command()
 def devices():
     """List available audio input and output devices."""
+    from voice_mode.tools.devices import check_audio_devices
     result = asyncio.run(check_audio_devices.fn())
     click.echo(result)
 
@@ -880,6 +923,7 @@ def devices():
 @diag.command()
 def registry():
     """Show voice provider registry with all discovered endpoints."""
+    from voice_mode.tools.voice_registry import voice_registry
     result = asyncio.run(voice_registry.fn())
     click.echo(result)
 
@@ -888,6 +932,7 @@ def registry():
 def dependencies():
     """Check system audio dependencies and provide installation guidance."""
     import json
+    from voice_mode.tools.dependencies import check_audio_dependencies
     result = asyncio.run(check_audio_dependencies.fn())
     
     if isinstance(result, dict):
