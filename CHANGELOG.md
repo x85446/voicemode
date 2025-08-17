@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.25.1] - 2025-08-18
+
 ### Fixed
 - **WSL2 detection display** - Fixed incorrect WSL2 label on non-WSL systems
   - Parameter expansion bug was showing "(WSL2)" on all Linux systems
