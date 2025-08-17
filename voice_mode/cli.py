@@ -420,6 +420,78 @@ def uninstall(remove_models, remove_all_data):
             click.echo(f"   Details: {result['details']}")
 
 
+@whisper.command("models")
+def whisper_models():
+    """List available Whisper models and their installation status."""
+    from voice_mode.tools.services.whisper.models import (
+        WHISPER_MODELS, 
+        get_model_directory,
+        get_current_model,
+        is_model_installed,
+        get_installed_models,
+        format_size
+    )
+    
+    model_dir = get_model_directory()
+    current_model = get_current_model()
+    installed_models = get_installed_models()
+    
+    # Calculate totals
+    total_installed_size = sum(
+        WHISPER_MODELS[m]["size_mb"] for m in installed_models
+    )
+    total_available_size = sum(
+        m["size_mb"] for m in WHISPER_MODELS.values()
+    )
+    
+    # Print header
+    click.echo("\nWhisper Models:")
+    click.echo("")
+    
+    # Print models table
+    for model_name, info in WHISPER_MODELS.items():
+        # Check status
+        is_installed = is_model_installed(model_name)
+        is_current = model_name == current_model
+        
+        # Format status
+        if is_current:
+            status = click.style("→", fg="yellow", bold=True)
+            model_display = click.style(f"{model_name:15}", fg="yellow", bold=True)
+        else:
+            status = " "
+            model_display = f"{model_name:15}"
+        
+        # Format installation status
+        if is_installed:
+            install_status = click.style("[✓ Installed]", fg="green")
+        else:
+            install_status = click.style("[ Download ]", fg="bright_black")
+        
+        # Format size
+        size_str = format_size(info["size_mb"]).rjust(8)
+        
+        # Format languages
+        lang_str = f"{info['languages']:20}"
+        
+        # Format description
+        desc = info['description']
+        if is_current:
+            desc += " (Currently selected)"
+            desc = click.style(desc, fg="yellow")
+        
+        # Print row
+        click.echo(f"{status} {model_display} {install_status:14} {size_str}  {lang_str} {desc}")
+    
+    # Print footer
+    click.echo("")
+    click.echo(f"Models directory: {model_dir}")
+    click.echo(f"Total size: {format_size(total_installed_size)} installed / {format_size(total_available_size)} available")
+    click.echo("")
+    click.echo("To download a model: voice-mode whisper download-model <model-name>")
+    click.echo("To set default model: export VOICEMODE_WHISPER_MODEL=<model-name>")
+
+
 @whisper.command("download-model")
 @click.argument('model', default='large-v2')
 @click.option('--force', '-f', is_flag=True, help='Re-download even if model exists')
