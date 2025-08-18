@@ -994,3 +994,165 @@ cli.add_command(exchanges_cmd.exchanges)
 voice_mode_main_cli.add_command(exchanges_cmd.exchanges)
 
 
+# Converse command - direct voice conversation from CLI
+@voice_mode_main_cli.command()
+@click.option('--message', '-m', default="Hello! How can I help you today?", help='Initial message to speak')
+@click.option('--wait/--no-wait', default=True, help='Wait for response after speaking')
+@click.option('--duration', '-d', type=float, default=30.0, help='Listen duration in seconds')
+@click.option('--min-duration', type=float, default=2.0, help='Minimum listen duration before silence detection')
+@click.option('--transport', type=click.Choice(['auto', 'local', 'livekit']), default='auto', help='Transport method')
+@click.option('--room-name', default='', help='LiveKit room name (for livekit transport)')
+@click.option('--voice', help='TTS voice to use (e.g., nova, shimmer, af_sky)')
+@click.option('--tts-provider', type=click.Choice(['openai', 'kokoro']), help='TTS provider')
+@click.option('--tts-model', help='TTS model (e.g., tts-1, tts-1-hd)')
+@click.option('--tts-instructions', help='Tone/style instructions for gpt-4o-mini-tts')
+@click.option('--audio-feedback/--no-audio-feedback', default=None, help='Enable/disable audio feedback')
+@click.option('--audio-format', help='Audio format (pcm, mp3, wav, flac, aac, opus)')
+@click.option('--disable-silence-detection', is_flag=True, help='Disable silence detection')
+@click.option('--speed', type=float, help='Speech rate (0.25 to 4.0)')
+@click.option('--vad-aggressiveness', type=int, help='VAD aggressiveness (0-3)')
+@click.option('--skip-tts/--no-skip-tts', default=None, help='Skip TTS and only show text')
+@click.option('--continuous', '-c', is_flag=True, help='Continuous conversation mode')
+def converse(message, wait, duration, min_duration, transport, room_name, voice, tts_provider, 
+            tts_model, tts_instructions, audio_feedback, audio_format, disable_silence_detection,
+            speed, vad_aggressiveness, skip_tts, continuous):
+    """Have a voice conversation directly from the command line.
+    
+    Examples:
+    
+        # Simple conversation
+        voice-mode converse
+        
+        # Speak a message without waiting
+        voice-mode converse -m "Hello there!" --no-wait
+        
+        # Continuous conversation mode
+        voice-mode converse --continuous
+        
+        # Use specific voice
+        voice-mode converse --voice nova
+    """
+    from voice_mode.tools.converse import converse as converse_fn
+    
+    async def run_conversation():
+        """Run the conversation asynchronously."""
+        try:
+            if continuous:
+                # Continuous conversation mode
+                click.echo("🎤 Starting continuous conversation mode...")
+                click.echo("   Press Ctrl+C to exit\n")
+                
+                # First message
+                result = await converse_fn.fn(
+                    message=message,
+                    wait_for_response=True,
+                    listen_duration=duration,
+                    min_listen_duration=min_duration,
+                    transport=transport,
+                    room_name=room_name,
+                    voice=voice,
+                    tts_provider=tts_provider,
+                    tts_model=tts_model,
+                    tts_instructions=tts_instructions,
+                    audio_feedback=audio_feedback,
+                    audio_feedback_style=None,
+                    audio_format=audio_format,
+                    disable_silence_detection=disable_silence_detection,
+                    speed=speed,
+                    vad_aggressiveness=vad_aggressiveness,
+                    skip_tts=skip_tts
+                )
+                
+                if result and "Voice response:" in result:
+                    click.echo(f"You: {result.split('Voice response:')[1].split('|')[0].strip()}")
+                
+                # Continue conversation
+                while True:
+                    # Wait for user's next input
+                    result = await converse_fn.fn(
+                        message="",  # Empty message for listening only
+                        wait_for_response=True,
+                        listen_duration=duration,
+                        min_listen_duration=min_duration,
+                        transport=transport,
+                        room_name=room_name,
+                        voice=voice,
+                        tts_provider=tts_provider,
+                        tts_model=tts_model,
+                        tts_instructions=tts_instructions,
+                        audio_feedback=audio_feedback,
+                        audio_feedback_style=None,
+                        audio_format=audio_format,
+                        disable_silence_detection=disable_silence_detection,
+                        speed=speed,
+                        vad_aggressiveness=vad_aggressiveness,
+                        skip_tts=skip_tts
+                    )
+                    
+                    if result and "Voice response:" in result:
+                        user_text = result.split('Voice response:')[1].split('|')[0].strip()
+                        click.echo(f"You: {user_text}")
+                        
+                        # Check for exit commands
+                        if user_text.lower() in ['exit', 'quit', 'goodbye', 'bye']:
+                            await converse_fn.fn(
+                                message="Goodbye!",
+                                wait_for_response=False,
+                                voice=voice,
+                                tts_provider=tts_provider,
+                                tts_model=tts_model,
+                                audio_format=audio_format,
+                                speed=speed,
+                                skip_tts=skip_tts
+                            )
+                            break
+            else:
+                # Single conversation
+                result = await converse_fn.fn(
+                    message=message,
+                    wait_for_response=wait,
+                    listen_duration=duration,
+                    min_listen_duration=min_duration,
+                    transport=transport,
+                    room_name=room_name,
+                    voice=voice,
+                    tts_provider=tts_provider,
+                    tts_model=tts_model,
+                    tts_instructions=tts_instructions,
+                    audio_feedback=audio_feedback,
+                    audio_feedback_style=None,
+                    audio_format=audio_format,
+                    disable_silence_detection=disable_silence_detection,
+                    speed=speed,
+                    vad_aggressiveness=vad_aggressiveness,
+                    skip_tts=skip_tts
+                )
+                
+                # Display result
+                if result:
+                    if "Voice response:" in result:
+                        # Extract the response text and timing info
+                        parts = result.split('|')
+                        response_text = result.split('Voice response:')[1].split('|')[0].strip()
+                        timing_info = parts[1].strip() if len(parts) > 1 else ""
+                        
+                        click.echo(f"\n📢 Spoke: {message}")
+                        if wait:
+                            click.echo(f"🎤 Heard: {response_text}")
+                        if timing_info:
+                            click.echo(f"⏱️  {timing_info}")
+                    else:
+                        click.echo(result)
+                        
+        except KeyboardInterrupt:
+            click.echo("\n\n👋 Conversation ended")
+        except Exception as e:
+            click.echo(f"❌ Error: {e}", err=True)
+            import traceback
+            if os.environ.get('VOICEMODE_DEBUG'):
+                traceback.print_exc()
+    
+    # Run the async function
+    asyncio.run(run_conversation())
+
+

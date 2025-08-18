@@ -108,3 +108,6 @@ docs/README_PROCESSED.md
 # Test files
 test_preferences.py
 testdir/
+
+# Profiling output
+*.prof

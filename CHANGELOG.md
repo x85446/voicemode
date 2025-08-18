@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **CLI converse command** - Direct voice conversations from the command line
+  - New `voice-mode converse` command for testing voice interactions
+  - Supports all MCP tool options (voice, speed, audio format, etc.)
+  - Continuous conversation mode with `--continuous` flag
+  - Useful for testing TTS/STT services without MCP client
+  - Full control over voice parameters and silence detection
+  
+### Changed
+- **Gitignore update** - Added `*.prof` files to gitignore for profiling output
+
 ## [2.25.1] - 2025-08-18
 
 ### Fixed
