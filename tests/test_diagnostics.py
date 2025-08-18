@@ -97,10 +97,9 @@ class TestDiagnosticTools:
             }
         }
         
-        with patch("voice_mode.provider_discovery.ProviderRegistry.get_instance") as mock_get:
-            mock_instance = MagicMock()
-            mock_instance.get_all_endpoints.return_value = mock_registry
-            mock_get.return_value = mock_instance
+        with patch("voice_mode.provider_discovery.provider_registry") as mock_registry_instance:
+            mock_registry_instance.initialize = AsyncMock()
+            mock_registry_instance.get_registry_for_llm.return_value = mock_registry
             
             result = await voice_registry.fn()
             
@@ -121,10 +120,14 @@ class TestDiagnosticTools:
     @pytest.mark.asyncio
     async def test_check_audio_dependencies_linux(self):
         """Test check_audio_dependencies on Linux."""
-        with patch("voice_mode.tools.dependencies.platform.system", return_value="Linux"), \
-             patch("voice_mode.tools.dependencies.platform.platform", return_value="Linux-5.0"), \
-             patch("voice_mode.tools.dependencies.shutil.which") as mock_which, \
-             patch("voice_mode.tools.dependencies.subprocess.run") as mock_run:
+        import sys
+        mock_platform = MagicMock()
+        mock_platform.system.return_value = "Linux"
+        mock_platform.platform.return_value = "Linux-5.0"
+        
+        with patch.dict(sys.modules, {'platform': mock_platform}), \
+             patch("shutil.which") as mock_which, \
+             patch("subprocess.run") as mock_run:
             
             # Mock package checks
             mock_which.side_effect = lambda cmd: cmd in ["pulseaudio", "pactl"]
@@ -152,8 +155,12 @@ class TestDiagnosticTools:
     @pytest.mark.asyncio
     async def test_check_audio_dependencies_macos(self):
         """Test check_audio_dependencies on macOS."""
-        with patch("voice_mode.tools.dependencies.platform.system", return_value="Darwin"), \
-             patch("voice_mode.tools.dependencies.platform.platform", return_value="Darwin-21.0"):
+        import sys
+        mock_platform = MagicMock()
+        mock_platform.system.return_value = "Darwin"
+        mock_platform.platform.return_value = "Darwin-21.0"
+        
+        with patch.dict(sys.modules, {'platform': mock_platform}):
             
             result = await check_audio_dependencies.fn()
             

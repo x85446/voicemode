@@ -223,7 +223,7 @@ class TestSilenceDetection:
             mock_record.return_value = np.array([1, 2, 3])
             
             # When silence detection is disabled via parameter
-            result = record_audio_with_silence_detection(
+            result, speech_detected = record_audio_with_silence_detection(
                 max_duration=5.0,
                 disable_silence_detection=True,
                 min_duration=2.0
@@ -232,6 +232,7 @@ class TestSilenceDetection:
             # Should fall back to regular recording, ignoring min_duration
             mock_record.assert_called_once_with(5.0)
             assert np.array_equal(result, np.array([1, 2, 3]))
+            assert speech_detected  # Should assume speech when disabled
 
 
 class TestSilenceDetectionIntegration:
