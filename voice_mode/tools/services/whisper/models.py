@@ -201,3 +201,74 @@ def is_apple_silicon() -> bool:
     """Check if running on Apple Silicon (M1/M2/M3/M4)."""
     import platform
     return platform.system() == "Darwin" and platform.machine() == "arm64"
+
+
+def set_current_model(model_name: str) -> None:
+    """Set the current active Whisper model.
+    
+    Args:
+        model_name: Name of the model to set as active
+    
+    Updates the voicemode.env configuration file for persistence.
+    """
+    from pathlib import Path
+    import re
+    
+    # Configuration file path
+    config_path = Path.home() / ".voicemode" / ".voicemode.env"
+    
+    # Ensure directory exists
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    
+    # Read existing configuration
+    config = {}
+    if config_path.exists():
+        with open(config_path, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith('#'):
+                    continue
+                match = re.match(r'^([A-Z_]+)=(.*)$', line)
+                if match:
+                    key, value = match.groups()
+                    value = value.strip('"').strip("'")
+                    config[key] = value
+    
+    # Update the model
+    config['VOICEMODE_WHISPER_MODEL'] = model_name
+    
+    # Write back to file, preserving structure
+    lines = []
+    updated_keys = set()
+    
+    if config_path.exists():
+        with open(config_path, 'r') as f:
+            for line in f:
+                stripped = line.strip()
+                if stripped and not stripped.startswith('#'):
+                    match = re.match(r'^([A-Z_]+)=', stripped)
+                    if match:
+                        key = match.group(1)
+                        if key == 'VOICEMODE_WHISPER_MODEL':
+                            lines.append(f"VOICEMODE_WHISPER_MODEL={model_name}\n")
+                            updated_keys.add(key)
+                        elif key in config:
+                            lines.append(f"{key}={config[key]}\n")
+                            updated_keys.add(key)
+                        else:
+                            lines.append(line)
+                    else:
+                        lines.append(line)
+                else:
+                    lines.append(line)
+    
+    # Add VOICEMODE_WHISPER_MODEL if it wasn't in the file
+    if 'VOICEMODE_WHISPER_MODEL' not in updated_keys:
+        if lines and not lines[-1].strip() == '':
+            lines.append('\n')
+        lines.append("# Whisper Configuration\n")
+        lines.append(f"VOICEMODE_WHISPER_MODEL={model_name}\n")
+    
+    # Write the updated configuration
+    with open(config_path, 'w') as f:
+        f.writelines(lines)

@@ -443,7 +443,8 @@ def whisper_model_active(model_name):
     from voice_mode.tools.services.whisper.models import (
         get_current_model,
         WHISPER_MODELS,
-        is_model_installed
+        is_model_installed,
+        set_current_model
     )
     import os
     import subprocess
@@ -459,44 +460,33 @@ def whisper_model_active(model_name):
         
         # Check if model is installed
         if not is_model_installed(model_name):
-            click.echo(f"Warning: Model '{model_name}' is not installed.", err=True)
+            click.echo(f"Error: Model '{model_name}' is not installed.", err=True)
             click.echo(f"Install it with: voice-mode whisper model install {model_name}", err=True)
+            raise click.Abort()
         
         # Get previous model
         previous_model = get_current_model()
         
-        # Update environment variable
-        os.environ['VOICEMODE_WHISPER_MODEL'] = model_name
+        # Update the configuration file
+        set_current_model(model_name)
         
-        # Also update bashrc for persistence
-        bashrc = os.path.expanduser('~/.bashrc')
-        with open(bashrc, 'r') as f:
-            lines = f.readlines()
-        
-        # Remove old export if exists
-        lines = [l for l in lines if not l.startswith('export VOICEMODE_WHISPER_MODEL=')]
-        
-        # Add new export
-        lines.append(f'export VOICEMODE_WHISPER_MODEL={model_name}\n')
-        
-        with open(bashrc, 'w') as f:
-            f.writelines(lines)
-        
-        click.echo(f"✓ Changed active model from {previous_model} to {model_name}")
+        click.echo(f"✓ Active model set to: {model_name}")
+        if previous_model != model_name:
+            click.echo(f"  (was: {previous_model})")
         
         # Check if whisper service is running
         try:
             result = subprocess.run(['pgrep', '-f', 'whisper-server'], capture_output=True)
             if result.returncode == 0:
                 # Service is running
-                click.echo(f"\n⚠️  Whisper service is running with model: {previous_model}")
-                click.echo(f"Run this command to apply the change:")
+                click.echo(f"\n⚠️  Please restart the whisper service for changes to take effect:")
                 click.echo(f"  {click.style('voice-mode whisper restart', fg='yellow', bold=True)}")
             else:
                 click.echo(f"\nWhisper service is not running. Start it with:")
                 click.echo(f"  voice-mode whisper start")
+                click.echo(f"(or restart the whisper service if it's managed by systemd/launchd)")
         except:
-            click.echo(f"\nRestart the Whisper service to use the new model:")
+            click.echo(f"\nPlease restart the whisper service for changes to take effect:")
             click.echo(f"  voice-mode whisper restart")
     
     else:
