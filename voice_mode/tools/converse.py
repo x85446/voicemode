@@ -1412,6 +1412,37 @@ async def converse(
         Remember: Lower values (0-1) = more permissive, may detect non-speech as speech
                  Higher values (2-3) = more strict, may miss soft speech or whispers
     
+    Parallel Operations Pattern (RECOMMENDED):
+        When performing actions that don't require user confirmation, use wait_for_response=False
+        to speak while simultaneously executing other tools. This creates natural, flowing conversations.
+        
+        Pattern: converse("Status update", wait_for_response=False) then immediately run other tools.
+        The speech plays while your actions execute in parallel.
+        
+        Examples:
+        - Search narration: converse("Searching for that file", wait_for_response=False) + Grep(...)
+        - Processing update: converse("Analyzing the screenshot", wait_for_response=False) + analyze_screenshot(...)
+        - Creation status: converse("Creating that document now", wait_for_response=False) + Write(...)
+        - Quick confirmation: converse("Done! The file is saved", wait_for_response=False)
+        
+        Benefits:
+        - No dead air during operations
+        - User knows what's happening
+        - More natural conversation flow
+        - Better user experience
+        
+        When to use parallel pattern:
+        - File operations (reading, writing, searching)
+        - Data processing (analysis, computation)
+        - Status updates during long operations
+        - Confirmations that don't need response
+        
+        When NOT to use parallel pattern:
+        - Questions requiring answers
+        - Confirmations needing user approval
+        - Error messages needing acknowledgment
+        - End of conversation farewells (unless doing cleanup)
+    
     Skip TTS Examples:
         - Fast iteration mode: converse("Processing your request", skip_tts=True)  # Text only, no voice
         - Important announcement: converse("Warning: System will restart", skip_tts=False)  # Always use voice
