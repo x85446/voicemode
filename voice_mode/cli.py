@@ -420,22 +420,33 @@ def uninstall(remove_models, remove_all_data):
             click.echo(f"   Details: {result['details']}")
 
 
-@whisper.group("model", invoke_without_command=True)
-@click.pass_context
+@whisper.group("model")
+def whisper_model():
+    """Manage Whisper models.
+    
+    Subcommands:
+      active   - Show or set the active model
+      install  - Download and install models
+      remove   - Remove installed models
+    """
+    pass
+
+
+@whisper_model.command("active")
 @click.argument('model_name', required=False)
-def whisper_model(ctx, model_name):
-    """Get or set the current Whisper model.
+def whisper_model_active(model_name):
+    """Show or set the active Whisper model.
     
-    Without arguments: Shows the current model
-    With MODEL_NAME: Sets the model (updates VOICEMODE_WHISPER_MODEL)
-    
-    Use 'whisper models' to see available models.
+    Without arguments: Shows the current active model
+    With MODEL_NAME: Sets the active model (updates VOICEMODE_WHISPER_MODEL)
     """
     from voice_mode.tools.services.whisper.models import (
         get_current_model,
         WHISPER_MODELS,
         is_model_installed
     )
+    import os
+    import subprocess
     
     if model_name:
         # Set model mode
@@ -444,15 +455,17 @@ def whisper_model(ctx, model_name):
             click.echo("\nAvailable models:", err=True)
             for name in WHISPER_MODELS.keys():
                 click.echo(f"  - {name}", err=True)
-            ctx.exit(1)
+            return
         
         # Check if model is installed
         if not is_model_installed(model_name):
             click.echo(f"Warning: Model '{model_name}' is not installed.", err=True)
             click.echo(f"Install it with: voice-mode whisper model install {model_name}", err=True)
         
+        # Get previous model
+        previous_model = get_current_model()
+        
         # Update environment variable
-        import os
         os.environ['VOICEMODE_WHISPER_MODEL'] = model_name
         
         # Also update bashrc for persistence
@@ -469,12 +482,25 @@ def whisper_model(ctx, model_name):
         with open(bashrc, 'w') as f:
             f.writelines(lines)
         
-        click.echo(f"✓ Set Whisper model to: {model_name}")
-        click.echo(f"\nNote: Restart the Whisper service for changes to take effect.")
-        click.echo(f"  voice-mode whisper restart")
+        click.echo(f"✓ Changed active model from {previous_model} to {model_name}")
+        
+        # Check if whisper service is running
+        try:
+            result = subprocess.run(['pgrep', '-f', 'whisper-server'], capture_output=True)
+            if result.returncode == 0:
+                # Service is running
+                click.echo(f"\n⚠️  Whisper service is running with model: {previous_model}")
+                click.echo(f"Run this command to apply the change:")
+                click.echo(f"  {click.style('voice-mode whisper restart', fg='yellow', bold=True)}")
+            else:
+                click.echo(f"\nWhisper service is not running. Start it with:")
+                click.echo(f"  voice-mode whisper start")
+        except:
+            click.echo(f"\nRestart the Whisper service to use the new model:")
+            click.echo(f"  voice-mode whisper restart")
     
-    elif ctx.invoked_subcommand is None:
-        # Get model mode (no subcommand invoked)
+    else:
+        # Show current model
         current = get_current_model()
         
         # Check if current model is installed
@@ -484,14 +510,23 @@ def whisper_model(ctx, model_name):
         # Get model info
         model_info = WHISPER_MODELS.get(current, {})
         
-        click.echo(f"\nCurrent Whisper model: {click.style(current, fg='yellow', bold=True)} {status}")
+        click.echo(f"\nActive Whisper model: {click.style(current, fg='yellow', bold=True)} {status}")
         if model_info:
             click.echo(f"  Size: {model_info.get('size_mb', 'Unknown')} MB")
             click.echo(f"  Languages: {model_info.get('languages', 'Unknown')}")
             click.echo(f"  Description: {model_info.get('description', 'Unknown')}")
         
-        click.echo(f"\nTo change: voice-mode whisper model <model-name>")
-        click.echo(f"To list available models: voice-mode whisper models")
+        # Check what model the service is actually using
+        try:
+            result = subprocess.run(['pgrep', '-f', 'whisper-server'], capture_output=True)
+            if result.returncode == 0:
+                # Service is running, could check its actual model here
+                click.echo(f"\nWhisper service status: {click.style('Running', fg='green')}")
+        except:
+            pass
+        
+        click.echo(f"\nTo change: voice-mode whisper model active <model-name>")
+        click.echo(f"To list all models: voice-mode whisper models")
 
 
 @whisper.command("models")

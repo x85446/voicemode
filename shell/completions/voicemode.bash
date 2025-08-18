@@ -16,7 +16,7 @@ _voicemode_complete() {
     local whisper_models="tiny tiny.en base base.en small small.en medium medium.en large-v1 large-v2 large-v3 large-v3-turbo"
     
     # Whisper model commands
-    local whisper_model_commands="install remove"
+    local whisper_model_commands="active install remove"
     
     # Config commands
     local config_commands="list get set"
@@ -100,6 +100,15 @@ _voicemode_complete() {
                 model)
                     # Handle 'whisper model' subcommands
                     case ${words[3]} in
+                        active)
+                            # Complete model names for active
+                            if [[ $prev == "active" ]]; then
+                                COMPREPLY=($(compgen -W "$whisper_models" -- "$cur"))
+                            else
+                                COMPREPLY=($(compgen -W "--help -h" -- "$cur"))
+                            fi
+                            return
+                            ;;
                         install)
                             # Complete model names for install
                             if [[ $prev == "install" ]]; then
@@ -119,16 +128,12 @@ _voicemode_complete() {
                             return
                             ;;
                         "")
-                            # Complete model names for setting or subcommands
-                            COMPREPLY=($(compgen -W "$whisper_models $whisper_model_commands --help -h" -- "$cur"))
+                            # Only show subcommands, not model names
+                            COMPREPLY=($(compgen -W "$whisper_model_commands --help -h" -- "$cur"))
                             return
                             ;;
                         *)
-                            # If a model name was given, no more completions
-                            if [[ " $whisper_models " =~ " ${words[3]} " ]]; then
-                                return
-                            fi
-                            COMPREPLY=($(compgen -W "$whisper_model_commands --help -h" -- "$cur"))
+                            # Unknown subcommand
                             return
                             ;;
                     esac
