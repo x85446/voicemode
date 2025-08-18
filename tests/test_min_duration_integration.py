@@ -41,7 +41,7 @@ class TestMinDurationIntegration:
                 with patch('voice_mode.tools.converse.text_to_speech_with_failover', new_callable=AsyncMock) as mock_tts:
                     mock_tts.return_value = (True, {}, {})
                     with patch('voice_mode.tools.converse.record_audio_with_silence_detection') as mock_record:
-                        mock_record.return_value = np.array([1, 2, 3])
+                        mock_record.return_value = (np.array([1, 2, 3]), True)  # Returns tuple (audio, speech_detected)
                         with patch('voice_mode.tools.converse.speech_to_text', new_callable=AsyncMock) as mock_stt:
                             mock_stt.return_value = "Test response"
                             
@@ -74,7 +74,7 @@ class TestMinDurationIntegration:
             with patch('voice_mode.tools.converse.text_to_speech_with_failover', new_callable=AsyncMock) as mock_tts:
                 mock_tts.return_value = (True, {'generation': 0.5, 'playback': 1.0}, {})
                 with patch('voice_mode.tools.converse.record_audio_with_silence_detection') as mock_record:
-                    mock_record.return_value = np.array([1, 2, 3])
+                    mock_record.return_value = (np.array([1, 2, 3]), True)  # Returns tuple (audio, speech_detected)
                     with patch('voice_mode.tools.converse.speech_to_text', new_callable=AsyncMock) as mock_stt:
                         mock_stt.return_value = "Test response"
                         

@@ -10,19 +10,23 @@ from voice_mode.tools.service import load_service_template
 
 def test_systemd_template_has_health_check():
     """Test that systemd templates include health check commands."""
-    # Test Kokoro systemd template
-    kokoro_template = load_service_template("kokoro")
-    assert "ExecStartPost=" in kokoro_template
-    assert "curl" in kokoro_template
-    assert "/health" in kokoro_template
-    assert "Waiting for Kokoro to be ready" in kokoro_template
+    from unittest.mock import patch
     
-    # Test Whisper systemd template  
-    whisper_template = load_service_template("whisper")
-    assert "ExecStartPost=" in whisper_template
-    assert "curl" in whisper_template
-    assert "/health" in whisper_template
-    assert "Waiting for Whisper to be ready" in whisper_template
+    # Mock platform to get Linux templates
+    with patch('voice_mode.tools.service.platform.system', return_value='Linux'):
+        # Test Kokoro systemd template
+        kokoro_template = load_service_template("kokoro")
+        assert "ExecStartPost=" in kokoro_template
+        assert "curl" in kokoro_template
+        assert "/health" in kokoro_template
+        assert "Waiting for Kokoro to be ready" in kokoro_template
+        
+        # Test Whisper systemd template  
+        whisper_template = load_service_template("whisper")
+        assert "ExecStartPost=" in whisper_template
+        assert "curl" in whisper_template
+        assert "/health" in whisper_template
+        assert "Waiting for Whisper to be ready" in whisper_template
 
 
 def test_launchd_wrapper_scripts_exist():
@@ -75,14 +79,18 @@ def test_health_check_timeout_handling():
 
 def test_template_placeholders():
     """Test that templates use consistent placeholders."""
-    # Kokoro templates
-    kokoro_systemd = load_service_template("kokoro")
-    assert "{KOKORO_PORT}" in kokoro_systemd
-    assert "{KOKORO_DIR}" in kokoro_systemd
-    assert "{START_SCRIPT}" in kokoro_systemd
+    from unittest.mock import patch
     
-    # Whisper templates
-    whisper_systemd = load_service_template("whisper")
-    assert "{WHISPER_PORT}" in whisper_systemd
-    assert "{WHISPER_BIN}" in whisper_systemd
-    assert "{MODEL_FILE}" in whisper_systemd
+    # Mock platform to get Linux templates
+    with patch('voice_mode.tools.service.platform.system', return_value='Linux'):
+        # Kokoro templates
+        kokoro_systemd = load_service_template("kokoro")
+        assert "{KOKORO_PORT}" in kokoro_systemd
+        assert "{KOKORO_DIR}" in kokoro_systemd
+        assert "{START_SCRIPT}" in kokoro_systemd
+        
+        # Whisper templates
+        whisper_systemd = load_service_template("whisper")
+        assert "{WHISPER_PORT}" in whisper_systemd
+        assert "{WHISPER_BIN}" in whisper_systemd
+        assert "{MODEL_FILE}" in whisper_systemd

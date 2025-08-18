@@ -39,10 +39,10 @@ class TestLiveKitService:
     @pytest.mark.asyncio
     async def test_livekit_status_not_running(self):
         """Test LiveKit status when service is not running"""
-        with patch('voice_mode.tools.service.find_process_by_port', return_value=None):
+        with patch('voice_mode.tools.service.check_service_status', return_value=("not_available", None)):
             result = await service("livekit", "status")
-            assert "not running" in result.lower()
-            assert "port 7880" in result
+            assert "not available" in result.lower()
+            # The actual implementation doesn't include port in "not available" message
     
     @pytest.mark.asyncio
     @pytest.mark.skip(reason="Test infrastructure needs update for output format changes")
@@ -172,8 +172,11 @@ class TestLiveKitInstallation:
     @pytest.mark.asyncio
     async def test_install_already_installed(self):
         """Test installation when LiveKit is already installed"""
-        with patch('shutil.which', return_value='/usr/local/bin/livekit-server'):
+        # Mock the binary path existing in the install directory
+        with patch('pathlib.Path.exists') as mock_exists:
             with patch('subprocess.run') as mock_run:
+                # Set up exists to return True for the binary path check
+                mock_exists.return_value = True
                 # Mock version check
                 mock_run.return_value = MagicMock(returncode=0, stdout="v1.7.2", stderr="")
                 

@@ -73,16 +73,18 @@ async def test_update_service_files_needs_update():
                         with patch('pathlib.Path.rename') as mock_rename:
                             with patch('subprocess.run') as mock_run:
                                 with patch('voice_mode.tools.service.find_process_by_port') as mock_find:
-                                    mock_installed.return_value = "1.0.0"
-                                    mock_template.return_value = "1.1.0"
-                                    mock_load.return_value = "template content with {KOKORO_PORT}"
-                                    mock_exists.return_value = True
-                                    mock_run.return_value = MagicMock(returncode=0)
-                                    mock_find.return_value = None  # Not running
-                                    
-                                    result = await update_service_files("kokoro")
-                                    assert "Updated kokoro service files" in result
-                                    assert "from version 1.0.0 to 1.1.0" in result
+                                    with patch('voice_mode.tools.service.get_service_config_vars') as mock_config:
+                                        mock_installed.return_value = "1.0.0"
+                                        mock_template.return_value = "1.1.0"
+                                        mock_load.return_value = "template content with {KOKORO_PORT}"
+                                        mock_exists.return_value = False  # Wrapper script doesn't exist
+                                        mock_run.return_value = MagicMock(returncode=0)
+                                        mock_find.return_value = None  # Not running
+                                        mock_config.return_value = {"KOKORO_PORT": 8880, "KOKORO_DIR": "/tmp/kokoro"}
+                                        
+                                        result = await update_service_files("kokoro")
+                                        assert "Updated kokoro service files" in result
+                                        assert "from version 1.0.0 to 1.1.0" in result
                                     
                                     # Check that daemon-reload was called for Linux
                                     import platform

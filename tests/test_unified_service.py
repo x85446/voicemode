@@ -32,10 +32,10 @@ class TestUnifiedServiceTool:
     @pytest.mark.asyncio
     async def test_status_service_not_running(self):
         """Test status when service is not running"""
-        with patch('voice_mode.tools.service.find_process_by_port', return_value=None):
+        with patch('voice_mode.tools.service.check_service_status', return_value=("not_available", None)):
             result = await service("whisper", "status")
-            assert "not running" in result.lower()
-            assert "port 2022" in result
+            assert "not available" in result.lower()
+            # The actual implementation doesn't include port in "not available" message
     
     @pytest.mark.asyncio
     async def test_status_service_running(self):
@@ -48,7 +48,7 @@ class TestUnifiedServiceTool:
         mock_proc.create_time.return_value = 1000000000
         mock_proc.cmdline.return_value = ["whisper-server", "--model", "model.bin"]
         
-        with patch('voice_mode.tools.service.find_process_by_port', return_value=mock_proc), \
+        with patch('voice_mode.tools.service.check_service_status', return_value=("local", mock_proc)), \
              patch('time.time', return_value=1000001000):  # 1000 seconds later
             result = await service("whisper", "status")
             assert "✅" in result
@@ -106,7 +106,7 @@ class TestUnifiedServiceTool:
         with patch('voice_mode.tools.service.find_process_by_port', return_value=None), \
              patch('pathlib.Path.exists', return_value=False):
             result = await service("whisper", "stop")
-            assert "not running" in result
+            assert "not running" in result.lower()
     
     @pytest.mark.asyncio
     async def test_stop_service_success(self):

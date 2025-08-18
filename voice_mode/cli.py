@@ -897,6 +897,150 @@ def config_set(key, value):
     click.echo(result)
 
 
+# Shell completion group
+@voice_mode_main_cli.group()
+def completion():
+    """Generate shell completion scripts for voice-mode."""
+    pass
+
+
+@completion.command("bash")
+def completion_bash():
+    """Generate bash completion script.
+    
+    Add this to your ~/.bashrc:
+    
+        eval "$(_VOICE_MODE_COMPLETE=bash_source voice-mode)"
+    
+    Or for better performance, generate the script once:
+    
+        _VOICE_MODE_COMPLETE=bash_source voice-mode > ~/.voice-mode-complete.bash
+        echo '. ~/.voice-mode-complete.bash' >> ~/.bashrc
+    """
+    # Output the instructions directly since the environment variable method
+    # needs to be run from the shell itself
+    click.echo("# Bash completion for voice-mode")
+    click.echo("# Add this to your ~/.bashrc:")
+    click.echo("")
+    click.echo('eval "$(_VOICE_MODE_COMPLETE=bash_source voice-mode)"')
+    click.echo("")
+    click.echo("# Or for better performance, generate and save the script:")
+    click.echo("# _VOICE_MODE_COMPLETE=bash_source voice-mode > ~/.voice-mode-complete.bash")
+    click.echo("# Then add to ~/.bashrc:")
+    click.echo("# . ~/.voice-mode-complete.bash")
+
+
+@completion.command("zsh")
+def completion_zsh():
+    """Generate zsh completion script.
+    
+    Add this to your ~/.zshrc:
+    
+        eval "$(_VOICE_MODE_COMPLETE=zsh_source voice-mode)"
+    
+    Or for better performance, generate the script once:
+    
+        _VOICE_MODE_COMPLETE=zsh_source voice-mode > ~/.voice-mode-complete.zsh
+        echo '. ~/.voice-mode-complete.zsh' >> ~/.zshrc
+    """
+    # Output the instructions directly
+    click.echo("# Zsh completion for voice-mode")
+    click.echo("# Add this to your ~/.zshrc:")
+    click.echo("")
+    click.echo('eval "$(_VOICE_MODE_COMPLETE=zsh_source voice-mode)"')
+    click.echo("")
+    click.echo("# Or for better performance, generate and save the script:")
+    click.echo("# _VOICE_MODE_COMPLETE=zsh_source voice-mode > ~/.voice-mode-complete.zsh")
+    click.echo("# Then add to ~/.zshrc:")
+    click.echo("# . ~/.voice-mode-complete.zsh")
+
+
+@completion.command("fish")
+def completion_fish():
+    """Generate fish completion script.
+    
+    Add this to ~/.config/fish/completions/voice-mode.fish:
+    
+        _VOICE_MODE_COMPLETE=fish_source voice-mode | source
+    
+    Or save it to a file:
+    
+        _VOICE_MODE_COMPLETE=fish_source voice-mode > ~/.config/fish/completions/voice-mode.fish
+    """
+    # Output the instructions directly
+    click.echo("# Fish completion for voice-mode")
+    click.echo("# Save this to ~/.config/fish/completions/voice-mode.fish:")
+    click.echo("")
+    click.echo("_VOICE_MODE_COMPLETE=fish_source voice-mode | source")
+    click.echo("")
+    click.echo("# Or run this command to save it:")
+    click.echo("# _VOICE_MODE_COMPLETE=fish_source voice-mode > ~/.config/fish/completions/voice-mode.fish")
+
+
+@completion.command("install")
+@click.option('--shell', type=click.Choice(['bash', 'zsh', 'fish', 'auto']), default='auto', help='Shell type to install for')
+def completion_install(shell):
+    """Show installation instructions for shell completion.
+    
+    This command displays the steps to enable tab completion
+    for voice-mode in your shell.
+    """
+    # Detect shell if auto
+    if shell == 'auto':
+        shell_env = os.environ.get('SHELL', '')
+        if 'bash' in shell_env:
+            shell = 'bash'
+        elif 'zsh' in shell_env:
+            shell = 'zsh'
+        elif 'fish' in shell_env:
+            shell = 'fish'
+        else:
+            click.echo("Could not detect shell type. Showing instructions for all shells.")
+            click.echo("")
+            
+            # Show all instructions
+            click.echo("=== Bash ===")
+            click.echo("Add to ~/.bashrc:")
+            click.echo('  eval "$(_VOICE_MODE_COMPLETE=bash_source voice-mode)"')
+            click.echo("")
+            
+            click.echo("=== Zsh ===")
+            click.echo("Add to ~/.zshrc:")
+            click.echo('  eval "$(_VOICE_MODE_COMPLETE=zsh_source voice-mode)"')
+            click.echo("")
+            
+            click.echo("=== Fish ===")
+            click.echo("Run this command:")
+            click.echo('  _VOICE_MODE_COMPLETE=fish_source voice-mode > ~/.config/fish/completions/voice-mode.fish')
+            return
+    
+    click.echo(f"To enable tab completion for voice-mode in {shell}:")
+    click.echo("")
+    
+    if shell == 'bash':
+        click.echo("Add this line to your ~/.bashrc:")
+        click.echo('  eval "$(_VOICE_MODE_COMPLETE=bash_source voice-mode)"')
+        click.echo("")
+        click.echo("Or for better performance, generate the script once:")
+        click.echo("  _VOICE_MODE_COMPLETE=bash_source voice-mode > ~/.voice-mode-complete.bash")
+        click.echo("  echo '. ~/.voice-mode-complete.bash' >> ~/.bashrc")
+    elif shell == 'zsh':
+        click.echo("Add this line to your ~/.zshrc:")
+        click.echo('  eval "$(_VOICE_MODE_COMPLETE=zsh_source voice-mode)"')
+        click.echo("")
+        click.echo("Or for better performance, generate the script once:")
+        click.echo("  _VOICE_MODE_COMPLETE=zsh_source voice-mode > ~/.voice-mode-complete.zsh")
+        click.echo("  echo '. ~/.voice-mode-complete.zsh' >> ~/.zshrc")
+    elif shell == 'fish':
+        click.echo("Run this command:")
+        click.echo('  _VOICE_MODE_COMPLETE=fish_source voice-mode > ~/.config/fish/completions/voice-mode.fish')
+        click.echo("")
+        click.echo("Fish will automatically load the completion from this location.")
+    
+    click.echo("")
+    click.echo("After making these changes, restart your shell or source the config file.")
+
+
 # Diagnostics group
 @voice_mode_main_cli.group()
 def diag():

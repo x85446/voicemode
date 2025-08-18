@@ -74,11 +74,12 @@ class TestSilenceDetection:
     def test_silence_detection_stops_early(self, mock_vad, mock_sounddevice):
         """Test that recording stops when silence is detected."""
         # Record with a long max duration
-        result = record_audio_with_silence_detection(max_duration=10.0)
+        result, speech_detected = record_audio_with_silence_detection(max_duration=10.0)
         
         # Should have stopped early (6 chunks * 30ms = 180ms of audio)
         expected_samples = 6 * int(SAMPLE_RATE * VAD_CHUNK_DURATION_MS / 1000)
         assert len(result) == expected_samples
+        assert speech_detected  # Should have detected speech
         
         # Verify VAD was initialized with correct aggressiveness
         mock_vad.Vad.assert_called_once()
@@ -98,7 +99,7 @@ class TestSilenceDetection:
         silence_chunk = np.zeros(int(SAMPLE_RATE * VAD_CHUNK_DURATION_MS / 1000), dtype=np.int16)
         mock_sounddevice.rec.return_value = silence_chunk.reshape(-1, 1)
         
-        result = record_audio_with_silence_detection(max_duration=2.0)
+        result, speech_detected = record_audio_with_silence_detection(max_duration=2.0)
         
         # Should stop after MIN_RECORDING_DURATION * 2
         min_chunks = int((MIN_RECORDING_DURATION * 2) / (VAD_CHUNK_DURATION_MS / 1000))
@@ -120,7 +121,7 @@ class TestSilenceDetection:
         
         # Record for a short duration
         max_duration = 0.5
-        result = record_audio_with_silence_detection(max_duration=max_duration)
+        result, speech_detected = record_audio_with_silence_detection(max_duration=max_duration)
         
         # Should have recorded for the full duration
         expected_chunks = int(max_duration / (VAD_CHUNK_DURATION_MS / 1000))
@@ -133,11 +134,12 @@ class TestSilenceDetection:
         with patch('voice_mode.tools.converse.record_audio') as mock_record:
             mock_record.return_value = np.array([1, 2, 3])
             
-            result = record_audio_with_silence_detection(max_duration=5.0)
+            result, speech_detected = record_audio_with_silence_detection(max_duration=5.0)
             
             # Should fall back to regular recording
             mock_record.assert_called_once_with(5.0)
             assert np.array_equal(result, np.array([1, 2, 3]))
+            assert speech_detected  # Should assume speech when disabled
     
     @patch('voice_mode.tools.converse.DISABLE_SILENCE_DETECTION', False)
     @patch('voice_mode.tools.converse.VAD_AVAILABLE', False)
@@ -146,11 +148,12 @@ class TestSilenceDetection:
         with patch('voice_mode.tools.converse.record_audio') as mock_record:
             mock_record.return_value = np.array([1, 2, 3])
             
-            result = record_audio_with_silence_detection(max_duration=5.0)
+            result, speech_detected = record_audio_with_silence_detection(max_duration=5.0)
             
             # Should fall back to regular recording
             mock_record.assert_called_once_with(5.0)
             assert np.array_equal(result, np.array([1, 2, 3]))
+            assert speech_detected  # Should assume speech when VAD unavailable
     
     @pytest.mark.skip(reason="Mock sounddevice.rec() causing test to hang")
     @patch('voice_mode.tools.converse.DISABLE_SILENCE_DETECTION', False)
@@ -220,7 +223,7 @@ class TestSilenceDetection:
             mock_record.return_value = np.array([1, 2, 3])
             
             # When silence detection is disabled via parameter
-            result = record_audio_with_silence_detection(
+            result, speech_detected = record_audio_with_silence_detection(
                 max_duration=5.0,
                 disable_silence_detection=True,
                 min_duration=2.0
@@ -229,6 +232,7 @@ class TestSilenceDetection:
             # Should fall back to regular recording, ignoring min_duration
             mock_record.assert_called_once_with(5.0)
             assert np.array_equal(result, np.array([1, 2, 3]))
+            assert speech_detected  # Should assume speech when disabled
 
 
 class TestSilenceDetectionIntegration:
