@@ -34,7 +34,7 @@ class TestUnifiedServiceTool:
         """Test status when service is not running"""
         with patch('voice_mode.tools.service.find_process_by_port', return_value=None):
             result = await service("whisper", "status")
-            assert "not running" in result.lower()
+            assert "not available" in result.lower()
             assert "port 2022" in result
     
     @pytest.mark.asyncio
@@ -106,7 +106,7 @@ class TestUnifiedServiceTool:
         with patch('voice_mode.tools.service.find_process_by_port', return_value=None), \
              patch('pathlib.Path.exists', return_value=False):
             result = await service("whisper", "stop")
-            assert "not running" in result
+            assert "not available" in result
     
     @pytest.mark.asyncio
     async def test_stop_service_success(self):

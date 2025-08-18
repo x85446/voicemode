@@ -4,8 +4,8 @@ import os
 import pytest
 import pytest_asyncio
 from unittest.mock import Mock, patch
-from mcp.client.session import ClientSession
-from voice_mode.server import FastMCP
+from fastmcp import Client
+from voice_mode.server import mcp
 
 
 @pytest.fixture
@@ -19,11 +19,10 @@ def original_skip_tts():
         os.environ["VOICEMODE_SKIP_TTS"] = original
 
 
-@pytest_asyncio.fixture
-async def voice_mode_server():
+@pytest.fixture
+def voice_mode_server():
     """Create a voice mode server for testing"""
-    async with FastMCP().run_stdio_async() as streams:
-        yield streams
+    return mcp
 
 
 class TestSkipTTS:
@@ -38,7 +37,7 @@ class TestSkipTTS:
         with patch("voice_mode.tools.converse.text_to_speech_with_failover") as mock_tts:
             mock_tts.return_value = (True, {"ttfa": 1.0, "generation": 1.0, "playback": 2.0}, {"provider": "openai"})
             
-            async with ClientSession(voice_mode_server) as client:
+            async with Client(voice_mode_server) as client:
                 result = await client.call_tool(
                     "converse",
                     {
@@ -59,7 +58,7 @@ class TestSkipTTS:
         with patch("voice_mode.tools.converse.text_to_speech_with_failover") as mock_tts:
             mock_tts.return_value = (True, {"ttfa": 1.0, "generation": 1.0, "playback": 2.0}, {"provider": "openai"})
             
-            async with ClientSession(voice_mode_server) as client:
+            async with Client(voice_mode_server) as client:
                 result = await client.call_tool(
                     "converse",
                     {
@@ -80,7 +79,7 @@ class TestSkipTTS:
         with patch("voice_mode.tools.converse.text_to_speech_with_failover") as mock_tts:
             mock_tts.return_value = (True, {"ttfa": 1.0, "generation": 1.0, "playback": 2.0}, {"provider": "openai"})
             
-            async with ClientSession(voice_mode_server) as client:
+            async with Client(voice_mode_server) as client:
                 result = await client.call_tool(
                     "converse",
                     {
@@ -101,7 +100,7 @@ class TestSkipTTS:
         with patch("voice_mode.tools.converse.text_to_speech_with_failover") as mock_tts:
             mock_tts.return_value = (True, {"ttfa": 1.0, "generation": 1.0, "playback": 2.0}, {"provider": "openai"})
             
-            async with ClientSession(voice_mode_server) as client:
+            async with Client(voice_mode_server) as client:
                 result = await client.call_tool(
                     "converse",
                     {
