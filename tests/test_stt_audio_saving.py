@@ -44,30 +44,39 @@ async def test_stt_audio_saved_with_simple_failover():
                 mock_conv_logger.conversation_id = "test123"
                 mock_logger.return_value = mock_conv_logger
                 
-                # Call the function with save_audio enabled
-                result = await speech_to_text_with_failover(
-                    audio_data=audio_data,
-                    save_audio=True,
-                    audio_dir=test_audio_dir,
-                    transport="local"
-                )
-                
-                # Verify transcription was returned
-                assert result == "Test transcription"
-                
-                # Check that audio file was saved in year/month structure
-                now = datetime.now()
-                expected_dir = test_audio_dir / str(now.year) / f"{now.month:02d}"
-                assert expected_dir.exists()
-                
-                # Find the saved STT file
-                stt_files = list(expected_dir.glob("*_stt.wav"))
-                assert len(stt_files) == 1
-                # Verify it's an STT file with proper naming format
-                assert stt_files[0].name.endswith("_stt.wav")
-                
-                # Verify file exists and has content
-                assert stt_files[0].stat().st_size > 0
+                # Mock the scipy write function to actually write a test file
+                with patch('scipy.io.wavfile.write') as mock_write:
+                    def write_side_effect(filename, rate, data):
+                        # Actually create a dummy file so the test can verify it exists
+                        Path(filename).parent.mkdir(parents=True, exist_ok=True)
+                        Path(filename).write_bytes(b"dummy wav content")
+                    
+                    mock_write.side_effect = write_side_effect
+                    
+                    # Call the function with save_audio enabled
+                    result = await speech_to_text_with_failover(
+                        audio_data=audio_data,
+                        save_audio=True,
+                        audio_dir=test_audio_dir,
+                        transport="local"
+                    )
+                    
+                    # Verify transcription was returned
+                    assert result == "Test transcription"
+                    
+                    # Check that audio file was saved in year/month structure
+                    now = datetime.now()
+                    expected_dir = test_audio_dir / str(now.year) / f"{now.month:02d}"
+                    assert expected_dir.exists()
+                    
+                    # Find the saved STT file
+                    stt_files = list(expected_dir.glob("*_stt.wav"))
+                    assert len(stt_files) == 1
+                    # Verify it's an STT file with proper naming format
+                    assert stt_files[0].name.endswith("_stt.wav")
+                    
+                    # Verify file exists and has content
+                    assert stt_files[0].stat().st_size > 0
 
 
 @pytest.mark.asyncio

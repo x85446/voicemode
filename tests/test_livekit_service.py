@@ -172,8 +172,11 @@ class TestLiveKitInstallation:
     @pytest.mark.asyncio
     async def test_install_already_installed(self):
         """Test installation when LiveKit is already installed"""
-        with patch('shutil.which', return_value='/usr/local/bin/livekit-server'):
+        # Mock the binary path existing in the install directory
+        with patch('pathlib.Path.exists') as mock_exists:
             with patch('subprocess.run') as mock_run:
+                # Set up exists to return True for the binary path check
+                mock_exists.return_value = True
                 # Mock version check
                 mock_run.return_value = MagicMock(returncode=0, stdout="v1.7.2", stderr="")
                 
