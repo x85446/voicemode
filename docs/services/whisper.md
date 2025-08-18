@@ -5,11 +5,20 @@ Local speech recognition service that converts audio to text for voice-mode usin
 ## Quick Start
 
 ```bash
-# macOS
-launchctl load ~/Library/LaunchAgents/com.voicemode.whisper.plist
+# Install and configure whisper service
+voice-mode whisper install
 
-# Linux
-systemctl --user start whisper
+# List available models and their status
+voice-mode whisper models
+
+# Download a specific model
+voice-mode whisper model install large-v2
+
+# Set the active model
+voice-mode whisper model active large-v2
+
+# Start the service
+voice-mode whisper start
 ```
 
 Default endpoint: `http://127.0.0.1:2022/v1`
@@ -39,6 +48,71 @@ mkdir -p ~/.voicemode/models/whisper
 cd ~/.voicemode/models/whisper
 wget https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v2.bin
 ```
+
+## Model Management
+
+Voice Mode provides comprehensive model management commands:
+
+### List Available Models
+```bash
+voice-mode whisper models
+```
+Shows all available Whisper models with:
+- Installation status (✓ Installed or Download)
+- Model sizes
+- Language support (English only or Multilingual)
+- Currently selected model (highlighted with →)
+
+### Show/Set Active Model
+```bash
+# Show current active model
+voice-mode whisper model active
+
+# Set a different model as active
+voice-mode whisper model active small.en
+```
+Note: After changing the active model, restart the whisper service for changes to take effect.
+
+### Install Models
+```bash
+# Install default model (large-v2)
+voice-mode whisper model install
+
+# Install specific model
+voice-mode whisper model install medium
+
+# Install all available models
+voice-mode whisper model install all
+
+# Force re-download
+voice-mode whisper model install large-v3 --force
+
+# Skip Core ML conversion on Apple Silicon
+voice-mode whisper model install large-v2 --skip-core-ml
+```
+
+### Remove Models
+```bash
+# Remove a specific model
+voice-mode whisper model remove tiny
+
+# Remove without confirmation
+voice-mode whisper model remove tiny.en --force
+```
+
+### Available Models
+- **tiny** (39 MB) - Fastest, least accurate
+- **tiny.en** (39 MB) - Fastest English model
+- **base** (142 MB) - Good balance of speed and accuracy
+- **base.en** (142 MB) - Good English model
+- **small** (466 MB) - Better accuracy, slower
+- **small.en** (466 MB) - Better English accuracy
+- **medium** (1.5 GB) - High accuracy, slow
+- **medium.en** (1.5 GB) - High English accuracy
+- **large-v1** (2.9 GB) - Original large model
+- **large-v2** (2.9 GB) - Improved large model (recommended)
+- **large-v3** (3.1 GB) - Latest large model
+- **large-v3-turbo** (1.6 GB) - Faster large model with good accuracy
 
 ## Configure
 
