@@ -753,6 +753,20 @@ main() {
     echo ""
   fi
 
+  # Anonymous analytics beacon (privacy-respecting)
+  # Only tracks: install event, OS type, timestamp
+  # No personal data collected
+  {
+    if command -v curl >/dev/null 2>&1; then
+      # Simple beacon to track installs
+      # Uses Goatcounter's pixel tracking endpoint
+      curl -s "https://getvoicemode.goatcounter.com/count?p=/install&t=Install%20Script" \
+        -H "User-Agent: VoiceMode-Installer/${OS:-unknown}" \
+        -H "Referer: https://getvoicemode.com/install.sh" \
+        >/dev/null 2>&1 || true
+    fi
+  } &
+
   # Pre-flight checks
   detect_os
   
