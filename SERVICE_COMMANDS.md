@@ -103,22 +103,6 @@ Commands work on both macOS and Linux:
 - **Linux**: Uses systemctl for service management  
 - **Fallback**: Direct process control when service managers not available
 
-## Migration from Shell Aliases
-
-These commands replace the shell aliases from `shell/aliases`:
-
-| Old Alias | New Command |
-|-----------|-------------|
-| `voicemode-kokoro-status` | `voice-mode kokoro status` |
-| `voicemode-kokoro-start` | `voice-mode kokoro start` |
-| `voicemode-kokoro-stop` | `voice-mode kokoro stop` |
-| `voicemode-kokoro-restart` | `voice-mode kokoro restart` |
-| `voicemode-kokoro-enable` | `voice-mode kokoro enable` |
-| `voicemode-kokoro-disable` | `voice-mode kokoro disable` |
-| `voicemode-kokoro-logs` | `voice-mode kokoro logs` |
-| `kokoro-health` | `voice-mode kokoro health` |
-
-And similarly for Whisper commands.
 
 ## Benefits
 
