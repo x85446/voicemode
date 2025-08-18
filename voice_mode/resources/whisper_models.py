@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Dict, Any, List
 
 from ..server import mcp
-from ..config import logger
+from ..config import logger, WHISPER_MODEL_PATH, WHISPER_MODEL
 
 
 @mcp.resource("whisper://models")
@@ -24,17 +24,14 @@ async def list_whisper_models() -> str:
     and which one is currently being used by the whisper server.
     """
     try:
-        # Get whisper models directory - check both locations
-        models_dirs = [
-            Path.home() / ".voicemode/services/whisper/models",
-            Path.home() / ".voicemode/whisper.cpp/models"  # legacy
-        ]
+        # Get whisper models directory from config
+        models_dir = Path(WHISPER_MODEL_PATH)
         
-        models_dir = None
-        for dir_path in models_dirs:
-            if dir_path.exists():
-                models_dir = dir_path
-                break
+        # If config path doesn't exist, check service installation
+        if not models_dir.exists():
+            service_models = Path.home() / ".voicemode/services/whisper/models"
+            if service_models.exists():
+                models_dir = service_models
         
         # List all model files
         models: List[Dict[str, Any]] = []
@@ -55,8 +52,8 @@ async def list_whisper_models() -> str:
         # Sort models by name
         models.sort(key=lambda x: x["name"])
         
-        # Get current configuration
-        current_model = os.environ.get("VOICEMODE_WHISPER_MODEL", "large-v2")
+        # Get current configuration from config
+        current_model = WHISPER_MODEL
         
         # Build response
         data = {

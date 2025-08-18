@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Comprehensive Whisper model management system**
+  - New `whisper models` CLI command to list all available models with status
+  - `whisper model active` command to get/set the active model
+  - `whisper model install` and `whisper model remove` commands
+  - Model registry with size/hash metadata for all Whisper models
+  - Shell completion support for all model management commands
+  - Color-coded output showing installed/available models
+  - Clear indication of currently selected model
+  
+- **MCP tools for model management**
+  - `list_models` tool to list all available Whisper models
+  - Enhanced `download_model` tool using centralized registry
+  - Parity between CLI and MCP interfaces
+  
+- **Infrastructure improvements**
+  - Centralized model registry in `whisper/models.py`
+  - Shared download logic extracted to helpers module
+  - Dynamic Click-based shell completions replacing static files
+  - Comprehensive test suite for model management
+
+### Changed
+- Replaced static shell completions with Click-generated dynamic completions
+- Shell completion files now generated from CLI structure
+
+### Removed
+- Old static shell completion files
+- SERVICE_COMMANDS.md (replaced by integrated CLI commands)
+- Shell aliases file (functionality moved to Click commands)
+
 ## [2.26.0] - 2025-08-18
 
 ### Added
