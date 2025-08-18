@@ -185,14 +185,6 @@ class TestDiagnosticTools:
         """Test voice_mode_info handles errors gracefully."""
         # Skip this test as get_voice_mode_version doesn't exist
         pytest.skip("get_voice_mode_version doesn't exist in current implementation")
-            
-            result = await voice_mode_info.fn()
-            
-            # Should still return a string
-            assert isinstance(result, str)
-            
-            # Should indicate error or unknown
-            assert "unknown" in result.lower() or "error" in result.lower() or "N/A" in result
 
     @pytest.mark.asyncio
     async def test_check_audio_devices_no_devices(self):
