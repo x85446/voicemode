@@ -25,26 +25,41 @@ async def whisper_list_models() -> str:
     # Format output
     output = ["Whisper Models:", ""]
     
+    # Check if we should show Core ML column
+    show_coreml = any(model.get("has_coreml", False) for model in result["models"])
+    
     for model in result["models"]:
         # Format status indicators
         current = "→ " if model["current"] else "  "
         installed = "[✓ Installed]" if model["installed"] else "[ Download ]"
         
+        # Add Core ML indicator if on macOS
+        coreml = ""
+        if show_coreml:
+            coreml = "[ML]" if model.get("has_coreml", False) else "    "
+        
         # Format model line
-        line = f"{current}{model['name']:15} {installed:14} {model['size']:>8}  {model['languages']:20}"
+        line = f"{current}{model['name']:15} {installed:14} {coreml} {model['size']:>8}  {model['languages']:20}"
         if model["current"]:
             line += " (Currently selected)"
         
         output.append(line)
     
     # Add footer
-    output.extend([
+    footer = [
         "",
         f"Models directory: {result['model_directory']}",
         f"Total size: {result['installed_size']} installed / {result['available_size']} available",
         "",
         f"Installed models: {result['installed_count']}/{result['total_count']}",
         f"Current model: {result['current_model']}"
-    ])
+    ]
+    
+    # Add Core ML note if on macOS
+    if show_coreml:
+        footer.append("")
+        footer.append("[ML] = Core ML model available for faster inference on Apple Silicon")
+    
+    output.extend(footer)
     
     return "\n".join(output)

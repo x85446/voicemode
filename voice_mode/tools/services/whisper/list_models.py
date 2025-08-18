@@ -7,7 +7,9 @@ from voice_mode.tools.services.whisper.models import (
     get_current_model,
     is_model_installed,
     get_installed_models,
-    format_size
+    format_size,
+    has_coreml_model,
+    is_apple_silicon
 )
 
 
@@ -24,6 +26,8 @@ async def list_whisper_models() -> Dict[str, Any]:
         
         # Build models list with status
         models = []
+        show_coreml = is_apple_silicon()  # Only show Core ML on Apple Silicon
+        
         for model_name, info in WHISPER_MODELS.items():
             model_status = {
                 "name": model_name,
@@ -32,7 +36,8 @@ async def list_whisper_models() -> Dict[str, Any]:
                 "languages": info["languages"],
                 "description": info["description"],
                 "installed": is_model_installed(model_name),
-                "current": model_name == current_model
+                "current": model_name == current_model,
+                "has_coreml": has_coreml_model(model_name) if show_coreml else False
             }
             models.append(model_status)
         

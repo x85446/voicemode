@@ -12,6 +12,12 @@ _voicemode_complete() {
     # Service commands (common to kokoro, whisper, livekit)
     local service_commands="status start stop restart enable disable logs update-service-files health install uninstall"
     
+    # Whisper models
+    local whisper_models="tiny tiny.en base base.en small small.en medium medium.en large-v1 large-v2 large-v3 large-v3-turbo"
+    
+    # Whisper model commands
+    local whisper_model_commands="install remove"
+    
     # Config commands
     local config_commands="list get set"
     
@@ -82,7 +88,8 @@ _voicemode_complete() {
                     esac
                     ;;
                 *)
-                    COMPREPLY=($(compgen -W "$service_commands" -- "$cur"))
+                    # Add 'models' and 'model' to the service commands for whisper
+                    COMPREPLY=($(compgen -W "$service_commands models model download-model" -- "$cur"))
                     return
                     ;;
             esac
@@ -90,6 +97,47 @@ _voicemode_complete() {
             
         whisper)
             case ${words[2]} in
+                model)
+                    # Handle 'whisper model' subcommands
+                    case ${words[3]} in
+                        install)
+                            # Complete model names for install
+                            if [[ $prev == "install" ]]; then
+                                COMPREPLY=($(compgen -W "$whisper_models all" -- "$cur"))
+                            else
+                                COMPREPLY=($(compgen -W "--force -f --skip-core-ml --help -h" -- "$cur"))
+                            fi
+                            return
+                            ;;
+                        remove)
+                            # Complete model names for remove
+                            if [[ $prev == "remove" ]]; then
+                                COMPREPLY=($(compgen -W "$whisper_models" -- "$cur"))
+                            else
+                                COMPREPLY=($(compgen -W "--force -f --help -h" -- "$cur"))
+                            fi
+                            return
+                            ;;
+                        "")
+                            # Complete model names for setting or subcommands
+                            COMPREPLY=($(compgen -W "$whisper_models $whisper_model_commands --help -h" -- "$cur"))
+                            return
+                            ;;
+                        *)
+                            # If a model name was given, no more completions
+                            if [[ " $whisper_models " =~ " ${words[3]} " ]]; then
+                                return
+                            fi
+                            COMPREPLY=($(compgen -W "$whisper_model_commands --help -h" -- "$cur"))
+                            return
+                            ;;
+                    esac
+                    ;;
+                models)
+                    # No arguments for 'whisper models'
+                    COMPREPLY=($(compgen -W "--help -h" -- "$cur"))
+                    return
+                    ;;
                 install)
                     case $prev in
                         --install-dir)
@@ -114,10 +162,11 @@ _voicemode_complete() {
                     COMPREPLY=($(compgen -W "$uninstall_opts --help -h" -- "$cur"))
                     return
                     ;;
+                # Keep download-model for backwards compatibility
                 download-model)
                     case $prev in
                         download-model)
-                            COMPREPLY=($(compgen -W "tiny tiny.en base base.en small small.en medium medium.en large-v1 large-v2 large-v3 large-v3-turbo all" -- "$cur"))
+                            COMPREPLY=($(compgen -W "$whisper_models all" -- "$cur"))
                             return
                             ;;
                         *)

@@ -234,7 +234,7 @@ LIVEKIT_API_SECRET = os.getenv("LIVEKIT_API_SECRET", "secret")
 WHISPER_MODEL = os.getenv("VOICEMODE_WHISPER_MODEL", "large-v2")
 WHISPER_PORT = int(os.getenv("VOICEMODE_WHISPER_PORT", "2022"))
 WHISPER_LANGUAGE = os.getenv("VOICEMODE_WHISPER_LANGUAGE", "auto")
-WHISPER_MODEL_PATH = expand_path(os.getenv("VOICEMODE_WHISPER_MODEL_PATH", str(BASE_DIR / "models" / "whisper")))
+WHISPER_MODEL_PATH = expand_path(os.getenv("VOICEMODE_WHISPER_MODEL_PATH", str(Path.home() / ".voicemode" / "services" / "whisper" / "models")))
 
 # ==================== KOKORO CONFIGURATION ====================
 

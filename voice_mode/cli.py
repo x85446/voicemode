@@ -420,6 +420,80 @@ def uninstall(remove_models, remove_all_data):
             click.echo(f"   Details: {result['details']}")
 
 
+@whisper.group("model", invoke_without_command=True)
+@click.pass_context
+@click.argument('model_name', required=False)
+def whisper_model(ctx, model_name):
+    """Get or set the current Whisper model.
+    
+    Without arguments: Shows the current model
+    With MODEL_NAME: Sets the model (updates VOICEMODE_WHISPER_MODEL)
+    
+    Use 'whisper models' to see available models.
+    """
+    from voice_mode.tools.services.whisper.models import (
+        get_current_model,
+        WHISPER_MODELS,
+        is_model_installed
+    )
+    
+    if model_name:
+        # Set model mode
+        if model_name not in WHISPER_MODELS:
+            click.echo(f"Error: '{model_name}' is not a valid model.", err=True)
+            click.echo("\nAvailable models:", err=True)
+            for name in WHISPER_MODELS.keys():
+                click.echo(f"  - {name}", err=True)
+            ctx.exit(1)
+        
+        # Check if model is installed
+        if not is_model_installed(model_name):
+            click.echo(f"Warning: Model '{model_name}' is not installed.", err=True)
+            click.echo(f"Install it with: voice-mode whisper model install {model_name}", err=True)
+        
+        # Update environment variable
+        import os
+        os.environ['VOICEMODE_WHISPER_MODEL'] = model_name
+        
+        # Also update bashrc for persistence
+        bashrc = os.path.expanduser('~/.bashrc')
+        with open(bashrc, 'r') as f:
+            lines = f.readlines()
+        
+        # Remove old export if exists
+        lines = [l for l in lines if not l.startswith('export VOICEMODE_WHISPER_MODEL=')]
+        
+        # Add new export
+        lines.append(f'export VOICEMODE_WHISPER_MODEL={model_name}\n')
+        
+        with open(bashrc, 'w') as f:
+            f.writelines(lines)
+        
+        click.echo(f"✓ Set Whisper model to: {model_name}")
+        click.echo(f"\nNote: Restart the Whisper service for changes to take effect.")
+        click.echo(f"  voice-mode whisper restart")
+    
+    elif ctx.invoked_subcommand is None:
+        # Get model mode (no subcommand invoked)
+        current = get_current_model()
+        
+        # Check if current model is installed
+        installed = is_model_installed(current)
+        status = click.style("[✓ Installed]", fg="green") if installed else click.style("[Not installed]", fg="red")
+        
+        # Get model info
+        model_info = WHISPER_MODELS.get(current, {})
+        
+        click.echo(f"\nCurrent Whisper model: {click.style(current, fg='yellow', bold=True)} {status}")
+        if model_info:
+            click.echo(f"  Size: {model_info.get('size_mb', 'Unknown')} MB")
+            click.echo(f"  Languages: {model_info.get('languages', 'Unknown')}")
+            click.echo(f"  Description: {model_info.get('description', 'Unknown')}")
+        
+        click.echo(f"\nTo change: voice-mode whisper model <model-name>")
+        click.echo(f"To list available models: voice-mode whisper models")
+
+
 @whisper.command("models")
 def whisper_models():
     """List available Whisper models and their installation status."""
@@ -488,16 +562,16 @@ def whisper_models():
     click.echo(f"Models directory: {model_dir}")
     click.echo(f"Total size: {format_size(total_installed_size)} installed / {format_size(total_available_size)} available")
     click.echo("")
-    click.echo("To download a model: voice-mode whisper download-model <model-name>")
-    click.echo("To set default model: export VOICEMODE_WHISPER_MODEL=<model-name>")
+    click.echo("To download a model: voice-mode whisper model install <model-name>")
+    click.echo("To set default model: voice-mode whisper model <model-name>")
 
 
-@whisper.command("download-model")
+@whisper_model.command("install")
 @click.argument('model', default='large-v2')
 @click.option('--force', '-f', is_flag=True, help='Re-download even if model exists')
 @click.option('--skip-core-ml', is_flag=True, help='Skip Core ML conversion on Apple Silicon')
-def download_model_cmd(model, force, skip_core_ml):
-    """Download Whisper model(s) with optional Core ML conversion.
+def whisper_model_install(model, force, skip_core_ml):
+    """Install Whisper model(s) with optional Core ML conversion.
     
     MODEL can be a model name (e.g., 'large-v2'), 'all' to download all models,
     or omitted to use the default (large-v2).
@@ -542,6 +616,74 @@ def download_model_cmd(model, force, skip_core_ml):
                     click.echo(f"   - {m}")
     except json.JSONDecodeError:
         click.echo(result)
+
+
+@whisper_model.command("remove")
+@click.argument('model')
+@click.option('--force', '-f', is_flag=True, help='Remove without confirmation')
+def whisper_model_remove(model, force):
+    """Remove an installed Whisper model.
+    
+    MODEL is the name of the model to remove (e.g., 'large-v2').
+    """
+    from voice_mode.tools.services.whisper.models import (
+        WHISPER_MODELS,
+        is_model_installed,
+        get_model_directory,
+        get_current_model
+    )
+    import os
+    
+    # Validate model name
+    if model not in WHISPER_MODELS:
+        click.echo(f"Error: '{model}' is not a valid model.", err=True)
+        click.echo("\nAvailable models:", err=True)
+        for name in WHISPER_MODELS.keys():
+            click.echo(f"  - {name}", err=True)
+        ctx.exit(1)
+    
+    # Check if model is installed
+    if not is_model_installed(model):
+        click.echo(f"Model '{model}' is not installed.")
+        return
+    
+    # Check if it's the current model
+    current = get_current_model()
+    if model == current:
+        click.echo(f"Warning: '{model}' is the currently selected model.", err=True)
+        if not force:
+            if not click.confirm("Do you still want to remove it?"):
+                return
+    
+    # Get model path
+    model_dir = get_model_directory()
+    model_info = WHISPER_MODELS[model]
+    model_path = model_dir / model_info["filename"]
+    
+    # Also check for Core ML models
+    coreml_path = model_dir / f"ggml-{model}-encoder.mlmodelc"
+    
+    # Confirm removal if not forced
+    if not force:
+        size_mb = model_info["size_mb"]
+        if not click.confirm(f"Remove {model} ({size_mb} MB)?"):
+            return
+    
+    # Remove the model file
+    try:
+        if model_path.exists():
+            os.remove(model_path)
+            click.echo(f"✓ Removed model: {model}")
+        
+        # Remove Core ML model if exists
+        if coreml_path.exists():
+            import shutil
+            shutil.rmtree(coreml_path)
+            click.echo(f"✓ Removed Core ML model: {model}")
+        
+        click.echo(f"\nModel '{model}' has been removed.")
+    except Exception as e:
+        click.echo(f"Error removing model: {e}", err=True)
 
 
 # LiveKit service commands

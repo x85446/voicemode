@@ -3,6 +3,7 @@
 import os
 from pathlib import Path
 from typing import Dict, List, Optional, TypedDict
+from voice_mode.config import WHISPER_MODEL_PATH, WHISPER_MODEL
 
 
 class ModelInfo(TypedDict):
@@ -92,24 +93,22 @@ WHISPER_MODELS: Dict[str, ModelInfo] = {
 
 def get_model_directory() -> Path:
     """Get the directory where Whisper models are stored."""
-    # Check environment variable first
-    model_dir = os.getenv("VOICEMODE_WHISPER_MODEL_DIR")
-    if model_dir:
-        return Path(model_dir).expanduser()
+    # Use the configured path from config.py
+    model_dir = Path(WHISPER_MODEL_PATH)
     
-    # Check if whisper.cpp is installed
-    whisper_dir = os.getenv("VOICEMODE_WHISPER_DIR")
-    if whisper_dir:
-        return Path(whisper_dir).expanduser() / "models"
+    # If config path doesn't exist, check service installation
+    if not model_dir.exists():
+        service_models = Path.home() / ".voicemode" / "services" / "whisper" / "models"
+        if service_models.exists():
+            return service_models
     
-    # Default to ~/.voicemode/whisper.cpp/models
-    return Path.home() / ".voicemode" / "whisper.cpp" / "models"
+    return model_dir
 
 
 def get_current_model() -> str:
     """Get the currently selected Whisper model."""
-    # Read from environment variable
-    model = os.getenv("VOICEMODE_WHISPER_MODEL", "large-v2")
+    # Use the configured model from config.py
+    model = WHISPER_MODEL
     
     # Validate it's a known model
     if model not in WHISPER_MODELS:
@@ -128,6 +127,30 @@ def is_model_installed(model_name: str) -> bool:
     model_path = model_dir / model_info["filename"]
     
     return model_path.exists()
+
+
+def has_coreml_model(model_name: str) -> bool:
+    """Check if a Core ML model is available for the given model.
+    
+    Core ML models are only used on macOS with Apple Silicon.
+    They have the extension .mlmodelc and provide faster inference.
+    """
+    import platform
+    
+    # Core ML is only relevant on macOS
+    if platform.system() != "Darwin":
+        return False
+    
+    if model_name not in WHISPER_MODELS:
+        return False
+    
+    model_dir = get_model_directory()
+    model_info = WHISPER_MODELS[model_name]
+    
+    # Core ML model would be named like ggml-large-v2-encoder.mlmodelc
+    coreml_path = model_dir / f"ggml-{model_name}-encoder.mlmodelc"
+    
+    return coreml_path.exists()
 
 
 def get_installed_models() -> List[str]:
@@ -166,3 +189,15 @@ def format_size(size_mb: int) -> str:
     else:
         size_gb = size_mb / 1000
         return f"{size_gb:.1f} GB"
+
+
+def is_macos() -> bool:
+    """Check if running on macOS."""
+    import platform
+    return platform.system() == "Darwin"
+
+
+def is_apple_silicon() -> bool:
+    """Check if running on Apple Silicon (M1/M2/M3/M4)."""
+    import platform
+    return platform.system() == "Darwin" and platform.machine() == "arm64"
