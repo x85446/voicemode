@@ -37,22 +37,29 @@ class TestDiagnosticTools:
     async def test_check_audio_devices(self):
         """Test check_audio_devices returns device information."""
         mock_input_devices = [
-            {"name": "Built-in Microphone", "index": 0, "channels": 2},
-            {"name": "USB Microphone", "index": 1, "channels": 1}
+            {"name": "Built-in Microphone", "index": 0, "max_input_channels": 2, "max_output_channels": 0},
+            {"name": "USB Microphone", "index": 1, "max_input_channels": 1, "max_output_channels": 0}
         ]
         mock_output_devices = [
-            {"name": "Built-in Output", "index": 0, "channels": 2},
-            {"name": "Bluetooth Speaker", "index": 1, "channels": 2}
+            {"name": "Built-in Output", "index": 0, "max_input_channels": 0, "max_output_channels": 2},
+            {"name": "Bluetooth Speaker", "index": 1, "max_input_channels": 0, "max_output_channels": 2}
         ]
         
-        with patch("sounddevice.query_devices") as mock_query:
+        with patch("voice_mode.tools.devices.sd.query_devices") as mock_query:
             # Setup mock to return devices based on kind parameter
             def query_side_effect(kind=None):
                 if kind == 'input':
-                    return mock_input_devices
+                    return {"name": "Built-in Microphone", "index": 0, "max_input_channels": 2, "max_output_channels": 0}
                 elif kind == 'output':
-                    return mock_output_devices
-                return mock_input_devices + mock_output_devices
+                    return {"name": "Built-in Output", "index": 0, "max_input_channels": 0, "max_output_channels": 2}
+                # Return all devices when kind is None
+                all_devices = [
+                    {"name": "Built-in Microphone", "index": 0, "max_input_channels": 2, "max_output_channels": 0},
+                    {"name": "USB Microphone", "index": 1, "max_input_channels": 1, "max_output_channels": 0},
+                    {"name": "Built-in Output", "index": 2, "max_input_channels": 0, "max_output_channels": 2},
+                    {"name": "Bluetooth Speaker", "index": 3, "max_input_channels": 0, "max_output_channels": 2}
+                ]
+                return all_devices
             
             mock_query.side_effect = query_side_effect
             

@@ -76,7 +76,8 @@ class TestSkipTTS:
         # Set environment variable to true
         os.environ["VOICEMODE_SKIP_TTS"] = "true"
         
-        with patch("voice_mode.tools.converse.text_to_speech_with_failover") as mock_tts:
+        with patch("voice_mode.tools.converse.text_to_speech_with_failover") as mock_tts, \
+             patch("voice_mode.tools.converse.SKIP_TTS", True):
             mock_tts.return_value = (True, {"ttfa": 1.0, "generation": 1.0, "playback": 2.0}, {"provider": "openai"})
             
             async with Client(voice_mode_server) as client:
@@ -97,7 +98,8 @@ class TestSkipTTS:
         # Set environment variable to false
         os.environ["VOICEMODE_SKIP_TTS"] = "false"
         
-        with patch("voice_mode.tools.converse.text_to_speech_with_failover") as mock_tts:
+        with patch("voice_mode.tools.converse.text_to_speech_with_failover") as mock_tts, \
+             patch("voice_mode.tools.converse.SKIP_TTS", False):
             mock_tts.return_value = (True, {"ttfa": 1.0, "generation": 1.0, "playback": 2.0}, {"provider": "openai"})
             
             async with Client(voice_mode_server) as client:
