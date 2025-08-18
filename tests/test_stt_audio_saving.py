@@ -9,21 +9,13 @@ import pytest
 from unittest.mock import patch, MagicMock, AsyncMock
 from datetime import datetime
 
-# Mock the environment before importing voice_mode modules
-os.environ['VOICEMODE_SAVE_ALL'] = 'true'
-os.environ['VOICEMODE_SIMPLE_FAILOVER'] = 'true'
-
 from voice_mode.tools.converse import speech_to_text_with_failover
-from voice_mode.config import SAVE_ALL, SAVE_AUDIO, AUDIO_DIR
+from voice_mode import config
 
 
 @pytest.mark.asyncio
 async def test_stt_audio_saved_with_simple_failover():
     """Test that STT audio files are saved when SAVE_ALL is true and simple failover is enabled"""
-    
-    # Verify config is correct
-    assert SAVE_ALL is True
-    assert SAVE_AUDIO is True
     
     # Create test audio data (1 second of silence)
     sample_rate = 16000
@@ -34,49 +26,55 @@ async def test_stt_audio_saved_with_simple_failover():
         test_audio_dir = Path(temp_dir) / "audio"
         test_audio_dir.mkdir()
         
-        # Mock the simple_stt_failover to return test transcription
-        with patch('voice_mode.simple_failover.simple_stt_failover', new_callable=AsyncMock) as mock_stt:
-            mock_stt.return_value = "Test transcription"
+        # Patch the config values to ensure saving is enabled
+        with patch('voice_mode.config.SAVE_ALL', True), \
+             patch('voice_mode.config.SAVE_AUDIO', True), \
+             patch('voice_mode.config.SIMPLE_FAILOVER', True), \
+             patch('voice_mode.tools.converse.SAVE_AUDIO', True):
             
-            # Mock the conversation logger
-            with patch('voice_mode.tools.converse.get_conversation_logger') as mock_logger:
-                mock_conv_logger = MagicMock()
-                mock_conv_logger.conversation_id = "test123"
-                mock_logger.return_value = mock_conv_logger
+            # Mock the simple_stt_failover to return test transcription
+            with patch('voice_mode.simple_failover.simple_stt_failover', new_callable=AsyncMock) as mock_stt:
+                mock_stt.return_value = "Test transcription"
                 
-                # Mock the scipy write function to actually write a test file
-                with patch('scipy.io.wavfile.write') as mock_write:
-                    def write_side_effect(filename, rate, data):
-                        # Actually create a dummy file so the test can verify it exists
-                        Path(filename).parent.mkdir(parents=True, exist_ok=True)
-                        Path(filename).write_bytes(b"dummy wav content")
+                # Mock the conversation logger
+                with patch('voice_mode.tools.converse.get_conversation_logger') as mock_logger:
+                    mock_conv_logger = MagicMock()
+                    mock_conv_logger.conversation_id = "test123"
+                    mock_logger.return_value = mock_conv_logger
                     
-                    mock_write.side_effect = write_side_effect
-                    
-                    # Call the function with save_audio enabled
-                    result = await speech_to_text_with_failover(
-                        audio_data=audio_data,
-                        save_audio=True,
-                        audio_dir=test_audio_dir,
-                        transport="local"
-                    )
-                    
-                    # Verify transcription was returned
-                    assert result == "Test transcription"
-                    
-                    # Check that audio file was saved in year/month structure
-                    now = datetime.now()
-                    expected_dir = test_audio_dir / str(now.year) / f"{now.month:02d}"
-                    assert expected_dir.exists()
-                    
-                    # Find the saved STT file
-                    stt_files = list(expected_dir.glob("*_stt.wav"))
-                    assert len(stt_files) == 1
-                    # Verify it's an STT file with proper naming format
-                    assert stt_files[0].name.endswith("_stt.wav")
-                    
-                    # Verify file exists and has content
-                    assert stt_files[0].stat().st_size > 0
+                    # Mock the scipy write function to actually write a test file
+                    with patch('scipy.io.wavfile.write') as mock_write:
+                        def write_side_effect(filename, rate, data):
+                            # Actually create a dummy file so the test can verify it exists
+                            Path(filename).parent.mkdir(parents=True, exist_ok=True)
+                            Path(filename).write_bytes(b"dummy wav content")
+                        
+                        mock_write.side_effect = write_side_effect
+                        
+                        # Call the function with save_audio enabled
+                        result = await speech_to_text_with_failover(
+                            audio_data=audio_data,
+                            save_audio=True,
+                            audio_dir=test_audio_dir,
+                            transport="local"
+                        )
+                        
+                        # Verify transcription was returned
+                        assert result == "Test transcription"
+                        
+                        # Check that audio file was saved in year/month structure
+                        now = datetime.now()
+                        expected_dir = test_audio_dir / str(now.year) / f"{now.month:02d}"
+                        assert expected_dir.exists()
+                        
+                        # Find the saved STT file
+                        stt_files = list(expected_dir.glob("*_stt.wav"))
+                        assert len(stt_files) == 1
+                        # Verify it's an STT file with proper naming format
+                        assert stt_files[0].name.endswith("_stt.wav")
+                        
+                        # Verify file exists and has content
+                        assert stt_files[0].stat().st_size > 0
 
 
 @pytest.mark.asyncio
