@@ -466,11 +466,104 @@ setup_local_npm() {
   print_success "Local npm configuration complete"
 }
 
+setup_shell_completion() {
+  # Detect current shell
+  local shell_type=""
+  local shell_rc=""
+  
+  if [[ -n "${BASH_VERSION:-}" ]]; then
+    shell_type="bash"
+    shell_rc="$HOME/.bashrc"
+  elif [[ -n "${ZSH_VERSION:-}" ]]; then
+    shell_type="zsh"
+    shell_rc="$HOME/.zshrc"
+  elif [[ -n "${FISH_VERSION:-}" ]]; then
+    shell_type="fish"
+    shell_rc=""  # Fish uses a different approach
+  else
+    # Try to detect from SHELL environment variable
+    case "${SHELL:-}" in
+      */bash) 
+        shell_type="bash"
+        shell_rc="$HOME/.bashrc"
+        ;;
+      */zsh) 
+        shell_type="zsh"
+        shell_rc="$HOME/.zshrc"
+        ;;
+      */fish) 
+        shell_type="fish"
+        shell_rc=""
+        ;;
+    esac
+  fi
+  
+  if [[ -z "$shell_type" ]]; then
+    print_debug "Could not detect shell type for completion setup"
+    return 1
+  fi
+  
+  print_step "Setting up shell completion for $shell_type..."
+  
+  # Set up completion based on shell type
+  if [[ "$shell_type" == "bash" ]]; then
+    local completion_line='eval "$(_VOICE_MODE_COMPLETE=bash_source voice-mode)"'
+    if [[ -f "$shell_rc" ]] && grep -q "_VOICE_MODE_COMPLETE" "$shell_rc" 2>/dev/null; then
+      print_success "Shell completion already configured in $shell_rc"
+    else
+      echo "" >> "$shell_rc"
+      echo "# Voice Mode shell completion" >> "$shell_rc"
+      echo "$completion_line" >> "$shell_rc"
+      print_success "Added shell completion to $shell_rc"
+      echo "   Tab completion will be available in new shell sessions"
+    fi
+  elif [[ "$shell_type" == "zsh" ]]; then
+    local completion_line='eval "$(_VOICE_MODE_COMPLETE=zsh_source voice-mode)"'
+    if [[ -f "$shell_rc" ]] && grep -q "_VOICE_MODE_COMPLETE" "$shell_rc" 2>/dev/null; then
+      print_success "Shell completion already configured in $shell_rc"
+    else
+      echo "" >> "$shell_rc"
+      echo "# Voice Mode shell completion" >> "$shell_rc"
+      echo "$completion_line" >> "$shell_rc"
+      print_success "Added shell completion to $shell_rc"
+      echo "   Tab completion will be available in new shell sessions"
+    fi
+  elif [[ "$shell_type" == "fish" ]]; then
+    local fish_completion_dir="$HOME/.config/fish/completions"
+    local fish_completion_file="$fish_completion_dir/voice-mode.fish"
+    
+    mkdir -p "$fish_completion_dir"
+    
+    if [[ -f "$fish_completion_file" ]]; then
+      print_success "Fish completion already configured"
+    else
+      # Generate fish completion directly
+      if command -v voice-mode >/dev/null 2>&1; then
+        _VOICE_MODE_COMPLETE=fish_source voice-mode > "$fish_completion_file" 2>/dev/null
+      elif command -v uvx >/dev/null 2>&1; then
+        _VOICE_MODE_COMPLETE=fish_source uvx voice-mode > "$fish_completion_file" 2>/dev/null
+      fi
+      
+      if [[ -f "$fish_completion_file" ]] && [[ -s "$fish_completion_file" ]]; then
+        print_success "Added Fish completion to $fish_completion_file"
+        echo "   Tab completion will be available immediately"
+      else
+        print_debug "Failed to generate Fish completion"
+        rm -f "$fish_completion_file"
+        return 1
+      fi
+    fi
+  fi
+  
+  return 0
+}
+
 configure_claude_voicemode() {
   if command -v claude >/dev/null 2>&1; then
     # Check if voice-mode is already configured
     if claude mcp list 2>/dev/null | grep -q "voice-mode"; then
       print_success "Voice Mode is already configured in Claude Code"
+      setup_shell_completion
       return 0
     else
       if confirm_action "Configure Voice Mode with Claude Code (adds MCP server)"; then
@@ -479,10 +572,12 @@ configure_claude_voicemode() {
         # Try with --scope flag first (newer versions)
         if claude mcp add --scope user voice-mode -- uvx --refresh voice-mode 2>/dev/null; then
           print_success "Voice Mode configured with Claude Code"
+          setup_shell_completion
           return 0
         # Fallback to without --scope flag (older versions)
         elif claude mcp add voice-mode -- uvx --refresh voice-mode; then
           print_success "Voice Mode configured with Claude Code (global config)"
+          setup_shell_completion
           return 0
         else
           print_error "Failed to configure Voice Mode with Claude Code"
