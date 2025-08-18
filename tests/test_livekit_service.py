@@ -39,7 +39,7 @@ class TestLiveKitService:
     @pytest.mark.asyncio
     async def test_livekit_status_not_running(self):
         """Test LiveKit status when service is not running"""
-        with patch('voice_mode.tools.service.find_process_by_port', return_value=None):
+        with patch('voice_mode.tools.service.check_service_status', return_value=("not_available", None)):
             result = await service("livekit", "status")
             assert "not available" in result.lower()
             # The actual implementation doesn't include port in "not available" message
