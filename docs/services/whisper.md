@@ -116,7 +116,7 @@ voice-mode whisper model remove tiny.en --force
 
 ## Configure
 
-Environment variables in `~/.voicemode.env`:
+Environment variables in `~/.voicemode/voicemode.env`:
 
 ```bash
 VOICEMODE_WHISPER_MODEL=large-v2

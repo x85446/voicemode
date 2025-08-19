@@ -11,7 +11,9 @@ import logging
 logger = logging.getLogger("voice-mode")
 
 # Configuration file path (user-level only for security)
-USER_CONFIG_PATH = Path.home() / ".voicemode" / ".voicemode.env"
+USER_CONFIG_PATH = Path.home() / ".voicemode" / "voicemode.env"
+# Legacy path for backwards compatibility
+LEGACY_CONFIG_PATH = Path.home() / ".voicemode" / ".voicemode.env"
 
 
 def parse_env_file(file_path: Path) -> Dict[str, str]:
@@ -117,8 +119,11 @@ async def update_config(key: str, value: str) -> str:
     if not re.match(r'^[A-Z_]+$', key):
         return f"❌ Invalid key format: {key}. Keys must be uppercase with underscores only."
     
-    # Use user config path
+    # Use user config path, check for legacy if new doesn't exist
     config_path = USER_CONFIG_PATH
+    if not config_path.exists() and LEGACY_CONFIG_PATH.exists():
+        config_path = LEGACY_CONFIG_PATH
+        logger.warning(f"Using deprecated .voicemode.env - please rename to voicemode.env")
     
     try:
         # Read existing configuration

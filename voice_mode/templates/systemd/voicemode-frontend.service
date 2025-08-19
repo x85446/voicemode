@@ -7,7 +7,7 @@ Wants=network.target
 [Service]
 Type=simple
 WorkingDirectory={FRONTEND_DIR}
-EnvironmentFile=%h/.voicemode/.voicemode.env
+EnvironmentFile=%h/.voicemode/voicemode.env
 Environment=NODE_ENV=development
 Environment=PORT={PORT}
 Environment=HOST={HOST}

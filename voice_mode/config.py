@@ -16,8 +16,16 @@ from datetime import datetime
 # ==================== ENVIRONMENT CONFIGURATION ====================
 
 def load_voicemode_env():
-    """Load configuration from .voicemode.env file if it exists, creating a default if not."""
-    config_path = Path.home() / ".voicemode" / ".voicemode.env"
+    """Load configuration from voicemode.env file if it exists, creating a default if not."""
+    # Try new filename first
+    config_path = Path.home() / ".voicemode" / "voicemode.env"
+    
+    # Backwards compatibility: check for old filename if new doesn't exist
+    if not config_path.exists():
+        old_path = Path.home() / ".voicemode" / ".voicemode.env"
+        if old_path.exists():
+            config_path = old_path
+            print(f"Warning: Using deprecated .voicemode.env - please rename to voicemode.env")
     
     if not config_path.exists():
         # Create default template

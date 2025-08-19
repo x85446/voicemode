@@ -60,3 +60,7 @@ This glossary defines key terms and concepts used throughout the Voice Mode proj
 **TTFA (Time to First Audio)**: The time between requesting TTS and when audio playback begins.
 
 **TTS (Text-to-Speech)**: Converting written text into spoken audio.
+
+**VoiceMode**: The project name and package that brings natural voice conversations to AI assistants through the Model Context Protocol (MCP). Written as one word with capital M in documentation, lowercase in code/paths.
+
+**VoiceMode Home Directory**: The user's application data directory at `~/.voicemode/` that stores all VoiceMode data including audio recordings, logs, configuration, installed services, and downloaded models. Also referred to by the environment variable VOICEMODE_BASE_DIR.
