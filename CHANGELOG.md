@@ -8,22 +8,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Shell completion support for CLI**
+  - New `voice-mode completion` command group with bash, zsh, and fish subcommands
+  - Automatic tab completion for all commands, options, and arguments
+  - Install.sh automatically configures shell completions during setup
+  - Native Click completion mechanism for dynamic suggestions
+  
+- **Parallel operations documentation**
+  - Documented `wait_for_response=False` pattern in converse tool
+  - Enables speaking while performing other operations simultaneously
+  - Creates more natural conversations by eliminating dead air
+  - Marked as RECOMMENDED pattern with clear usage examples
+  
 - **Comprehensive Whisper model management system**
   - New `whisper models` CLI command to list all available models with status
-  - `whisper model active` command to get/set the active model
+  - `whisper model active` command to get/set the active model  
   - `whisper model install` and `whisper model remove` commands
-  - Model registry with size/hash metadata for all Whisper models
+  - Model registry with complete size/hash metadata for all Whisper models
+  - Color-coded output showing installed/available models (green=installed, yellow=selected)
+  - Support for English-only models and all multilingual variants
+  - Automatic Core ML conversion on Apple Silicon for improved performance
   - Shell completion support for all model management commands
-  - Color-coded output showing installed/available models
-  - Clear indication of currently selected model
   
 - **MCP tools for model management**
-  - `list_models` tool to list all available Whisper models
-  - Enhanced `download_model` tool using centralized registry
+  - `list_models` tool to list all available Whisper models with status
+  - Enhanced `download_model` tool with registry validation
+  - Force download option to re-download corrupted models
+  - Skip Core ML option for testing
   - Parity between CLI and MCP interfaces
   
 - **Infrastructure improvements**
-  - Centralized model registry in `whisper/models.py`
+  - Centralized model registry in `whisper/models.py` with all model metadata
+  - Model categorization: tiny, base, small, medium, large, turbo
+  - Size information for all models (39MB to 3.1GB)
+  - SHA256 hashes for integrity verification
   - Shared download logic extracted to helpers module
   - Dynamic Click-based shell completions replacing static files
   - Comprehensive test suite for model management
@@ -31,9 +49,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Replaced static shell completions with Click-generated dynamic completions
 - Shell completion files now generated from CLI structure
+- Whisper model downloads now use centralized registry for validation
+- Model status checks now verify both file existence and selection
+
+### Fixed
+- Whisper model management now properly uses voicemode.env configuration file
+- Test suite updated for all API changes and return value structures
+- Resolved all CI test failures related to service status and diagnostics
 
 ### Removed
-- Old static shell completion files
+- Old static shell completion files  
 - SERVICE_COMMANDS.md (replaced by integrated CLI commands)
 - Shell aliases file (functionality moved to Click commands)
 
