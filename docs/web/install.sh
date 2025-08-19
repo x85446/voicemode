@@ -467,6 +467,19 @@ setup_local_npm() {
 }
 
 setup_shell_completion() {
+  # TEMPORARILY DISABLED: This function can cause shell startup errors when voice-mode
+  # is installed via uvx rather than pip. The completion setup adds lines to shell rc
+  # files that expect 'voice-mode' command to be available globally.
+  # 
+  # TODO: Implement detection of installation method and use appropriate command:
+  # - If 'voice-mode' command exists: use 'voice-mode' 
+  # - Else if 'uvx' exists: use 'uvx voice-mode'
+  # - Else: skip silently
+  #
+  # Manual setup for users who want completions:
+  # Bash: echo 'command -v voice-mode >/dev/null && eval "$(_VOICE_MODE_COMPLETE=bash_source voice-mode)" || command -v uvx >/dev/null && eval "$(_VOICE_MODE_COMPLETE=bash_source uvx voice-mode)"' >> ~/.bashrc
+  # Zsh:  echo 'command -v voice-mode >/dev/null && eval "$(_VOICE_MODE_COMPLETE=zsh_source voice-mode)" || command -v uvx >/dev/null && eval "$(_VOICE_MODE_COMPLETE=zsh_source uvx voice-mode)"' >> ~/.zshrc
+  
   # Detect current shell
   local shell_type=""
   local shell_rc=""
@@ -563,7 +576,8 @@ configure_claude_voicemode() {
     # Check if voice-mode is already configured
     if claude mcp list 2>/dev/null | grep -q "voice-mode"; then
       print_success "Voice Mode is already configured in Claude Code"
-      setup_shell_completion
+      # TEMPORARILY DISABLED: Shell completion can cause errors - see setup_shell_completion function
+      # setup_shell_completion
       return 0
     else
       if confirm_action "Configure Voice Mode with Claude Code (adds MCP server)"; then
@@ -572,12 +586,14 @@ configure_claude_voicemode() {
         # Try with --scope flag first (newer versions)
         if claude mcp add --scope user voice-mode -- uvx --refresh voice-mode 2>/dev/null; then
           print_success "Voice Mode configured with Claude Code"
-          setup_shell_completion
+          # TEMPORARILY DISABLED: Shell completion can cause errors - see setup_shell_completion function
+      # setup_shell_completion
           return 0
         # Fallback to without --scope flag (older versions)
         elif claude mcp add voice-mode -- uvx --refresh voice-mode; then
           print_success "Voice Mode configured with Claude Code (global config)"
-          setup_shell_completion
+          # TEMPORARILY DISABLED: Shell completion can cause errors - see setup_shell_completion function
+      # setup_shell_completion
           return 0
         else
           print_error "Failed to configure Voice Mode with Claude Code"
@@ -865,8 +881,8 @@ main() {
   # Pre-flight checks
   detect_os
   
-  # Early sudo caching for service installation
-  if command -v sudo >/dev/null 2>&1; then
+  # Early sudo caching for service installation (Linux only)
+  if [[ "$OS" == "linux" ]] && command -v sudo >/dev/null 2>&1; then
     print_step "Requesting administrator access for system configuration..."
     if ! sudo -v; then
       print_warning "Administrator access declined. Some features may not be available."
