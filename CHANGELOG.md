@@ -47,6 +47,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Comprehensive test suite for model management
 
 ### Changed
+- **Configuration file naming**
+  - Renamed `.voicemode.env` to `voicemode.env` (removed leading dot)
+  - Added backwards compatibility to check for old filename
+  - Shows deprecation warning when old filename is used
+  - Updated all documentation to reference new filename
+  - Updated systemd service templates
+  
 - Replaced static shell completions with Click-generated dynamic completions
 - Shell completion files now generated from CLI structure
 - Whisper model downloads now use centralized registry for validation
