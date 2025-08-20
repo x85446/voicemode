@@ -207,7 +207,7 @@ check_system_dependencies() {
   print_step "Checking system dependencies..."
 
   if [[ "$OS" == "macos" ]]; then
-    local packages=("node" "portaudio" "ffmpeg" "cmake")
+    local packages=("node" "portaudio" "ffmpeg" "cmake" "coreutils")
     local missing_packages=()
 
     for package in "${packages[@]}"; do
@@ -283,7 +283,7 @@ install_system_dependencies() {
         brew update
 
         # Install required packages
-        local packages=("node" "portaudio" "ffmpeg" "cmake")
+        local packages=("node" "portaudio" "ffmpeg" "cmake" "coreutils")
 
         for package in "${packages[@]}"; do
           if brew list "$package" >/dev/null 2>&1; then
