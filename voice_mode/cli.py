@@ -316,7 +316,7 @@ def health():
     import subprocess
     try:
         result = subprocess.run(
-            ["curl", "-s", "http://127.0.0.1:8090/health"],
+            ["curl", "-s", "http://127.0.0.1:2022/health"],
             capture_output=True, text=True, timeout=5
         )
         if result.returncode == 0:
@@ -330,7 +330,7 @@ def health():
             except json.JSONDecodeError:
                 click.echo("✅ Whisper is responding (non-JSON response)")
         else:
-            click.echo("❌ Whisper not responding on port 8090")
+            click.echo("❌ Whisper not responding on port 2022")
     except subprocess.TimeoutExpired:
         click.echo("❌ Whisper health check timed out")
     except Exception as e:
@@ -529,7 +529,8 @@ def whisper_models():
         get_current_model,
         is_model_installed,
         get_installed_models,
-        format_size
+        format_size,
+        has_coreml_model
     )
     
     model_dir = get_model_directory()
@@ -564,7 +565,11 @@ def whisper_models():
         
         # Format installation status
         if is_installed:
-            install_status = click.style("[✓ Installed]", fg="green")
+            # Check for Core ML model
+            if has_coreml_model(model_name):
+                install_status = click.style("[✓ Installed+ML]", fg="green")
+            else:
+                install_status = click.style("[✓ Installed]", fg="green")
         else:
             install_status = click.style("[ Download ]", fg="bright_black")
         
@@ -581,7 +586,7 @@ def whisper_models():
             desc = click.style(desc, fg="yellow")
         
         # Print row
-        click.echo(f"{status} {model_display} {install_status:14} {size_str}  {lang_str} {desc}")
+        click.echo(f"{status} {model_display} {install_status:18} {size_str}  {lang_str} {desc}")
     
     # Print footer
     click.echo("")

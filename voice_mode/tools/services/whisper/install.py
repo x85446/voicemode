@@ -283,6 +283,11 @@ async def whisper_install(
 WHISPER_DIR="{install_dir}"
 LOG_FILE="{os.path.join(voicemode_dir, 'whisper-server.log')}"
 
+# Source voicemode configuration if it exists
+if [ -f "{voicemode_dir}/voicemode.env" ]; then
+    source "{voicemode_dir}/voicemode.env"
+fi
+
 # Model selection with environment variable support
 MODEL_NAME="${{VOICEMODE_WHISPER_MODEL:-{model}}}"
 MODEL_PATH="$WHISPER_DIR/models/ggml-$MODEL_NAME.bin"
