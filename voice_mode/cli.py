@@ -7,6 +7,7 @@ import os
 import warnings
 import click
 
+
 # Suppress known deprecation warnings for better user experience
 # These apply to both CLI commands and MCP server operation
 # They can be shown with VOICEMODE_DEBUG=true or --debug flag
@@ -1537,5 +1538,112 @@ def converse(message, wait, duration, min_duration, transport, room_name, voice,
     
     # Run the async function
     asyncio.run(run_conversation())
+
+
+# Completions command
+@voice_mode_main_cli.command()
+@click.argument('shell', type=click.Choice(['bash', 'zsh', 'fish']))
+@click.option('--install', is_flag=True, help='Install completion script to the appropriate location')
+def completions(shell, install):
+    """Generate or install shell completion scripts.
+    
+    Examples:
+        voicemode completions bash              # Output bash completion to stdout
+        voicemode completions bash --install    # Install to ~/.bash_completion.d/
+        voicemode completions zsh --install     # Install to ~/.zfunc/
+        voicemode completions fish --install    # Install to ~/.config/fish/completions/
+    """
+    from pathlib import Path
+    
+    # Generate completion scripts based on shell type
+    if shell == 'bash':
+        completion_script = '''# bash completion for voicemode
+_voicemode_completion() {
+    local IFS=$'\\n'
+    local response
+    
+    response=$(env _VOICEMODE_COMPLETE=bash_complete COMP_WORDS="${COMP_WORDS[*]}" COMP_CWORD=$COMP_CWORD voicemode 2>/dev/null)
+    
+    for completion in $response; do
+        IFS=',' read type value <<< "$completion"
+        
+        if [[ $type == 'plain' ]]; then
+            COMPREPLY+=("$value")
+        elif [[ $type == 'file' ]]; then
+            COMPREPLY+=("$value")
+        elif [[ $type == 'dir' ]]; then
+            COMPREPLY+=("$value")
+        fi
+    done
+    
+    return 0
+}
+
+complete -o default -F _voicemode_completion voicemode
+'''
+    
+    elif shell == 'zsh':
+        completion_script = '''#compdef voicemode
+# zsh completion for voicemode
+
+_voicemode() {
+    local -a response
+    response=(${(f)"$(env _VOICEMODE_COMPLETE=zsh_complete COMP_WORDS="${words[*]}" COMP_CWORD=$((CURRENT-1)) voicemode 2>/dev/null)"})
+    
+    for completion in $response; do
+        IFS=',' read type value <<< "$completion"
+        compadd -U -- "$value"
+    done
+}
+
+compdef _voicemode voicemode
+'''
+    
+    elif shell == 'fish':
+        completion_script = '''# fish completion for voicemode
+function __fish_voicemode_complete
+    set -l response (env _VOICEMODE_COMPLETE=fish_complete COMP_WORDS=(commandline -cp) COMP_CWORD=(commandline -t) voicemode 2>/dev/null)
+    
+    for completion in $response
+        echo $completion
+    end
+end
+
+complete -c voicemode -f -a '(__fish_voicemode_complete)'
+'''
+    
+    if install:
+        # Define installation locations for each shell
+        locations = {
+            'bash': '~/.bash_completion.d/voicemode',
+            'zsh': '~/.zfunc/_voicemode',
+            'fish': '~/.config/fish/completions/voicemode.fish'
+        }
+        
+        install_path = Path(locations[shell]).expanduser()
+        install_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Write completion script to file
+        install_path.write_text(completion_script)
+        click.echo(f"✅ Installed {shell} completions to {install_path}")
+        
+        # Provide shell-specific instructions
+        if shell == 'bash':
+            click.echo("\nTo activate now, run:")
+            click.echo(f"  source {install_path}")
+            click.echo("\nTo activate permanently, add to ~/.bashrc:")
+            click.echo(f"  source {install_path}")
+        elif shell == 'zsh':
+            click.echo("\nTo activate now, run:")
+            click.echo("  autoload -U compinit && compinit")
+            click.echo("\nMake sure ~/.zfunc is in your fpath (add to ~/.zshrc):")
+            click.echo("  fpath=(~/.zfunc $fpath)")
+        elif shell == 'fish':
+            click.echo("\nCompletions will be active in new fish sessions.")
+            click.echo("To activate now, run:")
+            click.echo(f"  source {install_path}")
+    else:
+        # Output completion script to stdout
+        click.echo(completion_script)
 
 
