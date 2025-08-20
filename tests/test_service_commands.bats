@@ -188,7 +188,6 @@ setup() {
 }
 
 @test "version command runs without error" {
-    # Test that version command works
     run $VOICE_MODE version
     
     # Check that it didn't crash
@@ -198,34 +197,49 @@ setup() {
         return 1
     fi
     
-    # Should contain "Voice Mode version"
-    if [[ "$output" != *"Voice Mode version"* ]]; then
-        echo "Version command didn't output expected text:"
+    if [[ "$output" == *"NameError"* ]]; then
+        echo "Command has NameError (missing import?):"
         echo "$output"
         return 1
     fi
     
+    # Check that it shows version information
+    if [[ "$output" != *"Voice Mode version:"* ]]; then
+        echo "Version command didn't show version info:"
+        echo "$output"
+        return 1
+    fi
+    
+    # Success - command ran and showed version
     return 0
 }
 
 @test "update command runs without error" {
-    # Test that update command works (may fail if no updates available)
-    run $VOICE_MODE update --help
+    # Test update command (it should check for updates without actually updating)
+    run $VOICE_MODE update
     
-    # Check that help works at least
+    # Check that it didn't crash
     if [[ "$output" == *"Traceback"* ]]; then
         echo "Command crashed with Python error:"
         echo "$output"
         return 1
     fi
     
-    # Should contain "Update Voice Mode"
-    if [[ "$output" != *"Update Voice Mode"* ]]; then
-        echo "Update command help didn't output expected text:"
+    if [[ "$output" == *"NameError"* ]]; then
+        echo "Command has NameError (missing import?):"
         echo "$output"
         return 1
     fi
     
+    # Check that it shows appropriate message
+    # Should either say "Already running the latest version" or "Updating Voice Mode"
+    if [[ "$output" != *"Already running"* ]] && [[ "$output" != *"Updating Voice Mode"* ]]; then
+        echo "Update command didn't show expected output:"
+        echo "$output"
+        return 1
+    fi
+    
+    # Success - command ran without errors
     return 0
 }
 

@@ -1540,6 +1540,123 @@ def converse(message, wait, duration, min_duration, transport, room_name, voice,
     asyncio.run(run_conversation())
 
 
+# Version command
+@voice_mode_main_cli.command()
+def version():
+    """Show Voice Mode version and check for updates."""
+    import requests
+    from importlib.metadata import version as get_version, PackageNotFoundError
+    
+    try:
+        current_version = get_version("voice-mode")
+    except PackageNotFoundError:
+        # Fallback for development installations
+        current_version = "development"
+    
+    click.echo(f"Voice Mode version: {current_version}")
+    
+    # Check for updates if not in development mode
+    if current_version != "development":
+        try:
+            response = requests.get(
+                "https://pypi.org/pypi/voice-mode/json",
+                timeout=2
+            )
+            if response.status_code == 200:
+                latest_version = response.json()["info"]["version"]
+                
+                # Simple version comparison (works for semantic versioning)
+                if latest_version != current_version:
+                    click.echo(f"Latest version: {latest_version} available")
+                    click.echo("Run 'voicemode update' to update")
+                else:
+                    click.echo("You are running the latest version")
+        except (requests.RequestException, KeyError, ValueError):
+            # Fail silently if we can't check for updates
+            pass
+
+
+# Update command
+@voice_mode_main_cli.command()
+@click.option('--force', is_flag=True, help='Force reinstall even if already up to date')
+def update(force):
+    """Update Voice Mode to the latest version."""
+    import subprocess
+    import requests
+    from importlib.metadata import version as get_version, PackageNotFoundError
+    
+    try:
+        current_version = get_version("voice-mode")
+    except PackageNotFoundError:
+        current_version = "development"
+    
+    if not force and current_version != "development":
+        # Check if update is needed
+        try:
+            response = requests.get(
+                "https://pypi.org/pypi/voice-mode/json",
+                timeout=2
+            )
+            if response.status_code == 200:
+                latest_version = response.json()["info"]["version"]
+                if latest_version == current_version:
+                    click.echo(f"Already running the latest version ({current_version})")
+                    return
+        except (requests.RequestException, KeyError, ValueError):
+            # Continue with update if we can't check
+            pass
+    
+    click.echo("Updating Voice Mode to the latest version...")
+    
+    # Try UV first, fall back to pip
+    try:
+        # Check if UV is available
+        result = subprocess.run(
+            ["uv", "--version"],
+            capture_output=True,
+            text=True,
+            check=False
+        )
+        
+        if result.returncode == 0:
+            # Use UV for update
+            result = subprocess.run(
+                ["uv", "pip", "install", "--upgrade", "voice-mode"],
+                capture_output=True,
+                text=True
+            )
+            if result.returncode == 0:
+                # Get new version
+                try:
+                    new_version = get_version("voice-mode")
+                    click.echo(f"✅ Successfully updated to version {new_version}")
+                except PackageNotFoundError:
+                    click.echo("✅ Successfully updated Voice Mode")
+            else:
+                click.echo(f"❌ Update failed: {result.stderr}")
+                click.echo("Try running: uv pip install --upgrade voice-mode")
+        else:
+            # Fall back to pip
+            result = subprocess.run(
+                [sys.executable, "-m", "pip", "install", "--upgrade", "voice-mode"],
+                capture_output=True,
+                text=True
+            )
+            if result.returncode == 0:
+                try:
+                    new_version = get_version("voice-mode")
+                    click.echo(f"✅ Successfully updated to version {new_version}")
+                except PackageNotFoundError:
+                    click.echo("✅ Successfully updated Voice Mode")
+            else:
+                click.echo(f"❌ Update failed: {result.stderr}")
+                click.echo("Try running: pip install --upgrade voice-mode")
+    
+    except FileNotFoundError as e:
+        click.echo(f"❌ Update failed: {e}")
+        click.echo("Please install UV or pip and try again")
+
+
 # Completions command
 @voice_mode_main_cli.command()
 @click.argument('shell', type=click.Choice(['bash', 'zsh', 'fish']))
