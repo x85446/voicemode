@@ -369,13 +369,14 @@ exec "$SERVER_BIN" \\
             with open(plist_path, 'w') as f:
                 f.write(plist_content)
             
-            # Load the launchagent
+            # Unload if already loaded (ignore errors)
             try:
                 subprocess.run(["launchctl", "unload", plist_path], capture_output=True)
             except:
                 pass  # Ignore if not loaded
             
-            subprocess.run(["launchctl", "load", plist_path], check=True)
+            # Don't load here - let enable_service handle it with the -w flag
+            # This prevents the "already loaded" error when enable_service runs
             
             # Handle auto_enable
             enable_message = ""
