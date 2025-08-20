@@ -242,3 +242,66 @@ setup() {
     # Success - command ran without errors
     return 0
 }
+
+@test "completions command generates bash completions" {
+    # Test that completions command generates bash completion script
+    run $VOICE_MODE completions bash
+    
+    # Check that it didn't crash
+    if [[ "$output" == *"Traceback"* ]]; then
+        echo "Command crashed with Python error:"
+        echo "$output"
+        return 1
+    fi
+    
+    # Should contain bash completion function
+    if [[ "$output" != *"_voicemode_completion"* ]]; then
+        echo "Completions didn't generate bash function:"
+        echo "$output"
+        return 1
+    fi
+    
+    return 0
+}
+
+@test "completions command generates zsh completions" {
+    # Test that completions command generates zsh completion script
+    run $VOICE_MODE completions zsh
+    
+    # Check that it didn't crash
+    if [[ "$output" == *"Traceback"* ]]; then
+        echo "Command crashed with Python error:"
+        echo "$output"
+        return 1
+    fi
+    
+    # Should contain zsh completion function
+    if [[ "$output" != *"#compdef voicemode"* ]]; then
+        echo "Completions didn't generate zsh function:"
+        echo "$output"
+        return 1
+    fi
+    
+    return 0
+}
+
+@test "completions command generates fish completions" {
+    # Test that completions command generates fish completion script
+    run $VOICE_MODE completions fish
+    
+    # Check that it didn't crash
+    if [[ "$output" == *"Traceback"* ]]; then
+        echo "Command crashed with Python error:"
+        echo "$output"
+        return 1
+    fi
+    
+    # Should contain fish completion function
+    if [[ "$output" != *"__fish_voicemode_complete"* ]]; then
+        echo "Completions didn't generate fish function:"
+        echo "$output"
+        return 1
+    fi
+    
+    return 0
+}
