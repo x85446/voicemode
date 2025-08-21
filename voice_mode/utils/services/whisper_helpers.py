@@ -262,7 +262,8 @@ async def convert_to_coreml(
         while current != current.parent:
             if (current / "pyproject.toml").exists():
                 with open(current / "pyproject.toml") as f:
-                    if 'name = "voicemode"' in f.read():
+                    content = f.read()
+                    if 'name = "voice-mode"' in content or 'name = "voicemode"' in content:
                         voicemode_root = current
                         break
             current = current.parent
@@ -271,21 +272,42 @@ async def convert_to_coreml(
         if voicemode_root and shutil.which("uv"):
             # Run the Python script directly with uv instead of using the bash wrapper
             logger.info("Using uv for Core ML conversion with Python dependencies")
+            # Run from the whisper models directory
+            script_path = whisper_dir / "models" / "convert-whisper-to-coreml.py"
             result = subprocess.run(
                 ["uv", "run", "--project", str(voicemode_root), "python", 
-                 str(whisper_dir / "models" / "convert-whisper-to-coreml.py"),
+                 str(script_path),
                  "--model", model, "--encoder-only", "True", "--optimize-ane", "True"],
-                cwd=str(whisper_dir),
+                cwd=str(whisper_dir / "models"),
                 capture_output=True,
                 text=True,
                 check=True
             )
+            
+            # Now compile the mlpackage to mlmodelc using coremlc
+            mlpackage_path = models_dir / f"coreml-encoder-{model}.mlpackage"
+            if mlpackage_path.exists():
+                logger.info(f"Compiling Core ML model with coremlc...")
+                compile_result = subprocess.run(
+                    ["xcrun", "coremlc", "compile", str(mlpackage_path), str(models_dir)],
+                    capture_output=True,
+                    text=True,
+                    check=True
+                )
+                
+                # Move the compiled model to the correct name
+                compiled_path = models_dir / f"coreml-encoder-{model}.mlmodelc"
+                if compiled_path.exists():
+                    shutil.rmtree(coreml_path, ignore_errors=True)
+                    shutil.move(str(compiled_path), str(coreml_path))
         else:
             # Fallback to original bash script
             logger.info("Using standard Python for Core ML conversion")
+            # Run from the whisper models directory where the script is located
+            script_dir = convert_script.parent
             result = subprocess.run(
                 ["bash", str(convert_script), model],
-                cwd=str(models_dir),
+                cwd=str(script_dir),
                 capture_output=True,
                 text=True,
                 check=True
@@ -306,6 +328,8 @@ async def convert_to_coreml(
     except subprocess.CalledProcessError as e:
         error_text = e.stderr if e.stderr else ""
         stdout_text = e.stdout if e.stdout else ""
+        # Combine both for error detection since Python errors can appear in either
+        combined_output = error_text + stdout_text
         
         # Enhanced error detection with specific categories
         error_details = {
@@ -316,8 +340,8 @@ async def convert_to_coreml(
         }
         
         # Detect specific missing dependencies
-        if "ModuleNotFoundError" in error_text:
-            if "torch" in error_text:
+        if "ModuleNotFoundError" in combined_output:
+            if "torch" in combined_output:
                 error_details.update({
                     "error_category": "missing_pytorch",
                     "error": "PyTorch not installed - required for Core ML conversion",
@@ -325,7 +349,7 @@ async def convert_to_coreml(
                     "manual_install": "pip install torch",
                     "package_size": "~2.5GB"
                 })
-            elif "coremltools" in error_text:
+            elif "coremltools" in combined_output:
                 error_details.update({
                     "error_category": "missing_coremltools",
                     "error": "CoreMLTools not installed",
@@ -333,7 +357,7 @@ async def convert_to_coreml(
                     "manual_install": "pip install coremltools",
                     "package_size": "~50MB"
                 })
-            elif "whisper" in error_text:
+            elif "whisper" in combined_output:
                 error_details.update({
                     "error_category": "missing_whisper",
                     "error": "OpenAI Whisper package not installed",
@@ -341,7 +365,7 @@ async def convert_to_coreml(
                     "manual_install": "pip install openai-whisper",
                     "package_size": "~100MB"
                 })
-            elif "ane_transformers" in error_text:
+            elif "ane_transformers" in combined_output:
                 error_details.update({
                     "error_category": "missing_ane_transformers",
                     "error": "ANE Transformers not installed for Apple Neural Engine optimization",
@@ -351,7 +375,7 @@ async def convert_to_coreml(
                 })
             else:
                 # Generic module not found
-                module_match = re.search(r"No module named '([^']+)'", error_text)
+                module_match = re.search(r"No module named '([^']+)'", combined_output)
                 module_name = module_match.group(1) if module_match else "unknown"
                 error_details.update({
                     "error_category": "missing_module",
@@ -359,14 +383,22 @@ async def convert_to_coreml(
                     "install_command": f"uv pip install {module_name}",
                     "manual_install": f"pip install {module_name}"
                 })
-        elif "xcrun: error" in error_text or "coremlc" in error_text:
+        elif "xcrun: error" in combined_output and "coremlc" in combined_output:
+            error_details.update({
+                "error_category": "missing_coremlc",
+                "error": "Core ML compiler (coremlc) not found - requires full Xcode installation",
+                "install_command": "Install Xcode from Mac App Store",
+                "note": "Command Line Tools alone are insufficient. Full Xcode provides coremlc for Core ML compilation.",
+                "alternative": "Models will work with Metal acceleration without Core ML compilation"
+            })
+        elif "xcrun: error" in combined_output:
             error_details.update({
                 "error_category": "missing_xcode_tools",
                 "error": "Xcode Command Line Tools not installed or xcrun not available",
                 "install_command": "xcode-select --install",
-                "note": "Requires Xcode Command Line Tools for Core ML compilation"
+                "note": "Requires Xcode Command Line Tools"
             })
-        elif "timeout" in error_text.lower():
+        elif "timeout" in combined_output.lower():
             error_details.update({
                 "error_category": "conversion_timeout",
                 "error": "Core ML conversion timed out",
