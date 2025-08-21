@@ -374,8 +374,7 @@ def benchmark_whisper_model(model_name: str, sample_file: Optional[str] = None) 
                 "--model", str(model_path),
                 "--file", str(sample_file),
                 "--threads", "8",
-                "--beam-size", "1",
-                "--no-prints"
+                "--beam-size", "1"
             ],
             capture_output=True,
             text=True,

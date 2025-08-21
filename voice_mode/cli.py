@@ -611,8 +611,10 @@ def whisper_model_install(model, force, skip_core_ml):
     medium, medium.en, large-v1, large-v2, large-v3, large-v3-turbo
     """
     import json
-    from voice_mode.tools.services.whisper.model_install import whisper_model_install
-    result = asyncio.run(whisper_model_install(
+    import voice_mode.tools.services.whisper.model_install as install_module
+    # Get the actual function, not the MCP tool wrapper
+    install_func = install_module.whisper_model_install.__wrapped__ if hasattr(install_module.whisper_model_install, '__wrapped__') else install_module.whisper_model_install
+    result = asyncio.run(install_func(
         model=model,
         force_download=force,
         skip_core_ml=skip_core_ml
