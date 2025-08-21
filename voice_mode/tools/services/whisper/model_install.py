@@ -109,11 +109,32 @@ async def whisper_model_install(
                 force_download=force_download
             )
             
-            results.append({
+            # Build comprehensive result entry
+            model_result = {
                 "model": model_name,
-                "success": result["success"],
-                "message": result.get("message", result.get("error", "Unknown error"))
-            })
+                "download_success": result["success"],
+                "message": result.get("message", result.get("error", "Unknown error")),
+                "acceleration": result.get("acceleration", "unknown")
+            }
+            
+            # Include Core ML status if available
+            if "core_ml_status" in result and not skip_core_ml:
+                core_ml = result["core_ml_status"]
+                model_result["core_ml"] = {
+                    "attempted": True,
+                    "success": core_ml.get("success", False),
+                    "error_category": core_ml.get("error_category") if not core_ml.get("success") else None,
+                    "error": core_ml.get("error") if not core_ml.get("success") else None,
+                    "fix_command": core_ml.get("install_command") if not core_ml.get("success") else None,
+                    "package_size": core_ml.get("package_size") if not core_ml.get("success") else None
+                }
+            elif skip_core_ml:
+                model_result["core_ml"] = {
+                    "attempted": False,
+                    "reason": "Skipped by user request"
+                }
+            
+            results.append(model_result)
             
             if result["success"]:
                 success_count += 1
@@ -121,18 +142,58 @@ async def whisper_model_install(
         # Summary
         total_models = len(models_to_download)
         
-        return json.dumps({
+        # Collect warnings and recommendations
+        warnings = []
+        recommendations = []
+        
+        # Check for Core ML issues
+        core_ml_failures = [r for r in results if r.get("core_ml", {}).get("attempted") and not r.get("core_ml", {}).get("success")]
+        if core_ml_failures:
+            # Group by error category
+            error_categories = {}
+            for failure in core_ml_failures:
+                category = failure["core_ml"].get("error_category", "unknown")
+                if category not in error_categories:
+                    error_categories[category] = failure["core_ml"]
+            
+            # Add warnings for each category
+            if "missing_pytorch" in error_categories:
+                warnings.append("PyTorch not installed - Core ML acceleration unavailable")
+                recommendations.append(f"Install PyTorch for Core ML: {error_categories['missing_pytorch'].get('fix_command', 'uv pip install torch')}")
+            elif "missing_coremltools" in error_categories:
+                warnings.append("CoreMLTools not installed - Core ML acceleration unavailable")
+                recommendations.append(f"Install CoreMLTools: {error_categories['missing_coremltools'].get('fix_command', 'uv pip install coremltools')}")
+            
+            # General Core ML recommendation
+            if len(core_ml_failures) == len(results):
+                recommendations.append("Models will use Metal acceleration. Core ML provides better performance on Apple Silicon.")
+        
+        summary = {
             "success": success_count > 0,
             "models_directory": str(actual_models_dir),
             "total_requested": total_models,
             "successful_downloads": success_count,
             "failed_downloads": total_models - success_count,
             "results": results,
-            "core_ml_enabled": not skip_core_ml and os.uname().machine == "arm64",
-            "recommendation": "Models downloaded successfully. You can now use them with whisper_start."
-            if success_count == total_models
-            else "Some models failed to download. Check the results for details."
-        }, indent=2)
+            "core_ml_available": not skip_core_ml and os.uname().machine == "arm64",
+        }
+        
+        # Add warnings and recommendations if present
+        if warnings:
+            summary["warnings"] = warnings
+        if recommendations:
+            summary["recommendations"] = recommendations
+        
+        # Add overall status message
+        if success_count == total_models:
+            if core_ml_failures:
+                summary["status"] = "Models downloaded successfully but Core ML conversion failed. Using Metal acceleration."
+            else:
+                summary["status"] = "Models downloaded and converted successfully. Ready to use with whisper_start."
+        else:
+            summary["status"] = "Some models failed to download. Check the results for details."
+        
+        return json.dumps(summary, indent=2)
         
     except Exception as e:
         logger.error(f"Error in download_model: {e}")

@@ -1,6 +1,7 @@
 """Helper functions for whisper service management."""
 
 import os
+import re
 import subprocess
 import platform
 import logging
@@ -177,16 +178,20 @@ async def download_whisper_model(
             if core_ml_result["success"]:
                 logger.info(f"Core ML conversion completed for {model}")
             else:
-                error_msg = core_ml_result.get('error', '')
-                if 'torch' in error_msg or 'ModuleNotFoundError' in error_msg:
-                    logger.info(f"Core ML conversion skipped - PyTorch not installed. Whisper will still work with Metal acceleration.")
+                # Log appropriate level based on error category
+                error_category = core_ml_result.get('error_category', 'unknown')
+                if error_category in ['missing_pytorch', 'missing_coremltools', 'missing_whisper', 'missing_ane_transformers', 'missing_module']:
+                    logger.info(f"Core ML conversion skipped - {core_ml_result.get('error', 'Missing dependencies')}. Whisper will use Metal acceleration.")
                 else:
-                    logger.warning(f"Core ML conversion failed: {error_msg}")
+                    logger.warning(f"Core ML conversion failed ({error_category}): {core_ml_result.get('error', 'Unknown error')}")
         
+        # Always include Core ML status in response
         return {
             "success": True,
             "path": str(model_path),
-            "message": f"Model {model} downloaded successfully"
+            "message": f"Model {model} downloaded successfully",
+            "core_ml_status": core_ml_result,
+            "acceleration": "coreml" if core_ml_result.get("success") else "metal"
         }
         
     except subprocess.CalledProcessError as e:
@@ -300,21 +305,100 @@ async def convert_to_coreml(
             
     except subprocess.CalledProcessError as e:
         error_text = e.stderr if e.stderr else ""
-        if "ModuleNotFoundError" in error_text and "torch" in error_text:
-            return {
-                "success": False,
-                "error": "PyTorch not installed - Core ML conversion requires: pip install torch coremltools"
-            }
-        logger.error(f"Core ML conversion failed: {error_text}")
+        stdout_text = e.stdout if e.stdout else ""
+        
+        # Enhanced error detection with specific categories
+        error_details = {
+            "success": False,
+            "error_type": "subprocess_error",
+            "return_code": e.returncode,
+            "command": " ".join(e.cmd) if hasattr(e, 'cmd') else "conversion script",
+        }
+        
+        # Detect specific missing dependencies
+        if "ModuleNotFoundError" in error_text:
+            if "torch" in error_text:
+                error_details.update({
+                    "error_category": "missing_pytorch",
+                    "error": "PyTorch not installed - required for Core ML conversion",
+                    "install_command": "uv pip install torch",
+                    "manual_install": "pip install torch",
+                    "package_size": "~2.5GB"
+                })
+            elif "coremltools" in error_text:
+                error_details.update({
+                    "error_category": "missing_coremltools",
+                    "error": "CoreMLTools not installed",
+                    "install_command": "uv pip install coremltools",
+                    "manual_install": "pip install coremltools",
+                    "package_size": "~50MB"
+                })
+            elif "whisper" in error_text:
+                error_details.update({
+                    "error_category": "missing_whisper",
+                    "error": "OpenAI Whisper package not installed",
+                    "install_command": "uv pip install openai-whisper",
+                    "manual_install": "pip install openai-whisper",
+                    "package_size": "~100MB"
+                })
+            elif "ane_transformers" in error_text:
+                error_details.update({
+                    "error_category": "missing_ane_transformers",
+                    "error": "ANE Transformers not installed for Apple Neural Engine optimization",
+                    "install_command": "uv pip install ane_transformers",
+                    "manual_install": "pip install ane_transformers",
+                    "package_size": "~10MB"
+                })
+            else:
+                # Generic module not found
+                module_match = re.search(r"No module named '([^']+)'", error_text)
+                module_name = module_match.group(1) if module_match else "unknown"
+                error_details.update({
+                    "error_category": "missing_module",
+                    "error": f"Python module '{module_name}' not installed",
+                    "install_command": f"uv pip install {module_name}",
+                    "manual_install": f"pip install {module_name}"
+                })
+        elif "xcrun: error" in error_text or "coremlc" in error_text:
+            error_details.update({
+                "error_category": "missing_xcode_tools",
+                "error": "Xcode Command Line Tools not installed or xcrun not available",
+                "install_command": "xcode-select --install",
+                "note": "Requires Xcode Command Line Tools for Core ML compilation"
+            })
+        elif "timeout" in error_text.lower():
+            error_details.update({
+                "error_category": "conversion_timeout",
+                "error": "Core ML conversion timed out",
+                "suggestion": "Try with a smaller model or increase timeout"
+            })
+        else:
+            # Generic conversion failure
+            error_details.update({
+                "error_category": "conversion_failure",
+                "error": f"Core ML conversion failed",
+                "stderr": error_text[:500] if error_text else None,  # Truncate long errors
+                "stdout": stdout_text[:500] if stdout_text else None
+            })
+        
+        logger.error(f"Core ML conversion failed - Category: {error_details.get('error_category', 'unknown')}, Error: {error_text[:200]}")
+        return error_details
+        
+    except subprocess.TimeoutExpired as e:
+        logger.error(f"Core ML conversion timed out after {e.timeout} seconds")
         return {
             "success": False,
-            "error": f"Conversion failed: {error_text}"
+            "error_category": "timeout",
+            "error": f"Core ML conversion timed out after {e.timeout} seconds",
+            "suggestion": "Model conversion is taking too long. Try again or use a smaller model."
         }
     except Exception as e:
-        logger.error(f"Error during Core ML conversion: {e}")
+        logger.error(f"Unexpected error during Core ML conversion: {e}")
         return {
             "success": False,
-            "error": str(e)
+            "error_category": "unexpected_error",
+            "error": str(e),
+            "error_type": type(e).__name__
         }
 
 
