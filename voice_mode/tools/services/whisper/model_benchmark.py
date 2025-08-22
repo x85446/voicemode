@@ -56,7 +56,8 @@ async def whisper_model_benchmark(
             if is_whisper_model_installed(model):
                 model_list.append(model)
             else:
-                print(f"Warning: Model {model} is not installed, skipping")
+                # Model not installed, skip silently or could use logger.warning
+                pass
         if not model_list:
             return {
                 "success": False,
