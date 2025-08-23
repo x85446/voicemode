@@ -58,18 +58,21 @@ def voice_mode() -> None:
 
 # Service group commands
 @voice_mode_main_cli.group()
+@click.help_option('-h', '--help', help='Show this message and exit')
 def kokoro():
     """Manage Kokoro TTS service."""
     pass
 
 
 @voice_mode_main_cli.group()
+@click.help_option('-h', '--help', help='Show this message and exit')
 def whisper():
     """Manage Whisper STT service."""
     pass
 
 
 @voice_mode_main_cli.group()
+@click.help_option('-h', '--help', help='Show this message and exit')
 def livekit():
     """Manage LiveKit RTC service."""
     pass
@@ -128,6 +131,7 @@ def disable():
 
 
 @kokoro.command()
+@click.help_option('-h', '--help')
 @click.option('--lines', '-n', default=50, help='Number of log lines to show')
 def logs(lines):
     """View Kokoro service logs."""
@@ -172,6 +176,7 @@ def health():
 
 
 @kokoro.command()
+@click.help_option('-h', '--help')
 @click.option('--install-dir', help='Directory to install kokoro-fastapi')
 @click.option('--port', default=8880, help='Port to configure for the service')
 @click.option('--force', '-f', is_flag=True, help='Force reinstall even if already installed')
@@ -209,6 +214,7 @@ def install(install_dir, port, force, version, auto_enable):
 
 
 @kokoro.command()
+@click.help_option('-h', '--help')
 @click.option('--remove-models', is_flag=True, help='Also remove downloaded Kokoro models')
 @click.option('--remove-all-data', is_flag=True, help='Remove all Kokoro data including logs and cache')
 @click.confirmation_option(prompt='Are you sure you want to uninstall Kokoro?')
@@ -294,6 +300,7 @@ def disable():
 
 
 @whisper.command()
+@click.help_option('-h', '--help')
 @click.option('--lines', '-n', default=50, help='Number of log lines to show')
 def logs(lines):
     """View Whisper service logs."""
@@ -338,6 +345,7 @@ def health():
 
 
 @whisper.command()
+@click.help_option('-h', '--help')
 @click.option('--install-dir', help='Directory to install whisper.cpp')
 @click.option('--model', default='large-v2', help='Whisper model to download (default: large-v2)')
 @click.option('--use-gpu/--no-gpu', default=None, help='Enable GPU support if available')
@@ -386,6 +394,7 @@ def install(install_dir, model, use_gpu, force, version, auto_enable):
 
 
 @whisper.command()
+@click.help_option('-h', '--help')
 @click.option('--remove-models', is_flag=True, help='Also remove downloaded Whisper models')
 @click.option('--remove-all-data', is_flag=True, help='Remove all Whisper data including logs and transcriptions')
 @click.confirmation_option(prompt='Are you sure you want to uninstall Whisper?')
@@ -422,6 +431,7 @@ def uninstall(remove_models, remove_all_data):
 
 
 @whisper.group("model")
+@click.help_option('-h', '--help', help='Show this message and exit')
 def whisper_model():
     """Manage Whisper models.
     
@@ -434,6 +444,7 @@ def whisper_model():
 
 
 @whisper_model.command("active")
+@click.help_option('-h', '--help')
 @click.argument('model_name', required=False)
 def whisper_model_active(model_name):
     """Show or set the active Whisper model.
@@ -598,6 +609,7 @@ def whisper_models():
 
 
 @whisper_model.command("install")
+@click.help_option('-h', '--help')
 @click.argument('model', default='large-v2')
 @click.option('--force', '-f', is_flag=True, help='Re-download even if model exists')
 @click.option('--skip-core-ml', is_flag=True, help='Skip Core ML conversion on Apple Silicon')
@@ -653,6 +665,7 @@ def whisper_model_install(model, force, skip_core_ml):
 
 
 @whisper_model.command("remove")
+@click.help_option('-h', '--help')
 @click.argument('model')
 @click.option('--force', '-f', is_flag=True, help='Remove without confirmation')
 def whisper_model_remove(model, force):
@@ -721,6 +734,7 @@ def whisper_model_remove(model, force):
 
 
 @whisper_model.command("benchmark")
+@click.help_option('-h', '--help')
 @click.option('--models', default='installed', help='Models to benchmark: installed, all, or comma-separated list')
 @click.option('--sample', help='Audio file to use for benchmarking')
 @click.option('--runs', default=1, help='Number of benchmark runs per model')
@@ -846,6 +860,7 @@ def disable():
 
 
 @livekit.command()
+@click.help_option('-h', '--help')
 @click.option('--lines', '-n', default=50, help='Number of log lines to show')
 def logs(lines):
     """View LiveKit service logs."""
@@ -869,6 +884,7 @@ def update():
 
 
 @livekit.command()
+@click.help_option('-h', '--help')
 @click.option('--install-dir', help='Directory to install LiveKit')
 @click.option('--port', default=7880, help='Port for LiveKit server (default: 7880)')
 @click.option('--force', '-f', is_flag=True, help='Force reinstall even if already installed')
@@ -909,6 +925,7 @@ def install(install_dir, port, force, version, auto_enable):
 
 
 @livekit.command()
+@click.help_option('-h', '--help')
 @click.option('--remove-config', is_flag=True, help='Also remove LiveKit configuration files')
 @click.option('--remove-all-data', is_flag=True, help='Remove all LiveKit data including logs')
 @click.confirmation_option(prompt='Are you sure you want to uninstall LiveKit?')
@@ -938,12 +955,14 @@ def uninstall(remove_config, remove_all_data):
 
 # LiveKit frontend subcommands
 @livekit.group()
+@click.help_option('-h', '--help', help='Show this message and exit')
 def frontend():
     """Manage LiveKit Voice Assistant Frontend."""
     pass
 
 
 @frontend.command("install")
+@click.help_option('-h', '--help')
 @click.option('--auto-enable/--no-auto-enable', default=None, help='Enable service after installation (default: from config)')
 def frontend_install(auto_enable):
     """Install and setup LiveKit Voice Assistant Frontend."""
@@ -971,6 +990,7 @@ def frontend_install(auto_enable):
 
 
 @frontend.command("start")
+@click.help_option('-h', '--help')
 @click.option('--port', default=3000, help='Port to run frontend on (default: 3000)')
 @click.option('--host', default='127.0.0.1', help='Host to bind to (default: 127.0.0.1)')
 def frontend_start(port, host):
@@ -1051,6 +1071,7 @@ def frontend_open():
 
 
 @frontend.command("logs")
+@click.help_option('-h', '--help')
 @click.option("--lines", "-n", default=50, help="Number of lines to show (default: 50)")
 @click.option("--follow", "-f", is_flag=True, help="Follow log output (tail -f)")
 def frontend_logs(lines, follow):
@@ -1104,6 +1125,7 @@ def frontend_disable():
 
 
 @frontend.command("build")
+@click.help_option('-h', '--help')
 @click.option('--force', '-f', is_flag=True, help='Force rebuild even if build exists')
 def frontend_build(force):
     """Build frontend for production (requires Node.js)."""
@@ -1161,6 +1183,7 @@ def frontend_build(force):
 
 # Configuration management group
 @voice_mode_main_cli.group()
+@click.help_option('-h', '--help', help='Show this message and exit')
 def config():
     """Manage voice-mode configuration."""
     pass
@@ -1175,6 +1198,7 @@ def config_list():
 
 
 @config.command("get")
+@click.help_option('-h', '--help')
 @click.argument('key')
 def config_get(key):
     """Get a configuration value."""
@@ -1212,6 +1236,7 @@ def config_get(key):
 
 
 @config.command("set")
+@click.help_option('-h', '--help')
 @click.argument('key')
 @click.argument('value')
 def config_set(key, value):
@@ -1223,6 +1248,7 @@ def config_set(key, value):
 
 # Shell completion group
 @voice_mode_main_cli.group()
+@click.help_option('-h', '--help', help='Show this message and exit')
 def completion():
     """Generate shell completion scripts for voice-mode."""
     pass
@@ -1302,6 +1328,7 @@ def completion_fish():
 
 
 @completion.command("install")
+@click.help_option('-h', '--help')
 @click.option('--shell', type=click.Choice(['bash', 'zsh', 'fish', 'auto']), default='auto', help='Shell type to install for')
 def completion_install(shell):
     """Show installation instructions for shell completion.
@@ -1367,6 +1394,7 @@ def completion_install(shell):
 
 # Diagnostics group
 @voice_mode_main_cli.group()
+@click.help_option('-h', '--help', help='Show this message and exit')
 def diag():
     """Diagnostic tools for voice-mode."""
     pass
@@ -1464,6 +1492,7 @@ voice_mode_main_cli.add_command(exchanges_cmd.exchanges)
 
 # Converse command - direct voice conversation from CLI
 @voice_mode_main_cli.command()
+@click.help_option('-h', '--help')
 @click.option('--message', '-m', default="Hello! How can I help you today?", help='Initial message to speak')
 @click.option('--wait/--no-wait', default=True, help='Wait for response after speaking')
 @click.option('--duration', '-d', type=float, default=30.0, help='Listen duration in seconds')
@@ -1662,6 +1691,7 @@ def version():
 
 # Update command
 @voice_mode_main_cli.command()
+@click.help_option('-h', '--help')
 @click.option('--force', is_flag=True, help='Force reinstall even if already up to date')
 def update(force):
     """Update Voice Mode to the latest version."""
@@ -1743,6 +1773,7 @@ def update(force):
 
 # Completions command
 @voice_mode_main_cli.command()
+@click.help_option('-h', '--help')
 @click.argument('shell', type=click.Choice(['bash', 'zsh', 'fish']))
 @click.option('--install', is_flag=True, help='Install completion script to the appropriate location')
 def completions(shell, install):
