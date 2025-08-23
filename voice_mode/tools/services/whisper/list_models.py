@@ -2,18 +2,18 @@
 
 from typing import Dict, Any
 from voice_mode.tools.services.whisper.models import (
-    WHISPER_MODELS,
+    WHISPER_MODEL_REGISTRY,
     get_model_directory,
-    get_current_model,
-    is_model_installed,
-    get_installed_models,
+    get_active_model,
+    is_whisper_model_installed,
+    get_installed_whisper_models,
     format_size,
-    has_coreml_model,
+    has_whisper_coreml_model,
     is_apple_silicon
 )
 
 
-async def list_whisper_models() -> Dict[str, Any]:
+async def whisper_models() -> Dict[str, Any]:
     """List available Whisper models and their installation status.
     
     Returns:
@@ -21,32 +21,32 @@ async def list_whisper_models() -> Dict[str, Any]:
     """
     try:
         model_dir = get_model_directory()
-        current_model = get_current_model()
-        installed_models = get_installed_models()
+        current_model = get_active_model()
+        installed_models = get_installed_whisper_models()
         
         # Build models list with status
         models = []
         show_coreml = is_apple_silicon()  # Only show Core ML on Apple Silicon
         
-        for model_name, info in WHISPER_MODELS.items():
+        for model_name, info in WHISPER_MODEL_REGISTRY.items():
             model_status = {
                 "name": model_name,
                 "size_mb": info["size_mb"],
                 "size": format_size(info["size_mb"]),
                 "languages": info["languages"],
                 "description": info["description"],
-                "installed": is_model_installed(model_name),
+                "installed": is_whisper_model_installed(model_name),
                 "current": model_name == current_model,
-                "has_coreml": has_coreml_model(model_name) if show_coreml else False
+                "has_coreml": has_whisper_coreml_model(model_name) if show_coreml else False
             }
             models.append(model_status)
         
         # Calculate totals
         total_installed_size = sum(
-            WHISPER_MODELS[m]["size_mb"] for m in installed_models
+            WHISPER_MODEL_REGISTRY[m]["size_mb"] for m in installed_models
         )
         total_available_size = sum(
-            m["size_mb"] for m in WHISPER_MODELS.values()
+            m["size_mb"] for m in WHISPER_MODEL_REGISTRY.values()
         )
         
         return {
@@ -55,7 +55,7 @@ async def list_whisper_models() -> Dict[str, Any]:
             "current_model": current_model,
             "model_directory": str(model_dir),
             "installed_count": len(installed_models),
-            "total_count": len(WHISPER_MODELS),
+            "total_count": len(WHISPER_MODEL_REGISTRY),
             "installed_size_mb": total_installed_size,
             "installed_size": format_size(total_installed_size),
             "available_size_mb": total_available_size,

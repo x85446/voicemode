@@ -7,6 +7,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Comprehensive CLI help support**
+  - Added `-h` and `--help` options to all CLI commands and subcommands
+  - Consistent help functionality across all command groups (kokoro, whisper, livekit, config, etc.)
+  - Help options available for both groups and individual commands
+  - Improved user experience with quick access to command documentation
+
+- **Core ML support for whisper.cpp installation**
+  - Whisper install now uses CMake instead of Make for better control
+  - Automatically enables Core ML support on Apple Silicon Macs
+  - Provides ~3x faster encoding performance with Core ML acceleration
+  - Core ML models automatically converted during installation
+  - Falls back gracefully if Core ML conversion fails
+  
+- **Enhanced whisper status command**
+  - Shows whisper.cpp version information
+  - Displays Core ML support status (enabled/disabled)
+  - Shows if Core ML model is active for current model
+  - Reports GPU acceleration type (Metal/CUDA)
+  - Helper utility in `whisper_version.py` for capability detection
+  
+- **Audio conversion optimization for local whisper**
+  - Automatically detects truly local whisper (not SSH-forwarded)
+  - Skips WAV to MP3 conversion for local whisper, sending WAV directly
+  - Adds timing measurements for audio format conversion
+  - Logs conversion time at INFO level for performance monitoring
+  - Significantly reduces STT processing time for local deployments
+  
+- **Whisper model benchmark command**
+  - New `whisper model benchmark` CLI command
+  - Compares performance across multiple models
+  - Shows load time, encode time, and total processing time
+  - Calculates real-time factor for each model
+  - Fixed timing output by removing --no-prints flag
+  - Helps users choose optimal model for speed/accuracy tradeoffs
+  - Provides personalized recommendations based on results
+
+### Fixed
+- **MCP server configuration**
+  - Fixed .mcp.json to use `uv run voicemode` for local development
+  - Removed hardcoded paths for better portability
+  - Works correctly with project-local development version
+  
+- **Whisper model management**
+  - Fixed model active command to properly update configuration
+  - Fixed naming conflict in model install CLI command
+  - Benchmark now correctly shows timing information
+  - Core ML conversion errors are now properly reported and handled
+
 ## [2.27.0] - 2025-08-20
 
 ### Added

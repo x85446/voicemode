@@ -29,6 +29,10 @@ Natural voice conversations for AI assistants. Voice Mode brings human-like voic
 1. **🎤 Computer with microphone and speakers** OR **☁️ LiveKit server** ([LiveKit Cloud](https://docs.livekit.io/home/cloud/) or [self-hosted](https://github.com/livekit/livekit))
 2. **🔑 OpenAI API Key** (optional) - Voice Mode can install free, open-source transcription and text-to-speech services locally
 
+**Optional for enhanced performance:**
+
+- **🍎 Xcode** (macOS only) - Required for Core ML acceleration of Whisper models (2-3x faster inference). Install from [Mac App Store](https://apps.apple.com/app/xcode/id497799835) then run `sudo xcode-select -s /Applications/Xcode.app/Contents/Developer`
+
 ## Quick Start
 
 > 📖 **Using a different tool?** See our [Integration Guides](docs/integrations/README.md) for Cursor, VS Code, Gemini CLI, and more!

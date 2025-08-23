@@ -613,31 +613,51 @@ async def _speech_to_text_internal(
         if stt_config.get('base_url') and ("127.0.0.1" in stt_config['base_url'] or "localhost" in stt_config['base_url']):
             provider = "whisper-local"
         
-        # Validate format for provider
-        export_format = validate_audio_format(STT_AUDIO_FORMAT, provider, "stt")
+        # Check if we can skip conversion for local whisper
+        skip_conversion = False
+        if provider == "whisper-local":
+            # Check if whisper is truly local (not SSH-forwarded)
+            from voice_mode.utils.services.common import check_service_status
+            from voice_mode.config import WHISPER_PORT
+            status, _ = check_service_status(WHISPER_PORT)
+            if status == "local":
+                skip_conversion = True
+                logger.info("Detected truly local whisper - skipping audio conversion, using WAV directly")
         
-        # Convert WAV to target format for upload
-        logger.debug(f"Converting WAV to {export_format.upper()} for upload...")
-        try:
-            audio = AudioSegment.from_wav(wav_file)
-            logger.debug(f"Audio loaded - Duration: {len(audio)}ms, Channels: {audio.channels}, Frame rate: {audio.frame_rate}")
+        if skip_conversion:
+            # Use WAV directly for local whisper
+            upload_file = wav_file
+            export_format = "wav"
+            logger.debug("Using WAV file directly for local whisper upload")
+        else:
+            # Validate format for provider
+            export_format = validate_audio_format(STT_AUDIO_FORMAT, provider, "stt")
             
-            # Get export parameters for the format
-            export_params = get_format_export_params(export_format)
-            
-            with tempfile.NamedTemporaryFile(suffix=f'.{export_format}', delete=False) as export_file_obj:
-                export_file = export_file_obj.name
-                audio.export(export_file, **export_params)
-                upload_file = export_file
-                logger.debug(f"{export_format.upper()} created for STT upload: {upload_file}")
-        except Exception as e:
-            if "ffmpeg" in str(e).lower() or "avconv" in str(e).lower():
-                logger.error(f"Audio conversion failed - FFmpeg may not be installed: {e}")
-                from voice_mode.utils.ffmpeg_check import get_install_instructions
-                logger.error(f"\n{get_install_instructions()}")
-                raise RuntimeError("FFmpeg is required but not found. Please install FFmpeg and try again.") from e
-            else:
-                raise
+            # Convert WAV to target format for upload
+            logger.debug(f"Converting WAV to {export_format.upper()} for upload...")
+            conversion_start = time.perf_counter()
+            try:
+                audio = AudioSegment.from_wav(wav_file)
+                logger.debug(f"Audio loaded - Duration: {len(audio)}ms, Channels: {audio.channels}, Frame rate: {audio.frame_rate}")
+                
+                # Get export parameters for the format
+                export_params = get_format_export_params(export_format)
+                
+                with tempfile.NamedTemporaryFile(suffix=f'.{export_format}', delete=False) as export_file_obj:
+                    export_file = export_file_obj.name
+                    audio.export(export_file, **export_params)
+                    upload_file = export_file
+                    conversion_time = time.perf_counter() - conversion_start
+                    logger.info(f"Audio conversion: WAV → {export_format.upper()} took {conversion_time:.3f}s")
+                    logger.debug(f"{export_format.upper()} created for STT upload: {upload_file}")
+            except Exception as e:
+                if "ffmpeg" in str(e).lower() or "avconv" in str(e).lower():
+                    logger.error(f"Audio conversion failed - FFmpeg may not be installed: {e}")
+                    from voice_mode.utils.ffmpeg_check import get_install_instructions
+                    logger.error(f"\n{get_install_instructions()}")
+                    raise RuntimeError("FFmpeg is required but not found. Please install FFmpeg and try again.") from e
+                else:
+                    raise
         
         # Save debug file for upload version
         if DEBUG:

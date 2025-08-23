@@ -20,12 +20,14 @@ from voice_mode.exchanges import (
 
 
 @click.group()
+@click.help_option('-h', '--help', help='Show this message and exit')
 def exchanges():
     """Manage and view conversation exchange logs."""
     pass
 
 
 @exchanges.command()
+@click.help_option('-h', '--help')
 @click.option('-f', '--format', 
               type=click.Choice(['simple', 'pretty', 'json', 'raw']), 
               default='simple',
@@ -86,6 +88,7 @@ def tail(format, stt, tts, full, no_color, date, transport, provider):
 
 
 @exchanges.command()
+@click.help_option('-h', '--help')
 @click.option('-n', '--lines', type=int, default=20,
               help='Number of exchanges to show')
 @click.option('-c', '--conversation', help='Show specific conversation')
@@ -140,6 +143,7 @@ def view(lines, conversation, today, yesterday, date, format, reverse, no_color)
 
 
 @exchanges.command()
+@click.help_option('-h', '--help')
 @click.argument('query')
 @click.option('-n', '--max-results', type=int, default=50,
               help='Maximum results to show')
@@ -221,6 +225,7 @@ def search(query, max_results, days, exchange_type, regex, ignore_case,
 
 
 @exchanges.command()
+@click.help_option('-h', '--help')
 @click.option('-d', '--days', type=int, help='Stats for last N days')
 @click.option('--by-hour', is_flag=True, help='Group by hour')
 @click.option('--by-provider', is_flag=True, help='Group by provider')
@@ -333,6 +338,7 @@ def stats(days, by_hour, by_provider, by_transport, timing, conversations,
 
 
 @exchanges.command()
+@click.help_option('-h', '--help')
 @click.option('-c', '--conversation', help='Export specific conversation')
 @click.option('-d', '--date', type=click.DateTime(formats=['%Y-%m-%d']),
               help='Export date range')

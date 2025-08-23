@@ -206,13 +206,20 @@ async def whisper_install(
             except subprocess.CalledProcessError:
                 logger.warning("Make clean failed, continuing anyway...")
         
-        # Build with appropriate flags
+        # Build with CMake for better control and Core ML support
         build_env = os.environ.copy()
+        cmake_flags = []
         
-        if is_macos and use_gpu:
-            build_env["WHISPER_METAL"] = "1"
+        # Enable GPU support based on platform
+        if is_macos:
+            # On macOS, always enable Metal
+            cmake_flags.append("-DGGML_METAL=ON")
+            # On Apple Silicon, also enable Core ML for better performance
+            if platform.machine() == "arm64":
+                cmake_flags.append("-DWHISPER_COREML=ON")
+                logger.info("Enabling Core ML support for Apple Silicon")
         elif is_linux and use_gpu:
-            build_env["WHISPER_CUDA"] = "1"
+            cmake_flags.append("-DGGML_CUDA=ON")
         
         # Get number of CPU cores for parallel build
         cpu_count = os.cpu_count() or 4
@@ -220,13 +227,31 @@ async def whisper_install(
         # Determine if we should show build output
         debug_mode = os.environ.get("VOICEMODE_DEBUG", "").lower() in ("true", "1", "yes")
         
+        # Configure with CMake
+        logger.info("Configuring whisper.cpp build...")
+        cmake_cmd = ["cmake", "-B", "build"] + cmake_flags
+        
         if debug_mode:
-            subprocess.run(["make", f"-j{cpu_count}"], env=build_env, check=True)
+            subprocess.run(cmake_cmd, env=build_env, check=True)
         else:
-            # Suppress output unless there's an error
-            logger.info("Building whisper.cpp (this may take a few minutes)...")
             try:
-                result = subprocess.run(["make", f"-j{cpu_count}"], env=build_env, 
+                result = subprocess.run(cmake_cmd, env=build_env, 
+                                      capture_output=True, text=True, check=True)
+            except subprocess.CalledProcessError as e:
+                logger.error(f"Configuration failed: {e}")
+                if e.stderr:
+                    logger.error(f"Configuration errors:\n{e.stderr}")
+                raise
+        
+        # Build with CMake
+        logger.info("Building whisper.cpp (this may take a few minutes)...")
+        build_cmd = ["cmake", "--build", "build", "-j", str(cpu_count), "--config", "Release"]
+        
+        if debug_mode:
+            subprocess.run(build_cmd, env=build_env, check=True)
+        else:
+            try:
+                result = subprocess.run(build_cmd, env=build_env, 
                                       capture_output=True, text=True, check=True)
                 logger.info("Build completed successfully")
             except subprocess.CalledProcessError as e:
@@ -258,7 +283,8 @@ async def whisper_install(
         model_path = download_result["path"]
         
         # Test whisper with sample if available
-        main_path = os.path.join(install_dir, "main")
+        # With CMake build, binaries are in build/bin/
+        main_path = os.path.join(install_dir, "build", "bin", "whisper-cli")
         sample_path = os.path.join(install_dir, "samples", "jfk.wav")
         if os.path.exists(sample_path) and os.path.exists(main_path):
             try:

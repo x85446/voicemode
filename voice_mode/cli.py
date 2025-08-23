@@ -58,18 +58,21 @@ def voice_mode() -> None:
 
 # Service group commands
 @voice_mode_main_cli.group()
+@click.help_option('-h', '--help', help='Show this message and exit')
 def kokoro():
     """Manage Kokoro TTS service."""
     pass
 
 
 @voice_mode_main_cli.group()
+@click.help_option('-h', '--help', help='Show this message and exit')
 def whisper():
     """Manage Whisper STT service."""
     pass
 
 
 @voice_mode_main_cli.group()
+@click.help_option('-h', '--help', help='Show this message and exit')
 def livekit():
     """Manage LiveKit RTC service."""
     pass
@@ -128,6 +131,7 @@ def disable():
 
 
 @kokoro.command()
+@click.help_option('-h', '--help')
 @click.option('--lines', '-n', default=50, help='Number of log lines to show')
 def logs(lines):
     """View Kokoro service logs."""
@@ -172,6 +176,7 @@ def health():
 
 
 @kokoro.command()
+@click.help_option('-h', '--help')
 @click.option('--install-dir', help='Directory to install kokoro-fastapi')
 @click.option('--port', default=8880, help='Port to configure for the service')
 @click.option('--force', '-f', is_flag=True, help='Force reinstall even if already installed')
@@ -209,6 +214,7 @@ def install(install_dir, port, force, version, auto_enable):
 
 
 @kokoro.command()
+@click.help_option('-h', '--help')
 @click.option('--remove-models', is_flag=True, help='Also remove downloaded Kokoro models')
 @click.option('--remove-all-data', is_flag=True, help='Remove all Kokoro data including logs and cache')
 @click.confirmation_option(prompt='Are you sure you want to uninstall Kokoro?')
@@ -294,6 +300,7 @@ def disable():
 
 
 @whisper.command()
+@click.help_option('-h', '--help')
 @click.option('--lines', '-n', default=50, help='Number of log lines to show')
 def logs(lines):
     """View Whisper service logs."""
@@ -338,6 +345,7 @@ def health():
 
 
 @whisper.command()
+@click.help_option('-h', '--help')
 @click.option('--install-dir', help='Directory to install whisper.cpp')
 @click.option('--model', default='large-v2', help='Whisper model to download (default: large-v2)')
 @click.option('--use-gpu/--no-gpu', default=None, help='Enable GPU support if available')
@@ -386,6 +394,7 @@ def install(install_dir, model, use_gpu, force, version, auto_enable):
 
 
 @whisper.command()
+@click.help_option('-h', '--help')
 @click.option('--remove-models', is_flag=True, help='Also remove downloaded Whisper models')
 @click.option('--remove-all-data', is_flag=True, help='Remove all Whisper data including logs and transcriptions')
 @click.confirmation_option(prompt='Are you sure you want to uninstall Whisper?')
@@ -422,6 +431,7 @@ def uninstall(remove_models, remove_all_data):
 
 
 @whisper.group("model")
+@click.help_option('-h', '--help', help='Show this message and exit')
 def whisper_model():
     """Manage Whisper models.
     
@@ -434,6 +444,7 @@ def whisper_model():
 
 
 @whisper_model.command("active")
+@click.help_option('-h', '--help')
 @click.argument('model_name', required=False)
 def whisper_model_active(model_name):
     """Show or set the active Whisper model.
@@ -442,34 +453,34 @@ def whisper_model_active(model_name):
     With MODEL_NAME: Sets the active model (updates VOICEMODE_WHISPER_MODEL)
     """
     from voice_mode.tools.services.whisper.models import (
-        get_current_model,
-        WHISPER_MODELS,
-        is_model_installed,
-        set_current_model
+        get_active_model,
+        WHISPER_MODEL_REGISTRY,
+        is_whisper_model_installed,
+        set_active_model
     )
     import os
     import subprocess
     
     if model_name:
         # Set model mode
-        if model_name not in WHISPER_MODELS:
+        if model_name not in WHISPER_MODEL_REGISTRY:
             click.echo(f"Error: '{model_name}' is not a valid model.", err=True)
             click.echo("\nAvailable models:", err=True)
-            for name in WHISPER_MODELS.keys():
+            for name in WHISPER_MODEL_REGISTRY.keys():
                 click.echo(f"  - {name}", err=True)
             return
         
         # Check if model is installed
-        if not is_model_installed(model_name):
+        if not is_whisper_model_installed(model_name):
             click.echo(f"Error: Model '{model_name}' is not installed.", err=True)
             click.echo(f"Install it with: voice-mode whisper model install {model_name}", err=True)
             raise click.Abort()
         
         # Get previous model
-        previous_model = get_current_model()
+        previous_model = get_active_model()
         
         # Update the configuration file
-        set_current_model(model_name)
+        set_active_model(model_name)
         
         click.echo(f"✓ Active model set to: {model_name}")
         if previous_model != model_name:
@@ -492,14 +503,14 @@ def whisper_model_active(model_name):
     
     else:
         # Show current model
-        current = get_current_model()
+        current = get_active_model()
         
         # Check if current model is installed
-        installed = is_model_installed(current)
+        installed = is_whisper_model_installed(current)
         status = click.style("[✓ Installed]", fg="green") if installed else click.style("[Not installed]", fg="red")
         
         # Get model info
-        model_info = WHISPER_MODELS.get(current, {})
+        model_info = WHISPER_MODEL_REGISTRY.get(current, {})
         
         click.echo(f"\nActive Whisper model: {click.style(current, fg='yellow', bold=True)} {status}")
         if model_info:
@@ -524,25 +535,25 @@ def whisper_model_active(model_name):
 def whisper_models():
     """List available Whisper models and their installation status."""
     from voice_mode.tools.services.whisper.models import (
-        WHISPER_MODELS, 
+        WHISPER_MODEL_REGISTRY, 
         get_model_directory,
-        get_current_model,
-        is_model_installed,
-        get_installed_models,
+        get_active_model,
+        is_whisper_model_installed,
+        get_installed_whisper_models,
         format_size,
-        has_coreml_model
+        has_whisper_coreml_model
     )
     
     model_dir = get_model_directory()
-    current_model = get_current_model()
-    installed_models = get_installed_models()
+    current_model = get_active_model()
+    installed_models = get_installed_whisper_models()
     
     # Calculate totals
     total_installed_size = sum(
-        WHISPER_MODELS[m]["size_mb"] for m in installed_models
+        WHISPER_MODEL_REGISTRY[m]["size_mb"] for m in installed_models
     )
     total_available_size = sum(
-        m["size_mb"] for m in WHISPER_MODELS.values()
+        m["size_mb"] for m in WHISPER_MODEL_REGISTRY.values()
     )
     
     # Print header
@@ -550,9 +561,9 @@ def whisper_models():
     click.echo("")
     
     # Print models table
-    for model_name, info in WHISPER_MODELS.items():
+    for model_name, info in WHISPER_MODEL_REGISTRY.items():
         # Check status
-        is_installed = is_model_installed(model_name)
+        is_installed = is_whisper_model_installed(model_name)
         is_current = model_name == current_model
         
         # Format status
@@ -566,7 +577,7 @@ def whisper_models():
         # Format installation status
         if is_installed:
             # Check for Core ML model
-            if has_coreml_model(model_name):
+            if has_whisper_coreml_model(model_name):
                 install_status = click.style("[✓ Installed+ML]", fg="green")
             else:
                 install_status = click.style("[✓ Installed]", fg="green")
@@ -598,6 +609,7 @@ def whisper_models():
 
 
 @whisper_model.command("install")
+@click.help_option('-h', '--help')
 @click.argument('model', default='large-v2')
 @click.option('--force', '-f', is_flag=True, help='Re-download even if model exists')
 @click.option('--skip-core-ml', is_flag=True, help='Skip Core ML conversion on Apple Silicon')
@@ -611,8 +623,11 @@ def whisper_model_install(model, force, skip_core_ml):
     medium, medium.en, large-v1, large-v2, large-v3, large-v3-turbo
     """
     import json
-    from voice_mode.tools.services.whisper.download_model import download_model
-    result = asyncio.run(download_model.fn(
+    import voice_mode.tools.services.whisper.model_install as install_module
+    # Get the actual function from the MCP tool wrapper
+    tool = install_module.whisper_model_install
+    install_func = tool.fn if hasattr(tool, 'fn') else tool
+    result = asyncio.run(install_func(
         model=model,
         force_download=force,
         skip_core_ml=skip_core_ml
@@ -650,6 +665,7 @@ def whisper_model_install(model, force, skip_core_ml):
 
 
 @whisper_model.command("remove")
+@click.help_option('-h', '--help')
 @click.argument('model')
 @click.option('--force', '-f', is_flag=True, help='Remove without confirmation')
 def whisper_model_remove(model, force):
@@ -658,28 +674,28 @@ def whisper_model_remove(model, force):
     MODEL is the name of the model to remove (e.g., 'large-v2').
     """
     from voice_mode.tools.services.whisper.models import (
-        WHISPER_MODELS,
-        is_model_installed,
+        WHISPER_MODEL_REGISTRY,
+        is_whisper_model_installed,
         get_model_directory,
-        get_current_model
+        get_active_model
     )
     import os
     
     # Validate model name
-    if model not in WHISPER_MODELS:
+    if model not in WHISPER_MODEL_REGISTRY:
         click.echo(f"Error: '{model}' is not a valid model.", err=True)
         click.echo("\nAvailable models:", err=True)
-        for name in WHISPER_MODELS.keys():
+        for name in WHISPER_MODEL_REGISTRY.keys():
             click.echo(f"  - {name}", err=True)
         ctx.exit(1)
     
     # Check if model is installed
-    if not is_model_installed(model):
+    if not is_whisper_model_installed(model):
         click.echo(f"Model '{model}' is not installed.")
         return
     
     # Check if it's the current model
-    current = get_current_model()
+    current = get_active_model()
     if model == current:
         click.echo(f"Warning: '{model}' is the currently selected model.", err=True)
         if not force:
@@ -688,7 +704,7 @@ def whisper_model_remove(model, force):
     
     # Get model path
     model_dir = get_model_directory()
-    model_info = WHISPER_MODELS[model]
+    model_info = WHISPER_MODEL_REGISTRY[model]
     model_path = model_dir / model_info["filename"]
     
     # Also check for Core ML models
@@ -715,6 +731,83 @@ def whisper_model_remove(model, force):
         click.echo(f"\nModel '{model}' has been removed.")
     except Exception as e:
         click.echo(f"Error removing model: {e}", err=True)
+
+
+@whisper_model.command("benchmark")
+@click.help_option('-h', '--help')
+@click.option('--models', default='installed', help='Models to benchmark: installed, all, or comma-separated list')
+@click.option('--sample', help='Audio file to use for benchmarking')
+@click.option('--runs', default=1, help='Number of benchmark runs per model')
+def whisper_model_benchmark_cmd(models, sample, runs):
+    """Benchmark Whisper model performance.
+    
+    Runs performance tests on specified models to help choose the optimal model
+    for your use case based on speed vs accuracy trade-offs.
+    """
+    from voice_mode.tools.services.whisper.model_benchmark import whisper_model_benchmark
+    
+    # Parse models parameter
+    if ',' in models:
+        model_list = [m.strip() for m in models.split(',')]
+    else:
+        model_list = models
+    
+    # Run benchmark
+    result = asyncio.run(whisper_model_benchmark(
+        models=model_list,
+        sample_file=sample,
+        runs=runs
+    ))
+    
+    if not result.get('success'):
+        click.echo(f"❌ Benchmark failed: {result.get('error', 'Unknown error')}", err=True)
+        return
+    
+    # Display results
+    click.echo("\n" + "="*60)
+    click.echo("Whisper Model Benchmark Results")
+    click.echo("="*60)
+    
+    if result.get('sample_file'):
+        click.echo(f"Sample: {result['sample_file']}")
+    if result.get('runs_per_model') > 1:
+        click.echo(f"Runs per model: {result['runs_per_model']} (showing best)")
+    click.echo("")
+    
+    # Display benchmark table
+    click.echo(f"{'Model':<20} {'Load (ms)':<12} {'Encode (ms)':<12} {'Total (ms)':<12} {'Speed':<10}")
+    click.echo("-"*70)
+    
+    for bench in result.get('benchmarks', []):
+        if bench.get('success'):
+            model = bench['model']
+            load_time = f"{bench.get('load_time_ms', 0):.1f}"
+            encode_time = f"{bench.get('encode_time_ms', 0):.1f}"
+            total_time = f"{bench.get('total_time_ms', 0):.1f}"
+            rtf = f"{bench.get('real_time_factor', 0):.1f}x"
+            
+            # Highlight fastest model
+            if bench['model'] == result.get('fastest_model'):
+                model = click.style(model, fg='green', bold=True)
+                rtf = click.style(rtf, fg='green', bold=True)
+            
+            click.echo(f"{model:<20} {load_time:<12} {encode_time:<12} {total_time:<12} {rtf:<10}")
+        else:
+            click.echo(f"{bench['model']:<20} {'Failed':<12} {bench.get('error', 'Unknown error')}")
+    
+    # Display recommendations
+    if result.get('recommendations'):
+        click.echo("\nRecommendations:")
+        for rec in result['recommendations']:
+            click.echo(f"  • {rec}")
+    
+    # Summary
+    if result.get('fastest_model'):
+        click.echo(f"\nFastest model: {click.style(result['fastest_model'], fg='yellow', bold=True)}")
+        click.echo(f"Processing time: {result.get('fastest_time_ms', 'N/A')} ms")
+    
+    click.echo("\nNote: Speed values show real-time factor (higher is better)")
+    click.echo("      1.0x = real-time, 10x = 10 times faster than real-time")
 
 
 # LiveKit service commands
@@ -767,6 +860,7 @@ def disable():
 
 
 @livekit.command()
+@click.help_option('-h', '--help')
 @click.option('--lines', '-n', default=50, help='Number of log lines to show')
 def logs(lines):
     """View LiveKit service logs."""
@@ -790,6 +884,7 @@ def update():
 
 
 @livekit.command()
+@click.help_option('-h', '--help')
 @click.option('--install-dir', help='Directory to install LiveKit')
 @click.option('--port', default=7880, help='Port for LiveKit server (default: 7880)')
 @click.option('--force', '-f', is_flag=True, help='Force reinstall even if already installed')
@@ -830,6 +925,7 @@ def install(install_dir, port, force, version, auto_enable):
 
 
 @livekit.command()
+@click.help_option('-h', '--help')
 @click.option('--remove-config', is_flag=True, help='Also remove LiveKit configuration files')
 @click.option('--remove-all-data', is_flag=True, help='Remove all LiveKit data including logs')
 @click.confirmation_option(prompt='Are you sure you want to uninstall LiveKit?')
@@ -859,12 +955,14 @@ def uninstall(remove_config, remove_all_data):
 
 # LiveKit frontend subcommands
 @livekit.group()
+@click.help_option('-h', '--help', help='Show this message and exit')
 def frontend():
     """Manage LiveKit Voice Assistant Frontend."""
     pass
 
 
 @frontend.command("install")
+@click.help_option('-h', '--help')
 @click.option('--auto-enable/--no-auto-enable', default=None, help='Enable service after installation (default: from config)')
 def frontend_install(auto_enable):
     """Install and setup LiveKit Voice Assistant Frontend."""
@@ -892,6 +990,7 @@ def frontend_install(auto_enable):
 
 
 @frontend.command("start")
+@click.help_option('-h', '--help')
 @click.option('--port', default=3000, help='Port to run frontend on (default: 3000)')
 @click.option('--host', default='127.0.0.1', help='Host to bind to (default: 127.0.0.1)')
 def frontend_start(port, host):
@@ -972,6 +1071,7 @@ def frontend_open():
 
 
 @frontend.command("logs")
+@click.help_option('-h', '--help')
 @click.option("--lines", "-n", default=50, help="Number of lines to show (default: 50)")
 @click.option("--follow", "-f", is_flag=True, help="Follow log output (tail -f)")
 def frontend_logs(lines, follow):
@@ -1025,6 +1125,7 @@ def frontend_disable():
 
 
 @frontend.command("build")
+@click.help_option('-h', '--help')
 @click.option('--force', '-f', is_flag=True, help='Force rebuild even if build exists')
 def frontend_build(force):
     """Build frontend for production (requires Node.js)."""
@@ -1082,6 +1183,7 @@ def frontend_build(force):
 
 # Configuration management group
 @voice_mode_main_cli.group()
+@click.help_option('-h', '--help', help='Show this message and exit')
 def config():
     """Manage voice-mode configuration."""
     pass
@@ -1096,6 +1198,7 @@ def config_list():
 
 
 @config.command("get")
+@click.help_option('-h', '--help')
 @click.argument('key')
 def config_get(key):
     """Get a configuration value."""
@@ -1133,6 +1236,7 @@ def config_get(key):
 
 
 @config.command("set")
+@click.help_option('-h', '--help')
 @click.argument('key')
 @click.argument('value')
 def config_set(key, value):
@@ -1144,6 +1248,7 @@ def config_set(key, value):
 
 # Shell completion group
 @voice_mode_main_cli.group()
+@click.help_option('-h', '--help', help='Show this message and exit')
 def completion():
     """Generate shell completion scripts for voice-mode."""
     pass
@@ -1223,6 +1328,7 @@ def completion_fish():
 
 
 @completion.command("install")
+@click.help_option('-h', '--help')
 @click.option('--shell', type=click.Choice(['bash', 'zsh', 'fish', 'auto']), default='auto', help='Shell type to install for')
 def completion_install(shell):
     """Show installation instructions for shell completion.
@@ -1288,6 +1394,7 @@ def completion_install(shell):
 
 # Diagnostics group
 @voice_mode_main_cli.group()
+@click.help_option('-h', '--help', help='Show this message and exit')
 def diag():
     """Diagnostic tools for voice-mode."""
     pass
@@ -1385,6 +1492,7 @@ voice_mode_main_cli.add_command(exchanges_cmd.exchanges)
 
 # Converse command - direct voice conversation from CLI
 @voice_mode_main_cli.command()
+@click.help_option('-h', '--help')
 @click.option('--message', '-m', default="Hello! How can I help you today?", help='Initial message to speak')
 @click.option('--wait/--no-wait', default=True, help='Wait for response after speaking')
 @click.option('--duration', '-d', type=float, default=30.0, help='Listen duration in seconds')
@@ -1583,6 +1691,7 @@ def version():
 
 # Update command
 @voice_mode_main_cli.command()
+@click.help_option('-h', '--help')
 @click.option('--force', is_flag=True, help='Force reinstall even if already up to date')
 def update(force):
     """Update Voice Mode to the latest version."""
@@ -1664,6 +1773,7 @@ def update(force):
 
 # Completions command
 @voice_mode_main_cli.command()
+@click.help_option('-h', '--help')
 @click.argument('shell', type=click.Choice(['bash', 'zsh', 'fish']))
 @click.option('--install', is_flag=True, help='Install completion script to the appropriate location')
 def completions(shell, install):

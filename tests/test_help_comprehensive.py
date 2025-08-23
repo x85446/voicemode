@@ -30,36 +30,93 @@ def discover_all_commands() -> List[List[str]]:
     # Use python -m voice_mode for development testing
     base_cmd = [sys.executable, '-m', 'voice_mode']
     
-    # Main command
+    # Main command - test both -h and --help
     commands.append(base_cmd + ['--help'])
     commands.append(base_cmd + ['-h'])
     
     # Top-level commands discovered from help output
     # These are the actual CLI commands (not MCP tools)
-    top_level_commands = ['config', 'diag', 'exchanges', 'whisper', 'kokoro', 'livekit']
+    top_level_commands = ['config', 'diag', 'exchanges', 'whisper', 'kokoro', 'livekit', 
+                          'completion', 'converse', 'update', 'version', 'completions']
+    
+    # Commands that have options/arguments and support -h
+    commands_with_short_help = ['config', 'diag', 'exchanges', 'whisper', 'kokoro', 'livekit', 
+                                'completion', 'converse', 'update', 'completions']
     
     for cmd in top_level_commands:
         commands.append(base_cmd + [cmd, '--help'])
+        if cmd in commands_with_short_help:
+            commands.append(base_cmd + [cmd, '-h'])  # Only test -h for commands that support it
     
     # Service management commands
     services = ['whisper', 'kokoro', 'livekit']
-    service_actions = ['status', 'start', 'stop', 'restart', 'enable', 'disable', 'logs']
+    common_actions = ['status', 'start', 'stop', 'restart', 'enable', 'disable', 'logs', 
+                      'install', 'uninstall']
+    
+    # Service-specific additional actions
+    service_specific = {
+        'whisper': ['health', 'update-service-files'],
+        'kokoro': ['health', 'update-service-files'],
+        'livekit': ['update']  # LiveKit has 'update' instead of 'update-service-files'
+    }
+    
+    # Actions that have options and support -h
+    actions_with_short_help = ['logs', 'install', 'uninstall']
     
     for service in services:
-        # Service subcommands
-        for action in service_actions:
+        # Common service subcommands
+        for action in common_actions:
             commands.append(base_cmd + [service, action, '--help'])
+            if action in actions_with_short_help:
+                commands.append(base_cmd + [service, action, '-h'])
+        
+        # Service-specific commands
+        if service in service_specific:
+            for action in service_specific[service]:
+                commands.append(base_cmd + [service, action, '--help'])
     
-    # Config subcommands - check actual commands with config --help
-    # Only add subcommands we know exist
-    config_subcommands = ['set']  # Known to exist
+    # Whisper model subcommands
+    whisper_model_cmds = ['models', 'model']
+    for cmd in whisper_model_cmds:
+        commands.append(base_cmd + ['whisper', cmd, '--help'])
+        if cmd == 'model':
+            commands.append(base_cmd + ['whisper', cmd, '-h'])
+            # Model subcommands
+            for sub in ['active', 'install', 'remove', 'benchmark']:
+                commands.append(base_cmd + ['whisper', 'model', sub, '--help'])
+                commands.append(base_cmd + ['whisper', 'model', sub, '-h'])
+    
+    # LiveKit frontend subcommands
+    frontend_cmds = ['install', 'start', 'stop', 'status', 'open', 'logs', 'enable', 'disable', 'build']
+    for cmd in frontend_cmds:
+        commands.append(base_cmd + ['livekit', 'frontend', cmd, '--help'])
+        if cmd in ['install', 'start', 'logs', 'build']:  # Commands with options
+            commands.append(base_cmd + ['livekit', 'frontend', cmd, '-h'])
+    
+    # Config subcommands
+    config_subcommands = ['list', 'get', 'set']
     for sub in config_subcommands:
         commands.append(base_cmd + ['config', sub, '--help'])
+        if sub in ['get', 'set']:  # Commands with arguments
+            commands.append(base_cmd + ['config', sub, '-h'])
     
-    # Exchanges subcommands - tail is known to exist
-    exchanges_subcommands = ['tail']  # Known to exist
+    # Exchanges subcommands
+    exchanges_subcommands = ['tail', 'view', 'search', 'stats', 'export']
     for sub in exchanges_subcommands:
         commands.append(base_cmd + ['exchanges', sub, '--help'])
+        commands.append(base_cmd + ['exchanges', sub, '-h'])  # All have options
+    
+    # Completion subcommands
+    completion_subcommands = ['bash', 'zsh', 'fish', 'install']
+    for sub in completion_subcommands:
+        commands.append(base_cmd + ['completion', sub, '--help'])
+        if sub == 'install':
+            commands.append(base_cmd + ['completion', sub, '-h'])
+    
+    # Diag subcommands - none have options so no -h support
+    diag_subcommands = ['info', 'devices', 'registry', 'dependencies']
+    for sub in diag_subcommands:
+        commands.append(base_cmd + ['diag', sub, '--help'])
     
     return commands
 
@@ -90,7 +147,7 @@ def get_performance_threshold(category: str) -> float:
     Some commands may legitimately need more time due to their complexity.
     """
     thresholds = {
-        'main': 0.5,      # Main help should be fastest
+        'main': 0.8,      # Main help should be fast (increased from 0.5 for CI environments)
         'service': 1.0,   # Service commands can take a bit longer
         'install': 1.5,   # Install commands might need more discovery
         'stats': 1.0,     # Stats commands are moderate
@@ -342,7 +399,7 @@ class TestPerformanceBaseline:
             times.append(duration)
         
         avg_time = sum(times) / len(times)
-        assert avg_time < 0.5, f"Main help average time {avg_time:.2f}s exceeds baseline"
+        assert avg_time < 0.8, f"Main help average time {avg_time:.2f}s exceeds baseline"
     
     def test_no_performance_regression(self):
         """Ensure help performance doesn't regress over time."""

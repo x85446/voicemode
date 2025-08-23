@@ -233,18 +233,45 @@ async def status_service(service_name: str) -> str:
         if service_name == "whisper":
             # Get model info
             model = "unknown"
+            model_name = None
             for i, arg in enumerate(cmdline):
                 if arg == "--model" and i + 1 < len(cmdline):
                     model = Path(cmdline[i + 1]).name
+                    # Extract model name from filename (e.g., ggml-large-v3-turbo.bin -> large-v3-turbo)
+                    if model.startswith("ggml-") and model.endswith(".bin"):
+                        model_name = model[5:-4]
                     break
             extra_info_parts.append(f"Model: {model}")
             
-            # Try to get version info
+            # Get version and capability info
             try:
-                from voice_mode.tools.services.version_info import get_whisper_version
-                version_info = get_whisper_version()
+                from voice_mode.utils.services.whisper_version import get_whisper_version_info, check_coreml_model_exists
+                version_info = get_whisper_version_info()
+                
                 if version_info.get("version"):
                     extra_info_parts.append(f"Version: {version_info['version']}")
+                elif version_info.get("commit"):
+                    extra_info_parts.append(f"Commit: {version_info['commit']}")
+                
+                # Show Core ML status on Apple Silicon
+                if platform.machine() == "arm64" and platform.system() == "Darwin":
+                    if version_info.get("coreml_supported"):
+                        # Check if the current model has Core ML
+                        if model_name and check_coreml_model_exists(model_name):
+                            extra_info_parts.append("Core ML: ✓ Enabled & Active")
+                        else:
+                            extra_info_parts.append("Core ML: ✓ Supported (model not converted)")
+                    else:
+                        extra_info_parts.append("Core ML: ✗ Not compiled in")
+                
+                # Show GPU support
+                gpu_support = []
+                if version_info.get("metal_supported"):
+                    gpu_support.append("Metal")
+                if version_info.get("cuda_supported"):
+                    gpu_support.append("CUDA")
+                if gpu_support:
+                    extra_info_parts.append(f"GPU: {', '.join(gpu_support)}")
             except:
                 pass
                 
