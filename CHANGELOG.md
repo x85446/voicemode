@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.28.0] - 2025-08-23
+
 ### Added
 - **Comprehensive CLI help support**
   - Added `-h` and `--help` options to all CLI commands and subcommands
