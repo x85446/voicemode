@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **CoreML acceleration support for Whisper on Apple Silicon**
+  - Added optional dependency group 'coreml' with PyTorch and CoreMLTools
+  - Enhanced whisper_model_install tool with install_torch and auto_confirm parameters
+  - Automatic detection of Apple Silicon Macs with CoreML acceleration offer
+  - User-friendly confirmation prompts for large (~2.5GB) PyTorch download
+  - Graceful fallback to Metal acceleration if CoreML requirements not met
+  - Clear instructions for enabling CoreML later if initially skipped
+
+- **Beautiful installer experience**
+  - Added Voice Mode ASCII art in Claude Code orange color
+  - Enhanced preamble with clear value proposition and privacy messaging
+  - Early system detection with special recognition for Apple Silicon
+  - Professional presentation with centered text and visual hierarchy
+
 ### Fixed
 - **Improved converse tool documentation**
   - Simplified listen_duration parameter documentation
