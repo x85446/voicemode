@@ -473,7 +473,7 @@ def whisper_model_active(model_name):
         # Check if model is installed
         if not is_whisper_model_installed(model_name):
             click.echo(f"Error: Model '{model_name}' is not installed.", err=True)
-            click.echo(f"Install it with: voice-mode whisper model install {model_name}", err=True)
+            click.echo(f"Install it with: voicemode whisper model install {model_name}", err=True)
             raise click.Abort()
         
         # Get previous model
@@ -492,14 +492,14 @@ def whisper_model_active(model_name):
             if result.returncode == 0:
                 # Service is running
                 click.echo(f"\n⚠️  Please restart the whisper service for changes to take effect:")
-                click.echo(f"  {click.style('voice-mode whisper restart', fg='yellow', bold=True)}")
+                click.echo(f"  {click.style('voicemode whisper restart', fg='yellow', bold=True)}")
             else:
                 click.echo(f"\nWhisper service is not running. Start it with:")
-                click.echo(f"  voice-mode whisper start")
+                click.echo(f"  voicemode whisper start")
                 click.echo(f"(or restart the whisper service if it's managed by systemd/launchd)")
         except:
             click.echo(f"\nPlease restart the whisper service for changes to take effect:")
-            click.echo(f"  voice-mode whisper restart")
+            click.echo(f"  voicemode whisper restart")
     
     else:
         # Show current model
@@ -527,8 +527,8 @@ def whisper_model_active(model_name):
         except:
             pass
         
-        click.echo(f"\nTo change: voice-mode whisper model active <model-name>")
-        click.echo(f"To list all models: voice-mode whisper models")
+        click.echo(f"\nTo change: voicemode whisper model active <model-name>")
+        click.echo(f"To list all models: voicemode whisper models")
 
 
 @whisper.command("models")
@@ -604,8 +604,8 @@ def whisper_models():
     click.echo(f"Models directory: {model_dir}")
     click.echo(f"Total size: {format_size(total_installed_size)} installed / {format_size(total_available_size)} available")
     click.echo("")
-    click.echo("To download a model: voice-mode whisper model install <model-name>")
-    click.echo("To set default model: voice-mode whisper model <model-name>")
+    click.echo("To download a model: voicemode whisper model install <model-name>")
+    click.echo("To set default model: voicemode whisper model <model-name>")
 
 
 @whisper_model.command("install")
@@ -613,7 +613,8 @@ def whisper_models():
 @click.argument('model', default='large-v2')
 @click.option('--force', '-f', is_flag=True, help='Re-download even if model exists')
 @click.option('--skip-core-ml', is_flag=True, help='Skip Core ML conversion on Apple Silicon')
-def whisper_model_install(model, force, skip_core_ml):
+@click.option('--install-torch', is_flag=True, help='Install PyTorch for Core ML conversion (~2.5GB)')
+def whisper_model_install(model, force, skip_core_ml, install_torch):
     """Install Whisper model(s) with optional Core ML conversion.
     
     MODEL can be a model name (e.g., 'large-v2'), 'all' to download all models,
@@ -627,15 +628,36 @@ def whisper_model_install(model, force, skip_core_ml):
     # Get the actual function from the MCP tool wrapper
     tool = install_module.whisper_model_install
     install_func = tool.fn if hasattr(tool, 'fn') else tool
+    
+    # First attempt without install_torch to check if it's needed
     result = asyncio.run(install_func(
         model=model,
         force_download=force,
-        skip_core_ml=skip_core_ml
+        skip_core_ml=skip_core_ml,
+        install_torch=install_torch,
+        auto_confirm=install_torch  # If user passed --install-torch, skip confirmation
     ))
     
     try:
         # Parse JSON response
         data = json.loads(result)
+        
+        # Check if PyTorch installation is required for Core ML
+        if data.get('requires_confirmation') and not install_torch and not skip_core_ml:
+            click.echo("\n" + data.get('message', 'Core ML requires PyTorch (~2.5GB)'))
+            if data.get('recommendation'):
+                click.echo(f"💡 {data['recommendation']}")
+            
+            if click.confirm("\nWould you like to install PyTorch for Core ML acceleration?"):
+                # Retry with install_torch=True
+                result = asyncio.run(install_func(
+                    model=model,
+                    force_download=force,
+                    skip_core_ml=skip_core_ml,
+                    install_torch=True,
+                    auto_confirm=True
+                ))
+                data = json.loads(result)
         if data.get('success'):
             click.echo("✅ Model download completed!")
             
@@ -984,7 +1006,7 @@ def frontend_install(auto_enable):
         if result.get('service_enabled'):
             click.echo("\n💡 Frontend service is enabled and will start automatically at boot/login")
         else:
-            click.echo("\n💡 Run 'voice-mode livekit frontend enable' to start automatically at boot/login")
+            click.echo("\n💡 Run 'voicemode livekit frontend enable' to start automatically at boot/login")
     else:
         click.echo(f"❌ Frontend installation failed: {result.get('error', 'Unknown error')}")
 
@@ -1185,7 +1207,7 @@ def frontend_build(force):
 @voice_mode_main_cli.group()
 @click.help_option('-h', '--help', help='Show this message and exit')
 def config():
-    """Manage voice-mode configuration."""
+    """Manage voicemode configuration."""
     pass
 
 
@@ -1232,7 +1254,7 @@ def config_get(key):
             click.echo(f"{key}={env_value} (from environment)")
         else:
             click.echo(f"❌ Configuration key not found: {key}")
-            click.echo("Run 'voice-mode config list' to see available keys")
+            click.echo("Run 'voicemode config list' to see available keys")
 
 
 @config.command("set")
@@ -1250,7 +1272,7 @@ def config_set(key, value):
 @voice_mode_main_cli.group()
 @click.help_option('-h', '--help', help='Show this message and exit')
 def completion():
-    """Generate shell completion scripts for voice-mode."""
+    """Generate shell completion scripts for voicemode."""
     pass
 
 
@@ -1260,24 +1282,24 @@ def completion_bash():
     
     Add this to your ~/.bashrc:
     
-        eval "$(_VOICE_MODE_COMPLETE=bash_source voice-mode)"
+        eval "$(_VOICE_MODE_COMPLETE=bash_source voicemode)"
     
     Or for better performance, generate the script once:
     
-        _VOICE_MODE_COMPLETE=bash_source voice-mode > ~/.voice-mode-complete.bash
-        echo '. ~/.voice-mode-complete.bash' >> ~/.bashrc
+        _VOICE_MODE_COMPLETE=bash_source voicemode > ~/.voicemode-complete.bash
+        echo '. ~/.voicemode-complete.bash' >> ~/.bashrc
     """
     # Output the instructions directly since the environment variable method
     # needs to be run from the shell itself
-    click.echo("# Bash completion for voice-mode")
+    click.echo("# Bash completion for voicemode")
     click.echo("# Add this to your ~/.bashrc:")
     click.echo("")
-    click.echo('eval "$(_VOICE_MODE_COMPLETE=bash_source voice-mode)"')
+    click.echo('eval "$(_VOICE_MODE_COMPLETE=bash_source voicemode)"')
     click.echo("")
     click.echo("# Or for better performance, generate and save the script:")
-    click.echo("# _VOICE_MODE_COMPLETE=bash_source voice-mode > ~/.voice-mode-complete.bash")
+    click.echo("# _VOICE_MODE_COMPLETE=bash_source voicemode > ~/.voicemode-complete.bash")
     click.echo("# Then add to ~/.bashrc:")
-    click.echo("# . ~/.voice-mode-complete.bash")
+    click.echo("# . ~/.voicemode-complete.bash")
 
 
 @completion.command("zsh")
@@ -1286,45 +1308,45 @@ def completion_zsh():
     
     Add this to your ~/.zshrc:
     
-        eval "$(_VOICE_MODE_COMPLETE=zsh_source voice-mode)"
+        eval "$(_VOICE_MODE_COMPLETE=zsh_source voicemode)"
     
     Or for better performance, generate the script once:
     
-        _VOICE_MODE_COMPLETE=zsh_source voice-mode > ~/.voice-mode-complete.zsh
-        echo '. ~/.voice-mode-complete.zsh' >> ~/.zshrc
+        _VOICE_MODE_COMPLETE=zsh_source voicemode > ~/.voicemode-complete.zsh
+        echo '. ~/.voicemode-complete.zsh' >> ~/.zshrc
     """
     # Output the instructions directly
-    click.echo("# Zsh completion for voice-mode")
+    click.echo("# Zsh completion for voicemode")
     click.echo("# Add this to your ~/.zshrc:")
     click.echo("")
-    click.echo('eval "$(_VOICE_MODE_COMPLETE=zsh_source voice-mode)"')
+    click.echo('eval "$(_VOICE_MODE_COMPLETE=zsh_source voicemode)"')
     click.echo("")
     click.echo("# Or for better performance, generate and save the script:")
-    click.echo("# _VOICE_MODE_COMPLETE=zsh_source voice-mode > ~/.voice-mode-complete.zsh")
+    click.echo("# _VOICE_MODE_COMPLETE=zsh_source voicemode > ~/.voicemode-complete.zsh")
     click.echo("# Then add to ~/.zshrc:")
-    click.echo("# . ~/.voice-mode-complete.zsh")
+    click.echo("# . ~/.voicemode-complete.zsh")
 
 
 @completion.command("fish")
 def completion_fish():
     """Generate fish completion script.
     
-    Add this to ~/.config/fish/completions/voice-mode.fish:
+    Add this to ~/.config/fish/completions/voicemode.fish:
     
-        _VOICE_MODE_COMPLETE=fish_source voice-mode | source
+        _VOICE_MODE_COMPLETE=fish_source voicemode | source
     
     Or save it to a file:
     
-        _VOICE_MODE_COMPLETE=fish_source voice-mode > ~/.config/fish/completions/voice-mode.fish
+        _VOICE_MODE_COMPLETE=fish_source voicemode > ~/.config/fish/completions/voicemode.fish
     """
     # Output the instructions directly
-    click.echo("# Fish completion for voice-mode")
-    click.echo("# Save this to ~/.config/fish/completions/voice-mode.fish:")
+    click.echo("# Fish completion for voicemode")
+    click.echo("# Save this to ~/.config/fish/completions/voicemode.fish:")
     click.echo("")
-    click.echo("_VOICE_MODE_COMPLETE=fish_source voice-mode | source")
+    click.echo("_VOICE_MODE_COMPLETE=fish_source voicemode | source")
     click.echo("")
     click.echo("# Or run this command to save it:")
-    click.echo("# _VOICE_MODE_COMPLETE=fish_source voice-mode > ~/.config/fish/completions/voice-mode.fish")
+    click.echo("# _VOICE_MODE_COMPLETE=fish_source voicemode > ~/.config/fish/completions/voicemode.fish")
 
 
 @completion.command("install")
@@ -1334,7 +1356,7 @@ def completion_install(shell):
     """Show installation instructions for shell completion.
     
     This command displays the steps to enable tab completion
-    for voice-mode in your shell.
+    for voicemode in your shell.
     """
     # Detect shell if auto
     if shell == 'auto':
@@ -1352,39 +1374,39 @@ def completion_install(shell):
             # Show all instructions
             click.echo("=== Bash ===")
             click.echo("Add to ~/.bashrc:")
-            click.echo('  eval "$(_VOICE_MODE_COMPLETE=bash_source voice-mode)"')
+            click.echo('  eval "$(_VOICE_MODE_COMPLETE=bash_source voicemode)"')
             click.echo("")
             
             click.echo("=== Zsh ===")
             click.echo("Add to ~/.zshrc:")
-            click.echo('  eval "$(_VOICE_MODE_COMPLETE=zsh_source voice-mode)"')
+            click.echo('  eval "$(_VOICE_MODE_COMPLETE=zsh_source voicemode)"')
             click.echo("")
             
             click.echo("=== Fish ===")
             click.echo("Run this command:")
-            click.echo('  _VOICE_MODE_COMPLETE=fish_source voice-mode > ~/.config/fish/completions/voice-mode.fish')
+            click.echo('  _VOICE_MODE_COMPLETE=fish_source voicemode > ~/.config/fish/completions/voicemode.fish')
             return
     
-    click.echo(f"To enable tab completion for voice-mode in {shell}:")
+    click.echo(f"To enable tab completion for voicemode in {shell}:")
     click.echo("")
     
     if shell == 'bash':
         click.echo("Add this line to your ~/.bashrc:")
-        click.echo('  eval "$(_VOICE_MODE_COMPLETE=bash_source voice-mode)"')
+        click.echo('  eval "$(_VOICE_MODE_COMPLETE=bash_source voicemode)"')
         click.echo("")
         click.echo("Or for better performance, generate the script once:")
-        click.echo("  _VOICE_MODE_COMPLETE=bash_source voice-mode > ~/.voice-mode-complete.bash")
-        click.echo("  echo '. ~/.voice-mode-complete.bash' >> ~/.bashrc")
+        click.echo("  _VOICE_MODE_COMPLETE=bash_source voicemode > ~/.voicemode-complete.bash")
+        click.echo("  echo '. ~/.voicemode-complete.bash' >> ~/.bashrc")
     elif shell == 'zsh':
         click.echo("Add this line to your ~/.zshrc:")
-        click.echo('  eval "$(_VOICE_MODE_COMPLETE=zsh_source voice-mode)"')
+        click.echo('  eval "$(_VOICE_MODE_COMPLETE=zsh_source voicemode)"')
         click.echo("")
         click.echo("Or for better performance, generate the script once:")
-        click.echo("  _VOICE_MODE_COMPLETE=zsh_source voice-mode > ~/.voice-mode-complete.zsh")
-        click.echo("  echo '. ~/.voice-mode-complete.zsh' >> ~/.zshrc")
+        click.echo("  _VOICE_MODE_COMPLETE=zsh_source voicemode > ~/.voicemode-complete.zsh")
+        click.echo("  echo '. ~/.voicemode-complete.zsh' >> ~/.zshrc")
     elif shell == 'fish':
         click.echo("Run this command:")
-        click.echo('  _VOICE_MODE_COMPLETE=fish_source voice-mode > ~/.config/fish/completions/voice-mode.fish')
+        click.echo('  _VOICE_MODE_COMPLETE=fish_source voicemode > ~/.config/fish/completions/voicemode.fish')
         click.echo("")
         click.echo("Fish will automatically load the completion from this location.")
     
@@ -1396,13 +1418,13 @@ def completion_install(shell):
 @voice_mode_main_cli.group()
 @click.help_option('-h', '--help', help='Show this message and exit')
 def diag():
-    """Diagnostic tools for voice-mode."""
+    """Diagnostic tools for voicemode."""
     pass
 
 
 @diag.command()
 def info():
-    """Show voice-mode installation information."""
+    """Show voicemode installation information."""
     from voice_mode.tools.diagnostics import voice_mode_info
     result = asyncio.run(voice_mode_info.fn())
     click.echo(result)
@@ -1471,7 +1493,7 @@ def dependencies():
         click.echo(str(result))
 
 
-# Legacy CLI for voice-mode-cli command
+# Legacy CLI for voicemode-cli command
 @click.group()
 @click.version_option()
 @click.help_option('-h', '--help')
@@ -1518,16 +1540,16 @@ def converse(message, wait, duration, min_duration, transport, room_name, voice,
     Examples:
     
         # Simple conversation
-        voice-mode converse
+        voicemode converse
         
         # Speak a message without waiting
-        voice-mode converse -m "Hello there!" --no-wait
+        voicemode converse -m "Hello there!" --no-wait
         
         # Continuous conversation mode
-        voice-mode converse --continuous
+        voicemode converse --continuous
         
         # Use specific voice
-        voice-mode converse --voice nova
+        voicemode converse --voice nova
     """
     from voice_mode.tools.converse import converse as converse_fn
     

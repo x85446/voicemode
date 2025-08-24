@@ -204,7 +204,7 @@ async def whisper_install(
                 subprocess.run(["make", "clean"], check=True, 
                              capture_output=True, text=True)
             except subprocess.CalledProcessError:
-                logger.warning("Make clean failed, continuing anyway...")
+                logger.warning("Make clean skipped (no previous build), continuing...")
         
         # Build with CMake for better control and Core ML support
         build_env = os.environ.copy()
