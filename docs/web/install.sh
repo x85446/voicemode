@@ -1,13 +1,13 @@
 #!/bin/bash
-# Voice Mode Universal Installer
+# VoiceMode Universal Installer
 # Usage: curl -sSf https://getvoicemode.com/install.sh | sh
 
 set -e
 
 # Parse command line arguments
 show_help() {
-  cat << EOF
-Voice Mode Universal Installer
+  cat <<EOF
+VoiceMode Universal Installer
 
 Usage: $0 [OPTIONS]
 
@@ -34,18 +34,18 @@ EOF
 # Process arguments
 while [[ $# -gt 0 ]]; do
   case $1 in
-    -h|--help)
-      show_help
-      ;;
-    -d|--debug)
-      export VOICEMODE_INSTALL_DEBUG=true
-      shift
-      ;;
-    *)
-      echo "Unknown option: $1"
-      echo "Use --help for usage information"
-      exit 1
-      ;;
+  -h | --help)
+    show_help
+    ;;
+  -d | --debug)
+    export VOICEMODE_INSTALL_DEBUG=true
+    shift
+    ;;
+  *)
+    echo "Unknown option: $1"
+    echo "Use --help for usage information"
+    exit 1
+    ;;
   esac
 done
 
@@ -62,6 +62,11 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+MAGENTA='\033[0;35m'
+ORANGE='\033[38;5;208m' # Claude Code orange
+BOLD='\033[1m'
+DIM='\033[2m'
 NC='\033[0m' # No Color
 
 # Global variables
@@ -198,7 +203,7 @@ install_homebrew() {
       HOMEBREW_INSTALLED=true
       XCODE_TOOLS_INSTALLED=true
     else
-      print_error "Homebrew is required for Voice Mode dependencies. Installation aborted."
+      print_error "Homebrew is required for VoiceMode dependencies. Installation aborted."
     fi
   fi
 }
@@ -295,7 +300,7 @@ install_system_dependencies() {
           fi
         done
       else
-        print_warning "Skipping system dependencies. Voice Mode may not work properly without them."
+        print_warning "Skipping system dependencies. VoiceMode may not work properly without them."
       fi
     elif [[ "$OS" == "fedora" ]]; then
       if confirm_action "Install missing system dependencies via DNF"; then
@@ -311,7 +316,7 @@ install_system_dependencies() {
         sudo dnf install -y "${packages[@]}"
         print_success "System dependencies installed"
       else
-        print_warning "Skipping system dependencies. Voice Mode may not work properly without them."
+        print_warning "Skipping system dependencies. VoiceMode may not work properly without them."
       fi
     elif [[ "$OS" == "ubuntu" ]]; then
       if confirm_action "Install missing system dependencies via APT"; then
@@ -356,7 +361,7 @@ install_system_dependencies() {
           fi
         fi
       else
-        print_warning "Skipping system dependencies. Voice Mode may not work properly without them."
+        print_warning "Skipping system dependencies. VoiceMode may not work properly without them."
       fi
     fi
   fi
@@ -380,10 +385,10 @@ check_python() {
   fi
 }
 
-install_uvx() {
-  if ! command -v uvx >/dev/null 2>&1; then
-    if confirm_action "Install UV/UVX (required for Voice Mode)"; then
-      print_step "Installing UV/UVX..."
+install_uv() {
+  if ! command -v uv >/dev/null 2>&1; then
+    if confirm_action "Install UV (required for VoiceMode)"; then
+      print_step "Installing UV..."
 
       # Install UV using the official installer
       curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -392,14 +397,14 @@ install_uvx() {
       export PATH="$HOME/.local/bin:$PATH"
 
       # Verify installation immediately
-      if ! command -v uvx >/dev/null 2>&1; then
-        print_error "UV/UVX installation failed - command not found after installation"
+      if ! command -v uv >/dev/null 2>&1; then
+        print_error "UV installation failed - command not found after installation"
         return 1
       fi
 
-      # Test uvx actually works
-      if ! uvx --version >/dev/null 2>&1; then
-        print_error "UV/UVX installation failed - command not working"
+      # Test uv actually works
+      if ! uv --version >/dev/null 2>&1; then
+        print_error "UV installation failed - command not working"
         return 1
       fi
 
@@ -425,19 +430,41 @@ install_uvx() {
         fi
       fi
 
-      print_success "UV/UVX installed and verified successfully"
+      print_success "UV installed and verified successfully"
     else
-      print_error "UV/UVX is required for Voice Mode. Installation aborted."
+      print_error "UV is required for VoiceMode. Installation aborted."
       return 1
     fi
   else
-    print_success "UV/UVX is already installed"
-    
+    print_success "UV is already installed"
+
     # Even if already installed, verify it works
-    if ! uvx --version >/dev/null 2>&1; then
-      print_error "UV/UVX is installed but not working properly"
+    if ! uv --version >/dev/null 2>&1; then
+      print_error "UV is installed but not working properly"
       return 1
     fi
+  fi
+}
+
+install_voicemode() {
+  print_step "Installing VoiceMode..."
+  
+  # Install voice-mode package with uv tool install
+  if uv tool install voice-mode; then
+    print_success "VoiceMode installed successfully"
+    
+    # Verify the voicemode command is available
+    if command -v voicemode >/dev/null 2>&1; then
+      print_success "VoiceMode command verified: voicemode"
+      return 0
+    else
+      print_warning "VoiceMode installed but command not immediately available"
+      echo "  You may need to restart your shell or run: source ~/.bashrc"
+      return 0
+    fi
+  else
+    print_error "Failed to install VoiceMode"
+    return 1
   fi
 }
 
@@ -480,20 +507,20 @@ setup_shell_completion() {
   # TEMPORARILY DISABLED: This function can cause shell startup errors when voice-mode
   # is installed via uvx rather than pip. The completion setup adds lines to shell rc
   # files that expect 'voice-mode' command to be available globally.
-  # 
+  #
   # TODO: Implement detection of installation method and use appropriate command:
-  # - If 'voice-mode' command exists: use 'voice-mode' 
+  # - If 'voice-mode' command exists: use 'voice-mode'
   # - Else if 'uvx' exists: use 'uvx voice-mode'
   # - Else: skip silently
   #
   # Manual setup for users who want completions:
   # Bash: echo 'command -v voice-mode >/dev/null && eval "$(_VOICE_MODE_COMPLETE=bash_source voice-mode)" || command -v uvx >/dev/null && eval "$(_VOICE_MODE_COMPLETE=bash_source uvx voice-mode)"' >> ~/.bashrc
   # Zsh:  echo 'command -v voice-mode >/dev/null && eval "$(_VOICE_MODE_COMPLETE=zsh_source voice-mode)" || command -v uvx >/dev/null && eval "$(_VOICE_MODE_COMPLETE=zsh_source uvx voice-mode)"' >> ~/.zshrc
-  
+
   # Detect current shell
   local shell_type=""
   local shell_rc=""
-  
+
   if [[ -n "${BASH_VERSION:-}" ]]; then
     shell_type="bash"
     shell_rc="$HOME/.bashrc"
@@ -502,41 +529,41 @@ setup_shell_completion() {
     shell_rc="$HOME/.zshrc"
   elif [[ -n "${FISH_VERSION:-}" ]]; then
     shell_type="fish"
-    shell_rc=""  # Fish uses a different approach
+    shell_rc="" # Fish uses a different approach
   else
     # Try to detect from SHELL environment variable
     case "${SHELL:-}" in
-      */bash) 
-        shell_type="bash"
-        shell_rc="$HOME/.bashrc"
-        ;;
-      */zsh) 
-        shell_type="zsh"
-        shell_rc="$HOME/.zshrc"
-        ;;
-      */fish) 
-        shell_type="fish"
-        shell_rc=""
-        ;;
+    */bash)
+      shell_type="bash"
+      shell_rc="$HOME/.bashrc"
+      ;;
+    */zsh)
+      shell_type="zsh"
+      shell_rc="$HOME/.zshrc"
+      ;;
+    */fish)
+      shell_type="fish"
+      shell_rc=""
+      ;;
     esac
   fi
-  
+
   if [[ -z "$shell_type" ]]; then
     print_debug "Could not detect shell type for completion setup"
     return 1
   fi
-  
+
   print_step "Setting up shell completion for $shell_type..."
-  
+
   # Set up completion based on shell type
   if [[ "$shell_type" == "bash" ]]; then
     local completion_line='eval "$(_VOICE_MODE_COMPLETE=bash_source voice-mode)"'
     if [[ -f "$shell_rc" ]] && grep -q "_VOICE_MODE_COMPLETE" "$shell_rc" 2>/dev/null; then
       print_success "Shell completion already configured in $shell_rc"
     else
-      echo "" >> "$shell_rc"
-      echo "# Voice Mode shell completion" >> "$shell_rc"
-      echo "$completion_line" >> "$shell_rc"
+      echo "" >>"$shell_rc"
+      echo "# VoiceMode shell completion" >>"$shell_rc"
+      echo "$completion_line" >>"$shell_rc"
       print_success "Added shell completion to $shell_rc"
       echo "   Tab completion will be available in new shell sessions"
     fi
@@ -545,28 +572,28 @@ setup_shell_completion() {
     if [[ -f "$shell_rc" ]] && grep -q "_VOICE_MODE_COMPLETE" "$shell_rc" 2>/dev/null; then
       print_success "Shell completion already configured in $shell_rc"
     else
-      echo "" >> "$shell_rc"
-      echo "# Voice Mode shell completion" >> "$shell_rc"
-      echo "$completion_line" >> "$shell_rc"
+      echo "" >>"$shell_rc"
+      echo "# VoiceMode shell completion" >>"$shell_rc"
+      echo "$completion_line" >>"$shell_rc"
       print_success "Added shell completion to $shell_rc"
       echo "   Tab completion will be available in new shell sessions"
     fi
   elif [[ "$shell_type" == "fish" ]]; then
     local fish_completion_dir="$HOME/.config/fish/completions"
     local fish_completion_file="$fish_completion_dir/voice-mode.fish"
-    
+
     mkdir -p "$fish_completion_dir"
-    
+
     if [[ -f "$fish_completion_file" ]]; then
       print_success "Fish completion already configured"
     else
       # Generate fish completion directly
       if command -v voice-mode >/dev/null 2>&1; then
-        _VOICE_MODE_COMPLETE=fish_source voice-mode > "$fish_completion_file" 2>/dev/null
+        _VOICE_MODE_COMPLETE=fish_source voice-mode >"$fish_completion_file" 2>/dev/null
       elif command -v uvx >/dev/null 2>&1; then
-        _VOICE_MODE_COMPLETE=fish_source uvx voice-mode > "$fish_completion_file" 2>/dev/null
+        _VOICE_MODE_COMPLETE=fish_source uvx voice-mode >"$fish_completion_file" 2>/dev/null
       fi
-      
+
       if [[ -f "$fish_completion_file" ]] && [[ -s "$fish_completion_file" ]]; then
         print_success "Added Fish completion to $fish_completion_file"
         echo "   Tab completion will be available immediately"
@@ -577,7 +604,7 @@ setup_shell_completion() {
       fi
     fi
   fi
-  
+
   return 0
 }
 
@@ -585,46 +612,46 @@ configure_claude_voicemode() {
   if command -v claude >/dev/null 2>&1; then
     # Check if voice-mode is already configured
     if claude mcp list 2>/dev/null | grep -q "voice-mode"; then
-      print_success "Voice Mode is already configured in Claude Code"
+      print_success "VoiceMode is already configured in Claude Code"
       # TEMPORARILY DISABLED: Shell completion can cause errors - see setup_shell_completion function
       # setup_shell_completion
       return 0
     else
-      if confirm_action "Configure Voice Mode with Claude Code (adds MCP server)"; then
-        print_step "Configuring Voice Mode with Claude Code..."
+      if confirm_action "Configure VoiceMode with Claude Code (adds MCP server)"; then
+        print_step "Configuring VoiceMode with Claude Code..."
 
         # Try with --scope flag first (newer versions)
-        if claude mcp add --scope user voice-mode -- uvx voice-mode 2>/dev/null; then
-          print_success "Voice Mode configured with Claude Code"
+        if claude mcp add --scope user voice-mode -- voicemode 2>/dev/null; then
+          print_success "VoiceMode configured with Claude Code"
           # TEMPORARILY DISABLED: Shell completion can cause errors - see setup_shell_completion function
-      # setup_shell_completion
+          # setup_shell_completion
           return 0
         # Fallback to without --scope flag (older versions)
-        elif claude mcp add voice-mode -- uvx voice-mode; then
-          print_success "Voice Mode configured with Claude Code (global config)"
+        elif claude mcp add voice-mode -- voicemode; then
+          print_success "VoiceMode configured with Claude Code (global config)"
           # TEMPORARILY DISABLED: Shell completion can cause errors - see setup_shell_completion function
-      # setup_shell_completion
+          # setup_shell_completion
           return 0
         else
-          print_error "Failed to configure Voice Mode with Claude Code"
+          print_error "Failed to configure VoiceMode with Claude Code"
           return 1
         fi
       else
-        print_step "Skipping Voice Mode configuration"
+        print_step "Skipping VoiceMode configuration"
         echo "You can configure it later with:"
-        echo "  claude mcp add voice-mode -- uvx voice-mode"
+        echo "  claude mcp add voice-mode -- voicemode"
         return 1
       fi
     fi
   else
-    print_warning "Claude Code not found. Please install it first to use Voice Mode."
+    print_warning "Claude Code not found. Please install it first to use VoiceMode."
     return 1
   fi
 }
 
 install_claude_if_needed() {
   if ! command -v claude >/dev/null 2>&1; then
-    if confirm_action "Install Claude Code (required for Voice Mode)"; then
+    if confirm_action "Install Claude Code (required for VoiceMode)"; then
       print_step "Installing Claude Code..."
       if command -v npm >/dev/null 2>&1; then
         npm install -g @anthropic-ai/claude-code
@@ -634,7 +661,7 @@ install_claude_if_needed() {
         return 1
       fi
     else
-      print_warning "Claude Code is required for Voice Mode. Skipping configuration."
+      print_warning "Claude Code is required for VoiceMode. Skipping configuration."
       return 1
     fi
   fi
@@ -643,40 +670,23 @@ install_claude_if_needed() {
 
 # Service installation functions
 check_voice_mode_cli() {
-  # Always use uvx voice-mode since that's how MCP is configured
-  # This ensures consistency and works on fresh systems
-  
+  # Check for locally installed voicemode command
+  # This should be available after uv tool install
+
   if [[ "${VOICEMODE_INSTALL_DEBUG:-}" == "true" ]]; then
-    echo "[DEBUG] Checking for voice-mode CLI availability..." >&2
+    echo "[DEBUG] Checking for voicemode CLI availability..." >&2
   fi
-  
-  # First check if uvx is available
-  if ! command -v uvx >/dev/null 2>&1; then
-    print_warning "uvx not found. Please ensure UV was installed correctly." >&2
-    echo "  You may need to restart your shell or run: source ~/.bashrc" >&2
-    return 1
-  fi
-  
-  # Always refresh to ensure we have the latest version
-  print_step "Downloading/updating Voice Mode to latest version..." >&2
-  if timeout 60 uvx --refresh voice-mode --version >/dev/null 2>&1; then
-    print_success "Voice Mode CLI is up to date" >&2
-    echo "uvx voice-mode"
+
+  # Check if voicemode command is available
+  if command -v voicemode >/dev/null 2>&1; then
+    print_success "VoiceMode CLI is available" >&2
+    echo "voicemode"
     return 0
   else
-    print_warning "Failed to download/update Voice Mode" >&2
-    echo "  This may be a network issue. Please check your internet connection." >&2
-    
-    # Try without refresh as fallback if already cached
-    print_step "Checking for cached Voice Mode version..." >&2
-    if timeout 30 uvx voice-mode --version >/dev/null 2>&1; then
-      print_warning "Using cached Voice Mode version (may not be latest)" >&2
-      echo "uvx voice-mode"
-      return 0
-    else
-      print_error "Voice Mode CLI is not available" >&2
-      return 1
-    fi
+    print_warning "VoiceMode CLI not found" >&2
+    echo "  Please ensure VoiceMode was installed correctly with 'uv tool install voice-mode'" >&2
+    echo "  You may need to restart your shell or run: source ~/.bashrc" >&2
+    return 1
   fi
 }
 
@@ -684,14 +694,14 @@ install_service() {
   local service_name="$1"
   local voice_mode_cmd="$2"
   local description="$3"
-  
+
   print_step "Installing $description..."
-  
+
   # Debug mode check
   if [[ "${VOICEMODE_INSTALL_DEBUG:-}" == "true" ]]; then
     echo "[DEBUG] Checking service command: $voice_mode_cmd $service_name --help"
   fi
-  
+
   # Check if the service subcommand exists first
   # Redirect stderr to stdout and check for the actual help output
   # This handles cases where Python warnings are printed to stderr
@@ -699,7 +709,7 @@ install_service() {
   local help_exit_code
   help_output=$(timeout 30 $voice_mode_cmd $service_name --help 2>&1 || true)
   help_exit_code=$?
-  
+
   if [[ "${VOICEMODE_INSTALL_DEBUG:-}" == "true" ]]; then
     echo "[DEBUG] Help command exit code: $help_exit_code"
     echo "[DEBUG] Help output length: ${#help_output} bytes"
@@ -708,7 +718,7 @@ install_service() {
     echo ""
     echo "[DEBUG] Checking for 'Commands:' in output..."
   fi
-  
+
   if ! echo "$help_output" | grep -q "Commands:"; then
     print_warning "$description service command not available"
     if [[ "${VOICEMODE_INSTALL_DEBUG:-}" == "true" ]]; then
@@ -718,20 +728,20 @@ install_service() {
     fi
     return 1
   fi
-  
+
   if [[ "${VOICEMODE_INSTALL_DEBUG:-}" == "true" ]]; then
     echo "[DEBUG] Service command check passed"
   fi
-  
+
   # Install with timeout and capture output
   local temp_log=$(mktemp)
   local install_success=false
-  
+
   print_step "Running: $voice_mode_cmd $service_name install --auto-enable"
   if timeout 600 $voice_mode_cmd $service_name install --auto-enable 2>&1 | tee "$temp_log"; then
     install_success=true
   fi
-  
+
   # Check for specific success/failure indicators
   if [[ "$install_success" == true ]] && ! grep -qi "error\|failed\|traceback" "$temp_log"; then
     print_success "$description installed successfully"
@@ -750,22 +760,24 @@ install_all_services() {
   local voice_mode_cmd="$1"
   local success_count=0
   local total_count=3
-  
-  print_step "Installing all Voice Mode services..."
-  
+
+  print_step "Installing all VoiceMode services..."
+
   # Install each service independently
   if install_service "whisper" "$voice_mode_cmd" "Whisper (Speech-to-Text)"; then
     ((success_count++))
+    # Offer CoreML acceleration for Apple Silicon Macs after Whisper installation
+    setup_coreml_acceleration
   fi
-  
+
   if install_service "kokoro" "$voice_mode_cmd" "Kokoro (Text-to-Speech)"; then
     ((success_count++))
   fi
-  
+
   if install_service "livekit" "$voice_mode_cmd" "LiveKit (Real-time Communication)"; then
     ((success_count++))
   fi
-  
+
   # Report results
   echo ""
   if [[ $success_count -eq $total_count ]]; then
@@ -780,42 +792,45 @@ install_all_services() {
 
 install_services_selective() {
   local voice_mode_cmd="$1"
-  
+
   if confirm_action "Install Whisper (Speech-to-Text)"; then
-    install_service "whisper" "$voice_mode_cmd" "Whisper"
+    if install_service "whisper" "$voice_mode_cmd" "Whisper"; then
+      # Offer CoreML acceleration for Apple Silicon Macs after Whisper installation
+      setup_coreml_acceleration
+    fi
   fi
-  
+
   if confirm_action "Install Kokoro (Text-to-Speech)"; then
     install_service "kokoro" "$voice_mode_cmd" "Kokoro"
   fi
-  
+
   if confirm_action "Install LiveKit (Real-time Communication)"; then
     install_service "livekit" "$voice_mode_cmd" "LiveKit"
   fi
 }
 
 verify_voice_mode_after_mcp() {
-  print_step "Verifying Voice Mode CLI availability after MCP configuration..."
-  
+  print_step "Verifying VoiceMode CLI availability after MCP configuration..."
+
   # Give a moment for any caching to settle
   sleep 2
-  
+
   # Check voice-mode CLI availability
   local voice_mode_cmd
   if ! voice_mode_cmd=$(check_voice_mode_cli); then
-    print_warning "Voice Mode CLI not available yet. This could be due to:"
+    print_warning "VoiceMode CLI not available yet. This could be due to:"
     echo "  • PATH not updated in current shell"
-    echo "  • uvx cache not refreshed"
-    echo "  • Network connectivity issues"
+    echo "  • VoiceMode not installed yet"
+    echo "  • Need to restart shell for PATH updates"
     echo ""
     echo "You can install services manually later with:"
-    echo "  uvx --refresh voice-mode whisper install"
-    echo "  uvx --refresh voice-mode kokoro install"
-    echo "  uvx --refresh voice-mode livekit install"
+    echo "  voicemode whisper install"
+    echo "  voicemode kokoro install"
+    echo "  voicemode livekit install"
     return 1
   fi
-  
-  print_success "Voice Mode CLI verified: $voice_mode_cmd"
+
+  print_success "VoiceMode CLI verified: $voice_mode_cmd"
   return 0
 }
 
@@ -824,15 +839,15 @@ install_voice_services() {
   if ! verify_voice_mode_after_mcp; then
     return 1
   fi
-  
+
   # Get the verified command
   local voice_mode_cmd
   voice_mode_cmd=$(check_voice_mode_cli)
-  
+
   echo ""
-  echo -e "${BLUE}🎤 Voice Mode Services${NC}"
+  echo -e "${BLUE}🎤 VoiceMode Services${NC}"
   echo ""
-  echo "Voice Mode can install local services for the best experience:"
+  echo "VoiceMode can install local services for the best experience:"
   echo "  • Whisper - Fast local speech-to-text (no cloud required)"
   echo "  • Kokoro - Natural text-to-speech with multiple voices"
   echo "  • LiveKit - Real-time voice communication server"
@@ -844,29 +859,151 @@ install_voice_services() {
   echo ""
   echo "Note: Service installation may take several minutes and requires internet access."
   echo ""
-  
+
   # Quick mode or selective
   read -p "Install all recommended services? [Y/n/s]: " choice
   case $choice in
-    [Ss]*)
-      # Selective mode
-      install_services_selective "$voice_mode_cmd"
-      ;;
-    [Nn]*)
-      print_warning "Skipping service installation. Voice Mode will use cloud services."
-      ;;
-    *)
-      # Default: install all
-      install_all_services "$voice_mode_cmd"
-      ;;
+  [Ss]*)
+    # Selective mode
+    install_services_selective "$voice_mode_cmd"
+    ;;
+  [Nn]*)
+    print_warning "Skipping service installation. VoiceMode will use cloud services."
+    ;;
+  *)
+    # Default: install all
+    install_all_services "$voice_mode_cmd"
+    ;;
   esac
 }
 
-main() {
-  echo -e "${BLUE}🎤 Voice Mode Universal Installer${NC}"
-  echo "This installer will set up Voice Mode and its dependencies on your system."
+show_banner() {
+  # Clear screen for clean presentation
+  clear
+
+  # Display VoiceMode ASCII art
   echo ""
-  
+  echo -e "${ORANGE}${BOLD}"
+  cat <<'EOF'
+    ╔════════════════════════════════════════════╗
+    ║                                            ║
+    ║   ██╗   ██╗ ██████╗ ██╗ ██████╗███████╗    ║
+    ║   ██║   ██║██╔═══██╗██║██╔════╝██╔════╝    ║
+    ║   ██║   ██║██║   ██║██║██║     █████╗      ║
+    ║   ╚██╗ ██╔╝██║   ██║██║██║     ██╔══╝      ║
+    ║    ╚████╔╝ ╚██████╔╝██║╚██████╗███████╗    ║
+    ║     ╚═══╝   ╚═════╝ ╚═╝ ╚═════╝╚══════╝    ║
+    ║                                            ║
+    ║   ███╗   ███╗ ██████╗ ██████╗ ███████╗     ║
+    ║   ████╗ ████║██╔═══██╗██╔══██╗██╔════╝     ║
+    ║   ██╔████╔██║██║   ██║██║  ██║█████╗       ║
+    ║   ██║╚██╔╝██║██║   ██║██║  ██║██╔══╝       ║
+    ║   ██║ ╚═╝ ██║╚██████╔╝██████╔╝███████╗     ║
+    ║   ╚═╝     ╚═╝ ╚═════╝ ╚═════╝ ╚══════╝     ║
+    ║                                            ║
+    ║     🎙️  VoiceMode for Claude Code  🤖      ║
+    ║                                            ║
+    ╚════════════════════════════════════════════╝
+EOF
+  echo -e "${NC}"
+
+  echo -e "${BOLD}Talk to Claude like a colleague, not a chatbot.${NC}"
+  echo ""
+  echo -e "${DIM}Transform your AI coding experience with natural voice conversations.${NC}"
+  echo ""
+}
+
+setup_coreml_acceleration() {
+  # Check if we're on Apple Silicon Mac
+  if [[ "$OS" == "macos" ]] && [[ "$ARCH" == "arm64" ]]; then
+    echo ""
+    echo -e "${CYAN}${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo ""
+    echo -e "${BLUE}${BOLD}🚀 CoreML Acceleration Available${NC}"
+    echo ""
+    echo "Your Mac supports CoreML acceleration for Whisper!"
+    echo ""
+    echo -e "${GREEN}Benefits:${NC}"
+    echo "  • 2-3x faster transcription than Metal-only"
+    echo "  • Lower CPU usage during speech recognition"
+    echo "  • Better battery life on MacBooks"
+    echo ""
+    echo -e "${YELLOW}Requirements:${NC}"
+    echo "  • PyTorch package (~2.5GB download)"
+    echo "  • CoreMLTools and dependencies (~100MB)"
+    echo "  • Full Xcode installation (~10GB from Mac App Store)"
+    echo ""
+
+    # Check for Xcode
+    XCODE_AVAILABLE=false
+    if [[ -f "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/coremlc" ]]; then
+      echo -e "${GREEN}✓${NC} Full Xcode detected"
+      XCODE_AVAILABLE=true
+    else
+      echo -e "${YELLOW}⚠${NC} Full Xcode not found (Command Line Tools alone won't work)"
+      echo ""
+      echo "  Without Xcode, Whisper will still use Metal acceleration (fast)"
+      echo "  To enable CoreML later:"
+      echo "    1. Install Xcode from Mac App Store"
+      echo "    2. Open Xcode once to accept license"
+      echo "    3. Run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer"
+      echo "    4. Run: voicemode whisper model-install --install-torch"
+    fi
+
+    echo ""
+
+    # Only offer to install if Xcode is available
+    if [[ "$XCODE_AVAILABLE" == "true" ]]; then
+      echo -e "${BOLD}Install CoreML acceleration now?${NC}"
+      echo ""
+      echo "This will download PyTorch (~2.5GB) and configure CoreML."
+      echo "You can always add this later with: voicemode whisper model-install --install-torch"
+      echo ""
+      read -p "Install CoreML acceleration? [y/N]: " -n 1 -r
+      echo ""
+
+      if [[ $REPLY =~ ^[Yy]$ ]]; then
+        echo ""
+        print_step "Installing CoreML dependencies..."
+        echo "This may take several minutes due to the large download size..."
+        echo ""
+
+        # Get the voice mode command
+        local voice_mode_cmd
+        voice_mode_cmd=$(check_voice_mode_cli)
+
+        # Run the whisper model-install command with torch installation
+        if $voice_mode_cmd whisper model-install large-v2 --install-torch --yes; then
+          print_success "CoreML acceleration installed successfully!"
+          echo ""
+          echo "Whisper will now use CoreML for maximum performance."
+        else
+          print_warning "CoreML installation encountered issues."
+          echo "Whisper will use Metal acceleration (still fast)."
+          echo ""
+          echo "You can retry later with:"
+          echo "  voicemode whisper model-install --install-torch"
+        fi
+      else
+        echo ""
+        echo "Skipping CoreML setup. Whisper will use Metal acceleration."
+        echo ""
+        echo -e "${DIM}To add CoreML later, run: voicemode whisper model-install --install-torch${NC}"
+      fi
+    else
+      echo -e "${DIM}Skipping CoreML - Xcode not installed${NC}"
+      echo "Whisper will use Metal acceleration (still performs well)"
+    fi
+
+    echo ""
+    echo -e "${CYAN}${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+  fi
+}
+
+main() {
+  # Show banner first
+  show_banner
+
   # Check for debug mode
   if [[ "${VOICEMODE_INSTALL_DEBUG:-}" == "true" ]]; then
     echo -e "${YELLOW}[DEBUG MODE ENABLED]${NC}"
@@ -889,7 +1026,7 @@ main() {
 
   # Pre-flight checks
   detect_os
-  
+
   # Early sudo caching for service installation (Linux only)
   if [[ "$OS" == "linux" ]] && command -v sudo >/dev/null 2>&1; then
     print_step "Requesting administrator access for system configuration..."
@@ -908,37 +1045,40 @@ main() {
   fi
 
   check_python
-  install_uvx
+  install_uv
 
   # Install dependencies
   install_system_dependencies
+  
+  # Install VoiceMode package locally
+  install_voicemode
 
   # Setup npm for non-macOS systems
   if [[ "$OS" != "macos" ]]; then
     setup_local_npm
   fi
 
-  # Install Claude Code if needed, then configure Voice Mode
+  # Install Claude Code if needed, then configure VoiceMode
   if install_claude_if_needed; then
     if configure_claude_voicemode; then
-      # Voice Mode configured successfully
+      # VoiceMode configured successfully
       echo ""
-      echo "🎉 Voice Mode is ready! You can use voice commands with:"
+      echo "🎉 VoiceMode is ready! You can use voice commands with:"
       echo "  claude converse"
       echo ""
-      
+
       # Offer to install services
       install_voice_services
     else
-      print_warning "Voice Mode configuration was skipped or failed."
+      print_warning "VoiceMode configuration was skipped or failed."
       echo ""
-      echo "You can manually configure Voice Mode later with:"
-      echo "  claude mcp add voice-mode -- uvx --refresh voice-mode"
+      echo "You can manually configure VoiceMode later with:"
+      echo "  claude mcp add voice-mode -- voicemode"
       echo ""
       echo "Then install services with:"
-      echo "  uvx voice-mode whisper install"
-      echo "  uvx voice-mode kokoro install"
-      echo "  uvx voice-mode livekit install"
+      echo "  voicemode whisper install"
+      echo "  voicemode kokoro install"
+      echo "  voicemode livekit install"
     fi
   fi
 
@@ -946,7 +1086,7 @@ main() {
   if [[ "$IS_WSL" == true ]]; then
     echo ""
     echo -e "${YELLOW}WSL2 Audio Setup:${NC}"
-    echo "Voice Mode requires microphone access in WSL2. If you encounter audio issues:"
+    echo "VoiceMode requires microphone access in WSL2. If you encounter audio issues:"
     echo "  1. Enable Windows microphone permissions for your terminal app"
     echo "  2. Ensure PulseAudio is running: pulseaudio --start"
     echo "  3. Test audio devices: python3 -m sounddevice"
