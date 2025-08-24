@@ -1,10 +1,13 @@
 """Download Whisper models with Core ML support."""
 
 import os
+import sys
 import json
 import logging
+import platform
+import subprocess
 from pathlib import Path
-from typing import Union, List
+from typing import Union, List, Dict, Any
 
 from voice_mode.server import mcp
 from voice_mode.config import logger, MODELS_DIR
@@ -17,7 +20,9 @@ logger = logging.getLogger("voice-mode")
 async def whisper_model_install(
     model: Union[str, List[str]] = "large-v2",
     force_download: Union[bool, str] = False,
-    skip_core_ml: Union[bool, str] = False
+    skip_core_ml: Union[bool, str] = False,
+    install_torch: Union[bool, str] = False,
+    auto_confirm: Union[bool, str] = False
 ) -> str:
     """Download Whisper model(s) with optional Core ML conversion.
     
@@ -31,6 +36,8 @@ async def whisper_model_install(
                - "all" to download all available models
         force_download: Re-download even if model exists (default: False)
         skip_core_ml: Skip Core ML conversion on Apple Silicon (default: False)
+        install_torch: Install PyTorch for CoreML (adds ~2.5GB) (default: False)
+        auto_confirm: Skip all confirmation prompts (default: False)
         
     Available models:
         - tiny, tiny.en
@@ -76,6 +83,20 @@ async def whisper_model_install(
                 "success": False,
                 "error": "Whisper.cpp not installed. Please run whisper_install first."
             }, indent=2)
+        
+        # Handle CoreML dependencies if needed
+        coreml_status = await _handle_coreml_dependencies(
+            install_torch=install_torch,
+            auto_confirm=auto_confirm,
+            skip_core_ml=skip_core_ml
+        )
+        
+        if not coreml_status["continue"]:
+            return json.dumps(coreml_status, indent=2)
+        
+        # If CoreML deps were installed, skip_core_ml may have been updated
+        if coreml_status.get("coreml_deps_failed"):
+            skip_core_ml = True
         
         # Parse model input
         available_models = get_available_models()
@@ -201,3 +222,78 @@ async def whisper_model_install(
             "success": False,
             "error": str(e)
         }, indent=2)
+
+
+async def _handle_coreml_dependencies(
+    install_torch: bool = False,
+    auto_confirm: bool = False,
+    skip_core_ml: bool = False
+) -> Dict[str, Any]:
+    """Handle CoreML dependency installation for Apple Silicon Macs.
+    
+    Returns:
+        Dict with 'continue' key indicating whether to proceed with model download
+    """
+    # Check if we're on Apple Silicon Mac
+    if platform.system() != "Darwin" or platform.machine() != "arm64":
+        return {"continue": True}
+    
+    # If skipping CoreML, no need to check dependencies
+    if skip_core_ml:
+        return {"continue": True}
+    
+    # Check if torch is already installed
+    try:
+        import torch
+        logger.info("PyTorch already installed for CoreML support")
+        return {"continue": True}
+    except ImportError:
+        pass
+    
+    # Check if user wants to install torch
+    if not install_torch and not auto_confirm:
+        return {
+            "continue": False,
+            "success": False,
+            "requires_confirmation": True,
+            "message": "CoreML requires PyTorch (~2.5GB). Rerun with install_torch=True to confirm.",
+            "recommendation": "Set install_torch=True for CoreML acceleration (2-3x faster)"
+        }
+    
+    # Install CoreML dependencies
+    logger.info("Installing CoreML dependencies...")
+    
+    try:
+        # Detect environment and install appropriately
+        packages = ["torch>=2.0.0", "coremltools>=7.0", "transformers", "ane-transformers"]
+        
+        # Try UV first (most common)
+        if subprocess.run(["which", "uv"], capture_output=True).returncode == 0:
+            cmd = ["uv", "pip", "install"] + packages
+            logger.info("Installing via UV...")
+        else:
+            # Fallback to pip
+            cmd = [sys.executable, "-m", "pip", "install"] + packages
+            logger.info("Installing via pip...")
+        
+        # Run installation
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        
+        if result.returncode == 0:
+            logger.info("CoreML dependencies installed successfully")
+            return {"continue": True, "coreml_deps_installed": True}
+        else:
+            logger.warning(f"Failed to install CoreML dependencies: {result.stderr}")
+            return {
+                "continue": True,
+                "coreml_deps_failed": True,
+                "warning": "CoreML dependencies installation failed. Models will use Metal acceleration."
+            }
+            
+    except Exception as e:
+        logger.warning(f"Error installing CoreML dependencies: {e}")
+        return {
+            "continue": True,
+            "coreml_deps_failed": True,
+            "warning": f"CoreML setup error: {str(e)}. Models will use Metal acceleration."
+        }
