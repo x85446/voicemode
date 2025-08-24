@@ -21,7 +21,7 @@ Environment variables:
 
 Examples:
   # Normal installation
-  curl -sSf https://getvoicemode.com/install.sh | sh
+  curl -O https://getvoicemode.com/install.sh && bash install.sh
   
   # Debug mode
   VOICEMODE_INSTALL_DEBUG=true ./install.sh
@@ -448,11 +448,11 @@ install_uv() {
 
 install_voicemode() {
   print_step "Installing VoiceMode..."
-  
+
   # Install voice-mode package with uv tool install
-  if uv tool install voice-mode; then
+  if uv tool install -U voice-mode; then
     print_success "VoiceMode installed successfully"
-    
+
     # Verify the voicemode command is available
     if command -v voicemode >/dev/null 2>&1; then
       print_success "VoiceMode command verified: voicemode"
@@ -506,16 +506,16 @@ setup_local_npm() {
 setup_shell_completion() {
   # TEMPORARILY DISABLED: This function can cause shell startup errors when voice-mode
   # is installed via uvx rather than pip. The completion setup adds lines to shell rc
-  # files that expect 'voice-mode' command to be available globally.
+  # files that expect 'voicemode' command to be available globally.
   #
   # TODO: Implement detection of installation method and use appropriate command:
-  # - If 'voice-mode' command exists: use 'voice-mode'
+  # - If 'voicemode' command exists: use 'voicemode'
   # - Else if 'uvx' exists: use 'uvx voice-mode'
   # - Else: skip silently
   #
   # Manual setup for users who want completions:
-  # Bash: echo 'command -v voice-mode >/dev/null && eval "$(_VOICE_MODE_COMPLETE=bash_source voice-mode)" || command -v uvx >/dev/null && eval "$(_VOICE_MODE_COMPLETE=bash_source uvx voice-mode)"' >> ~/.bashrc
-  # Zsh:  echo 'command -v voice-mode >/dev/null && eval "$(_VOICE_MODE_COMPLETE=zsh_source voice-mode)" || command -v uvx >/dev/null && eval "$(_VOICE_MODE_COMPLETE=zsh_source uvx voice-mode)"' >> ~/.zshrc
+  # Bash: echo 'command -v voicemode >/dev/null && eval "$(_VOICE_MODE_COMPLETE=bash_source voicemode)" || command -v uvx >/dev/null && eval "$(_VOICE_MODE_COMPLETE=bash_source uvx voice-mode)"' >> ~/.bashrc
+  # Zsh:  echo 'command -v voicemode >/dev/null && eval "$(_VOICE_MODE_COMPLETE=zsh_source voicemode)" || command -v uvx >/dev/null && eval "$(_VOICE_MODE_COMPLETE=zsh_source uvx voice-mode)"' >> ~/.zshrc
 
   # Detect current shell
   local shell_type=""
@@ -557,7 +557,7 @@ setup_shell_completion() {
 
   # Set up completion based on shell type
   if [[ "$shell_type" == "bash" ]]; then
-    local completion_line='eval "$(_VOICE_MODE_COMPLETE=bash_source voice-mode)"'
+    local completion_line='eval "$(_VOICE_MODE_COMPLETE=bash_source voicemode)"'
     if [[ -f "$shell_rc" ]] && grep -q "_VOICE_MODE_COMPLETE" "$shell_rc" 2>/dev/null; then
       print_success "Shell completion already configured in $shell_rc"
     else
@@ -568,7 +568,7 @@ setup_shell_completion() {
       echo "   Tab completion will be available in new shell sessions"
     fi
   elif [[ "$shell_type" == "zsh" ]]; then
-    local completion_line='eval "$(_VOICE_MODE_COMPLETE=zsh_source voice-mode)"'
+    local completion_line='eval "$(_VOICE_MODE_COMPLETE=zsh_source voicemode)"'
     if [[ -f "$shell_rc" ]] && grep -q "_VOICE_MODE_COMPLETE" "$shell_rc" 2>/dev/null; then
       print_success "Shell completion already configured in $shell_rc"
     else
@@ -580,7 +580,7 @@ setup_shell_completion() {
     fi
   elif [[ "$shell_type" == "fish" ]]; then
     local fish_completion_dir="$HOME/.config/fish/completions"
-    local fish_completion_file="$fish_completion_dir/voice-mode.fish"
+    local fish_completion_file="$fish_completion_dir/voicemode.fish"
 
     mkdir -p "$fish_completion_dir"
 
@@ -588,10 +588,10 @@ setup_shell_completion() {
       print_success "Fish completion already configured"
     else
       # Generate fish completion directly
-      if command -v voice-mode >/dev/null 2>&1; then
-        _VOICE_MODE_COMPLETE=fish_source voice-mode >"$fish_completion_file" 2>/dev/null
+      if command -v voicemode >/dev/null 2>&1; then
+        _VOICE_MODE_COMPLETE=fish_source voicemode >"$fish_completion_file" 2>/dev/null
       elif command -v uvx >/dev/null 2>&1; then
-        _VOICE_MODE_COMPLETE=fish_source uvx voice-mode >"$fish_completion_file" 2>/dev/null
+        _VOICE_MODE_COMPLETE=fish_source uvx voicemode >"$fish_completion_file" 2>/dev/null
       fi
 
       if [[ -f "$fish_completion_file" ]] && [[ -s "$fish_completion_file" ]]; then
@@ -610,8 +610,8 @@ setup_shell_completion() {
 
 configure_claude_voicemode() {
   if command -v claude >/dev/null 2>&1; then
-    # Check if voice-mode is already configured
-    if claude mcp list 2>/dev/null | grep -q "voice-mode"; then
+    # Check if voicemode is already configured
+    if claude mcp list 2>/dev/null | grep -q -e "voicemode" -e "voice-mode"; then
       print_success "VoiceMode is already configured in Claude Code"
       # TEMPORARILY DISABLED: Shell completion can cause errors - see setup_shell_completion function
       # setup_shell_completion
@@ -621,13 +621,13 @@ configure_claude_voicemode() {
         print_step "Configuring VoiceMode with Claude Code..."
 
         # Try with --scope flag first (newer versions)
-        if claude mcp add --scope user voice-mode -- voicemode 2>/dev/null; then
+        if claude mcp add --scope user voicemode -- voicemode 2>/dev/null; then
           print_success "VoiceMode configured with Claude Code"
           # TEMPORARILY DISABLED: Shell completion can cause errors - see setup_shell_completion function
           # setup_shell_completion
           return 0
         # Fallback to without --scope flag (older versions)
-        elif claude mcp add voice-mode -- voicemode; then
+        elif claude mcp add voicemode -- voicemode; then
           print_success "VoiceMode configured with Claude Code (global config)"
           # TEMPORARILY DISABLED: Shell completion can cause errors - see setup_shell_completion function
           # setup_shell_completion
@@ -1049,7 +1049,7 @@ main() {
 
   # Install dependencies
   install_system_dependencies
-  
+
   # Install VoiceMode package locally
   install_voicemode
 
