@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.28.1] - 2025-08-24
+
+### Added
+- **Standardized project naming as VoiceMode MCP**
+  - Consistent branding across all documentation and code
+  - Updated project descriptions and metadata
+  - Renamed internal references from "voice-mode" to "VoiceMode MCP"
+  - Maintains backward compatibility with existing installations
+
+### Fixed
+- **CoreML fallback for whisper.cpp on Apple Silicon**
+  - Added proper error handling when CoreML models fail to load
+  - Automatically falls back to CPU processing if CoreML initialization fails
+  - Prevents whisper-server crashes on systems with CoreML issues
+  - Improves reliability on various macOS configurations
+
 ## [2.28.0] - 2025-08-23
 
 ### Added
