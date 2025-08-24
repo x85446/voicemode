@@ -657,25 +657,24 @@ check_voice_mode_cli() {
     return 1
   fi
   
-  # Test that uvx voice-mode actually works
-  print_step "Verifying Voice Mode CLI availability..." >&2
-  if timeout 30 uvx voice-mode --version >/dev/null 2>&1; then
-    print_success "Voice Mode CLI is available" >&2
+  # Always refresh to ensure we have the latest version
+  print_step "Downloading/updating Voice Mode to latest version..." >&2
+  if timeout 60 uvx --refresh voice-mode --version >/dev/null 2>&1; then
+    print_success "Voice Mode CLI is up to date" >&2
     echo "uvx voice-mode"
     return 0
   else
-    print_warning "Voice Mode CLI not working. It may need to be downloaded first." >&2
-    echo "  The first run of uvx voice-mode will download and cache it." >&2
-    echo "  This requires an internet connection." >&2
+    print_warning "Failed to download/update Voice Mode" >&2
+    echo "  This may be a network issue. Please check your internet connection." >&2
     
-    # Try to trigger the download with --refresh flag
-    print_step "Attempting to download/refresh Voice Mode..." >&2
-    if timeout 60 uvx --refresh voice-mode --help >/dev/null 2>&1; then
-      print_success "Voice Mode downloaded successfully" >&2
+    # Try without refresh as fallback if already cached
+    print_step "Checking for cached Voice Mode version..." >&2
+    if timeout 30 uvx voice-mode --version >/dev/null 2>&1; then
+      print_warning "Using cached Voice Mode version (may not be latest)" >&2
       echo "uvx voice-mode"
       return 0
     else
-      print_warning "Failed to download Voice Mode" >&2
+      print_error "Voice Mode CLI is not available" >&2
       return 1
     fi
   fi
