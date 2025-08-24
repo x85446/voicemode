@@ -558,8 +558,15 @@ def generate_chime(frequencies: list, duration: float = 0.1, sample_rate: int = 
     # Concatenate all tones
     chime = np.concatenate(all_samples)
     
+    # Add leading silence for Bluetooth wake-up time (100ms)
+    # This prevents the beginning of the chime from being cut off
+    silence_duration = 0.1  # seconds
+    silence_samples = int(sample_rate * silence_duration)
+    silence = np.zeros(silence_samples)
+    chime_with_buffer = np.concatenate([silence, chime])
+    
     # Convert to 16-bit integer
-    chime_int16 = (chime * 32767).astype(np.int16)
+    chime_int16 = (chime_with_buffer * 32767).astype(np.int16)
     
     return chime_int16
 
