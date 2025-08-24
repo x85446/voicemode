@@ -395,8 +395,9 @@ async def text_to_speech(
                         if event_logger:
                             event_logger.log_event(event_logger.TTS_PLAYBACK_START)
                         
-                        # Add 100ms of silence at the beginning to prevent clipping
-                        silence_duration = 0.1  # seconds
+                        # Add configurable silence at the beginning to prevent clipping
+                        from .config import PIP_LEADING_SILENCE
+                        silence_duration = PIP_LEADING_SILENCE  # seconds
                         silence_samples = int(audio.frame_rate * silence_duration)
                         # Match the shape of the samples array exactly
                         if samples.ndim == 1:
@@ -507,13 +508,21 @@ async def text_to_speech(
         return False, metrics
 
 
-def generate_chime(frequencies: list, duration: float = 0.1, sample_rate: int = SAMPLE_RATE) -> np.ndarray:
+def generate_chime(
+    frequencies: list, 
+    duration: float = 0.1, 
+    sample_rate: int = SAMPLE_RATE,
+    leading_silence: Optional[float] = None,
+    trailing_silence: Optional[float] = None
+) -> np.ndarray:
     """Generate a chime sound with given frequencies.
     
     Args:
         frequencies: List of frequencies to play in sequence
         duration: Duration of each tone in seconds
         sample_rate: Sample rate for audio generation
+        leading_silence: Optional override for leading silence duration (seconds)
+        trailing_silence: Optional override for trailing silence duration (seconds)
         
     Returns:
         Numpy array of audio samples
@@ -521,12 +530,30 @@ def generate_chime(frequencies: list, duration: float = 0.1, sample_rate: int = 
     samples_per_tone = int(sample_rate * duration)
     fade_samples = int(sample_rate * 0.01)  # 10ms fade
     
+    # Determine amplitude based on output device
+    amplitude = 0.0375  # Default (very quiet)
+    try:
+        import sounddevice as sd
+        default_output = sd.default.device[1]
+        if default_output is not None:
+            devices = sd.query_devices()
+            device_name = devices[default_output]['name'].lower()
+            # Check for Bluetooth devices (AirPods, Bluetooth headphones, etc)
+            if 'airpod' in device_name or 'bluetooth' in device_name or 'bt' in device_name:
+                amplitude = 0.15  # Higher amplitude for Bluetooth devices
+                logger.debug(f"Bluetooth device detected ({devices[default_output]['name']}), using amplitude {amplitude}")
+            else:
+                amplitude = 0.075  # Moderate amplitude for built-in speakers
+                logger.debug(f"Built-in speaker detected ({devices[default_output]['name']}), using amplitude {amplitude}")
+    except Exception as e:
+        logger.debug(f"Could not detect output device type: {e}, using default amplitude {amplitude}")
+    
     all_samples = []
     
     for freq in frequencies:
         # Generate sine wave
         t = np.linspace(0, duration, samples_per_tone, False)
-        tone = 0.0375 * np.sin(2 * np.pi * freq * t)  # 0.0375 amplitude for extremely quiet volume
+        tone = amplitude * np.sin(2 * np.pi * freq * t)
         
         # Apply fade in/out to prevent clicks
         fade_in = np.linspace(0, 1, fade_samples)
@@ -540,21 +567,55 @@ def generate_chime(frequencies: list, duration: float = 0.1, sample_rate: int = 
     # Concatenate all tones
     chime = np.concatenate(all_samples)
     
+    # Import config values if not overridden
+    from .config import PIP_LEADING_SILENCE, PIP_TRAILING_SILENCE
+    
+    # Use parameter overrides or fall back to config
+    actual_leading_silence = leading_silence if leading_silence is not None else PIP_LEADING_SILENCE
+    actual_trailing_silence = trailing_silence if trailing_silence is not None else PIP_TRAILING_SILENCE
+    
+    # Add leading silence for Bluetooth wake-up time
+    # This prevents the beginning of the chime from being cut off
+    silence_samples = int(sample_rate * actual_leading_silence)
+    silence = np.zeros(silence_samples)
+    
+    # Add trailing silence to prevent end cutoff
+    trailing_silence_samples = int(sample_rate * actual_trailing_silence)
+    trailing_silence = np.zeros(trailing_silence_samples)
+    
+    # Combine: leading silence + chime + trailing silence
+    chime_with_buffer = np.concatenate([silence, chime, trailing_silence])
+    
     # Convert to 16-bit integer
-    chime_int16 = (chime * 32767).astype(np.int16)
+    chime_int16 = (chime_with_buffer * 32767).astype(np.int16)
     
     return chime_int16
 
 
-async def play_chime_start(sample_rate: int = SAMPLE_RATE) -> bool:
+async def play_chime_start(
+    sample_rate: int = SAMPLE_RATE,
+    leading_silence: Optional[float] = None,
+    trailing_silence: Optional[float] = None
+) -> bool:
     """Play the recording start chime (ascending tones).
+    
+    Args:
+        sample_rate: Sample rate for audio
+        leading_silence: Optional override for leading silence duration (seconds)
+        trailing_silence: Optional override for trailing silence duration (seconds)
     
     Returns:
         True if chime played successfully, False otherwise
     """
     try:
         import sounddevice as sd
-        chime = generate_chime([800, 1000], duration=0.1, sample_rate=sample_rate)
+        chime = generate_chime(
+            [800, 1000], 
+            duration=0.1, 
+            sample_rate=sample_rate,
+            leading_silence=leading_silence,
+            trailing_silence=trailing_silence
+        )
         sd.play(chime, sample_rate)
         sd.wait()
         return True
@@ -563,15 +624,30 @@ async def play_chime_start(sample_rate: int = SAMPLE_RATE) -> bool:
         return False
 
 
-async def play_chime_end(sample_rate: int = SAMPLE_RATE) -> bool:
+async def play_chime_end(
+    sample_rate: int = SAMPLE_RATE,
+    leading_silence: Optional[float] = None,
+    trailing_silence: Optional[float] = None
+) -> bool:
     """Play the recording end chime (descending tones).
+    
+    Args:
+        sample_rate: Sample rate for audio
+        leading_silence: Optional override for leading silence duration (seconds)
+        trailing_silence: Optional override for trailing silence duration (seconds)
     
     Returns:
         True if chime played successfully, False otherwise
     """
     try:
         import sounddevice as sd
-        chime = generate_chime([1000, 800], duration=0.1, sample_rate=sample_rate)
+        chime = generate_chime(
+            [1000, 800], 
+            duration=0.1, 
+            sample_rate=sample_rate,
+            leading_silence=leading_silence,
+            trailing_silence=trailing_silence
+        )
         sd.play(chime, sample_rate)
         sd.wait()
         return True
