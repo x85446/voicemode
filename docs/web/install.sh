@@ -966,7 +966,7 @@ setup_coreml_acceleration() {
         voice_mode_cmd=$(check_voice_mode_cli)
 
         # Run the whisper model install command with torch installation
-        if $voice_mode_cmd whisper model install large-v2 --install-torch --auto-confirm; then
+        if $voice_mode_cmd whisper model install large-v2 --install-torch; then
           print_success "CoreML acceleration installed successfully!"
           echo ""
           echo "Whisper will now use CoreML for maximum performance."
