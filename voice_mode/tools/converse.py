@@ -1351,14 +1351,13 @@ async def converse(
         message: The message to speak
         wait_for_response: Whether to listen for a response after speaking (default: True)
         listen_duration: How long to listen for response in seconds (default: 120.0)
-                         Recommended durations based on expected response:
-                         - Simple yes/no questions: 10 seconds
-                         - Normal conversational responses: 30 seconds  
-                         - Open-ended questions: 60 seconds
-                         - Detailed explanations: 120 seconds (default)
-                         - Stories or long explanations: 300 seconds
-                         Always err on the side of longer duration - it's better to have 
-                         silence at the end than to cut off the user mid-sentence.
+                         The tool handles silence detection well and uses a sensible default.
+                         It's unusual to need to set the duration - only override if you have 
+                         specific requirements such as:
+                         - Silence detection is disabled and you need a specific timeout
+                         - You know the response will be exceptionally long (>120s)
+                         - You're in a special mode that requires different timing
+                         In most cases, just let the default and silence detection handle it.
         min_listen_duration: Minimum time to record before silence detection can stop (default: 2.0)
                              Useful for preventing premature cutoffs when users need thinking time.
                              Examples:

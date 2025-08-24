@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Improved converse tool documentation**
+  - Simplified listen_duration parameter documentation
+  - Removed confusing duration recommendations that led to unnecessary overrides
+  - Clarified that silence detection handles timing well with sensible defaults
+  - Reduces cognitive load and prevents token waste from explicit duration settings
+
 ## [2.28.3] - 2025-08-24
 
 ### Fixed
