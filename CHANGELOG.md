@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Safe shell completions in installer**
+  - Re-enabled shell completion setup with runtime command availability checks
+  - Completions only activate if `voicemode` command is found in PATH
+  - Prevents shell startup errors when command is not available
+  - Supports bash, zsh, and fish shells with safe fallback behavior
+
+### Changed
+- **CLI consistency improvements**
+  - Replaced all user-facing "voice-mode" references with "voicemode"
+  - Updated shell completion environment variables from `_VOICE_MODE_COMPLETE` to `_VOICEMODE_COMPLETE`
+  - Removed redundant `completion` command, keeping only the superior `completions` command
+  - Simplified command help text and examples for consistency
+  - Logger name remains "voice-mode" for backward compatibility
+
 ## [2.30.0] - 2025-08-25
 
 ## [2.29.0] - 2025-08-25
