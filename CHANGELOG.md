@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Installer script stability**
+  - Fixed script exit after Whisper installation when CoreML setup CLI check fails
+  - Properly handle check_voice_mode_cli failures in setup_coreml_acceleration
+  - Installer now continues with Kokoro and LiveKit even if CoreML setup encounters issues
+
+### Changed
+- **Web documentation improvements**
+  - Updated Quick Start to use `curl -O && bash install.sh` for proper interactive prompts
+  - Clarified OpenAI API key is optional and serves as backup when local services unavailable
+  - Added comprehensive list of what the installer automatically configures
+  - Changed example to use `claude converse` instead of interactive prompt
+
 ## [2.32.0] - 2025-08-25
 
 ### Added
