@@ -23,12 +23,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.28.2] - 2025-08-24
 
+### Added
+- **Configurable audio feedback pip delays**
+  - Added VOICEMODE_PIP_LEADING_SILENCE and VOICEMODE_PIP_TRAILING_SILENCE environment variables
+  - Allows customization of silence before and after audio feedback chimes
+  - Configurable via converse tool parameters pip_leading_silence and pip_trailing_silence
+  - Helps prevent audio cutoff on Bluetooth devices and other audio systems with delay
+
 ### Fixed
-- **Improved noise filtering in VAD (Voice Activity Detection)**
-  - Fixed issue where nose blowing and similar non-speech sounds were detected as speech
-  - Adjusted VAD aggressiveness handling to better filter continuous non-speech audio
-  - Prevents false positives from breathing sounds, sniffles, and ambient noise
-  - Improves overall speech detection accuracy
+- **Audio feedback for Bluetooth devices**
+  - Added silence buffer before chimes to prevent Bluetooth audio cutoff
+  - Improved compatibility with devices that have audio activation delay
+  - Better audio feedback experience across different output devices
 
 ## [2.28.1] - 2025-08-24
 
