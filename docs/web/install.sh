@@ -2,7 +2,7 @@
 # VoiceMode Universal Installer
 # Usage: curl -sSf https://getvoicemode.com/install.sh | sh
 
-set -e
+# set -e
 
 # Parse command line arguments
 show_help() {
@@ -552,7 +552,7 @@ setup_shell_completion() {
 if command -v voicemode >/dev/null 2>&1; then
     eval "$(_VOICEMODE_COMPLETE=bash_source voicemode)"
 fi'
-    
+
     if [[ -f "$shell_rc" ]] && grep -q "_VOICEMODE_COMPLETE\|_VOICE_MODE_COMPLETE" "$shell_rc" 2>/dev/null; then
       print_success "Shell completion already configured in $shell_rc"
     else
@@ -567,7 +567,7 @@ fi'
 if command -v voicemode >/dev/null 2>&1; then
     eval "$(_VOICEMODE_COMPLETE=zsh_source voicemode)"
 fi'
-    
+
     if [[ -f "$shell_rc" ]] && grep -q "_VOICEMODE_COMPLETE\|_VOICE_MODE_COMPLETE" "$shell_rc" 2>/dev/null; then
       print_success "Shell completion already configured in $shell_rc"
     else
@@ -759,8 +759,9 @@ install_all_services() {
   # Install each service independently
   if install_service "whisper" "$voice_mode_cmd" "Whisper (Speech-to-Text)"; then
     ((success_count++))
-    # Offer CoreML acceleration for Apple Silicon Macs after Whisper installation
-    setup_coreml_acceleration
+    # CoreML setup temporarily disabled - --install-torch flag not working properly
+    # TODO: Fix PyTorch installation for CoreML acceleration
+    # setup_coreml_acceleration
   fi
 
   if install_service "kokoro" "$voice_mode_cmd" "Kokoro (Text-to-Speech)"; then
@@ -787,10 +788,10 @@ install_services_selective() {
   local voice_mode_cmd="$1"
 
   if confirm_action "Install Whisper (Speech-to-Text)"; then
-    if install_service "whisper" "$voice_mode_cmd" "Whisper"; then
-      # Offer CoreML acceleration for Apple Silicon Macs after Whisper installation
-      setup_coreml_acceleration
-    fi
+    install_service "whisper" "$voice_mode_cmd" "Whisper"
+    # CoreML setup temporarily disabled - --install-torch flag not working properly
+    # TODO: Fix PyTorch installation for CoreML acceleration
+    # setup_coreml_acceleration
   fi
 
   if confirm_action "Install Kokoro (Text-to-Speech)"; then
