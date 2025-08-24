@@ -217,7 +217,8 @@ async def whisper_install(
             # On Apple Silicon, also enable Core ML for better performance
             if platform.machine() == "arm64":
                 cmake_flags.append("-DWHISPER_COREML=ON")
-                logger.info("Enabling Core ML support for Apple Silicon")
+                cmake_flags.append("-DWHISPER_COREML_ALLOW_FALLBACK=ON")
+                logger.info("Enabling Core ML support with fallback for Apple Silicon")
         elif is_linux and use_gpu:
             cmake_flags.append("-DGGML_CUDA=ON")
         
