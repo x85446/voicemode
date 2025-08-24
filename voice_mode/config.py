@@ -291,6 +291,12 @@ INITIAL_SILENCE_GRACE_PERIOD = float(os.getenv("VOICEMODE_INITIAL_SILENCE_GRACE_
 # Default listen duration for converse tool
 DEFAULT_LISTEN_DURATION = float(os.getenv("VOICEMODE_DEFAULT_LISTEN_DURATION", "120.0"))  # Default 120s listening time
 
+# Audio feedback pip/chime configuration
+# Leading silence before pips to allow Bluetooth devices to wake up
+PIP_LEADING_SILENCE = float(os.getenv("VOICEMODE_PIP_LEADING_SILENCE", "0.1"))  # Default 0.1s - minimal delay for Bluetooth
+# Trailing silence after pips to prevent cutoff
+PIP_TRAILING_SILENCE = float(os.getenv("VOICEMODE_PIP_TRAILING_SILENCE", "0.2"))  # Default 0.2s - reduced for responsiveness
+
 # Audio format configuration
 AUDIO_FORMAT = os.getenv("VOICEMODE_AUDIO_FORMAT", "pcm").lower()
 TTS_AUDIO_FORMAT = os.getenv("VOICEMODE_TTS_AUDIO_FORMAT", "pcm").lower()  # Default to PCM for optimal streaming

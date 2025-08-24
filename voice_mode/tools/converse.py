@@ -784,7 +784,9 @@ async def play_audio_feedback(
     style: str = "whisper", 
     feedback_type: Optional[str] = None,
     voice: str = "nova",
-    model: str = "gpt-4o-mini-tts"
+    model: str = "gpt-4o-mini-tts",
+    pip_leading_silence: Optional[float] = None,
+    pip_trailing_silence: Optional[float] = None
 ) -> None:
     """Play an audio feedback chime
     
@@ -796,6 +798,8 @@ async def play_audio_feedback(
         feedback_type: Kept for compatibility, not used
         voice: Kept for compatibility, not used
         model: Kept for compatibility, not used
+        pip_leading_silence: Optional override for leading silence duration
+        pip_trailing_silence: Optional override for trailing silence duration
     """
     # Use parameter override if provided, otherwise use global setting
     if enabled is False:
@@ -810,11 +814,17 @@ async def play_audio_feedback(
         return
     
     try:
-        # Play appropriate chime
+        # Play appropriate chime with optional delay overrides
         if text == "listening":
-            await play_chime_start()
+            await play_chime_start(
+                leading_silence=pip_leading_silence,
+                trailing_silence=pip_trailing_silence
+            )
         elif text == "finished":
-            await play_chime_end()
+            await play_chime_end(
+                leading_silence=pip_leading_silence,
+                trailing_silence=pip_trailing_silence
+            )
     except Exception as e:
         logger.debug(f"Audio feedback failed: {e}")
         # Don't interrupt the main flow if feedback fails
@@ -1314,7 +1324,9 @@ async def converse(
     disable_silence_detection: Union[bool, str] = False,
     speed: Optional[float] = None,
     vad_aggressiveness: Optional[int] = None,
-    skip_tts: Optional[Union[bool, str]] = None
+    skip_tts: Optional[Union[bool, str]] = None,
+    pip_leading_silence: Optional[float] = None,
+    pip_trailing_silence: Optional[float] = None
 ) -> str:
     """Have a voice conversation - speak a message and optionally listen for response.
     
@@ -1391,6 +1403,10 @@ async def converse(
                   When False: Always use TTS regardless of environment setting
                   When None: Follow VOICEMODE_SKIP_TTS environment variable
                   Useful for rapid development iterations or when voice isn't needed
+        pip_leading_silence: Override leading silence before chimes (default: None uses VOICEMODE_PIP_LEADING_SILENCE env var)
+                             Time in seconds to add before the chime starts (e.g., 1.0 for Bluetooth devices)
+        pip_trailing_silence: Override trailing silence after chimes (default: None uses VOICEMODE_PIP_TRAILING_SILENCE env var)
+                              Time in seconds to add after the chime ends (e.g., 0.5 to prevent cutoff)
         If wait_for_response is False: Confirmation that message was spoken
         If wait_for_response is True: The voice response received (or error/timeout message)
     
@@ -1797,7 +1813,14 @@ async def converse(
                     await asyncio.sleep(0.5)
                     
                     # Play "listening" feedback sound
-                    await play_audio_feedback("listening", openai_clients, audio_feedback, audio_feedback_style or "whisper")
+                    await play_audio_feedback(
+                        "listening", 
+                        openai_clients, 
+                        audio_feedback, 
+                        audio_feedback_style or "whisper",
+                        pip_leading_silence=pip_leading_silence,
+                        pip_trailing_silence=pip_trailing_silence
+                    )
                     
                     # Record response
                     logger.info(f"🎤 Listening for {listen_duration} seconds...")
@@ -1821,7 +1844,14 @@ async def converse(
                         })
                     
                     # Play "finished" feedback sound
-                    await play_audio_feedback("finished", openai_clients, audio_feedback, audio_feedback_style or "whisper")
+                    await play_audio_feedback(
+                        "finished", 
+                        openai_clients, 
+                        audio_feedback, 
+                        audio_feedback_style or "whisper",
+                        pip_leading_silence=pip_leading_silence,
+                        pip_trailing_silence=pip_trailing_silence
+                    )
                     
                     # Mark the end of recording - this is when user expects response to start
                     user_done_time = time.perf_counter()
