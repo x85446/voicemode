@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Parameter type handling for MCP tools**
+  - Fixed vad_aggressiveness parameter to accept string values from LLMs
+  - Fixed port parameters in kokoro_install and livekit_install
+  - Fixed lines parameter in service management tool
+  - All numeric parameters now properly convert strings to integers
+  - Addresses systemic issue where Claude Code MCP client passes strings
+
+- **Installer script uvx command corrections**
+  - Fixed MCP configuration to use correct command `uvx voice-mode` (without --refresh)
+  - Installer now always refreshes to latest version at start
+  - Removed unnecessary --refresh flags from runtime commands
+  - Updated user-facing command examples to show correct usage
+
 ## [2.28.2] - 2025-08-24
 
 ### Fixed
