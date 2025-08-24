@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.28.3] - 2025-08-24
+
 ### Fixed
 - **Parameter type handling for MCP tools**
   - Fixed vad_aggressiveness parameter to accept string values from LLMs
