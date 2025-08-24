@@ -124,7 +124,7 @@ room:
 @mcp.tool()
 async def livekit_install(
     install_dir: Optional[str] = None,
-    port: int = 7880,
+    port: Union[int, str] = 7880,
     force_reinstall: Union[bool, str] = False,
     auto_enable: Optional[Union[bool, str]] = None,
     version: str = "latest"
@@ -158,6 +158,14 @@ async def livekit_install(
         
         # Check system
         system = platform.system()
+        
+        # Convert port to integer if provided as string
+        if isinstance(port, str):
+            try:
+                port = int(port)
+            except ValueError:
+                logger.warning(f"Invalid port value '{port}', using default 7880")
+                port = 7880
         
         # Handle string boolean conversions
         if isinstance(force_reinstall, str):

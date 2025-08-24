@@ -8,7 +8,7 @@ import platform
 import subprocess
 import time
 from pathlib import Path
-from typing import Literal, Optional, Dict, Any
+from typing import Literal, Optional, Dict, Any, Union
 
 import psutil
 
@@ -980,7 +980,7 @@ async def view_logs(service_name: str, lines: Optional[int] = None) -> str:
 async def service(
     service_name: Literal["whisper", "kokoro", "livekit", "frontend"],
     action: Literal["status", "start", "stop", "restart", "enable", "disable", "logs", "update-service-files"] = "status",
-    lines: Optional[int] = None
+    lines: Optional[Union[int, str]] = None
 ) -> str:
     """Unified service management tool for voice mode services.
     
@@ -1007,6 +1007,14 @@ async def service(
         service("kokoro", "start")    # Start Kokoro service
         service("whisper", "logs", 100)  # View last 100 lines of Whisper logs
     """
+    # Convert lines to integer if provided as string
+    if lines is not None and isinstance(lines, str):
+        try:
+            lines = int(lines)
+        except ValueError:
+            logger.warning(f"Invalid lines value '{lines}', using default 50")
+            lines = 50
+    
     # Route to appropriate handler
     if action == "status":
         return await status_service(service_name)

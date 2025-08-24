@@ -26,7 +26,7 @@ logger = logging.getLogger("voice-mode")
 async def kokoro_install(
     install_dir: Optional[str] = None,
     models_dir: Optional[str] = None,
-    port: int = 8880,
+    port: Union[int, str] = 8880,
     auto_start: Union[bool, str] = True,
     install_models: Union[bool, str] = True,
     force_reinstall: Union[bool, str] = False,
@@ -54,6 +54,14 @@ async def kokoro_install(
         Installation status with service configuration details
     """
     try:
+        # Convert port to integer if provided as string
+        if isinstance(port, str):
+            try:
+                port = int(port)
+            except ValueError:
+                logger.warning(f"Invalid port value '{port}', using default 8880")
+                port = 8880
+        
         # Check for and migrate old installations
         migration_msg = auto_migrate_if_needed("kokoro")
         
