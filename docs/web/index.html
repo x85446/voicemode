@@ -602,14 +602,47 @@
         <section>
             <h2>Quick Start<span class="typing-indicator"></span></h2>
             <div class="code-block">
-<span class="comment"># Configure for Claude Code</span><br>
-claude mcp add --scope user voice-mode uvx voice-mode<br>
-export OPENAI_API_KEY=your-openai-key<br>
-claude<br><br>
-<span class="comment"># Try it out</span><br>
-> /converse<br>
+<span class="comment"># Download and run the installer</span><br>
+curl -O https://getvoicemode.com/install.sh && bash install.sh<br><br>
+<span class="comment"># Optional: Set OpenAI API key (backup if local services unavailable)</span><br>
+export OPENAI_API_KEY=your-openai-key<br><br>
+<span class="comment"># Start Claude Code and try voice mode</span><br>
+claude converse
 </code>
             </div>
+            <p style="margin-top: 1.5rem; color: var(--text-secondary);">
+                The installer automatically:
+            </p>
+            <ul style="list-style: none; color: var(--text-secondary); margin-left: 0;">
+                <li style="margin-bottom: 0.5rem; padding-left: 1.5rem; position: relative;">
+                    <span style="position: absolute; left: 0; color: var(--accent);">✓</span>
+                    Installs system dependencies (Node.js, PortAudio, FFmpeg)
+                </li>
+                <li style="margin-bottom: 0.5rem; padding-left: 1.5rem; position: relative;">
+                    <span style="position: absolute; left: 0; color: var(--accent);">✓</span>
+                    Installs UV package manager and VoiceMode CLI
+                </li>
+                <li style="margin-bottom: 0.5rem; padding-left: 1.5rem; position: relative;">
+                    <span style="position: absolute; left: 0; color: var(--accent);">✓</span>
+                    Installs Claude Code if not present
+                </li>
+                <li style="margin-bottom: 0.5rem; padding-left: 1.5rem; position: relative;">
+                    <span style="position: absolute; left: 0; color: var(--accent);">✓</span>
+                    Configures VoiceMode as Claude Code MCP server
+                </li>
+                <li style="margin-bottom: 0.5rem; padding-left: 1.5rem; position: relative;">
+                    <span style="position: absolute; left: 0; color: var(--accent);">✓</span>
+                    Sets up shell completions for tab completion
+                </li>
+                <li style="margin-bottom: 0.5rem; padding-left: 1.5rem; position: relative;">
+                    <span style="position: absolute; left: 0; color: var(--accent);">✓</span>
+                    Optionally installs local STT/TTS services (Whisper, Kokoro, LiveKit)
+                </li>
+                <li style="margin-bottom: 0.5rem; padding-left: 1.5rem; position: relative;">
+                    <span style="position: absolute; left: 0; color: var(--accent);">✓</span>
+                    Offers CoreML acceleration setup on Apple Silicon Macs
+                </li>
+            </ul>
         </section>
 
         <div class="highlight-box">
