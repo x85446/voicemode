@@ -1694,18 +1694,89 @@ def version():
 @click.help_option('-h', '--help')
 @click.option('--force', is_flag=True, help='Force reinstall even if already up to date')
 def update(force):
-    """Update Voice Mode to the latest version."""
+    """Update Voice Mode to the latest version.
+    
+    Automatically detects installation method (UV tool, UV pip, or regular pip)
+    and uses the appropriate update command.
+    """
     import subprocess
     import requests
+    from pathlib import Path
     from importlib.metadata import version as get_version, PackageNotFoundError
     
+    def detect_uv_tool_installation():
+        """Detect if running from a UV tool installation."""
+        prefix_path = Path(sys.prefix).resolve()
+        uv_tools_base = Path.home() / ".local" / "share" / "uv" / "tools"
+        
+        # Check if sys.prefix is within UV tools directory
+        if uv_tools_base in prefix_path.parents or prefix_path.parent == uv_tools_base:
+            # Find the tool directory
+            tool_dir = prefix_path if prefix_path.parent == uv_tools_base else None
+            
+            if not tool_dir:
+                for parent in prefix_path.parents:
+                    if parent.parent == uv_tools_base:
+                        tool_dir = parent
+                        break
+            
+            if tool_dir:
+                # Verify with uv-receipt.toml
+                receipt_file = tool_dir / "uv-receipt.toml"
+                if receipt_file.exists():
+                    # Parse tool name from receipt or use directory name
+                    try:
+                        with open(receipt_file) as f:
+                            content = f.read()
+                            import re
+                            match = re.search(r'name = "([^"]+)"', content)
+                            tool_name = match.group(1) if match else tool_dir.name
+                            return True, tool_name
+                    except Exception:
+                        return True, tool_dir.name
+        
+        return False, None
+    
+    def detect_uv_venv():
+        """Detect if running in a UV-managed virtual environment."""
+        # Check if we're in a venv
+        if sys.prefix == sys.base_prefix:
+            return False
+        
+        # Check for UV markers in pyvenv.cfg
+        pyvenv_cfg = Path(sys.prefix) / "pyvenv.cfg"
+        if pyvenv_cfg.exists():
+            try:
+                with open(pyvenv_cfg) as f:
+                    content = f.read()
+                    if "uv" in content.lower() or "managed by uv" in content:
+                        return True
+            except Exception:
+                pass
+        
+        return False
+    
+    def check_uv_available():
+        """Check if UV is available."""
+        try:
+            result = subprocess.run(
+                ["uv", "--version"],
+                capture_output=True,
+                text=True,
+                timeout=2
+            )
+            return result.returncode == 0
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            return False
+    
+    # Get current version
     try:
         current_version = get_version("voice-mode")
     except PackageNotFoundError:
         current_version = "development"
     
+    # Check if update needed (unless forced)
     if not force and current_version != "development":
-        # Check if update is needed
         try:
             response = requests.get(
                 "https://pypi.org/pypi/voice-mode/json",
@@ -1717,58 +1788,82 @@ def update(force):
                     click.echo(f"Already running the latest version ({current_version})")
                     return
         except (requests.RequestException, KeyError, ValueError):
-            # Continue with update if we can't check
-            pass
+            pass  # Continue with update if we can't check
     
-    click.echo("Updating Voice Mode to the latest version...")
+    # Detect installation method
+    is_uv_tool, tool_name = detect_uv_tool_installation()
     
-    # Try UV first, fall back to pip
-    try:
-        # Check if UV is available
+    if is_uv_tool:
+        # UV tool installation - use uv tool upgrade
+        click.echo(f"Updating Voice Mode (UV tool: {tool_name})...")
+        
         result = subprocess.run(
-            ["uv", "--version"],
+            ["uv", "tool", "upgrade", tool_name],
             capture_output=True,
-            text=True,
-            check=False
+            text=True
         )
         
         if result.returncode == 0:
-            # Use UV for update
+            try:
+                new_version = get_version("voice-mode")
+                click.echo(f"✅ Successfully updated to version {new_version}")
+            except PackageNotFoundError:
+                click.echo("✅ Successfully updated Voice Mode")
+        else:
+            click.echo(f"❌ Update failed: {result.stderr}")
+            click.echo(f"Try running manually: uv tool upgrade {tool_name}")
+    
+    elif detect_uv_venv():
+        # UV-managed virtual environment
+        click.echo("Updating Voice Mode (UV virtual environment)...")
+        
+        result = subprocess.run(
+            ["uv", "pip", "install", "--upgrade", "voice-mode"],
+            capture_output=True,
+            text=True
+        )
+        
+        if result.returncode == 0:
+            try:
+                new_version = get_version("voice-mode")
+                click.echo(f"✅ Successfully updated to version {new_version}")
+            except PackageNotFoundError:
+                click.echo("✅ Successfully updated Voice Mode")
+        else:
+            click.echo(f"❌ Update failed: {result.stderr}")
+            click.echo("Try running: uv pip install --upgrade voice-mode")
+    
+    else:
+        # Standard installation - try UV if available, else pip
+        has_uv = check_uv_available()
+        
+        if has_uv:
+            click.echo("Updating Voice Mode (using UV)...")
             result = subprocess.run(
                 ["uv", "pip", "install", "--upgrade", "voice-mode"],
                 capture_output=True,
                 text=True
             )
-            if result.returncode == 0:
-                # Get new version
-                try:
-                    new_version = get_version("voice-mode")
-                    click.echo(f"✅ Successfully updated to version {new_version}")
-                except PackageNotFoundError:
-                    click.echo("✅ Successfully updated Voice Mode")
-            else:
-                click.echo(f"❌ Update failed: {result.stderr}")
-                click.echo("Try running: uv pip install --upgrade voice-mode")
         else:
-            # Fall back to pip
+            click.echo("Updating Voice Mode (using pip)...")
             result = subprocess.run(
                 [sys.executable, "-m", "pip", "install", "--upgrade", "voice-mode"],
                 capture_output=True,
                 text=True
             )
-            if result.returncode == 0:
-                try:
-                    new_version = get_version("voice-mode")
-                    click.echo(f"✅ Successfully updated to version {new_version}")
-                except PackageNotFoundError:
-                    click.echo("✅ Successfully updated Voice Mode")
+        
+        if result.returncode == 0:
+            try:
+                new_version = get_version("voice-mode")
+                click.echo(f"✅ Successfully updated to version {new_version}")
+            except PackageNotFoundError:
+                click.echo("✅ Successfully updated Voice Mode")
+        else:
+            click.echo(f"❌ Update failed: {result.stderr}")
+            if has_uv:
+                click.echo("Try running: uv pip install --upgrade voice-mode")
             else:
-                click.echo(f"❌ Update failed: {result.stderr}")
                 click.echo("Try running: pip install --upgrade voice-mode")
-    
-    except FileNotFoundError as e:
-        click.echo(f"❌ Update failed: {e}")
-        click.echo("Please install UV or pip and try again")
 
 
 # Completions command
