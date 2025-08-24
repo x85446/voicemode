@@ -14,6 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Prevents shell startup errors when command is not available
   - Supports bash, zsh, and fish shells with safe fallback behavior
 
+- **Interactive PyTorch installation prompt for Whisper**
+  - Added `--install-torch` flag to CLI for explicit PyTorch installation
+  - Interactive prompt when Core ML acceleration requires PyTorch (~2.5GB)
+  - Clear user choice between Core ML acceleration and standard Metal performance
+
 ### Changed
 - **CLI consistency improvements**
   - Replaced all user-facing "voice-mode" references with "voicemode"
@@ -22,7 +27,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Simplified command help text and examples for consistency
   - Logger name remains "voice-mode" for backward compatibility
 
+### Fixed
+- **Installer script reliability**
+  - Fixed false positive failure detection when Whisper shows "Make clean" warning
+  - Improved service installation success detection
+
 ## [2.30.0] - 2025-08-25
+
+### Added
+- **Intelligent update command**
+  - Automatic detection of installation method (UV tool, UV pip, or standard pip)
+  - Uses appropriate update strategy based on installation type
+  - Seamless updates regardless of how Voice Mode was installed
 
 ## [2.29.0] - 2025-08-25
 
