@@ -1323,7 +1323,7 @@ async def converse(
     audio_format: Optional[str] = None,
     disable_silence_detection: Union[bool, str] = False,
     speed: Optional[float] = None,
-    vad_aggressiveness: Optional[int] = None,
+    vad_aggressiveness: Optional[Union[int, str]] = None,
     skip_tts: Optional[Union[bool, str]] = None,
     pip_leading_silence: Optional[float] = None,
     pip_trailing_silence: Optional[float] = None
@@ -1494,6 +1494,15 @@ async def converse(
         audio_feedback = audio_feedback.lower() in ('true', '1', 'yes', 'on')
     if skip_tts is not None and isinstance(skip_tts, str):
         skip_tts = skip_tts.lower() in ('true', '1', 'yes', 'on')
+    
+    # Convert vad_aggressiveness to integer if provided as string
+    if vad_aggressiveness is not None and isinstance(vad_aggressiveness, str):
+        try:
+            vad_aggressiveness = int(vad_aggressiveness)
+            # Validation will happen later in the function
+        except ValueError:
+            logger.warning(f"Invalid VAD aggressiveness value '{vad_aggressiveness}', using default")
+            vad_aggressiveness = None
     
     # Determine whether to skip TTS
     if skip_tts is not None:
