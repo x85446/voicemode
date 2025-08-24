@@ -963,7 +963,12 @@ setup_coreml_acceleration() {
 
         # Get the voice mode command
         local voice_mode_cmd
-        voice_mode_cmd=$(check_voice_mode_cli)
+        if ! voice_mode_cmd=$(check_voice_mode_cli); then
+          print_warning "VoiceMode CLI not available for CoreML setup"
+          echo "You can retry later with:"
+          echo "  voicemode whisper model install --install-torch"
+          return 0
+        fi
 
         # Run the whisper model install command with torch installation
         if $voice_mode_cmd whisper model install large-v2 --install-torch; then
