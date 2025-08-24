@@ -25,7 +25,7 @@ def find_process_by_port(port: int) -> Optional[psutil.Process]:
                 if proc_name in ['ssh', 'sshd']:
                     continue
                     
-                for conn in proc.connections():
+                for conn in proc.net_connections():
                     if conn.laddr.port == port and conn.status == 'LISTEN':
                         # Verify this is a real local process
                         try:

@@ -22,6 +22,7 @@ if not os.environ.get('VOICEMODE_DEBUG', '').lower() in ('true', '1', 'yes'):
     # Also suppress INFO logging for CLI commands (but not for MCP server)
     import logging
     logging.getLogger("voice-mode").setLevel(logging.WARNING)
+    logging.getLogger("httpx").setLevel(logging.WARNING)
 
 
 # Service management CLI - runs MCP server by default, subcommands override
