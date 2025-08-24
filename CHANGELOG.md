@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.28.2] - 2025-08-24
+
+### Fixed
+- **Improved noise filtering in VAD (Voice Activity Detection)**
+  - Fixed issue where nose blowing and similar non-speech sounds were detected as speech
+  - Adjusted VAD aggressiveness handling to better filter continuous non-speech audio
+  - Prevents false positives from breathing sounds, sniffles, and ambient noise
+  - Improves overall speech detection accuracy
+
 ## [2.28.1] - 2025-08-24
 
 ### Added
