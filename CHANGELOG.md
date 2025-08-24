@@ -33,6 +33,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Installer script reliability**
   - Fixed false positive failure detection when Whisper shows "Make clean" warning
   - Improved service installation success detection
+  - Fixed incorrect `whisper model-install` command (should be `whisper model install`)
+  - Removed non-existent `--auto-confirm` flag from CoreML installation
+
+- **Clean CLI output**
+  - Replaced deprecated `proc.connections()` with `proc.net_connections()` to eliminate warnings
+  - Suppressed httpx INFO logging in CLI commands for cleaner output
+  - All warnings and debug info still available with `--debug` flag
 
 ## [2.30.0] - 2025-08-25
 
