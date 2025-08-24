@@ -521,12 +521,30 @@ def generate_chime(frequencies: list, duration: float = 0.1, sample_rate: int = 
     samples_per_tone = int(sample_rate * duration)
     fade_samples = int(sample_rate * 0.01)  # 10ms fade
     
+    # Determine amplitude based on output device
+    amplitude = 0.0375  # Default (very quiet)
+    try:
+        import sounddevice as sd
+        default_output = sd.default.device[1]
+        if default_output is not None:
+            devices = sd.query_devices()
+            device_name = devices[default_output]['name'].lower()
+            # Check for Bluetooth devices (AirPods, Bluetooth headphones, etc)
+            if 'airpod' in device_name or 'bluetooth' in device_name or 'bt' in device_name:
+                amplitude = 0.15  # Higher amplitude for Bluetooth devices
+                logger.debug(f"Bluetooth device detected ({devices[default_output]['name']}), using amplitude {amplitude}")
+            else:
+                amplitude = 0.075  # Moderate amplitude for built-in speakers
+                logger.debug(f"Built-in speaker detected ({devices[default_output]['name']}), using amplitude {amplitude}")
+    except Exception as e:
+        logger.debug(f"Could not detect output device type: {e}, using default amplitude {amplitude}")
+    
     all_samples = []
     
     for freq in frequencies:
         # Generate sine wave
         t = np.linspace(0, duration, samples_per_tone, False)
-        tone = 0.0375 * np.sin(2 * np.pi * freq * t)  # 0.0375 amplitude for extremely quiet volume
+        tone = amplitude * np.sin(2 * np.pi * freq * t)
         
         # Apply fade in/out to prevent clicks
         fade_in = np.linspace(0, 1, fade_samples)
