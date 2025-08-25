@@ -353,7 +353,7 @@ async def whisper_install(
             
             # Load plist template
             # First try to load from source if running in development
-            source_template = Path(__file__).parent.parent.parent.parent / "templates" / "launchd" / "com.voicemode.whisper.plist"
+            source_template = Path(__file__).parent.parent.parent / "templates" / "launchd" / "com.voicemode.whisper.plist"
             if source_template.exists():
                 logger.info(f"Loading plist template from source: {source_template}")
                 plist_content = source_template.read_text()
