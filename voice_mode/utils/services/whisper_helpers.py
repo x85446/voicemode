@@ -38,14 +38,23 @@ def find_whisper_server() -> Optional[str]:
 
 
 def find_whisper_model() -> Optional[str]:
-    """Find a whisper model file."""
-    from voice_mode.config import WHISPER_MODEL_PATH
+    """Find the active whisper model file based on VOICEMODE_WHISPER_MODEL setting."""
+    from voice_mode.config import WHISPER_MODEL_PATH, WHISPER_MODEL
+    
+    # First try to find the specific model configured in VOICEMODE_WHISPER_MODEL
+    model_name = WHISPER_MODEL  # This reads from env/config
+    model_filename = f"ggml-{model_name}.bin"
     
     # Check configured model path
     model_dir = Path(WHISPER_MODEL_PATH)
     if model_dir.exists():
-        # Look for ggml model files
+        specific_model = model_dir / model_filename
+        if specific_model.exists():
+            return str(specific_model)
+        
+        # Fall back to any model if configured model not found
         for model_file in model_dir.glob("ggml-*.bin"):
+            logger.warning(f"Configured model {model_name} not found, using {model_file.name}")
             return str(model_file)
     
     # Check default installation paths
@@ -56,7 +65,13 @@ def find_whisper_model() -> Optional[str]:
     
     for default_path in default_paths:
         if default_path.exists():
+            specific_model = default_path / model_filename
+            if specific_model.exists():
+                return str(specific_model)
+            
+            # Fall back to any model
             for model_file in default_path.glob("ggml-*.bin"):
+                logger.warning(f"Configured model {model_name} not found, using {model_file.name}")
                 return str(model_file)
     
     return None

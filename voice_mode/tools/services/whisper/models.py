@@ -113,7 +113,7 @@ def get_active_model() -> str:
     
     # Validate it's a known model
     if model not in WHISPER_MODEL_REGISTRY:
-        return "large-v2"  # Default fallback
+        return "base"  # Default fallback
     
     return model
 
