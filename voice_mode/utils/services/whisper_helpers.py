@@ -9,6 +9,8 @@ import shutil
 from pathlib import Path
 from typing import Optional, List, Dict, Union
 
+from .coreml_setup import setup_coreml_venv, get_coreml_python
+
 logger = logging.getLogger("voice-mode")
 
 def find_whisper_server() -> Optional[str]:
@@ -63,7 +65,8 @@ def find_whisper_model() -> Optional[str]:
 async def download_whisper_model(
     model: str,
     models_dir: Union[str, Path],
-    force_download: bool = False
+    force_download: bool = False,
+    skip_core_ml: bool = False
 ) -> Dict[str, Union[bool, str]]:
     """
     Download a single Whisper model.
@@ -72,6 +75,7 @@ async def download_whisper_model(
         model: Model name (e.g., 'large-v2', 'base.en')
         models_dir: Directory to download models to
         force_download: Re-download even if model exists
+        skip_core_ml: Skip Core ML conversion even on Apple Silicon
         
     Returns:
         Dict with 'success' and optional 'error' or 'path'
@@ -144,8 +148,11 @@ async def download_whisper_model(
                 "error": f"Model file not found after download: {model_path}"
             }
         
-        # Check for Core ML support on Apple Silicon
-        if platform.system() == "Darwin" and platform.machine() == "arm64":
+        # Initialize core_ml_result
+        core_ml_result = None
+        
+        # Check for Core ML support on Apple Silicon (unless explicitly skipped)
+        if platform.system() == "Darwin" and platform.machine() == "arm64" and not skip_core_ml:
             # Check if Core ML dependencies are needed
             requirements_file = Path(models_dir) / "requirements-coreml.txt"
             if requirements_file.exists() and shutil.which("uv"):
@@ -185,14 +192,21 @@ async def download_whisper_model(
                 else:
                     logger.warning(f"Core ML conversion failed ({error_category}): {core_ml_result.get('error', 'Unknown error')}")
         
-        # Always include Core ML status in response
-        return {
+        # Build response with appropriate status
+        response = {
             "success": True,
             "path": str(model_path),
-            "message": f"Model {model} downloaded successfully",
-            "core_ml_status": core_ml_result,
-            "acceleration": "coreml" if core_ml_result.get("success") else "metal"
+            "message": f"Model {model} downloaded successfully"
         }
+        
+        # Add Core ML status if attempted
+        if core_ml_result:
+            response["core_ml_status"] = core_ml_result
+            response["acceleration"] = "coreml" if core_ml_result.get("success") else "metal"
+        else:
+            response["acceleration"] = "metal"
+        
+        return response
         
     except subprocess.CalledProcessError as e:
         logger.error(f"Failed to download model {model}: {e.stderr}")
@@ -255,28 +269,24 @@ async def convert_to_coreml(
     logger.info(f"Converting {model} to Core ML format...")
     
     try:
-        # Check if we should use uv for Python dependencies
-        # Try to find the voicemode project root for uv
-        voicemode_root = None
-        current = Path(__file__).parent
-        while current != current.parent:
-            if (current / "pyproject.toml").exists():
-                with open(current / "pyproject.toml") as f:
-                    content = f.read()
-                    if 'name = "voice-mode"' in content or 'name = "voicemode"' in content:
-                        voicemode_root = current
-                        break
-            current = current.parent
+        # First, try to get existing CoreML Python environment
+        coreml_python = get_coreml_python(whisper_dir)
         
-        # If we found voicemode root and uv is available, use it
-        if voicemode_root and shutil.which("uv"):
-            # Run the Python script directly with uv instead of using the bash wrapper
-            logger.info("Using uv for Core ML conversion with Python dependencies")
-            # Run from the whisper models directory
+        # If no suitable environment exists, set one up
+        if not coreml_python:
+            logger.info("Setting up CoreML Python environment...")
+            setup_result = setup_coreml_venv(whisper_dir)
+            if setup_result["success"]:
+                coreml_python = setup_result.get("python_path")
+            else:
+                logger.warning(f"Could not setup CoreML environment: {setup_result.get('error')}")
+        
+        if coreml_python:
+            # Use the CoreML-enabled Python environment
+            logger.info(f"Using CoreML Python environment: {coreml_python}")
             script_path = whisper_dir / "models" / "convert-whisper-to-coreml.py"
             result = subprocess.run(
-                ["uv", "run", "--project", str(voicemode_root), "python", 
-                 str(script_path),
+                [coreml_python, str(script_path),
                  "--model", model, "--encoder-only", "True", "--optimize-ane", "True"],
                 cwd=str(whisper_dir / "models"),
                 capture_output=True,
@@ -301,8 +311,8 @@ async def convert_to_coreml(
                     shutil.rmtree(coreml_path, ignore_errors=True)
                     shutil.move(str(compiled_path), str(coreml_path))
         else:
-            # Fallback to original bash script
-            logger.info("Using standard Python for Core ML conversion")
+            # No suitable Python environment available
+            logger.warning("No suitable Python environment for CoreML conversion")
             # Run from the whisper models directory where the script is located
             script_dir = convert_script.parent
             result = subprocess.run(

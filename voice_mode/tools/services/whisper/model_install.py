@@ -127,7 +127,8 @@ async def whisper_model_install(
             result = await download_whisper_model(
                 model_name,
                 actual_models_dir,
-                force_download=force_download
+                force_download=force_download,
+                skip_core_ml=skip_core_ml
             )
             
             # Build comprehensive result entry
@@ -242,58 +243,48 @@ async def _handle_coreml_dependencies(
     if skip_core_ml:
         return {"continue": True}
     
-    # Check if torch is already installed
-    try:
-        import torch
-        logger.info("PyTorch already installed for CoreML support")
-        return {"continue": True}
-    except ImportError:
-        pass
+    # Check if the CoreML environment already exists
+    whisper_dir = Path.home() / ".voicemode" / "services" / "whisper"
+    venv_coreml = whisper_dir / "venv-coreml" / "bin" / "python"
     
-    # Check if user wants to install torch
+    if venv_coreml.exists():
+        # Test if it has the required packages
+        try:
+            result = subprocess.run(
+                [str(venv_coreml), "-c", "import torch, coremltools, whisper"],
+                capture_output=True,
+                timeout=5
+            )
+            if result.returncode == 0:
+                logger.info("CoreML environment already exists and is valid")
+                # Return with a flag indicating CoreML is ready
+                return {
+                    "continue": True,
+                    "coreml_ready": True,
+                    "coreml_deps_note": "CoreML environment exists and is valid"
+                }
+        except:
+            pass
+    
+    # Check if user wants to create CoreML environment
     if not install_torch and not auto_confirm:
         return {
             "continue": False,
             "success": False,
             "requires_confirmation": True,
-            "message": "CoreML requires PyTorch (~2.5GB). Rerun with install_torch=True to confirm.",
-            "recommendation": "Set install_torch=True for CoreML acceleration (2-3x faster)"
+            "message": "CoreML conversion requires a dedicated Python environment with PyTorch. Setup may download up to 2.5GB if packages aren't cached.",
+            "recommendation": "💡 Set install_torch=True for CoreML acceleration (2-3x faster)"
         }
     
-    # Install CoreML dependencies
-    logger.info("Installing CoreML dependencies...")
+    # Note: We don't actually install CoreML dependencies in the voicemode environment anymore
+    # The CoreML conversion uses its own dedicated environment in ~/.voicemode/services/whisper/venv-coreml
+    # This is handled automatically by whisper_helpers.convert_to_coreml()
     
-    try:
-        # Detect environment and install appropriately
-        packages = ["torch>=2.0.0", "coremltools>=7.0", "transformers", "ane-transformers"]
-        
-        # Try UV first (most common)
-        if subprocess.run(["which", "uv"], capture_output=True).returncode == 0:
-            cmd = ["uv", "pip", "install"] + packages
-            logger.info("Installing via UV...")
-        else:
-            # Fallback to pip
-            cmd = [sys.executable, "-m", "pip", "install"] + packages
-            logger.info("Installing via pip...")
-        
-        # Run installation
-        result = subprocess.run(cmd, capture_output=True, text=True)
-        
-        if result.returncode == 0:
-            logger.info("CoreML dependencies installed successfully")
-            return {"continue": True, "coreml_deps_installed": True}
-        else:
-            logger.warning(f"Failed to install CoreML dependencies: {result.stderr}")
-            return {
-                "continue": True,
-                "coreml_deps_failed": True,
-                "warning": "CoreML dependencies installation failed. Models will use Metal acceleration."
-            }
-            
-    except Exception as e:
-        logger.warning(f"Error installing CoreML dependencies: {e}")
-        return {
-            "continue": True,
-            "coreml_deps_failed": True,
-            "warning": f"CoreML setup error: {str(e)}. Models will use Metal acceleration."
-        }
+    logger.info("CoreML dependencies will be handled by the conversion process")
+    
+    # We still return success to continue with the model download
+    # The actual CoreML environment setup happens during conversion
+    return {
+        "continue": True,
+        "coreml_deps_note": "CoreML environment will be created during conversion if needed"
+    }
