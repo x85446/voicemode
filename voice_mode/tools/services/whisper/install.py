@@ -11,6 +11,11 @@ from pathlib import Path
 from typing import Dict, Any, Optional, Union
 import asyncio
 import aiohttp
+try:
+    from importlib.resources import files
+except ImportError:
+    # Python < 3.9 fallback
+    from importlib_resources import files
 
 from voice_mode.server import mcp
 from voice_mode.config import SERVICE_AUTO_ENABLE
@@ -302,59 +307,105 @@ async def whisper_install(
         if 'original_dir' in locals():
             os.chdir(original_dir)
         
-        # Create start script for whisper-server
-        logger.info("Creating whisper-server start script...")
-        start_script_content = f"""#!/bin/bash
+        # Copy template start script for whisper-server
+        logger.info("Installing whisper-server start script from template...")
+        
+        # Create bin directory
+        bin_dir = os.path.join(install_dir, "bin")
+        os.makedirs(bin_dir, exist_ok=True)
+        
+        # Copy template script
+        try:
+            template_resource = files("voice_mode.templates.scripts").joinpath("start-whisper-server.sh")
+            template_content = template_resource.read_text()
+        except Exception as e:
+            logger.warning(f"Failed to load template script: {e}. Using fallback inline script.")
+            # Fallback to inline script if template not found
+            template_content = f"""#!/bin/bash
 
-# Configuration
-WHISPER_DIR="{install_dir}"
-LOG_FILE="{os.path.join(voicemode_dir, 'whisper-server.log')}"
+# Whisper Service Startup Script
+# This script is used by both macOS (launchd) and Linux (systemd) to start the whisper service
+# It sources the voicemode.env file to get configuration, especially VOICEMODE_WHISPER_MODEL
+
+# Determine whisper directory (script is in bin/, whisper root is parent)
+SCRIPT_DIR="$(cd "$(dirname "${{BASH_SOURCE[0]}}")" && pwd)"
+WHISPER_DIR="$(dirname "$SCRIPT_DIR")"
+
+# Voicemode configuration directory
+VOICEMODE_DIR="$HOME/.voicemode"
+LOG_DIR="$VOICEMODE_DIR/logs/whisper"
+
+# Create log directory if it doesn't exist
+mkdir -p "$LOG_DIR"
+
+# Log file for this script (separate from whisper server logs)
+STARTUP_LOG="$LOG_DIR/startup.log"
 
 # Source voicemode configuration if it exists
-if [ -f "{voicemode_dir}/voicemode.env" ]; then
-    source "{voicemode_dir}/voicemode.env"
+if [ -f "$VOICEMODE_DIR/voicemode.env" ]; then
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Sourcing voicemode.env" >> "$STARTUP_LOG"
+    source "$VOICEMODE_DIR/voicemode.env"
+else
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Warning: voicemode.env not found" >> "$STARTUP_LOG"
 fi
 
 # Model selection with environment variable support
-MODEL_NAME="${{VOICEMODE_WHISPER_MODEL:-{model}}}"
+MODEL_NAME="${{VOICEMODE_WHISPER_MODEL:-base}}"
 MODEL_PATH="$WHISPER_DIR/models/ggml-$MODEL_NAME.bin"
+
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] Starting whisper-server with model: $MODEL_NAME" >> "$STARTUP_LOG"
 
 # Check if model exists
 if [ ! -f "$MODEL_PATH" ]; then
-    echo "Error: Model $MODEL_NAME not found at $MODEL_PATH" >> "$LOG_FILE"
-    echo "Available models:" >> "$LOG_FILE"
-    ls -1 "$WHISPER_DIR/models/" | grep "^ggml-.*\\.bin$" >> "$LOG_FILE"
-    exit 1
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Error: Model $MODEL_NAME not found at $MODEL_PATH" >> "$STARTUP_LOG"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Available models:" >> "$STARTUP_LOG"
+    ls -1 "$WHISPER_DIR/models/" 2>/dev/null | grep "^ggml-.*\\.bin$" >> "$STARTUP_LOG"
+    
+    # Try to find any available model as fallback
+    FALLBACK_MODEL=$(ls -1 "$WHISPER_DIR/models/" 2>/dev/null | grep "^ggml-.*\\.bin$" | head -1)
+    if [ -n "$FALLBACK_MODEL" ]; then
+        MODEL_PATH="$WHISPER_DIR/models/$FALLBACK_MODEL"
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] Using fallback model: $FALLBACK_MODEL" >> "$STARTUP_LOG"
+    else
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] Fatal: No whisper models found" >> "$STARTUP_LOG"
+        exit 1
+    fi
 fi
 
-echo "Starting whisper-server with model: $MODEL_NAME" >> "$LOG_FILE"
-
-# Note: whisper-server is now built as part of the main build target
+# Port configuration (with environment variable support)
+WHISPER_PORT="${{VOICEMODE_WHISPER_PORT:-2022}}"
 
 # Determine server binary location
+# Check new CMake build location first, then legacy location
 if [ -f "$WHISPER_DIR/build/bin/whisper-server" ]; then
     SERVER_BIN="$WHISPER_DIR/build/bin/whisper-server"
 elif [ -f "$WHISPER_DIR/server" ]; then
     SERVER_BIN="$WHISPER_DIR/server"
 else
-    echo "Error: whisper-server binary not found" >> "$LOG_FILE"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Error: whisper-server binary not found" >> "$STARTUP_LOG"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Checked: $WHISPER_DIR/build/bin/whisper-server" >> "$STARTUP_LOG"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Checked: $WHISPER_DIR/server" >> "$STARTUP_LOG"
     exit 1
 fi
 
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] Using binary: $SERVER_BIN" >> "$STARTUP_LOG"
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] Model path: $MODEL_PATH" >> "$STARTUP_LOG"
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] Port: $WHISPER_PORT" >> "$STARTUP_LOG"
+
 # Start whisper-server
+# Using exec to replace this script process with whisper-server
 cd "$WHISPER_DIR"
 exec "$SERVER_BIN" \\
-    --model "$MODEL_PATH" \\
     --host 0.0.0.0 \\
-    --port 2022 \\
+    --port "$WHISPER_PORT" \\
+    --model "$MODEL_PATH" \\
     --inference-path /v1/audio/transcriptions \\
-    --threads 8 \\
-    >> "$LOG_FILE" 2>&1
+    --threads 8
 """
         
-        start_script_path = os.path.join(install_dir, "start-whisper-server.sh")
+        start_script_path = os.path.join(bin_dir, "start-whisper-server.sh")
         with open(start_script_path, 'w') as f:
-            f.write(start_script_content)
+            f.write(template_content)
         os.chmod(start_script_path, 0o755)
         
         # Install launchagent on macOS
@@ -471,7 +522,6 @@ WorkingDirectory={install_dir}
 StandardOutput=append:{os.path.join(voicemode_dir, 'logs', 'whisper', 'whisper.out.log')}
 StandardError=append:{os.path.join(voicemode_dir, 'logs', 'whisper', 'whisper.err.log')}
 Environment="PATH=/usr/local/bin:/usr/bin:/bin:/usr/local/cuda/bin"
-Environment="VOICEMODE_WHISPER_MODEL={model}"
 
 [Install]
 WantedBy=default.target

@@ -99,6 +99,13 @@ voicemode = "voice_mode.cli:voice_mode"
 
 [tool.hatch.build.targets.wheel]
 packages = ["voice_mode"]
+include = [
+  "voice_mode/**/*.py",
+  "voice_mode/**/*.sh",
+  "voice_mode/**/*.plist",
+  "voice_mode/**/*.service",
+  "voice_mode/templates/**/*",
+]
 exclude = [
   "**/__pycache__",
   "**/*.pyc", 
