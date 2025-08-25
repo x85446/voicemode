@@ -6,7 +6,7 @@
       "args": [],
       "env": {}
     },
-    "voice-mode": {
+    "voicemode": {
       "type": "stdio",
       "command": "uv",
       "args": [
