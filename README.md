@@ -42,7 +42,15 @@ Natural voice conversations for AI assistants. Voice Mode brings human-like voic
 Install Claude Code with Voice Mode configured and ready to run on Linux, macOS, and Windows WSL:
 
 ```bash
+# Download and run the installer
 curl -O https://getvoicemode.com/install.sh && bash install.sh
+
+# While local voice services can be installed automatically, we recommend
+# providing an OpenAI API key as a fallback in case local services are unavailable
+export OPENAI_API_KEY=your-openai-key  # Optional but recommended
+
+# Start a voice conversation
+claude /voicemode:converse
 ```
 
 This installer will:
@@ -50,16 +58,7 @@ This installer will:
 - Install Claude Code if not already installed
 - Configure Voice Mode as an MCP server
 - Set up your system for voice conversations
-
-After installation, just run:
-```bash
-# With OpenAI API (cloud-based, requires API key)
-export OPENAI_API_KEY=your-openai-key
-claude /voicemode:converse
-
-# Or use free local services (Voice Mode will offer to install them)
-claude /voicemode:converse
-```
+- Offer to install free local STT/TTS services if no API key is provided
 
 ### Manual Installation
 
