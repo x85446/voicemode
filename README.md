@@ -618,7 +618,7 @@ To save all audio files (both TTS output and STT input):
 export VOICEMODE_SAVE_AUDIO=true
 ```
 
-Audio files are saved to: `~/voicemode_audio/` with timestamps in the filename.
+Audio files are saved to: `~/.voicemode/audio/YYYY/MM/` with timestamps in the filename.
 
 ## Documentation
 

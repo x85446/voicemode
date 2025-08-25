@@ -434,55 +434,16 @@ exec "$SERVER_BIN" \\
             plist_path = os.path.join(launchagents_dir, plist_name)
             
             # Load plist template
-            plist_content = None
-            
             # First try to load from source if running in development
             source_template = Path(__file__).parent.parent.parent.parent / "templates" / "launchd" / "com.voicemode.whisper.plist"
             if source_template.exists():
                 logger.info(f"Loading plist template from source: {source_template}")
                 plist_content = source_template.read_text()
             else:
-                # Try loading from package resources
-                try:
-                    template_resource = files("voice_mode.templates.launchd").joinpath("com.voicemode.whisper.plist")
-                    plist_content = template_resource.read_text()
-                    logger.info("Loaded plist template from package resources")
-                except Exception as e:
-                    logger.warning(f"Failed to load plist template: {e}")
-            
-            # Fall back to inline if template not found
-            if not plist_content:
-                logger.warning("Using inline plist generation (template not found)")
-                plist_content = """<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<!-- com.voicemode.whisper.plist v1.1.0 -->
-<!-- Last updated: 2025-08-25 -->
-<!-- Uses unified startup script for dynamic model selection -->
-<plist version="1.0">
-<dict>
-    <key>Label</key>
-    <string>com.voicemode.whisper</string>
-    <key>ProgramArguments</key>
-    <array>
-        <string>{START_SCRIPT_PATH}</string>
-    </array>
-    <key>RunAtLoad</key>
-    <true/>
-    <key>KeepAlive</key>
-    <true/>
-    <key>StandardOutPath</key>
-    <string>{LOG_DIR}/whisper/whisper.out.log</string>
-    <key>StandardErrorPath</key>
-    <string>{LOG_DIR}/whisper/whisper.err.log</string>
-    <key>WorkingDirectory</key>
-    <string>{INSTALL_DIR}</string>
-    <key>EnvironmentVariables</key>
-    <dict>
-        <key>PATH</key>
-        <string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin</string>
-    </dict>
-</dict>
-</plist>"""
+                # Load from package resources
+                template_resource = files("voice_mode.templates.launchd").joinpath("com.voicemode.whisper.plist")
+                plist_content = template_resource.read_text()
+                logger.info("Loaded plist template from package resources")
             
             # Replace placeholders
             plist_content = plist_content.replace("{START_SCRIPT_PATH}", start_script_path)
