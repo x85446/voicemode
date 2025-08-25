@@ -759,9 +759,8 @@ install_all_services() {
   # Install each service independently
   if install_service "whisper" "$voice_mode_cmd" "Whisper (Speech-to-Text)"; then
     ((success_count++))
-    # CoreML setup temporarily disabled - --install-torch flag not working properly
-    # TODO: Fix PyTorch installation for CoreML acceleration
-    # setup_coreml_acceleration
+    # CoreML acceleration setup for Apple Silicon Macs
+    setup_coreml_acceleration
   fi
 
   if install_service "kokoro" "$voice_mode_cmd" "Kokoro (Text-to-Speech)"; then
@@ -789,9 +788,8 @@ install_services_selective() {
 
   if confirm_action "Install Whisper (Speech-to-Text)"; then
     install_service "whisper" "$voice_mode_cmd" "Whisper"
-    # CoreML setup temporarily disabled - --install-torch flag not working properly
-    # TODO: Fix PyTorch installation for CoreML acceleration
-    # setup_coreml_acceleration
+    # CoreML acceleration setup for Apple Silicon Macs
+    setup_coreml_acceleration
   fi
 
   if confirm_action "Install Kokoro (Text-to-Speech)"; then
@@ -941,7 +939,7 @@ setup_coreml_acceleration() {
       echo "    1. Install Xcode from Mac App Store"
       echo "    2. Open Xcode once to accept license"
       echo "    3. Run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer"
-      echo "    4. Run: voicemode whisper model install --install-torch"
+      echo "    4. Run: voicemode whisper model install base"
     fi
 
     echo ""
@@ -951,7 +949,7 @@ setup_coreml_acceleration() {
       echo -e "${BOLD}Install CoreML acceleration now?${NC}"
       echo ""
       echo "This will download PyTorch (~2.5GB) and configure CoreML."
-      echo "You can always add this later with: voicemode whisper model install --install-torch"
+      echo "You can always add this later with: voicemode whisper model install base"
       echo ""
       read -p "Install CoreML acceleration? [y/N]: " -n 1 -r
       echo ""
@@ -967,12 +965,13 @@ setup_coreml_acceleration() {
         if ! voice_mode_cmd=$(check_voice_mode_cli); then
           print_warning "VoiceMode CLI not available for CoreML setup"
           echo "You can retry later with:"
-          echo "  voicemode whisper model install --install-torch"
+          echo "  voicemode whisper model install base"
           return 0
         fi
 
         # Run the whisper model install command with torch installation
-        if $voice_mode_cmd whisper model install large-v2 --install-torch; then
+        # Note: Using default model (base) which is a good balance of speed and accuracy
+        if echo "y" | $voice_mode_cmd whisper model install base; then
           print_success "CoreML acceleration installed successfully!"
           echo ""
           echo "Whisper will now use CoreML for maximum performance."
@@ -981,13 +980,13 @@ setup_coreml_acceleration() {
           echo "Whisper will use Metal acceleration (still fast)."
           echo ""
           echo "You can retry later with:"
-          echo "  voicemode whisper model install --install-torch"
+          echo "  voicemode whisper model install base"
         fi
       else
         echo ""
         echo "Skipping CoreML setup. Whisper will use Metal acceleration."
         echo ""
-        echo -e "${DIM}To add CoreML later, run: voicemode whisper model install --install-torch${NC}"
+        echo -e "${DIM}To add CoreML later, run: voicemode whisper model install base${NC}"
       fi
     else
       echo -e "${DIM}Skipping CoreML - Xcode not installed${NC}"

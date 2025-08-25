@@ -315,12 +315,24 @@ async def whisper_install(
         os.makedirs(bin_dir, exist_ok=True)
         
         # Copy template script
-        try:
-            template_resource = files("voice_mode.templates.scripts").joinpath("start-whisper-server.sh")
-            template_content = template_resource.read_text()
-        except Exception as e:
-            logger.warning(f"Failed to load template script: {e}. Using fallback inline script.")
-            # Fallback to inline script if template not found
+        template_content = None
+        
+        # First try to load from source if running in development
+        source_template = Path(__file__).parent.parent.parent.parent / "templates" / "scripts" / "start-whisper-server.sh"
+        if source_template.exists():
+            logger.info(f"Loading template from source: {source_template}")
+            template_content = source_template.read_text()
+        else:
+            # Try loading from package resources
+            try:
+                template_resource = files("voice_mode.templates.scripts").joinpath("start-whisper-server.sh")
+                template_content = template_resource.read_text()
+                logger.info("Loaded template from package resources")
+            except Exception as e:
+                logger.warning(f"Failed to load template script: {e}. Using fallback inline script.")
+        
+        # Fallback to inline script if template not found
+        if template_content is None:
             template_content = f"""#!/bin/bash
 
 # Whisper Service Startup Script
