@@ -55,10 +55,10 @@ After installation, just run:
 ```bash
 # With OpenAI API (cloud-based, requires API key)
 export OPENAI_API_KEY=your-openai-key
-claude converse
+claude /voicemode:converse
 
 # Or use free local services (Voice Mode will offer to install them)
-claude converse
+claude /voicemode:converse
 ```
 
 ### Manual Installation
