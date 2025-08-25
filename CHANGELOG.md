@@ -8,10 +8,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **CoreML acceleration improvements**
+  - Re-enabled CoreML acceleration in installer after fixing template loading issues
+  - Fixed CoreML conversion with dedicated Python environment to avoid dependency conflicts
+  - Improved CoreML setup to handle PyTorch dependency management properly
+  - Disabled misleading CoreML prompt temporarily while fixing PyTorch installation
+
+- **Whisper service improvements**
+  - Implemented unified Whisper startup script for Mac and Linux
+  - Fixed Whisper service to respect VOICEMODE_WHISPER_MODEL setting properly
+  - Changed default Whisper model from large-v2 to base for faster initial setup
+
 - **Installer script stability**
   - Fixed script exit after Whisper installation when CoreML setup CLI check fails
   - Properly handle check_voice_mode_cli failures in setup_coreml_acceleration
   - Installer now continues with Kokoro and LiveKit even if CoreML setup encounters issues
+  - Fixed installer exit issue after Whisper when checking for voicemode CLI
+
+- **Documentation corrections**
+  - Removed mention of response_duration from converse prompt to avoid confusion
 
 ### Changed
 - **Web documentation improvements**
@@ -19,6 +34,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Clarified OpenAI API key is optional and serves as backup when local services unavailable
   - Added comprehensive list of what the installer automatically configures
   - Changed example to use `claude converse` instead of interactive prompt
+  - Updated README to use `/voicemode:converse` for consistent voice usage
+
+- **Configuration updates**
+  - Added voicemode MCP to Claude Code configuration for easier integration
 
 ## [2.32.0] - 2025-08-25
 

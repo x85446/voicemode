@@ -37,11 +37,11 @@ def discover_all_commands() -> List[List[str]]:
     # Top-level commands discovered from help output
     # These are the actual CLI commands (not MCP tools)
     top_level_commands = ['config', 'diag', 'exchanges', 'whisper', 'kokoro', 'livekit', 
-                          'completion', 'converse', 'update', 'version', 'completions']
+                          'converse', 'update', 'version', 'completions']
     
     # Commands that have options/arguments and support -h
     commands_with_short_help = ['config', 'diag', 'exchanges', 'whisper', 'kokoro', 'livekit', 
-                                'completion', 'converse', 'update', 'completions']
+                                'converse', 'update', 'completions']
     
     for cmd in top_level_commands:
         commands.append(base_cmd + [cmd, '--help'])
@@ -106,12 +106,12 @@ def discover_all_commands() -> List[List[str]]:
         commands.append(base_cmd + ['exchanges', sub, '--help'])
         commands.append(base_cmd + ['exchanges', sub, '-h'])  # All have options
     
-    # Completion subcommands
-    completion_subcommands = ['bash', 'zsh', 'fish', 'install']
-    for sub in completion_subcommands:
-        commands.append(base_cmd + ['completion', sub, '--help'])
+    # Completions subcommands
+    completions_subcommands = ['bash', 'zsh', 'fish', 'install']
+    for sub in completions_subcommands:
+        commands.append(base_cmd + ['completions', sub, '--help'])
         if sub == 'install':
-            commands.append(base_cmd + ['completion', sub, '-h'])
+            commands.append(base_cmd + ['completions', sub, '-h'])
     
     # Diag subcommands - none have options so no -h support
     diag_subcommands = ['info', 'devices', 'registry', 'dependencies']
