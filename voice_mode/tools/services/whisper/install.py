@@ -28,7 +28,7 @@ logger = logging.getLogger("voice-mode")
 @mcp.tool()
 async def whisper_install(
     install_dir: Optional[str] = None,
-    model: str = "large-v2",
+    model: str = "base",
     use_gpu: Optional[Union[bool, str]] = None,
     force_reinstall: Union[bool, str] = False,
     auto_enable: Optional[Union[bool, str]] = None,
@@ -42,7 +42,7 @@ async def whisper_install(
     Args:
         install_dir: Directory to install whisper.cpp (default: ~/.voicemode/whisper.cpp)
         model: Whisper model to download (tiny, base, small, medium, large-v2, large-v3, etc.)
-               Default is large-v2 for best accuracy. Note: large models require ~3GB RAM.
+               Default is base for good balance of speed and accuracy (142MB).
         use_gpu: Enable GPU support if available (default: auto-detect)
         force_reinstall: Force reinstallation even if already installed
         auto_enable: Enable service after install. If None, uses VOICEMODE_SERVICE_AUTO_ENABLE config.
