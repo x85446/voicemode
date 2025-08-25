@@ -433,26 +433,49 @@ exec "$SERVER_BIN" \\
             plist_name = "com.voicemode.whisper.plist"
             plist_path = os.path.join(launchagents_dir, plist_name)
             
-            plist_content = f"""<?xml version="1.0" encoding="UTF-8"?>
+            # Load plist template
+            plist_content = None
+            
+            # First try to load from source if running in development
+            source_template = Path(__file__).parent.parent.parent.parent / "templates" / "launchd" / "com.voicemode.whisper.plist"
+            if source_template.exists():
+                logger.info(f"Loading plist template from source: {source_template}")
+                plist_content = source_template.read_text()
+            else:
+                # Try loading from package resources
+                try:
+                    template_resource = files("voice_mode.templates.launchd").joinpath("com.voicemode.whisper.plist")
+                    plist_content = template_resource.read_text()
+                    logger.info("Loaded plist template from package resources")
+                except Exception as e:
+                    logger.warning(f"Failed to load plist template: {e}")
+            
+            # Fall back to inline if template not found
+            if not plist_content:
+                logger.warning("Using inline plist generation (template not found)")
+                plist_content = """<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- com.voicemode.whisper.plist v1.1.0 -->
+<!-- Last updated: 2025-08-25 -->
+<!-- Uses unified startup script for dynamic model selection -->
 <plist version="1.0">
 <dict>
     <key>Label</key>
     <string>com.voicemode.whisper</string>
     <key>ProgramArguments</key>
     <array>
-        <string>{start_script_path}</string>
+        <string>{START_SCRIPT_PATH}</string>
     </array>
-    <key>WorkingDirectory</key>
-    <string>{install_dir}</string>
     <key>RunAtLoad</key>
     <true/>
     <key>KeepAlive</key>
     <true/>
     <key>StandardOutPath</key>
-    <string>{os.path.join(voicemode_dir, 'logs', 'whisper', 'whisper.out.log')}</string>
+    <string>{LOG_DIR}/whisper/whisper.out.log</string>
     <key>StandardErrorPath</key>
-    <string>{os.path.join(voicemode_dir, 'logs', 'whisper', 'whisper.err.log')}</string>
+    <string>{LOG_DIR}/whisper/whisper.err.log</string>
+    <key>WorkingDirectory</key>
+    <string>{INSTALL_DIR}</string>
     <key>EnvironmentVariables</key>
     <dict>
         <key>PATH</key>
@@ -460,6 +483,11 @@ exec "$SERVER_BIN" \\
     </dict>
 </dict>
 </plist>"""
+            
+            # Replace placeholders
+            plist_content = plist_content.replace("{START_SCRIPT_PATH}", start_script_path)
+            plist_content = plist_content.replace("{LOG_DIR}", os.path.join(voicemode_dir, 'logs'))
+            plist_content = plist_content.replace("{INSTALL_DIR}", install_dir)
             
             with open(plist_path, 'w') as f:
                 f.write(plist_content)
