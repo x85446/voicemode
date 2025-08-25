@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.33.1] - 2025-08-26
+
+### Fixed
+- **Whisper service LaunchAgent fixes**
+  - Fixed LaunchAgent plist to call start-whisper-server.sh script instead of binary directly
+  - Script provides dynamic model selection via VOICEMODE_WHISPER_MODEL environment variable
+  - Added proper command-line arguments (--inference-path, --threads) missing from direct binary call
+  - Resolved Signal 15 (SIGTERM) restart loop caused by missing parameters
+
+### Changed
+- **Service configuration templates**
+  - Refactored Whisper installer to use plist template file instead of inline generation
+  - Template approach improves maintainability and makes configuration easier to find
+  - Removed duplicate inline plist fallback to prevent template/code divergence
+  - Templates are packaged with distribution ensuring availability
+
 ## [2.33.0] - 2025-08-26
 
 ### Fixed

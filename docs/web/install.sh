@@ -616,12 +616,12 @@ configure_claude_voicemode() {
         print_step "Configuring VoiceMode with Claude Code..."
 
         # Try with --scope flag first (newer versions)
-        if claude mcp add --scope user voicemode -- voicemode 2>/dev/null; then
+        if claude mcp add --scope user -- voicemode uvx --refresh voicemode 2>/dev/null; then
           print_success "VoiceMode configured with Claude Code"
           setup_shell_completion
           return 0
         # Fallback to without --scope flag (older versions)
-        elif claude mcp add voicemode -- voicemode; then
+        elif claude mcp add voicemode -- uvx --refresh voicemode; then
           print_success "VoiceMode configured with Claude Code (global config)"
           setup_shell_completion
           return 0
@@ -632,7 +632,7 @@ configure_claude_voicemode() {
       else
         print_step "Skipping VoiceMode configuration"
         echo "You can configure it later with:"
-        echo "  claude mcp add voice-mode -- voicemode"
+        echo "  claude mcp add --scope user voicemode -- uvx --refresh voicemode"
         return 1
       fi
     fi
