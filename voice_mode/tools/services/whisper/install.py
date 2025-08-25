@@ -219,11 +219,14 @@ async def whisper_install(
         if is_macos:
             # On macOS, always enable Metal
             cmake_flags.append("-DGGML_METAL=ON")
-            # On Apple Silicon, also enable Core ML for better performance
+            # DISABLED: CoreML causing build issues for users
+            # Keeping Metal acceleration which works well
+            # if platform.machine() == "arm64":
+            #     cmake_flags.append("-DWHISPER_COREML=ON")
+            #     cmake_flags.append("-DWHISPER_COREML_ALLOW_FALLBACK=ON")
+            #     logger.info("Enabling Core ML support with fallback for Apple Silicon")
             if platform.machine() == "arm64":
-                cmake_flags.append("-DWHISPER_COREML=ON")
-                cmake_flags.append("-DWHISPER_COREML_ALLOW_FALLBACK=ON")
-                logger.info("Enabling Core ML support with fallback for Apple Silicon")
+                logger.info("Using Metal acceleration on Apple Silicon")
         elif is_linux and use_gpu:
             cmake_flags.append("-DGGML_CUDA=ON")
         
@@ -318,7 +321,7 @@ async def whisper_install(
         template_content = None
         
         # First try to load from source if running in development
-        source_template = Path(__file__).parent.parent.parent.parent / "templates" / "scripts" / "start-whisper-server.sh"
+        source_template = Path(__file__).parent.parent.parent / "templates" / "scripts" / "start-whisper-server.sh"
         if source_template.exists():
             logger.info(f"Loading template from source: {source_template}")
             template_content = source_template.read_text()
@@ -331,90 +334,7 @@ async def whisper_install(
             except Exception as e:
                 logger.warning(f"Failed to load template script: {e}. Using fallback inline script.")
         
-        # Fallback to inline script if template not found
-        if template_content is None:
-            template_content = f"""#!/bin/bash
-
-# Whisper Service Startup Script
-# This script is used by both macOS (launchd) and Linux (systemd) to start the whisper service
-# It sources the voicemode.env file to get configuration, especially VOICEMODE_WHISPER_MODEL
-
-# Determine whisper directory (script is in bin/, whisper root is parent)
-SCRIPT_DIR="$(cd "$(dirname "${{BASH_SOURCE[0]}}")" && pwd)"
-WHISPER_DIR="$(dirname "$SCRIPT_DIR")"
-
-# Voicemode configuration directory
-VOICEMODE_DIR="$HOME/.voicemode"
-LOG_DIR="$VOICEMODE_DIR/logs/whisper"
-
-# Create log directory if it doesn't exist
-mkdir -p "$LOG_DIR"
-
-# Log file for this script (separate from whisper server logs)
-STARTUP_LOG="$LOG_DIR/startup.log"
-
-# Source voicemode configuration if it exists
-if [ -f "$VOICEMODE_DIR/voicemode.env" ]; then
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Sourcing voicemode.env" >> "$STARTUP_LOG"
-    source "$VOICEMODE_DIR/voicemode.env"
-else
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Warning: voicemode.env not found" >> "$STARTUP_LOG"
-fi
-
-# Model selection with environment variable support
-MODEL_NAME="${{VOICEMODE_WHISPER_MODEL:-base}}"
-MODEL_PATH="$WHISPER_DIR/models/ggml-$MODEL_NAME.bin"
-
-echo "[$(date '+%Y-%m-%d %H:%M:%S')] Starting whisper-server with model: $MODEL_NAME" >> "$STARTUP_LOG"
-
-# Check if model exists
-if [ ! -f "$MODEL_PATH" ]; then
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Error: Model $MODEL_NAME not found at $MODEL_PATH" >> "$STARTUP_LOG"
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Available models:" >> "$STARTUP_LOG"
-    ls -1 "$WHISPER_DIR/models/" 2>/dev/null | grep "^ggml-.*\\.bin$" >> "$STARTUP_LOG"
-    
-    # Try to find any available model as fallback
-    FALLBACK_MODEL=$(ls -1 "$WHISPER_DIR/models/" 2>/dev/null | grep "^ggml-.*\\.bin$" | head -1)
-    if [ -n "$FALLBACK_MODEL" ]; then
-        MODEL_PATH="$WHISPER_DIR/models/$FALLBACK_MODEL"
-        echo "[$(date '+%Y-%m-%d %H:%M:%S')] Using fallback model: $FALLBACK_MODEL" >> "$STARTUP_LOG"
-    else
-        echo "[$(date '+%Y-%m-%d %H:%M:%S')] Fatal: No whisper models found" >> "$STARTUP_LOG"
-        exit 1
-    fi
-fi
-
-# Port configuration (with environment variable support)
-WHISPER_PORT="${{VOICEMODE_WHISPER_PORT:-2022}}"
-
-# Determine server binary location
-# Check new CMake build location first, then legacy location
-if [ -f "$WHISPER_DIR/build/bin/whisper-server" ]; then
-    SERVER_BIN="$WHISPER_DIR/build/bin/whisper-server"
-elif [ -f "$WHISPER_DIR/server" ]; then
-    SERVER_BIN="$WHISPER_DIR/server"
-else
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Error: whisper-server binary not found" >> "$STARTUP_LOG"
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Checked: $WHISPER_DIR/build/bin/whisper-server" >> "$STARTUP_LOG"
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Checked: $WHISPER_DIR/server" >> "$STARTUP_LOG"
-    exit 1
-fi
-
-echo "[$(date '+%Y-%m-%d %H:%M:%S')] Using binary: $SERVER_BIN" >> "$STARTUP_LOG"
-echo "[$(date '+%Y-%m-%d %H:%M:%S')] Model path: $MODEL_PATH" >> "$STARTUP_LOG"
-echo "[$(date '+%Y-%m-%d %H:%M:%S')] Port: $WHISPER_PORT" >> "$STARTUP_LOG"
-
-# Start whisper-server
-# Using exec to replace this script process with whisper-server
-cd "$WHISPER_DIR"
-exec "$SERVER_BIN" \\
-    --host 0.0.0.0 \\
-    --port "$WHISPER_PORT" \\
-    --model "$MODEL_PATH" \\
-    --inference-path /v1/audio/transcriptions \\
-    --threads 8
-"""
-        
+        # Create the start script (whether template was loaded from file or created inline)
         start_script_path = os.path.join(bin_dir, "start-whisper-server.sh")
         with open(start_script_path, 'w') as f:
             f.write(template_content)
@@ -496,9 +416,8 @@ exec "$SERVER_BIN" \\
                 "start_script": start_script_path,
                 "message": f"Successfully installed whisper.cpp {current_version} with {gpu_type} support and whisper-server on port 2022{enable_message}{' (' + migration_msg + ')' if migration_msg else ''}"
             }
-        
-        # Install systemd service on Linux
         elif system == "Linux":
+            # Install systemd service on Linux
             logger.info("Installing systemd user service for whisper-server...")
             systemd_user_dir = os.path.expanduser("~/.config/systemd/user")
             os.makedirs(systemd_user_dir, exist_ok=True)
@@ -511,22 +430,22 @@ exec "$SERVER_BIN" \\
             service_path = os.path.join(systemd_user_dir, service_name)
             
             service_content = f"""[Unit]
-Description=Whisper.cpp Speech Recognition Server
-After=network.target
+    Description=Whisper.cpp Speech Recognition Server
+    After=network.target
 
-[Service]
-Type=simple
-ExecStart={start_script_path}
-Restart=on-failure
-RestartSec=10
-WorkingDirectory={install_dir}
-StandardOutput=append:{os.path.join(voicemode_dir, 'logs', 'whisper', 'whisper.out.log')}
-StandardError=append:{os.path.join(voicemode_dir, 'logs', 'whisper', 'whisper.err.log')}
-Environment="PATH=/usr/local/bin:/usr/bin:/bin:/usr/local/cuda/bin"
+    [Service]
+    Type=simple
+    ExecStart={start_script_path}
+    Restart=on-failure
+    RestartSec=10
+    WorkingDirectory={install_dir}
+    StandardOutput=append:{os.path.join(voicemode_dir, 'logs', 'whisper', 'whisper.out.log')}
+    StandardError=append:{os.path.join(voicemode_dir, 'logs', 'whisper', 'whisper.err.log')}
+    Environment="PATH=/usr/local/bin:/usr/bin:/bin:/usr/local/cuda/bin"
 
-[Install]
-WantedBy=default.target
-"""
+    [Install]
+    WantedBy=default.target
+    """
             
             with open(service_path, 'w') as f:
                 f.write(service_content)
@@ -561,49 +480,49 @@ WantedBy=default.target
             current_version = get_current_version(Path(install_dir))
             return {
                 "success": True,
-                "install_path": install_dir,
-                "model_path": model_path,
-                "gpu_enabled": use_gpu,
-                "gpu_type": gpu_type,
-                "version": current_version,
-                "performance_info": {
-                    "system": system,
-                    "gpu_acceleration": gpu_type,
-                    "model": model,
-                    "binary_path": main_path if 'main_path' in locals() else os.path.join(install_dir, "main"),
-                    "server_port": 2022,
-                    "server_url": "http://localhost:2022"
-                },
-                "systemd_service": service_path,
-                "systemd_enabled": systemd_enabled,
-                "start_script": start_script_path,
-                "message": f"Successfully installed whisper.cpp {current_version} with {gpu_type} support. {systemd_message}{enable_message}{' (' + migration_msg + ')' if migration_msg else ''}"
+            "install_path": install_dir,
+            "model_path": model_path,
+            "gpu_enabled": use_gpu,
+            "gpu_type": gpu_type,
+            "version": current_version,
+            "performance_info": {
+                "system": system,
+                "gpu_acceleration": gpu_type,
+                "model": model,
+                "binary_path": main_path if 'main_path' in locals() else os.path.join(install_dir, "main"),
+                "server_port": 2022,
+                "server_url": "http://localhost:2022"
+            },
+            "systemd_service": service_path,
+            "systemd_enabled": systemd_enabled,
+            "start_script": start_script_path,
+            "message": f"Successfully installed whisper.cpp {current_version} with {gpu_type} support. {systemd_message}{enable_message}{' (' + migration_msg + ')' if migration_msg else ''}"
             }
-        
+    
         else:
             # Handle auto_enable for other systems (if we add Windows support later)
             enable_message = ""
             if auto_enable is None:
-                auto_enable = SERVICE_AUTO_ENABLE
+              auto_enable = SERVICE_AUTO_ENABLE
             
             if auto_enable:
-                logger.info("Auto-enable not supported on this platform")
+              logger.info("Auto-enable not supported on this platform")
             
             current_version = get_current_version(Path(install_dir))
             return {
                 "success": True,
-                "install_path": install_dir,
-                "model_path": model_path,
-                "gpu_enabled": use_gpu,
-                "gpu_type": gpu_type,
-                "version": current_version,
-                "performance_info": {
-                    "system": system,
-                    "gpu_acceleration": gpu_type,
-                    "model": model,
-                    "binary_path": main_path if 'main_path' in locals() else os.path.join(install_dir, "main")
-                },
-                "message": f"Successfully installed whisper.cpp {current_version} with {gpu_type} support{enable_message}{' (' + migration_msg + ')' if migration_msg else ''}"
+            "install_path": install_dir,
+            "model_path": model_path,
+            "gpu_enabled": use_gpu,
+            "gpu_type": gpu_type,
+            "version": current_version,
+            "performance_info": {
+                "system": system,
+                "gpu_acceleration": gpu_type,
+                "model": model,
+                "binary_path": main_path if 'main_path' in locals() else os.path.join(install_dir, "main")
+            },
+            "message": f"Successfully installed whisper.cpp {current_version} with {gpu_type} support{enable_message}{' (' + migration_msg + ')' if migration_msg else ''}"
             }
         
     except subprocess.CalledProcessError as e:
