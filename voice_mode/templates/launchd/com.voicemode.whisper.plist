@@ -9,18 +9,18 @@
     <string>com.voicemode.whisper</string>
     <key>ProgramArguments</key>
     <array>
-        <string>{START_SCRIPT_PATH}</string>
+        <string>~/.voicemode/services/whisper/bin/start-whisper-server.sh</string>
     </array>
     <key>RunAtLoad</key>
     <true/>
     <key>KeepAlive</key>
     <true/>
     <key>StandardOutPath</key>
-    <string>{LOG_DIR}/whisper/whisper.out.log</string>
+    <string>~/.voicemode/logs/whisper/whisper.out.log</string>
     <key>StandardErrorPath</key>
-    <string>{LOG_DIR}/whisper/whisper.err.log</string>
+    <string>~/.voicemode/logs/whisper/whisper.err.log</string>
     <key>WorkingDirectory</key>
-    <string>{INSTALL_DIR}</string>
+    <string>~/.voicemode/services/whisper</string>
     <key>EnvironmentVariables</key>
     <dict>
         <key>PATH</key>

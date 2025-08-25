@@ -332,11 +332,18 @@ async def whisper_install(
             except Exception as e:
                 logger.warning(f"Failed to load template script: {e}. Using fallback inline script.")
         
-        # Create the start script (whether template was loaded from file or created inline)
+        # Create the start script
         start_script_path = os.path.join(bin_dir, "start-whisper-server.sh")
-        with open(start_script_path, 'w') as f:
-            f.write(template_content)
-        os.chmod(start_script_path, 0o755)
+        if template_content:
+            with open(start_script_path, 'w') as f:
+                f.write(template_content)
+            os.chmod(start_script_path, 0o755)
+        else:
+            logger.error("Failed to load whisper server startup script template")
+            return {
+                "success": False,
+                "error": "Could not load startup script template"
+            }
         
         # Install launchagent on macOS
         if system == "Darwin":
@@ -363,10 +370,7 @@ async def whisper_install(
                 plist_content = template_resource.read_text()
                 logger.info("Loaded plist template from package resources")
             
-            # Replace placeholders
-            plist_content = plist_content.replace("{START_SCRIPT_PATH}", start_script_path)
-            plist_content = plist_content.replace("{LOG_DIR}", os.path.join(voicemode_dir, 'logs'))
-            plist_content = plist_content.replace("{INSTALL_DIR}", install_dir)
+            # No placeholders to replace - paths are hardcoded in the template
             
             with open(plist_path, 'w') as f:
                 f.write(plist_content)
