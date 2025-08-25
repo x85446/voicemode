@@ -612,27 +612,22 @@ configure_claude_voicemode() {
       setup_shell_completion
       return 0
     else
-      if confirm_action "Configure VoiceMode with Claude Code (adds MCP server)"; then
-        print_step "Configuring VoiceMode with Claude Code..."
+      if confirm_action "Add VoiceMode to Claude Code (adds MCP server)"; then
+        print_step "Adding VoiceMode to Claude Code..."
 
         # Try with --scope flag first (newer versions)
-        if claude mcp add --scope user -- voicemode uvx --refresh voicemode 2>/dev/null; then
-          print_success "VoiceMode configured with Claude Code"
-          setup_shell_completion
-          return 0
-        # Fallback to without --scope flag (older versions)
-        elif claude mcp add voicemode -- uvx --refresh voicemode; then
-          print_success "VoiceMode configured with Claude Code (global config)"
+        if claude mcp add --scope user -- voicemode uvx --refresh voice-mode 2>/dev/null; then
+          print_success "VoiceMode added to Claude Code"
           setup_shell_completion
           return 0
         else
-          print_error "Failed to configure VoiceMode with Claude Code"
+          print_error "Failed to add VoiceMode to Claude Code"
           return 1
         fi
       else
         print_step "Skipping VoiceMode configuration"
         echo "You can configure it later with:"
-        echo "  claude mcp add --scope user voicemode -- uvx --refresh voicemode"
+        echo "  claude mcp add --scope user -- voicemode uvx --refresh voice-mode"
         return 1
       fi
     fi
@@ -760,7 +755,8 @@ install_all_services() {
   if install_service "whisper" "$voice_mode_cmd" "Whisper (Speech-to-Text)"; then
     ((success_count++))
     # CoreML acceleration setup for Apple Silicon Macs
-    setup_coreml_acceleration
+    # DISABLED: CoreML build issues - users getting errors at 3:30am
+    # setup_coreml_acceleration
   fi
 
   if install_service "kokoro" "$voice_mode_cmd" "Kokoro (Text-to-Speech)"; then
@@ -789,7 +785,8 @@ install_services_selective() {
   if confirm_action "Install Whisper (Speech-to-Text)"; then
     install_service "whisper" "$voice_mode_cmd" "Whisper"
     # CoreML acceleration setup for Apple Silicon Macs
-    setup_coreml_acceleration
+    # DISABLED: CoreML build issues - users getting errors at 3:30am
+    # setup_coreml_acceleration
   fi
 
   if confirm_action "Install Kokoro (Text-to-Speech)"; then
