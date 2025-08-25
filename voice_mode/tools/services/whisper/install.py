@@ -219,14 +219,12 @@ async def whisper_install(
         if is_macos:
             # On macOS, always enable Metal
             cmake_flags.append("-DGGML_METAL=ON")
-            # DISABLED: CoreML causing build issues for users
-            # Keeping Metal acceleration which works well
-            # if platform.machine() == "arm64":
-            #     cmake_flags.append("-DWHISPER_COREML=ON")
-            #     cmake_flags.append("-DWHISPER_COREML_ALLOW_FALLBACK=ON")
-            #     logger.info("Enabling Core ML support with fallback for Apple Silicon")
+            # On Apple Silicon, also enable Core ML support with fallback
+            # This allows using CoreML models if available, but falls back to Metal if not
             if platform.machine() == "arm64":
-                logger.info("Using Metal acceleration on Apple Silicon")
+                cmake_flags.append("-DWHISPER_COREML=ON")
+                cmake_flags.append("-DWHISPER_COREML_ALLOW_FALLBACK=ON")
+                logger.info("Enabling Core ML support with fallback for Apple Silicon")
         elif is_linux and use_gpu:
             cmake_flags.append("-DGGML_CUDA=ON")
         
