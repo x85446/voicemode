@@ -450,8 +450,26 @@ install_voicemode() {
   print_step "Installing VoiceMode..."
 
   # Install voice-mode package with uv tool install
-  if uv tool install -U voice-mode; then
+  if uv tool install --upgrade voice-mode; then
     print_success "VoiceMode installed successfully"
+    
+    # Update shell to ensure PATH includes UV tools
+    print_step "Updating shell PATH configuration..."
+    if uv tool update-shell; then
+      print_success "Shell PATH updated"
+      
+      # Export PATH for current session
+      export PATH="$HOME/.local/bin:$PATH"
+      
+      # Source shell profile for immediate availability
+      if [[ "$SHELL" == *"zsh"* ]] && [[ -f "$HOME/.zshrc" ]]; then
+        source "$HOME/.zshrc" 2>/dev/null || true
+      elif [[ "$SHELL" == *"bash"* ]] && [[ -f "$HOME/.bashrc" ]]; then
+        source "$HOME/.bashrc" 2>/dev/null || true
+      fi
+    else
+      print_warning "Could not update shell PATH automatically"
+    fi
 
     # Verify the voicemode command is available
     if command -v voicemode >/dev/null 2>&1; then
@@ -517,9 +535,6 @@ setup_shell_completion() {
   elif [[ -n "${ZSH_VERSION:-}" ]]; then
     shell_type="zsh"
     shell_rc="$HOME/.zshrc"
-  elif [[ -n "${FISH_VERSION:-}" ]]; then
-    shell_type="fish"
-    shell_rc="" # Fish uses a different approach
   else
     # Try to detect from SHELL environment variable
     case "${SHELL:-}" in
@@ -531,9 +546,10 @@ setup_shell_completion() {
       shell_type="zsh"
       shell_rc="$HOME/.zshrc"
       ;;
-    */fish)
-      shell_type="fish"
-      shell_rc=""
+    *)
+      print_warning "Unsupported shell for completion: ${SHELL:-unknown}"
+      echo "  VoiceMode completion supports bash and zsh only"
+      return 1
       ;;
     esac
   fi
@@ -547,56 +563,119 @@ setup_shell_completion() {
 
   # Set up completion based on shell type
   if [[ "$shell_type" == "bash" ]]; then
-    # Safe completion line that checks command availability
-    local completion_line='# VoiceMode shell completion
+    # Check for existing bash-completion support
+    local has_bash_completion=false
+    local user_completions_dir="${XDG_DATA_HOME:-$HOME/.local/share}/bash-completion/completions"
+    
+    # Check if bash-completion is installed
+    if [[ -f "/usr/share/bash-completion/bash_completion" ]] || \
+       [[ -f "/etc/bash_completion" ]] || \
+       (command -v brew >/dev/null 2>&1 && brew list bash-completion@2 >/dev/null 2>&1); then
+      has_bash_completion=true
+    fi
+    
+    if [[ "$has_bash_completion" == true ]]; then
+      # Install completion file to user directory
+      mkdir -p "$user_completions_dir"
+      
+      # Generate and save completion file
+      if command -v voicemode >/dev/null 2>&1; then
+        _VOICEMODE_COMPLETE=bash_source voicemode > "$user_completions_dir/voicemode" 2>/dev/null
+        if [[ -s "$user_completions_dir/voicemode" ]]; then
+          print_success "Installed bash completion to $user_completions_dir/"
+          echo "   Tab completion will be available in new bash sessions"
+        else
+          rm -f "$user_completions_dir/voicemode"
+          # Fallback to shell RC method
+          has_bash_completion=false
+        fi
+      fi
+    fi
+    
+    if [[ "$has_bash_completion" == false ]]; then
+      # Fallback: Add to shell RC file
+      local completion_line='# VoiceMode shell completion
 if command -v voicemode >/dev/null 2>&1; then
     eval "$(_VOICEMODE_COMPLETE=bash_source voicemode)"
 fi'
 
-    if [[ -f "$shell_rc" ]] && grep -q "_VOICEMODE_COMPLETE\|_VOICE_MODE_COMPLETE" "$shell_rc" 2>/dev/null; then
-      print_success "Shell completion already configured in $shell_rc"
-    else
-      echo "" >>"$shell_rc"
-      echo "$completion_line" >>"$shell_rc"
-      print_success "Added safe shell completion to $shell_rc"
-      echo "   Tab completion will be available in new shell sessions"
+      if [[ -f "$shell_rc" ]] && grep -q "_VOICEMODE_COMPLETE\|_VOICE_MODE_COMPLETE" "$shell_rc" 2>/dev/null; then
+        print_success "Shell completion already configured in $shell_rc"
+      else
+        echo "" >>"$shell_rc"
+        echo "$completion_line" >>"$shell_rc"
+        print_success "Added shell completion to $shell_rc"
+        echo "   Tab completion will be available in new shell sessions"
+      fi
     fi
   elif [[ "$shell_type" == "zsh" ]]; then
-    # Safe completion line that checks command availability
-    local completion_line='# VoiceMode shell completion
+    # Detect best location for zsh completions
+    local completion_dir=""
+    local needs_fpath_update=false
+    
+    # Check for Homebrew on macOS
+    if [[ "$OS" == "macos" ]] && command -v brew >/dev/null 2>&1; then
+      local brew_prefix=$(brew --prefix)
+      if [[ -d "$brew_prefix/share/zsh/site-functions" ]]; then
+        completion_dir="$brew_prefix/share/zsh/site-functions"
+        print_debug "Using Homebrew zsh completion directory"
+      fi
+    fi
+    
+    # Check standard locations if not found
+    if [[ -z "$completion_dir" ]]; then
+      for dir in \
+        "/usr/local/share/zsh/site-functions" \
+        "/usr/share/zsh/site-functions" \
+        "$HOME/.zsh/completions"; do
+        if [[ -d "$dir" ]] || [[ "$dir" == "$HOME/.zsh/completions" ]]; then
+          completion_dir="$dir"
+          if [[ "$dir" == "$HOME/.zsh/completions" ]]; then
+            needs_fpath_update=true
+          fi
+          break
+        fi
+      done
+    fi
+    
+    # Create directory if needed
+    if [[ ! -d "$completion_dir" ]]; then
+      mkdir -p "$completion_dir"
+    fi
+    
+    # Generate and install completion file (with underscore prefix)
+    if command -v voicemode >/dev/null 2>&1; then
+      _VOICEMODE_COMPLETE=zsh_source voicemode > "$completion_dir/_voicemode" 2>/dev/null
+      if [[ -s "$completion_dir/_voicemode" ]]; then
+        print_success "Installed zsh completion to $completion_dir/"
+        
+        # Update fpath if using custom directory
+        if [[ "$needs_fpath_update" == true ]]; then
+          local fpath_line="fpath=($completion_dir \$fpath)"
+          if [[ -f "$shell_rc" ]] && ! grep -q "$completion_dir" "$shell_rc" 2>/dev/null; then
+            echo "" >> "$shell_rc"
+            echo "# Add VoiceMode completions to fpath" >> "$shell_rc"
+            echo "$fpath_line" >> "$shell_rc"
+            print_success "Added $completion_dir to fpath in $shell_rc"
+          fi
+        fi
+        echo "   Tab completion will be available in new zsh sessions"
+      else
+        # Fallback to shell RC method
+        rm -f "$completion_dir/_voicemode"
+        local completion_line='# VoiceMode shell completion
 if command -v voicemode >/dev/null 2>&1; then
     eval "$(_VOICEMODE_COMPLETE=zsh_source voicemode)"
 fi'
 
-    if [[ -f "$shell_rc" ]] && grep -q "_VOICEMODE_COMPLETE\|_VOICE_MODE_COMPLETE" "$shell_rc" 2>/dev/null; then
-      print_success "Shell completion already configured in $shell_rc"
-    else
-      echo "" >>"$shell_rc"
-      echo "$completion_line" >>"$shell_rc"
-      print_success "Added safe shell completion to $shell_rc"
-      echo "   Tab completion will be available in new shell sessions"
-    fi
-  elif [[ "$shell_type" == "fish" ]]; then
-    local fish_completion_dir="$HOME/.config/fish/completions"
-    local fish_completion_file="$fish_completion_dir/voicemode.fish"
-
-    mkdir -p "$fish_completion_dir"
-
-    if [[ -f "$fish_completion_file" ]]; then
-      print_success "Fish completion already configured"
-    else
-      # Generate fish completion directly
-      if command -v voicemode >/dev/null 2>&1; then
-        _VOICEMODE_COMPLETE=fish_source voicemode >"$fish_completion_file" 2>/dev/null
-      fi
-
-      if [[ -f "$fish_completion_file" ]] && [[ -s "$fish_completion_file" ]]; then
-        print_success "Added Fish completion to $fish_completion_file"
-        echo "   Tab completion will be available immediately"
-      else
-        print_debug "Failed to generate Fish completion"
-        rm -f "$fish_completion_file"
-        return 1
+        if [[ -f "$shell_rc" ]] && grep -q "_VOICEMODE_COMPLETE\|_VOICE_MODE_COMPLETE" "$shell_rc" 2>/dev/null; then
+          print_success "Shell completion already configured in $shell_rc"
+        else
+          echo "" >>"$shell_rc"
+          echo "$completion_line" >>"$shell_rc"
+          print_success "Added shell completion to $shell_rc"
+          echo "   Tab completion will be available in new shell sessions"
+        fi
       fi
     fi
   fi
@@ -616,7 +695,7 @@ configure_claude_voicemode() {
         print_step "Adding VoiceMode to Claude Code..."
 
         # Try with --scope flag first (newer versions)
-        if claude mcp add --scope user -- voicemode uvx --refresh voice-mode 2>/dev/null; then
+        if claude mcp add --scope user -- voicemode voice-mode 2>/dev/null; then
           print_success "VoiceMode added to Claude Code"
           setup_shell_completion
           return 0
@@ -627,7 +706,7 @@ configure_claude_voicemode() {
       else
         print_step "Skipping VoiceMode configuration"
         echo "You can configure it later with:"
-        echo "  claude mcp add --scope user -- voicemode uvx --refresh voice-mode"
+        echo "  claude mcp add --scope user -- voicemode voice-mode"
         return 1
       fi
     fi
