@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Installer improvements**
+  - Refactored installer to use permanent `uv tool install --upgrade` instead of `uvx --refresh`
+  - Added `uv tool update-shell` for automatic PATH configuration
+  - Improved shell completion detection with smart fallbacks
+  - Added Homebrew zsh completion directory support on macOS
+  - Implemented XDG-compliant paths for bash completions
+  - Removed fish shell support to simplify maintenance (bash/zsh only)
+  - Zsh completions now correctly use underscore prefix (_voicemode)
+  - MCP configuration now uses plain `voice-mode` command for better performance
+
 ### Fixed
 - **Service file updates on reinstall**
   - Fixed whisper and kokoro installers to always update service files (plist/systemd) even when service is already installed
@@ -16,9 +27,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.33.4] - 2025-08-26
 
+### Fixed
+- **CoreML support restoration**
+  - Re-enabled CoreML acceleration after fixing plist template path issues
+  - Improved CoreML compilation flags handling in whisper installer
+
 ## [2.33.3] - 2025-08-26
 
+### Changed
+- Version bump for testing installer fixes
+
 ## [2.33.2] - 2025-08-26
+
+### Fixed
+- **Whisper service installation**
+  - Corrected plist template path in whisper installer
+  - Fixed CoreML support compilation flags (disabled then re-enabled after testing)
+  - Removed duplicate inline plist fallback to prevent template divergence
 
 ## [2.33.1] - 2025-08-26
 
