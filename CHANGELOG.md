@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Whisper service enable command**
+  - Fixed `voicemode whisper enable` using incorrect template variable names
+  - Changed from WHISPER_BIN/MODEL_FILE to START_SCRIPT_PATH/INSTALL_DIR to match plist template
+  - Correctly locates start-whisper-server.sh script in whisper install directory
+  - Fixes KeyError 'START_SCRIPT_PATH' when enabling whisper service after installation
+
 ## [2.34.0] - 2025-08-26
 
 ## [2.24.0] - 2025-08-26
