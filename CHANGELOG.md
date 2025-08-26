@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.34.3] - 2025-08-26
+
 ### Changed
 - **Service management code cleanup**
   - Removed references to non-existent `start.sh` script in Kokoro service discovery
