@@ -16,6 +16,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Correctly locates start-whisper-server.sh script in whisper install directory
   - Fixes KeyError 'START_SCRIPT_PATH' when enabling whisper service after installation
 
+### Changed
+- **Installer reliability**
+  - Added `--force` flag to `uv tool install --upgrade` command
+  - Ensures voicemode is fully reinstalled even if already present
+  - Prevents stale installations when package structure changes
+  - Improves update reliability when running install.sh multiple times
+
 ## [2.34.0] - 2025-08-26
 
 ### Changed
