@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Service management code cleanup**
+  - Removed references to non-existent `start.sh` script in Kokoro service discovery
+  - Improved Kokoro start script detection by checking for GPU/CPU specific scripts only
+  - Cleaned up code paths for better maintainability
+
 ## [2.34.2] - 2025-08-26
 
 ## [2.34.1] - 2025-08-26
