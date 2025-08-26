@@ -73,14 +73,12 @@ def get_service_config_vars(service_name: str) -> Dict[str, Any]:
                 # Try GPU scripts first
                 possible_scripts = [
                     Path(kokoro_dir) / "start-gpu.sh",
-                    Path(kokoro_dir) / "start.sh",  # fallback
                     Path(kokoro_dir) / "start-cpu.sh"  # last resort
                 ]
             else:
                 # No GPU, prefer CPU script
                 possible_scripts = [
                     Path(kokoro_dir) / "start-cpu.sh",
-                    Path(kokoro_dir) / "start.sh",  # fallback
                     Path(kokoro_dir) / "start-gpu.sh"  # might work with CPU fallback
                 ]
             
@@ -409,14 +407,12 @@ async def start_service(service_name: str) -> str:
                 # Try GPU scripts first
                 possible_scripts = [
                     Path(kokoro_dir) / "start-gpu.sh",
-                    Path(kokoro_dir) / "start.sh",  # fallback
                     Path(kokoro_dir) / "start-cpu.sh"  # last resort
                 ]
             else:
                 # No GPU, prefer CPU script
                 possible_scripts = [
                     Path(kokoro_dir) / "start-cpu.sh",
-                    Path(kokoro_dir) / "start.sh",  # fallback
                     Path(kokoro_dir) / "start-gpu.sh"  # might work with CPU fallback
                 ]
             
@@ -688,14 +684,12 @@ async def enable_service(service_name: str) -> str:
                     # Try GPU scripts first
                     possible_scripts = [
                         Path(kokoro_dir) / "start-gpu.sh",
-                        Path(kokoro_dir) / "start.sh",  # fallback
                         Path(kokoro_dir) / "start-cpu.sh"  # last resort
                     ]
                 else:
                     # No GPU, prefer CPU script
                     possible_scripts = [
                         Path(kokoro_dir) / "start-cpu.sh",
-                        Path(kokoro_dir) / "start.sh",  # fallback
                         Path(kokoro_dir) / "start-gpu.sh"  # might work with CPU fallback
                     ]
                 

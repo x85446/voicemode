@@ -24,9 +24,22 @@ def find_kokoro_fastapi() -> Optional[str]:
             if platform.system() == "Darwin":
                 start_script = path / "start-gpu_mac.sh"
             else:
-                start_script = path / "start.sh"
+                # Check for appropriate start script
+                if has_gpu_support():
+                    # Prefer GPU script, fallback to general start
+                    possible_scripts = [
+                        path / "start-gpu.sh"
+                    ]
+                else:
+                    # Prefer CPU script, fallback to general start
+                    possible_scripts = [
+                        path / "start-cpu.sh"
+                    ]
+                
+                # Find first existing script
+                start_script = next((script for script in possible_scripts if script.exists()), None)
             
-            if start_script.exists():
+            if start_script and start_script.exists():
                 return str(path)
     
     return None
