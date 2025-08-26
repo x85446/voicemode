@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.24.0] - 2025-08-26
+
 ### Changed
 - **Installer improvements**
   - Refactored installer to use permanent `uv tool install --upgrade` instead of `uvx --refresh`
