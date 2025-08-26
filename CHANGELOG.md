@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Service file updates on reinstall**
+  - Fixed whisper and kokoro installers to always update service files (plist/systemd) even when service is already installed
+  - Ensures paths are properly expanded (no `~` symbols) in service files
+  - Fixes issue where broken service files with unexpanded paths would remain broken after running install.sh
+  - Service files now updated to latest templates on every install, ensuring users always get working configurations
+
 ## [2.33.4] - 2025-08-26
 
 ## [2.33.3] - 2025-08-26

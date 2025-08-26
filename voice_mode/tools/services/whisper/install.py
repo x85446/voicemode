@@ -30,6 +30,257 @@ from voice_mode.utils.gpu_detection import detect_gpu
 logger = logging.getLogger("voice-mode")
 
 
+async def update_whisper_service_files(
+    install_dir: str,
+    voicemode_dir: str,
+    auto_enable: Optional[bool] = None
+) -> Dict[str, Any]:
+    """Update service files (plist/systemd) for whisper service.
+    
+    This function updates the service files without reinstalling whisper itself.
+    It ensures paths are properly expanded and templates are up to date.
+    
+    Returns:
+        Dict with success status and details about what was updated
+    """
+    system = platform.system()
+    result = {"success": False, "updated": False}
+    
+    # Create bin directory if it doesn't exist
+    bin_dir = os.path.join(install_dir, "bin")
+    os.makedirs(bin_dir, exist_ok=True)
+    
+    # Create/update start script
+    logger.info("Updating whisper-server start script...")
+    
+    # Load template script
+    template_content = None
+    source_template = Path(__file__).parent.parent.parent.parent / "templates" / "scripts" / "start-whisper-server.sh"
+    if source_template.exists():
+        logger.info(f"Loading template from source: {source_template}")
+        template_content = source_template.read_text()
+    else:
+        try:
+            template_resource = files("voice_mode.templates.scripts").joinpath("start-whisper-server.sh")
+            template_content = template_resource.read_text()
+            logger.info("Loaded template from package resources")
+        except Exception as e:
+            logger.warning(f"Failed to load template script: {e}. Using fallback inline script.")
+    
+    # Use fallback inline script if template not found
+    if template_content is None:
+        template_content = f"""#!/bin/bash
+
+# Whisper Service Startup Script
+# This script is used by both macOS (launchd) and Linux (systemd) to start the whisper service
+# It sources the voicemode.env file to get configuration, especially VOICEMODE_WHISPER_MODEL
+
+# Determine whisper directory (script is in bin/, whisper root is parent)
+SCRIPT_DIR="$(cd "$(dirname "${{BASH_SOURCE[0]}}")" && pwd)"
+WHISPER_DIR="$(dirname "$SCRIPT_DIR")"
+
+# Voicemode configuration directory
+VOICEMODE_DIR="$HOME/.voicemode"
+LOG_DIR="$VOICEMODE_DIR/logs/whisper"
+
+# Create log directory if it doesn't exist
+mkdir -p "$LOG_DIR"
+
+# Log file for this script (separate from whisper server logs)
+STARTUP_LOG="$LOG_DIR/startup.log"
+
+# Source voicemode configuration if it exists
+if [ -f "$VOICEMODE_DIR/voicemode.env" ]; then
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Sourcing voicemode.env" >> "$STARTUP_LOG"
+    source "$VOICEMODE_DIR/voicemode.env"
+else
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Warning: voicemode.env not found" >> "$STARTUP_LOG"
+fi
+
+# Model selection with environment variable support
+MODEL_NAME="${{VOICEMODE_WHISPER_MODEL:-base}}"
+MODEL_PATH="$WHISPER_DIR/models/ggml-$MODEL_NAME.bin"
+
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] Starting whisper-server with model: $MODEL_NAME" >> "$STARTUP_LOG"
+
+# Check if model exists
+if [ ! -f "$MODEL_PATH" ]; then
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Error: Model $MODEL_NAME not found at $MODEL_PATH" >> "$STARTUP_LOG"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Available models:" >> "$STARTUP_LOG"
+    ls -1 "$WHISPER_DIR/models/" 2>/dev/null | grep "^ggml-.*\\.bin$" >> "$STARTUP_LOG"
+    
+    # Try to find any available model as fallback
+    FALLBACK_MODEL=$(ls -1 "$WHISPER_DIR/models/" 2>/dev/null | grep "^ggml-.*\\.bin$" | head -1)
+    if [ -n "$FALLBACK_MODEL" ]; then
+        MODEL_PATH="$WHISPER_DIR/models/$FALLBACK_MODEL"
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] Using fallback model: $FALLBACK_MODEL" >> "$STARTUP_LOG"
+    else
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] Fatal: No whisper models found" >> "$STARTUP_LOG"
+        exit 1
+    fi
+fi
+
+# Port configuration (with environment variable support)
+WHISPER_PORT="${{VOICEMODE_WHISPER_PORT:-2022}}"
+
+# Determine server binary location
+# Check new CMake build location first, then legacy location
+if [ -f "$WHISPER_DIR/build/bin/whisper-server" ]; then
+    SERVER_BIN="$WHISPER_DIR/build/bin/whisper-server"
+elif [ -f "$WHISPER_DIR/server" ]; then
+    SERVER_BIN="$WHISPER_DIR/server"
+else
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Error: whisper-server binary not found" >> "$STARTUP_LOG"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Checked: $WHISPER_DIR/build/bin/whisper-server" >> "$STARTUP_LOG"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Checked: $WHISPER_DIR/server" >> "$STARTUP_LOG"
+    exit 1
+fi
+
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] Using binary: $SERVER_BIN" >> "$STARTUP_LOG"
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] Model path: $MODEL_PATH" >> "$STARTUP_LOG"
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] Port: $WHISPER_PORT" >> "$STARTUP_LOG"
+
+# Start whisper-server
+# Using exec to replace this script process with whisper-server
+cd "$WHISPER_DIR"
+exec "$SERVER_BIN" \\
+    --host 0.0.0.0 \\
+    --port "$WHISPER_PORT" \\
+    --model "$MODEL_PATH" \\
+    --inference-path /v1/audio/transcriptions \\
+    --threads 8
+"""
+    
+    start_script_path = os.path.join(bin_dir, "start-whisper-server.sh")
+    with open(start_script_path, 'w') as f:
+        f.write(template_content)
+    os.chmod(start_script_path, 0o755)
+    
+    # Update service files based on platform
+    if system == "Darwin":
+        logger.info("Updating launchagent for whisper-server...")
+        launchagents_dir = os.path.expanduser("~/Library/LaunchAgents")
+        os.makedirs(launchagents_dir, exist_ok=True)
+        
+        # Create log directory
+        log_dir = os.path.join(voicemode_dir, 'logs', 'whisper')
+        os.makedirs(log_dir, exist_ok=True)
+        
+        plist_name = "com.voicemode.whisper.plist"
+        plist_path = os.path.join(launchagents_dir, plist_name)
+        
+        # Load plist template
+        source_template = Path(__file__).parent.parent.parent.parent / "templates" / "launchd" / "com.voicemode.whisper.plist"
+        if source_template.exists():
+            logger.info(f"Loading plist template from source: {source_template}")
+            plist_content = source_template.read_text()
+        else:
+            template_resource = files("voice_mode.templates.launchd").joinpath("com.voicemode.whisper.plist")
+            plist_content = template_resource.read_text()
+            logger.info("Loaded plist template from package resources")
+        
+        # Replace placeholders with expanded paths
+        plist_content = plist_content.replace("{START_SCRIPT_PATH}", start_script_path)
+        plist_content = plist_content.replace("{LOG_DIR}", os.path.join(voicemode_dir, 'logs'))
+        plist_content = plist_content.replace("{INSTALL_DIR}", install_dir)
+        
+        # Unload if already loaded (ignore errors)
+        try:
+            subprocess.run(["launchctl", "unload", plist_path], capture_output=True)
+        except:
+            pass
+        
+        # Write updated plist
+        with open(plist_path, 'w') as f:
+            f.write(plist_content)
+        
+        result["success"] = True
+        result["updated"] = True
+        result["plist_path"] = plist_path
+        result["start_script"] = start_script_path
+        
+        # Handle auto_enable if specified
+        if auto_enable is None:
+            auto_enable = SERVICE_AUTO_ENABLE
+        
+        if auto_enable:
+            logger.info("Auto-enabling whisper service...")
+            from voice_mode.tools.service import enable_service
+            enable_result = await enable_service("whisper")
+            if "✅" in enable_result:
+                result["enabled"] = True
+            else:
+                logger.warning(f"Auto-enable failed: {enable_result}")
+                result["enabled"] = False
+    
+    elif system == "Linux":
+        logger.info("Updating systemd user service for whisper-server...")
+        systemd_user_dir = os.path.expanduser("~/.config/systemd/user")
+        os.makedirs(systemd_user_dir, exist_ok=True)
+        
+        # Create log directory
+        log_dir = os.path.join(voicemode_dir, 'logs', 'whisper')
+        os.makedirs(log_dir, exist_ok=True)
+        
+        service_name = "voicemode-whisper.service"
+        service_path = os.path.join(systemd_user_dir, service_name)
+        
+        service_content = f"""[Unit]
+Description=Whisper.cpp Speech Recognition Server
+After=network.target
+
+[Service]
+Type=simple
+ExecStart={start_script_path}
+Restart=on-failure
+RestartSec=10
+WorkingDirectory={install_dir}
+StandardOutput=append:{os.path.join(voicemode_dir, 'logs', 'whisper', 'whisper.out.log')}
+StandardError=append:{os.path.join(voicemode_dir, 'logs', 'whisper', 'whisper.err.log')}
+Environment="PATH=/usr/local/bin:/usr/bin:/bin:/usr/local/cuda/bin"
+
+[Install]
+WantedBy=default.target
+"""
+        
+        with open(service_path, 'w') as f:
+            f.write(service_content)
+        
+        # Reload systemd
+        try:
+            subprocess.run(["systemctl", "--user", "daemon-reload"], check=True)
+            result["success"] = True
+            result["updated"] = True
+            result["service_path"] = service_path
+            result["start_script"] = start_script_path
+        except subprocess.CalledProcessError as e:
+            logger.warning(f"Failed to reload systemd: {e}")
+            result["success"] = True  # Still consider it success if file was written
+            result["updated"] = True
+            result["service_path"] = service_path
+            result["start_script"] = start_script_path
+        
+        # Handle auto_enable if specified
+        if auto_enable is None:
+            auto_enable = SERVICE_AUTO_ENABLE
+        
+        if auto_enable:
+            logger.info("Auto-enabling whisper service...")
+            from voice_mode.tools.service import enable_service
+            enable_result = await enable_service("whisper")
+            if "✅" in enable_result:
+                result["enabled"] = True
+            else:
+                logger.warning(f"Auto-enable failed: {enable_result}")
+                result["enabled"] = False
+    
+    else:
+        result["success"] = False
+        result["error"] = f"Unsupported platform: {system}"
+    
+    return result
+
+
 @mcp.tool()
 async def whisper_install(
     install_dir: Optional[str] = None,
@@ -87,17 +338,39 @@ async def whisper_install(
         
         # Check if already installed
         if os.path.exists(install_dir) and not force_reinstall:
-            if os.path.exists(os.path.join(install_dir, "main")):
+            if os.path.exists(os.path.join(install_dir, "main")) or os.path.exists(os.path.join(install_dir, "build", "bin", "whisper-cli")):
                 # Check if the requested version is already installed
                 if is_version_installed(Path(install_dir), version):
                     current_version = get_current_version(Path(install_dir))
+                    
+                    # Always update service files even if whisper is already installed
+                    logger.info("Whisper is already installed, updating service files...")
+                    service_update_result = await update_whisper_service_files(
+                        install_dir=install_dir,
+                        voicemode_dir=voicemode_dir,
+                        auto_enable=auto_enable
+                    )
+                    
+                    model_path = os.path.join(install_dir, "models", f"ggml-{model}.bin")
+                    
+                    # Build response message
+                    message = f"whisper.cpp version {current_version} already installed."
+                    if service_update_result.get("updated"):
+                        message += " Service files updated."
+                    if service_update_result.get("enabled"):
+                        message += " Service auto-enabled."
+                    
                     return {
                         "success": True,
                         "install_path": install_dir,
-                        "model_path": os.path.join(install_dir, "models", f"ggml-{model}.bin"),
+                        "model_path": model_path,
                         "already_installed": True,
+                        "service_files_updated": service_update_result.get("updated", False),
                         "version": current_version,
-                        "message": f"whisper.cpp version {current_version} already installed. Use force_reinstall=True to reinstall."
+                        "plist_path": service_update_result.get("plist_path"),
+                        "service_path": service_update_result.get("service_path"),
+                        "start_script": service_update_result.get("start_script"),
+                        "message": message
                     }
         
         # Detect system
@@ -307,176 +580,29 @@ async def whisper_install(
         if 'original_dir' in locals():
             os.chdir(original_dir)
         
-        # Copy template start script for whisper-server
-        logger.info("Installing whisper-server start script from template...")
+        # Update service files (includes creating start script)
+        logger.info("Installing/updating service files...")
+        service_update_result = await update_whisper_service_files(
+            install_dir=install_dir,
+            voicemode_dir=voicemode_dir,
+            auto_enable=auto_enable
+        )
         
-        # Create bin directory
-        bin_dir = os.path.join(install_dir, "bin")
-        os.makedirs(bin_dir, exist_ok=True)
+        if not service_update_result.get("success"):
+            logger.error(f"Failed to update service files: {service_update_result.get('error', 'Unknown error')}")
+            return {
+                "success": False,
+                "error": f"Service file update failed: {service_update_result.get('error', 'Unknown error')}"
+            }
         
-        # Copy template script
-        template_content = None
+        # Get the start script path from the result
+        start_script_path = service_update_result.get("start_script")
         
-        # First try to load from source if running in development
-        source_template = Path(__file__).parent.parent.parent.parent / "templates" / "scripts" / "start-whisper-server.sh"
-        if source_template.exists():
-            logger.info(f"Loading template from source: {source_template}")
-            template_content = source_template.read_text()
-        else:
-            # Try loading from package resources
-            try:
-                template_resource = files("voice_mode.templates.scripts").joinpath("start-whisper-server.sh")
-                template_content = template_resource.read_text()
-                logger.info("Loaded template from package resources")
-            except Exception as e:
-                logger.warning(f"Failed to load template script: {e}. Using fallback inline script.")
-        
-        # Fallback to inline script if template not found
-        if template_content is None:
-            template_content = f"""#!/bin/bash
-
-# Whisper Service Startup Script
-# This script is used by both macOS (launchd) and Linux (systemd) to start the whisper service
-# It sources the voicemode.env file to get configuration, especially VOICEMODE_WHISPER_MODEL
-
-# Determine whisper directory (script is in bin/, whisper root is parent)
-SCRIPT_DIR="$(cd "$(dirname "${{BASH_SOURCE[0]}}")" && pwd)"
-WHISPER_DIR="$(dirname "$SCRIPT_DIR")"
-
-# Voicemode configuration directory
-VOICEMODE_DIR="$HOME/.voicemode"
-LOG_DIR="$VOICEMODE_DIR/logs/whisper"
-
-# Create log directory if it doesn't exist
-mkdir -p "$LOG_DIR"
-
-# Log file for this script (separate from whisper server logs)
-STARTUP_LOG="$LOG_DIR/startup.log"
-
-# Source voicemode configuration if it exists
-if [ -f "$VOICEMODE_DIR/voicemode.env" ]; then
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Sourcing voicemode.env" >> "$STARTUP_LOG"
-    source "$VOICEMODE_DIR/voicemode.env"
-else
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Warning: voicemode.env not found" >> "$STARTUP_LOG"
-fi
-
-# Model selection with environment variable support
-MODEL_NAME="${{VOICEMODE_WHISPER_MODEL:-base}}"
-MODEL_PATH="$WHISPER_DIR/models/ggml-$MODEL_NAME.bin"
-
-echo "[$(date '+%Y-%m-%d %H:%M:%S')] Starting whisper-server with model: $MODEL_NAME" >> "$STARTUP_LOG"
-
-# Check if model exists
-if [ ! -f "$MODEL_PATH" ]; then
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Error: Model $MODEL_NAME not found at $MODEL_PATH" >> "$STARTUP_LOG"
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Available models:" >> "$STARTUP_LOG"
-    ls -1 "$WHISPER_DIR/models/" 2>/dev/null | grep "^ggml-.*\\.bin$" >> "$STARTUP_LOG"
-    
-    # Try to find any available model as fallback
-    FALLBACK_MODEL=$(ls -1 "$WHISPER_DIR/models/" 2>/dev/null | grep "^ggml-.*\\.bin$" | head -1)
-    if [ -n "$FALLBACK_MODEL" ]; then
-        MODEL_PATH="$WHISPER_DIR/models/$FALLBACK_MODEL"
-        echo "[$(date '+%Y-%m-%d %H:%M:%S')] Using fallback model: $FALLBACK_MODEL" >> "$STARTUP_LOG"
-    else
-        echo "[$(date '+%Y-%m-%d %H:%M:%S')] Fatal: No whisper models found" >> "$STARTUP_LOG"
-        exit 1
-    fi
-fi
-
-# Port configuration (with environment variable support)
-WHISPER_PORT="${{VOICEMODE_WHISPER_PORT:-2022}}"
-
-# Determine server binary location
-# Check new CMake build location first, then legacy location
-if [ -f "$WHISPER_DIR/build/bin/whisper-server" ]; then
-    SERVER_BIN="$WHISPER_DIR/build/bin/whisper-server"
-elif [ -f "$WHISPER_DIR/server" ]; then
-    SERVER_BIN="$WHISPER_DIR/server"
-else
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Error: whisper-server binary not found" >> "$STARTUP_LOG"
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Checked: $WHISPER_DIR/build/bin/whisper-server" >> "$STARTUP_LOG"
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Checked: $WHISPER_DIR/server" >> "$STARTUP_LOG"
-    exit 1
-fi
-
-echo "[$(date '+%Y-%m-%d %H:%M:%S')] Using binary: $SERVER_BIN" >> "$STARTUP_LOG"
-echo "[$(date '+%Y-%m-%d %H:%M:%S')] Model path: $MODEL_PATH" >> "$STARTUP_LOG"
-echo "[$(date '+%Y-%m-%d %H:%M:%S')] Port: $WHISPER_PORT" >> "$STARTUP_LOG"
-
-# Start whisper-server
-# Using exec to replace this script process with whisper-server
-cd "$WHISPER_DIR"
-exec "$SERVER_BIN" \\
-    --host 0.0.0.0 \\
-    --port "$WHISPER_PORT" \\
-    --model "$MODEL_PATH" \\
-    --inference-path /v1/audio/transcriptions \\
-    --threads 8
-"""
-        
-        start_script_path = os.path.join(bin_dir, "start-whisper-server.sh")
-        with open(start_script_path, 'w') as f:
-            f.write(template_content)
-        os.chmod(start_script_path, 0o755)
-        
-        # Install launchagent on macOS
+        # Build return message based on results
         if system == "Darwin":
-            logger.info("Installing launchagent for whisper-server...")
-            launchagents_dir = os.path.expanduser("~/Library/LaunchAgents")
-            os.makedirs(launchagents_dir, exist_ok=True)
-            
-            # Create log directory
-            log_dir = os.path.join(voicemode_dir, 'logs', 'whisper')
-            os.makedirs(log_dir, exist_ok=True)
-            
-            plist_name = "com.voicemode.whisper.plist"
-            plist_path = os.path.join(launchagents_dir, plist_name)
-            
-            # Load plist template
-            # First try to load from source if running in development
-            source_template = Path(__file__).parent.parent.parent.parent / "templates" / "launchd" / "com.voicemode.whisper.plist"
-            if source_template.exists():
-                logger.info(f"Loading plist template from source: {source_template}")
-                plist_content = source_template.read_text()
-            else:
-                # Load from package resources
-                template_resource = files("voice_mode.templates.launchd").joinpath("com.voicemode.whisper.plist")
-                plist_content = template_resource.read_text()
-                logger.info("Loaded plist template from package resources")
-            
-            # Replace placeholders
-            plist_content = plist_content.replace("{START_SCRIPT_PATH}", start_script_path)
-            plist_content = plist_content.replace("{LOG_DIR}", os.path.join(voicemode_dir, 'logs'))
-            plist_content = plist_content.replace("{INSTALL_DIR}", install_dir)
-            
-            with open(plist_path, 'w') as f:
-                f.write(plist_content)
-            
-            # Unload if already loaded (ignore errors)
-            try:
-                subprocess.run(["launchctl", "unload", plist_path], capture_output=True)
-            except:
-                pass  # Ignore if not loaded
-            
-            # Don't load here - let enable_service handle it with the -w flag
-            # This prevents the "already loaded" error when enable_service runs
-            
-            # Handle auto_enable
-            enable_message = ""
-            if auto_enable is None:
-                auto_enable = SERVICE_AUTO_ENABLE
-            
-            if auto_enable:
-                logger.info("Auto-enabling whisper service...")
-                from voice_mode.tools.service import enable_service
-                enable_result = await enable_service("whisper")
-                if "✅" in enable_result:
-                    enable_message = " Service auto-enabled."
-                else:
-                    logger.warning(f"Auto-enable failed: {enable_result}")
-            
             current_version = get_current_version(Path(install_dir))
+            enable_message = " Service auto-enabled." if service_update_result.get("enabled") else ""
+            
             return {
                 "success": True,
                 "install_path": install_dir,
@@ -492,73 +618,16 @@ exec "$SERVER_BIN" \\
                     "server_port": 2022,
                     "server_url": "http://localhost:2022"
                 },
-                "launchagent": plist_path,
+                "launchagent": service_update_result.get("plist_path"),
                 "start_script": start_script_path,
                 "message": f"Successfully installed whisper.cpp {current_version} with {gpu_type} support and whisper-server on port 2022{enable_message}{' (' + migration_msg + ')' if migration_msg else ''}"
             }
         
-        # Install systemd service on Linux
         elif system == "Linux":
-            logger.info("Installing systemd user service for whisper-server...")
-            systemd_user_dir = os.path.expanduser("~/.config/systemd/user")
-            os.makedirs(systemd_user_dir, exist_ok=True)
-            
-            # Create log directory
-            log_dir = os.path.join(voicemode_dir, 'logs', 'whisper')
-            os.makedirs(log_dir, exist_ok=True)
-            
-            service_name = "voicemode-whisper.service"
-            service_path = os.path.join(systemd_user_dir, service_name)
-            
-            service_content = f"""[Unit]
-Description=Whisper.cpp Speech Recognition Server
-After=network.target
-
-[Service]
-Type=simple
-ExecStart={start_script_path}
-Restart=on-failure
-RestartSec=10
-WorkingDirectory={install_dir}
-StandardOutput=append:{os.path.join(voicemode_dir, 'logs', 'whisper', 'whisper.out.log')}
-StandardError=append:{os.path.join(voicemode_dir, 'logs', 'whisper', 'whisper.err.log')}
-Environment="PATH=/usr/local/bin:/usr/bin:/bin:/usr/local/cuda/bin"
-
-[Install]
-WantedBy=default.target
-"""
-            
-            with open(service_path, 'w') as f:
-                f.write(service_content)
-            
-            # Reload systemd and enable service
-            try:
-                subprocess.run(["systemctl", "--user", "daemon-reload"], check=True)
-                subprocess.run(["systemctl", "--user", "enable", service_name], check=True)
-                subprocess.run(["systemctl", "--user", "start", service_name], check=True)
-                
-                systemd_enabled = True
-                systemd_message = "Systemd service installed and started"
-            except subprocess.CalledProcessError as e:
-                systemd_enabled = False
-                systemd_message = f"Systemd service created but not started: {e}"
-                logger.warning(systemd_message)
-            
-            # Handle auto_enable
-            enable_message = ""
-            if auto_enable is None:
-                auto_enable = SERVICE_AUTO_ENABLE
-            
-            if auto_enable:
-                logger.info("Auto-enabling whisper service...")
-                from voice_mode.tools.service import enable_service
-                enable_result = await enable_service("whisper")
-                if "✅" in enable_result:
-                    enable_message = " Service auto-enabled."
-                else:
-                    logger.warning(f"Auto-enable failed: {enable_result}")
-            
             current_version = get_current_version(Path(install_dir))
+            enable_message = " Service auto-enabled." if service_update_result.get("enabled") else ""
+            systemd_message = "Systemd service installed"
+            
             return {
                 "success": True,
                 "install_path": install_dir,
@@ -574,21 +643,13 @@ WantedBy=default.target
                     "server_port": 2022,
                     "server_url": "http://localhost:2022"
                 },
-                "systemd_service": service_path,
-                "systemd_enabled": systemd_enabled,
+                "systemd_service": service_update_result.get("service_path"),
+                "systemd_enabled": service_update_result.get("enabled", False),
                 "start_script": start_script_path,
                 "message": f"Successfully installed whisper.cpp {current_version} with {gpu_type} support. {systemd_message}{enable_message}{' (' + migration_msg + ')' if migration_msg else ''}"
             }
         
         else:
-            # Handle auto_enable for other systems (if we add Windows support later)
-            enable_message = ""
-            if auto_enable is None:
-                auto_enable = SERVICE_AUTO_ENABLE
-            
-            if auto_enable:
-                logger.info("Auto-enable not supported on this platform")
-            
             current_version = get_current_version(Path(install_dir))
             return {
                 "success": True,
