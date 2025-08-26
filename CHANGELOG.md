@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.34.1] - 2025-08-26
+
 ### Fixed
 - **Whisper service enable command**
   - Fixed `voicemode whisper enable` using incorrect template variable names
@@ -15,8 +17,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Fixes KeyError 'START_SCRIPT_PATH' when enabling whisper service after installation
 
 ## [2.34.0] - 2025-08-26
-
-## [2.24.0] - 2025-08-26
 
 ### Changed
 - **Installer improvements**
