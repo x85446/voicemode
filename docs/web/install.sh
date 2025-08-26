@@ -450,17 +450,17 @@ install_voicemode() {
   print_step "Installing VoiceMode..."
 
   # Install voice-mode package with uv tool install
-  if uv tool install --upgrade voice-mode; then
+  if uv tool install --upgrade --force voice-mode; then
     print_success "VoiceMode installed successfully"
-    
+
     # Update shell to ensure PATH includes UV tools
     print_step "Updating shell PATH configuration..."
     if uv tool update-shell; then
       print_success "Shell PATH updated"
-      
+
       # Export PATH for current session
       export PATH="$HOME/.local/bin:$PATH"
-      
+
       # Source shell profile for immediate availability
       if [[ "$SHELL" == *"zsh"* ]] && [[ -f "$HOME/.zshrc" ]]; then
         source "$HOME/.zshrc" 2>/dev/null || true
@@ -566,21 +566,21 @@ setup_shell_completion() {
     # Check for existing bash-completion support
     local has_bash_completion=false
     local user_completions_dir="${XDG_DATA_HOME:-$HOME/.local/share}/bash-completion/completions"
-    
+
     # Check if bash-completion is installed
-    if [[ -f "/usr/share/bash-completion/bash_completion" ]] || \
-       [[ -f "/etc/bash_completion" ]] || \
-       (command -v brew >/dev/null 2>&1 && brew list bash-completion@2 >/dev/null 2>&1); then
+    if [[ -f "/usr/share/bash-completion/bash_completion" ]] ||
+      [[ -f "/etc/bash_completion" ]] ||
+      (command -v brew >/dev/null 2>&1 && brew list bash-completion@2 >/dev/null 2>&1); then
       has_bash_completion=true
     fi
-    
+
     if [[ "$has_bash_completion" == true ]]; then
       # Install completion file to user directory
       mkdir -p "$user_completions_dir"
-      
+
       # Generate and save completion file
       if command -v voicemode >/dev/null 2>&1; then
-        _VOICEMODE_COMPLETE=bash_source voicemode > "$user_completions_dir/voicemode" 2>/dev/null
+        _VOICEMODE_COMPLETE=bash_source voicemode >"$user_completions_dir/voicemode" 2>/dev/null
         if [[ -s "$user_completions_dir/voicemode" ]]; then
           print_success "Installed bash completion to $user_completions_dir/"
           echo "   Tab completion will be available in new bash sessions"
@@ -591,7 +591,7 @@ setup_shell_completion() {
         fi
       fi
     fi
-    
+
     if [[ "$has_bash_completion" == false ]]; then
       # Fallback: Add to shell RC file
       local completion_line='# VoiceMode shell completion
@@ -612,7 +612,7 @@ fi'
     # Detect best location for zsh completions
     local completion_dir=""
     local needs_fpath_update=false
-    
+
     # Check for Homebrew on macOS
     if [[ "$OS" == "macos" ]] && command -v brew >/dev/null 2>&1; then
       local brew_prefix=$(brew --prefix)
@@ -621,7 +621,7 @@ fi'
         print_debug "Using Homebrew zsh completion directory"
       fi
     fi
-    
+
     # Check standard locations if not found
     if [[ -z "$completion_dir" ]]; then
       for dir in \
@@ -637,25 +637,25 @@ fi'
         fi
       done
     fi
-    
+
     # Create directory if needed
     if [[ ! -d "$completion_dir" ]]; then
       mkdir -p "$completion_dir"
     fi
-    
+
     # Generate and install completion file (with underscore prefix)
     if command -v voicemode >/dev/null 2>&1; then
-      _VOICEMODE_COMPLETE=zsh_source voicemode > "$completion_dir/_voicemode" 2>/dev/null
+      _VOICEMODE_COMPLETE=zsh_source voicemode >"$completion_dir/_voicemode" 2>/dev/null
       if [[ -s "$completion_dir/_voicemode" ]]; then
         print_success "Installed zsh completion to $completion_dir/"
-        
+
         # Update fpath if using custom directory
         if [[ "$needs_fpath_update" == true ]]; then
           local fpath_line="fpath=($completion_dir \$fpath)"
           if [[ -f "$shell_rc" ]] && ! grep -q "$completion_dir" "$shell_rc" 2>/dev/null; then
-            echo "" >> "$shell_rc"
-            echo "# Add VoiceMode completions to fpath" >> "$shell_rc"
-            echo "$fpath_line" >> "$shell_rc"
+            echo "" >>"$shell_rc"
+            echo "# Add VoiceMode completions to fpath" >>"$shell_rc"
+            echo "$fpath_line" >>"$shell_rc"
             print_success "Added $completion_dir to fpath in $shell_rc"
           fi
         fi
@@ -751,7 +751,7 @@ check_voice_mode_cli() {
     return 0
   else
     print_warning "VoiceMode CLI not found" >&2
-    echo "  Please ensure VoiceMode was installed correctly with 'uv tool install voice-mode'" >&2
+    echo "  Please ensure VoiceMode was installed correctly with 'uv tool install --upgrade --force voice-mode'" >&2
     echo "  You may need to restart your shell or run: source ~/.bashrc" >&2
     return 1
   fi
