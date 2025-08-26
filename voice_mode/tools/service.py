@@ -582,12 +582,18 @@ async def enable_service(service_name: str) -> str:
                 if not model_file:
                     return "❌ No Whisper model found. Please run download_model first."
                 
+                # Find the start script
+                # whisper_bin is at ~/.voicemode/services/whisper/build/bin/whisper-server
+                # start script is at ~/.voicemode/services/whisper/bin/start-whisper-server.sh
+                install_dir = Path(whisper_bin).parent.parent.parent  # Go up from build/bin/whisper-server to whisper dir
+                start_script_path = install_dir / "bin" / "start-whisper-server.sh"
+                if not start_script_path.exists():
+                    return f"❌ Start script not found: {start_script_path}"
+                
                 content = template.format(
-                    WHISPER_BIN=whisper_bin,
-                    WHISPER_PORT=WHISPER_PORT,
-                    MODEL_FILE=model_file,
-                    LOG_DIR=logs_dir,
-                    WORKING_DIR=Path(whisper_bin).parent
+                    START_SCRIPT_PATH=str(start_script_path),
+                    LOG_DIR=str(logs_dir),
+                    INSTALL_DIR=str(install_dir)
                 )
             elif service_name == "kokoro":
                 kokoro_dir = find_kokoro_fastapi()
