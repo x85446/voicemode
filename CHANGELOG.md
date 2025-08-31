@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.1.0] - 2025-09-01
+
+### Added
+- **Pronunciation middleware for TTS/STT text processing**
+  - Configurable pronunciation rules system that processes text before TTS and after STT
+  - Regex-based text substitution rules with YAML configuration
+  - Separate TTS and STT rule sets for bidirectional corrections
+  - Privacy support - rules can be marked private to hide from LLM tool listings
+  - Default rules for common patterns (3M, PoE, GbE, etc.)
+  - Full CLI interface for managing pronunciation rules
+  - MCP tool for LLM-based rule management with `pronounce` tool
+  - Integrated into converse tool for automatic text processing
+  - New configuration file: `voice_mode/data/default_pronunciation.yaml`
+
 ## [4.0.1] - 2025-09-01
 
 ### Removed
