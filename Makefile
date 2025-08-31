@@ -1,6 +1,6 @@
 # Voice MCP Makefile
 
-.PHONY: help build-package build-dev test test-package publish-test publish release install dev-install clean build-voice-mode publish-voice-mode sync-tomls claude cursor docs docs-serve docs-build docs-check docs-deploy
+.PHONY: help build-package build-dev test test-package publish-test publish release install dev-install clean build-voice-mode publish-voice-mode sync-tomls claude cursor docs docs-serve docs-build docs-check docs-deploy coverage coverage-html coverage-xml test-unit test-integration test-all test-parallel test-markers
 
 # Default target
 help:
@@ -11,6 +11,17 @@ help:
 	@echo "  dev-install   - Install package in editable mode with dev dependencies"
 	@echo "  test          - Run unit tests with pytest"
 	@echo "  clean         - Remove build artifacts and caches"
+	@echo ""
+	@echo "Testing & Coverage:"
+	@echo "  test          - Run unit tests with pytest"
+	@echo "  coverage      - Run tests with coverage report"
+	@echo "  coverage-html - Generate and open HTML coverage report"
+	@echo "  coverage-xml  - Generate XML coverage report (for CI)"
+	@echo "  test-unit     - Run unit tests only"
+	@echo "  test-integration - Run integration tests"
+	@echo "  test-all      - Run all tests (including slow/manual)"
+	@echo "  test-parallel - Run tests in parallel"
+	@echo "  test-markers  - Show available test markers"
 	@echo "  CLAUDE.md     - Generate CLAUDE.md with consolidated startup context"
 	@echo ""
 	@echo "Python package targets:"
@@ -114,6 +125,7 @@ publish: build-package
 clean:
 	@echo "Cleaning build artifacts..."
 	rm -rf dist/ build/ *.egg-info .pytest_cache __pycache__
+	rm -rf htmlcov/ .coverage coverage.xml .coverage.*
 	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 	find . -type f -name "*.pyc" -delete
 	@echo "Cleanup complete!"
@@ -279,3 +291,95 @@ docs-deploy:
 	@# ReadTheDocs typically auto-builds from GitHub
 	@echo "Push to main branch to trigger ReadTheDocs build"
 	@echo "Or configure manual deployment in ReadTheDocs dashboard"
+
+# Run tests with coverage report
+coverage:
+	@echo "Running tests with coverage..."
+	@if [ ! -d ".venv" ]; then \
+		echo "Creating virtual environment..."; \
+		uv venv; \
+	fi
+	@echo "Installing test dependencies..."
+	@uv pip install -e ".[test]" -q
+	@echo "Running tests with coverage..."
+	@uv run pytest tests --cov --cov-report=html --cov-report=term
+	@echo ""
+	@echo "✅ Coverage report generated!"
+	@echo "   Terminal report shown above"
+	@echo "   HTML report: htmlcov/index.html"
+	@echo ""
+	@echo "Opening HTML coverage report..."
+	@open htmlcov/index.html 2>/dev/null || xdg-open htmlcov/index.html 2>/dev/null || echo "Please open htmlcov/index.html manually"
+
+# Generate HTML coverage report
+coverage-html: coverage
+	@echo "Opening coverage report in browser..."
+	@open htmlcov/index.html 2>/dev/null || xdg-open htmlcov/index.html 2>/dev/null || echo "Please open htmlcov/index.html manually"
+
+# Generate XML coverage report for CI
+coverage-xml:
+	@echo "Generating XML coverage report..."
+	@if [ ! -d ".venv" ]; then \
+		echo "Creating virtual environment..."; \
+		uv venv; \
+	fi
+	@echo "Installing test dependencies..."
+	@uv pip install -e ".[test]" -q
+	@uv run pytest tests --cov --cov-report=xml
+	@echo "XML coverage report generated: coverage.xml"
+
+# Run unit tests only
+test-unit:
+	@echo "Running unit tests..."
+	@if [ ! -d ".venv" ]; then \
+		echo "Creating virtual environment..."; \
+		uv venv; \
+	fi
+	@echo "Installing test dependencies..."
+	@uv pip install -e ".[test]" -q
+	@uv run pytest tests -v -m "unit or not integration"
+
+# Run integration tests only
+test-integration:
+	@echo "Running integration tests..."
+	@if [ ! -d ".venv" ]; then \
+		echo "Creating virtual environment..."; \
+		uv venv; \
+	fi
+	@echo "Installing test dependencies..."
+	@uv pip install -e ".[test]" -q
+	@uv run pytest tests -v -m "integration"
+
+# Run all tests (including slow and manual)
+test-all:
+	@echo "Running all tests..."
+	@if [ ! -d ".venv" ]; then \
+		echo "Creating virtual environment..."; \
+		uv venv; \
+	fi
+	@echo "Installing test dependencies..."
+	@uv pip install -e ".[test]" -q
+	@uv run pytest tests -v
+
+# Run tests in parallel (requires pytest-xdist)
+test-parallel:
+	@echo "Installing pytest-xdist..."
+	@if [ ! -d ".venv" ]; then \
+		echo "Creating virtual environment..."; \
+		uv venv; \
+	fi
+	@uv pip install -e ".[test]" -q
+	@uv pip install pytest-xdist -q
+	@echo "Running tests in parallel..."
+	@uv run pytest tests -n auto -v
+
+# Show available test markers
+test-markers:
+	@echo "Available test markers:"
+	@echo "  unit        - Fast, isolated unit tests"
+	@echo "  integration - Tests that interact with services"
+	@echo "  slow        - Tests that take > 1s"
+	@echo "  manual      - Tests requiring human interaction"
+	@echo ""
+	@echo "Usage: uv run pytest -m 'marker_name'"
+	@echo "Example: uv run pytest -m 'not slow'"

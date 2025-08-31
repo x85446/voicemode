@@ -117,3 +117,9 @@ models/
 *.mlpackage/
 *.mlmodel
 *.mlmodelc/
+
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
