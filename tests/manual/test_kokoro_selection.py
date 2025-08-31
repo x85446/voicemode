@@ -12,7 +12,7 @@ from voice_mode.provider_discovery import provider_registry
 async def test_provider_selection():
     """Test that the voice-first selection works correctly."""
     print("Testing voice-first provider selection...")
-    print(f"TTS_VOICES env: {os.getenv('VOICEMODE_TTS_VOICES', 'not set')}")
+    print(f"VOICES env: {os.getenv('VOICEMODE_VOICES', 'not set')}")
     print(f"TTS_BASE_URLS env: {os.getenv('VOICEMODE_TTS_BASE_URLS', 'not set')}")
     
     # Test 1: Default selection (should pick af_sky -> Kokoro if available)

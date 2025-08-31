@@ -20,11 +20,11 @@ OPENAI_API_KEY=your-key-here
 # The system will try URLs in order of preference
 VOICEMODE_TTS_BASE_URLS=http://127.0.0.1:8880/v1,https://api.openai.com/v1
 
-# TTS Voices (comma-separated list)
+# Voice Preferences (comma-separated list)
 # Default: af_sky,alloy
 # OpenAI voices: alloy, echo, fable, onyx, nova, shimmer
 # Kokoro voices: af_sky, af_sarah, af_nicole, af_lilly, af_zara, am_adam, am_michael, bf_emma, bf_isabella
-VOICEMODE_TTS_VOICES=af_sky,alloy
+VOICEMODE_VOICES=af_sky,alloy
 
 # TTS Models (comma-separated list)
 # Default: gpt-4o-mini-tts,tts-1-hd,tts-1
@@ -271,7 +271,7 @@ VOICEMODE_WHISPER_MODEL_PATH=~/.voicemode/models/whisper
 ### Use Kokoro TTS with OpenAI STT
 ```bash
 VOICEMODE_TTS_BASE_URLS=http://127.0.0.1:8880/v1,https://api.openai.com/v1
-VOICEMODE_TTS_VOICES=af_sky,af_nova
+VOICEMODE_VOICES=af_sky,af_nova
 VOICEMODE_STT_BASE_URLS=https://api.openai.com/v1
 OPENAI_API_KEY=your-key-here
 ```
@@ -280,14 +280,14 @@ OPENAI_API_KEY=your-key-here
 ```bash
 VOICEMODE_STT_BASE_URLS=http://127.0.0.1:2022/v1,https://api.openai.com/v1
 VOICEMODE_TTS_BASE_URLS=https://api.openai.com/v1
-VOICEMODE_TTS_VOICES=nova,alloy
+VOICEMODE_VOICES=nova,alloy
 OPENAI_API_KEY=your-key-here
 ```
 
 ### Use both local services (Kokoro + Whisper)
 ```bash
 VOICEMODE_TTS_BASE_URLS=http://127.0.0.1:8880/v1
-VOICEMODE_TTS_VOICES=af_sky,af_nova
+VOICEMODE_VOICES=af_sky,af_nova
 VOICEMODE_STT_BASE_URLS=http://127.0.0.1:2022/v1
 ```
 

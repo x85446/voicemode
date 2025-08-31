@@ -82,7 +82,7 @@ export VOICEMODE_TTS_BASE_URLS="http://127.0.0.1:8880/v1,https://api.openai.com/
 export VOICEMODE_STT_BASE_URLS="http://127.0.0.1:2022/v1,https://api.openai.com/v1"
 
 # Optional - Voice preferences (comma-separated lists)
-export VOICEMODE_TTS_VOICES="af_sky,nova,alloy"
+export VOICEMODE_VOICES="af_sky,nova,alloy"
 export VOICEMODE_TTS_MODELS="gpt-4o-mini-tts,tts-1-hd,tts-1"
 ```
 

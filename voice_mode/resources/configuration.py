@@ -267,7 +267,7 @@ async def environment_variables() -> str:
         ("VOICEMODE_AUTO_START_KOKORO", "Auto-start Kokoro service (true/false)"),
         ("VOICEMODE_TTS_BASE_URLS", "Comma-separated list of TTS endpoints"),
         ("VOICEMODE_STT_BASE_URLS", "Comma-separated list of STT endpoints"),
-        ("VOICEMODE_TTS_VOICES", "Comma-separated list of preferred voices"),
+        ("VOICEMODE_VOICES", "Comma-separated list of preferred voices"),
         ("VOICEMODE_TTS_MODELS", "Comma-separated list of preferred models"),
         # Audio Settings
         ("VOICEMODE_AUDIO_FORMAT", "Audio format for recording (pcm/mp3/wav/flac/aac/opus)"),
@@ -358,7 +358,7 @@ async def environment_template() -> str:
         f"export VOICEMODE_AUTO_START_KOKORO=\"{str(AUTO_START_KOKORO).lower()}\"",
         f"export VOICEMODE_TTS_BASE_URLS=\"{','.join(TTS_BASE_URLS)}\"",
         f"export VOICEMODE_STT_BASE_URLS=\"{','.join(STT_BASE_URLS)}\"",
-        f"export VOICEMODE_TTS_VOICES=\"{','.join(TTS_VOICES)}\"",
+        f"export VOICEMODE_VOICES=\"{','.join(TTS_VOICES)}\"",
         f"export VOICEMODE_TTS_MODELS=\"{','.join(TTS_MODELS)}\"",
         "",
         "# Audio Settings",
