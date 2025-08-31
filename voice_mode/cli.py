@@ -1359,12 +1359,17 @@ def cli():
 
 # Import subcommand groups
 from voice_mode.cli_commands import exchanges as exchanges_cmd
+from voice_mode.cli_commands import transcribe as transcribe_cmd
 
 # Add subcommands to legacy CLI
 cli.add_command(exchanges_cmd.exchanges)
+cli.add_command(transcribe_cmd.transcribe)
 
 # Add exchanges to main CLI
 voice_mode_main_cli.add_command(exchanges_cmd.exchanges)
+
+# Add transcribe to main CLI
+voice_mode_main_cli.add_command(transcribe_cmd.transcribe)
 
 
 # Converse command - direct voice conversation from CLI
