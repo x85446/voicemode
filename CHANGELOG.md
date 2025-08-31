@@ -9,9 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [4.0.0] - 2025-08-31
 
-## [3.35.0] - 2025-08-31
+### BREAKING CHANGES
+- **Unified voice configuration system**
+  - **BREAKING**: Replaced `.voices.txt` files with unified `.voicemode.env` configuration
+  - Changed environment variable from `VOICEMODE_TTS_VOICES` to `VOICEMODE_VOICES` for simplicity
+  - Implemented cascading configuration: env vars > project configs > global config  
+  - Added directory tree walking for project-specific configuration discovery
+  - Supports runtime configuration reloading via MCP tools
+  - **Migration Required**: Users must migrate from `.voices.txt` to `.voicemode.env` with `VOICEMODE_VOICES=voice1,voice2` format
 
 ### Added
+
 - **Comprehensive test coverage reporting system**
   - Integration with pytest-cov for coverage measurement
   - HTML coverage reports generated in htmlcov/ directory  
@@ -24,6 +32,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - New transcription CLI command for processing audio files
   - Comprehensive transcription backend supporting multiple formats
   - Word timing data available for improved accessibility and analysis
+
+- **Enhanced voice selection guide**
+  - Comprehensive documentation for voice selection across different providers
+  - Clear migration instructions from old `.voices.txt` system
+  
+### Removed  
+- **Legacy voice preference system**
+  - Removed 578 lines of old `voice_preferences.py` system
+  - Eliminated unreliable `.voices.txt` file parsing
+  - Removed associated test files for deprecated voice preference system
 
 ## [3.34.3] - 2025-08-26
 
