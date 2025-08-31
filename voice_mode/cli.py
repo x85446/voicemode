@@ -1746,9 +1746,9 @@ def update(force):
 # Sound Fonts command
 @voice_mode_main_cli.command("play-sound")
 @click.help_option('-h', '--help')
-@click.option('--tool', help='Tool name for direct command-line usage')
-@click.option('--action', default='start', type=click.Choice(['start', 'end']), help='Action type')
-@click.option('--subagent', help='Subagent type (for Task tool)')
+@click.option('-t', '--tool', help='Tool name for direct command-line usage')
+@click.option('-a', '--action', default='start', type=click.Choice(['start', 'end']), help='Action type')
+@click.option('-s', '--subagent', help='Subagent type (for Task tool)')
 def play_sound(tool, action, subagent):
     """Play sound based on tool events (primarily for Claude Code hooks).
     
