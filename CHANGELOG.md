@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.1] - 2025-09-01
+
+### Removed
+- Removed `whisperx` optional dependency to fix PyPI upload compatibility
+  - The dependency was specified as a Git URL which is not allowed for PyPI packages
+  - WhisperX functionality was recently added and not essential for core features
+
 ## [4.0.0] - 2025-08-31
 
 ### BREAKING CHANGES
