@@ -56,10 +56,6 @@ coreml = [
     "transformers",
     "ane-transformers",
 ]
-whisperx = [
-    "torch>=2.0.0",
-    "whisperx @ git+https://github.com/m-bain/whisperX.git",
-]
 dev = [
     "build>=1.0.0",
     "twine>=4.0.0",
