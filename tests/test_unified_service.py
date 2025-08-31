@@ -143,14 +143,34 @@ class TestUnifiedServiceTool:
         with patch('platform.system', return_value='Darwin'), \
              patch('voice_mode.tools.service.get_installed_service_version', return_value="1.0.0"), \
              patch('voice_mode.tools.service.load_service_file_version', return_value="1.0.0"), \
-             patch('voice_mode.tools.service.load_service_template', return_value="template content"), \
+             patch('voice_mode.tools.service.load_service_template', return_value="template content") as mock_template, \
              patch('voice_mode.tools.service.find_whisper_server', return_value="/path/to/whisper"), \
              patch('voice_mode.tools.service.find_whisper_model', return_value="/path/to/model.bin"), \
              patch('pathlib.Path.mkdir'), \
              patch('pathlib.Path.write_text'), \
+             patch('pathlib.Path.exists', return_value=True), \
+             patch('pathlib.Path.home') as mock_home, \
              patch('subprocess.run') as mock_run:
             
-            mock_run.return_value = MagicMock(returncode=0)
+            # Mock the template content with proper format string
+            mock_template.return_value = """<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.voicemode.whisper</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>{START_SCRIPT_PATH}</string>
+    </array>
+</dict>
+</plist>"""
+            
+            # Mock home directory to isolated test location
+            mock_home.return_value = Path("/tmp/test_home")
+            
+            # Mock subprocess.run to avoid real system calls
+            # This prevents any launchctl/systemctl commands from affecting real system
+            mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
             
             result = await service("whisper", "enable")
             assert "✅" in result
