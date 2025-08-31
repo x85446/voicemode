@@ -330,7 +330,7 @@ def reload_configuration():
 # Legacy variables have been removed - use the new list-based configuration:
 # - VOICEMODE_TTS_BASE_URLS (comma-separated list)
 # - VOICEMODE_STT_BASE_URLS (comma-separated list)
-# - VOICEMODE_TTS_VOICES (comma-separated list)
+# - VOICEMODE_VOICES (comma-separated list)
 # - VOICEMODE_TTS_MODELS (comma-separated list)
 
 # LiveKit configuration

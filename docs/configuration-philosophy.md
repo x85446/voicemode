@@ -45,10 +45,10 @@ This approach provides:
 
 ```bash
 # Host-provided (highest priority)
-export VOICEMODE_TTS_VOICES="nova,alloy"
+export VOICEMODE_VOICES="nova,alloy"
 
 # Or in ~/.voicemode/voicemode.env
-VOICEMODE_TTS_VOICES="af_sky,nova"
+VOICEMODE_VOICES="af_sky,nova"
 VOICEMODE_WHISPER_MODEL="base"
 
 # Environment variables always win over file config

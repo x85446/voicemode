@@ -109,7 +109,7 @@ async def update_config(key: str, value: str) -> str:
     """Update a configuration value in the voicemode.env file.
     
     Args:
-        key: The configuration key to update (e.g., 'VOICEMODE_TTS_VOICES')
+        key: The configuration key to update (e.g., 'VOICEMODE_VOICES')
         value: The new value for the configuration
     
     Returns:

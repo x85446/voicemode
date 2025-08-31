@@ -23,7 +23,7 @@ VOICEMODE_TTS_BASE_URLS=http://127.0.0.1:8880/v1,https://api.openai.com/v1
 VOICEMODE_STT_BASE_URLS=http://127.0.0.1:2022/v1,https://api.openai.com/v1
 
 # Comma-separated list of preferred TTS voices (tried in order of availability)
-VOICEMODE_TTS_VOICES=af_sky,nova,alloy
+VOICEMODE_VOICES=af_sky,nova,alloy
 
 # Comma-separated list of preferred TTS models (optional)
 VOICEMODE_TTS_MODELS=tts-1,gpt-4o-mini-tts
@@ -108,7 +108,7 @@ When a TTS request is made:
 ### Selection Priority
 
 1. User-specified voice/model/provider (if provided)
-2. First available voice from `VOICEMODE_TTS_VOICES`
+2. First available voice from `VOICEMODE_VOICES`
 3. First available model from `VOICEMODE_TTS_MODELS`
 4. First healthy endpoint from `VOICEMODE_TTS_BASE_URLS`
 
@@ -117,7 +117,7 @@ When a TTS request is made:
 Given:
 ```bash
 VOICEMODE_TTS_BASE_URLS=http://127.0.0.1:8880/v1,https://api.openai.com/v1
-VOICEMODE_TTS_VOICES=af_sky,nova,alloy
+VOICEMODE_VOICES=af_sky,nova,alloy
 ```
 
 If 127.0.0.1:8880 is healthy and has `af_sky`, use it. Otherwise, check if OpenAI has `nova` or `alloy`.
@@ -179,7 +179,7 @@ OPENAI_API_KEY=sk-...
 ```bash
 VOICEMODE_TTS_BASE_URLS=http://127.0.0.1:8880/v1,https://api.openai.com/v1
 VOICEMODE_STT_BASE_URLS=http://127.0.0.1:2022/v1,https://api.openai.com/v1
-VOICEMODE_TTS_VOICES=af_sky,nova,alloy
+VOICEMODE_VOICES=af_sky,nova,alloy
 OPENAI_API_KEY=sk-...
 ```
 
@@ -187,7 +187,7 @@ OPENAI_API_KEY=sk-...
 ```bash
 VOICEMODE_TTS_BASE_URLS=http://tts-prod.internal/v1,http://tts-backup.internal/v1,https://api.openai.com/v1
 VOICEMODE_STT_BASE_URLS=http://stt-prod.internal/v1,https://api.openai.com/v1
-VOICEMODE_TTS_VOICES=nova,alloy,echo
+VOICEMODE_VOICES=nova,alloy,echo
 VOICEMODE_TTS_MODELS=gpt-4o-mini-tts,tts-1-hd,tts-1
 OPENAI_API_KEY=sk-...
 ```

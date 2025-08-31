@@ -171,7 +171,7 @@ You can configure Voice Mode behavior with these environment variables:
 export VOICEMODE_TTS_BASE_URLS="http://127.0.0.1:8880/v1,https://api.openai.com/v1"
 
 # Prefer specific voices
-export VOICEMODE_TTS_VOICES="af_sky,nova,alloy"
+export VOICEMODE_VOICES="af_sky,nova,alloy"
 
 # Enable debug logging
 export VOICEMODE_DEBUG="true"

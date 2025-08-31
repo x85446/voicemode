@@ -271,7 +271,7 @@ VOICEMODE_WHISPER_MODEL_PATH=~/.voicemode/models/whisper
 ### Use Kokoro TTS with OpenAI STT
 ```bash
 VOICEMODE_TTS_BASE_URLS=http://127.0.0.1:8880/v1,https://api.openai.com/v1
-VOICEMODE_TTS_VOICES=af_sky,af_nova
+VOICEMODE_VOICES=af_sky,af_nova
 VOICEMODE_STT_BASE_URLS=https://api.openai.com/v1
 OPENAI_API_KEY=your-key-here
 ```
@@ -280,14 +280,14 @@ OPENAI_API_KEY=your-key-here
 ```bash
 VOICEMODE_STT_BASE_URLS=http://127.0.0.1:2022/v1,https://api.openai.com/v1
 VOICEMODE_TTS_BASE_URLS=https://api.openai.com/v1
-VOICEMODE_TTS_VOICES=nova,alloy
+VOICEMODE_VOICES=nova,alloy
 OPENAI_API_KEY=your-key-here
 ```
 
 ### Use both local services (Kokoro + Whisper)
 ```bash
 VOICEMODE_TTS_BASE_URLS=http://127.0.0.1:8880/v1
-VOICEMODE_TTS_VOICES=af_sky,af_nova
+VOICEMODE_VOICES=af_sky,af_nova
 VOICEMODE_STT_BASE_URLS=http://127.0.0.1:2022/v1
 ```
 
