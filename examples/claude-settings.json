@@ -1,0 +1,25 @@
+{
+  "model": "opus",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/admin/.local/bin/voicemode hook stdin-receiver"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/admin/.local/bin/voicemode hook stdin-receiver"
+          }
+        ]
+      }
+    ]
+  }
+}
