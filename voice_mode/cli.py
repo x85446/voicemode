@@ -1359,12 +1359,16 @@ def cli():
 
 # Import subcommand groups
 from voice_mode.cli_commands import exchanges as exchanges_cmd
+from voice_mode.cli_commands import hook as hook_cmd
 
 # Add subcommands to legacy CLI
 cli.add_command(exchanges_cmd.exchanges)
 
 # Add exchanges to main CLI
 voice_mode_main_cli.add_command(exchanges_cmd.exchanges)
+
+# Add hook command to main CLI
+voice_mode_main_cli.add_command(hook_cmd.hook)
 
 
 # Converse command - direct voice conversation from CLI
