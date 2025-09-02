@@ -1,6 +1,7 @@
 """Claude Code message extraction tools for Think Out Loud mode and conversation analysis."""
 
 import json
+import logging
 import os
 from pathlib import Path
 from typing import Optional, List, Dict, Any
@@ -8,6 +9,8 @@ from datetime import datetime
 
 from voice_mode.server import mcp
 from voice_mode.config import THINK_OUT_LOUD_ENABLED
+
+logger = logging.getLogger("voice-mode")
 
 
 def find_claude_log_file(working_dir: Optional[str] = None) -> Optional[Path]:
@@ -22,14 +25,20 @@ def find_claude_log_file(working_dir: Optional[str] = None) -> Optional[Path]:
     if working_dir is None:
         working_dir = os.getcwd()
     
-    # Transform path: /Users/admin/Code/project → -Users-admin-Code-project
-    project_dir = working_dir.replace('/', '-')
+    logger.debug(f"Looking for Claude logs in working_dir: {working_dir}")
+    
+    # Transform path: /Users/admin/Code/github.com/project → -Users-admin-Code-github-com-project
+    # Note: Both slashes and dots are replaced with hyphens
+    project_dir = working_dir.replace('/', '-').replace('.', '-')
+    logger.debug(f"Transformed project dir: {project_dir}")
     
     # Build path to Claude logs
     claude_base = Path.home() / '.claude' / 'projects'
     log_dir = claude_base / project_dir
+    logger.debug(f"Claude log directory: {log_dir}")
     
     if not log_dir.exists():
+        logger.warning(f"Claude log directory does not exist: {log_dir}")
         return None
     
     # Find most recent .jsonl file
@@ -39,7 +48,12 @@ def find_claude_log_file(working_dir: Optional[str] = None) -> Optional[Path]:
         reverse=True
     )
     
-    return log_files[0] if log_files else None
+    if log_files:
+        logger.info(f"Found {len(log_files)} Claude log files, using most recent: {log_files[0].name}")
+        return log_files[0]
+    else:
+        logger.warning(f"No .jsonl files found in {log_dir}")
+        return None
 
 
 def extract_messages_from_log(log_file: Path, last_n: int = 2, message_types: Optional[List[str]] = None) -> List[Dict[str, Any]]:
@@ -54,14 +68,17 @@ def extract_messages_from_log(log_file: Path, last_n: int = 2, message_types: Op
     Returns:
         List of messages with metadata
     """
+    logger.debug(f"Extracting {last_n} messages from {log_file}, types={message_types}")
     messages = []
     
     try:
         with open(log_file, 'r') as f:
             lines = f.readlines()
+        
+        logger.debug(f"Read {len(lines)} lines from log file")
             
         # Process lines in reverse to get most recent first
-        for line in reversed(lines):
+        for i, line in enumerate(reversed(lines)):
             if not line.strip():
                 continue
                 
@@ -75,6 +92,7 @@ def extract_messages_from_log(log_file: Path, last_n: int = 2, message_types: Op
                 
                 # Extract user or assistant messages
                 if entry_type in ['user', 'assistant']:
+                    logger.debug(f"Found {entry_type} message at line {len(lines) - i}")
                     message = entry.get('message', {})
                     
                     # Build message info
@@ -94,15 +112,17 @@ def extract_messages_from_log(log_file: Path, last_n: int = 2, message_types: Op
                     messages.append(message_info)
                     
                     if len(messages) >= last_n:
+                        logger.info(f"Extracted {len(messages)} messages successfully")
                         return messages
                         
-            except json.JSONDecodeError:
+            except json.JSONDecodeError as e:
+                logger.debug(f"Skipping invalid JSON at line {len(lines) - i}: {e}")
                 continue
                 
     except Exception as e:
-        # Log error but don't crash
-        print(f"Error reading log file: {e}")
-        
+        logger.error(f"Error reading log file {log_file}: {e}")
+    
+    logger.info(f"Extracted {len(messages)} messages (requested {last_n})")    
     return messages
 
 
@@ -152,8 +172,11 @@ def get_claude_messages(
     Returns:
         The extracted messages in the requested format
     """
+    logger.debug(f"get_claude_messages called: last_n={last_n}, working_dir={working_dir}, types={message_types}, format={format}")
+    
     # Check if Think Out Loud mode is enabled
     if not THINK_OUT_LOUD_ENABLED:
+        logger.warning("Think Out Loud mode is not enabled")
         return "Think Out Loud mode is not enabled. Set VOICEMODE_THINK_OUT_LOUD=true to enable."
     
     # Find the log file

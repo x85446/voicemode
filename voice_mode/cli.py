@@ -1361,15 +1361,18 @@ def cli():
 from voice_mode.cli_commands import exchanges as exchanges_cmd
 from voice_mode.cli_commands import transcribe as transcribe_cmd
 from voice_mode.cli_commands import pronounce_commands
+from voice_mode.cli_commands import claude
 
 # Add subcommands to legacy CLI
 cli.add_command(exchanges_cmd.exchanges)
 cli.add_command(transcribe_cmd.transcribe)
 cli.add_command(pronounce_commands.pronounce_group)
+cli.add_command(claude.claude_group)
 
 # Add exchanges to main CLI
 voice_mode_main_cli.add_command(exchanges_cmd.exchanges)
 voice_mode_main_cli.add_command(pronounce_commands.pronounce_group)
+voice_mode_main_cli.add_command(claude.claude_group)
 
 # Add transcribe to main CLI
 voice_mode_main_cli.add_command(transcribe_cmd.transcribe)
