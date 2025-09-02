@@ -841,3 +841,28 @@ def get_format_export_params(format: str) -> dict:
         pass
     
     return params
+
+# ==================== THINK OUT LOUD CONFIGURATION ====================
+
+# Enable Think Out Loud mode
+THINK_OUT_LOUD_ENABLED = env_bool("VOICEMODE_THINK_OUT_LOUD", False)
+
+# Voice persona mappings for thinking roles (role:voice pairs)
+# Default: analytical:am_adam,creative:af_sarah,critical:af_bella,synthesis:af_nova
+THINKING_VOICES_STR = os.getenv(
+    "VOICEMODE_THINKING_VOICES",
+    "analytical:am_adam,creative:af_sarah,critical:af_bella,synthesis:af_nova"
+)
+
+# Parse thinking voices into a dictionary
+THINKING_VOICES = {}
+for pair in THINKING_VOICES_STR.split(","):
+    if ":" in pair:
+        role, voice = pair.strip().split(":", 1)
+        THINKING_VOICES[role.strip()] = voice.strip()
+
+# Thinking presentation style: sequential, debate, or chorus
+THINKING_STYLE = os.getenv("VOICEMODE_THINKING_STYLE", "sequential")
+
+# Whether to announce which voice is speaking
+THINKING_ANNOUNCE_VOICE = env_bool("VOICEMODE_THINKING_ANNOUNCE_VOICE", True)
