@@ -182,6 +182,36 @@ VOICEMODE_MIN_RECORDING_DURATION=0.5
 VOICEMODE_INITIAL_SILENCE_GRACE_PERIOD=4.0
 ```
 
+## Think Out Loud Mode
+
+```bash
+# Enable Think Out Loud Mode
+# Default: false
+# When enabled, AI voices its internal reasoning process using multiple voice personas
+VOICEMODE_THINK_OUT_LOUD=false
+
+# Voice Persona Mappings (role:voice pairs)
+# Default: analytical:am_adam,creative:af_sky,critical:af_bella,synthesis:af_nova
+# Maps thinking roles to specific voices for multi-voice reasoning
+# Available roles: analytical, creative, critical, synthesis
+# Kokoro voices: am_adam, af_sky, af_bella, af_nova, af_sarah, am_michael
+VOICEMODE_THINKING_VOICES=analytical:am_adam,creative:af_sky,critical:af_bella,synthesis:af_nova
+
+# Think Out Loud Style
+# Default: sequential
+# How thinking voices are presented
+# Options:
+#   sequential - Each voice speaks in turn, building on previous thoughts
+#   debate - Voices engage in back-and-forth discussion
+#   chorus - Multiple perspectives presented rapidly
+VOICEMODE_THINKING_STYLE=sequential
+
+# Think Out Loud Introduction
+# Default: true
+# Whether to announce which voice is speaking (e.g., "Analytical perspective:")
+VOICEMODE_THINKING_ANNOUNCE_VOICE=true
+```
+
 ## Development & Debugging
 
 ```bash
