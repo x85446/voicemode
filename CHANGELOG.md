@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.2.0] - 2025-09-03
+
+### Added
+- **🧠 Think Out Loud Mode - AI Reasoning Made Audible**
+  - Revolutionary feature that transforms AI's internal thinking into spoken performances
+  - Extracts and voices Claude's reasoning blocks using multiple personas
+  - Herman's Head / Inside Out style multi-voice performances for different reasoning types
+  - Theditor agent that orchestrates thinking performances with distinct voices
+  - Makes AI decision-making transparent and engaging through voice
+
+- **🔊 Sound Fonts Integration - Audio Feedback for Every Action**
+  - Play custom sounds for tool operations, errors, and completions
+  - Filesystem-based sound font system with automatic discovery
+  - Claude Code integration via stdin-receiver for hook-based audio
+  - CLI command `play-sound` with theme, action, and sound selection
+  - Enhances user experience with auditory feedback during operations
+
+- **🎭 Claude Code Deep Integration**
+  - Extract and analyze Claude's conversation logs in real-time
+  - Access Claude's internal thinking blocks for transparency
+  - CLI commands for message extraction with multiple output formats
+  - Automatic context detection for Claude Code sessions
+  - Foundation for advanced AI introspection features
+
+### Changed
+- **Enhanced Message Extraction**
+  - Generic and flexible extraction supporting full conversations
+  - Multiple output formats: full messages, text only, or thinking only
+  - Better filtering by message type (user/assistant)
+  - Improved integration with voice mode tools
+
+### Removed
+- **Redundant get_claude_thinking MCP tool**
+  - Consolidated into more powerful get_claude_messages tool
+
+### Documentation
+- **Comprehensive Think Out Loud Documentation**
+  - Agent specifications for theditor
+  - Claude orchestration instructions
+  - Voice persona mapping guide
+  - Integration patterns and examples
+
 ## [4.1.0] - 2025-09-01
 
 ### Added
