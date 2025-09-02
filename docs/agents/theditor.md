@@ -36,18 +36,25 @@ class TheditorAgent:
         logs = sorted(log_path.glob('*.jsonl'), key=lambda p: p.stat().st_mtime)
         return logs[-1] if logs else None
     
-    def extract_thinking(self, log_file: Path) -> List[ThinkingEntry]:
-        """Extract thinking entries from JSONL log"""
-        thinking_entries = []
+    def extract_messages(self, log_file: Path, last_n: int = 2) -> List[dict]:
+        """Extract recent messages from JSONL log
+        
+        Uses the get_claude_messages MCP tool for extraction.
+        Returns messages in various formats for processing.
+        """
+        # The actual implementation uses MCP tools
+        # get_claude_messages(last_n=2, format="full")
+        # This shows the conceptual structure
+        messages = []
         with open(log_file) as f:
-            for line in f:
+            lines = list(f)
+            for line in reversed(lines[-100:]):  # Check recent lines
                 entry = json.loads(line)
-                if entry.get('type') == 'assistant':
-                    content = entry.get('message', {}).get('content', [])
-                    for item in content:
-                        if item.get('type') == 'thinking':
-                            thinking_entries.append(item['text'])
-        return thinking_entries
+                if entry.get('type') in ['user', 'assistant']:
+                    messages.append(entry)
+                    if len(messages) >= last_n:
+                        break
+        return messages
 ```
 
 ### Voice Persona Mapping

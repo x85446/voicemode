@@ -11,10 +11,20 @@ Activate Think Out Loud mode when:
 
 ## Orchestration Process
 
-### Step 1: Extract Thinking
-When you have just reasoned through a problem in your thinking tags:
+### Step 1: Extract Messages
+When you have just responded or reasoned through a problem:
 ```python
-# Use the MCP tool to extract your recent thinking
+# Use the MCP tool to extract recent messages
+# Option 1: Get full messages (user request + assistant response)
+messages = get_claude_messages(last_n=2, format="full")
+
+# Option 2: Get just the text content
+text_content = get_claude_messages(last_n=2, format="text")
+
+# Option 3: Extract only thinking (if present)
+thinking_text = get_claude_messages(last_n=1, format="thinking")
+
+# Or use the legacy wrapper for thinking
 thinking_text = get_claude_thinking()
 ```
 

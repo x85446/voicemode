@@ -1,4 +1,4 @@
-"""Claude Code thinking extraction tool for Think Out Loud mode."""
+"""Claude Code message extraction tools for Think Out Loud mode and conversation analysis."""
 
 import json
 import os
@@ -42,17 +42,19 @@ def find_claude_log_file(working_dir: Optional[str] = None) -> Optional[Path]:
     return log_files[0] if log_files else None
 
 
-def extract_thinking_from_log(log_file: Path, last_n: int = 1) -> List[Dict[str, Any]]:
-    """Extract thinking entries from Claude Code JSONL log.
+def extract_messages_from_log(log_file: Path, last_n: int = 2, message_types: Optional[List[str]] = None) -> List[Dict[str, Any]]:
+    """Extract messages from Claude Code JSONL log.
     
     Args:
         log_file: Path to the JSONL log file
-        last_n: Number of most recent thinking entries to return
+        last_n: Number of most recent messages to return (default: 2)
+        message_types: Optional list of message types to filter ('user', 'assistant', 'system')
+                      If None, returns all message types
         
     Returns:
-        List of thinking entries with metadata
+        List of messages with metadata
     """
-    thinking_entries = []
+    messages = []
     
     try:
         with open(log_file, 'r') as f:
@@ -65,26 +67,35 @@ def extract_thinking_from_log(log_file: Path, last_n: int = 1) -> List[Dict[str,
                 
             try:
                 entry = json.loads(line)
+                entry_type = entry.get('type')
                 
-                # Look for assistant messages with thinking
-                if entry.get('type') == 'assistant':
+                # Filter by message type if specified
+                if message_types and entry_type not in message_types:
+                    continue
+                
+                # Extract user or assistant messages
+                if entry_type in ['user', 'assistant']:
                     message = entry.get('message', {})
-                    content = message.get('content', [])
                     
-                    for item in content:
-                        if item.get('type') == 'thinking':
-                            thinking_text = item.get('text', '')
-                            if thinking_text:
-                                thinking_entries.append({
-                                    'text': thinking_text,
-                                    'timestamp': entry.get('timestamp'),
-                                    'uuid': entry.get('uuid'),
-                                    'raw_entry': entry
-                                })
-                                
-                                if len(thinking_entries) >= last_n:
-                                    return thinking_entries
-                                    
+                    # Build message info
+                    message_info = {
+                        'type': entry_type,
+                        'role': message.get('role'),
+                        'content': message.get('content', []),
+                        'timestamp': entry.get('timestamp'),
+                        'uuid': entry.get('uuid'),
+                        'model': message.get('model') if entry_type == 'assistant' else None
+                    }
+                    
+                    # Add usage info for assistant messages
+                    if entry_type == 'assistant' and 'usage' in message:
+                        message_info['usage'] = message['usage']
+                    
+                    messages.append(message_info)
+                    
+                    if len(messages) >= last_n:
+                        return messages
+                        
             except json.JSONDecodeError:
                 continue
                 
@@ -92,28 +103,54 @@ def extract_thinking_from_log(log_file: Path, last_n: int = 1) -> List[Dict[str,
         # Log error but don't crash
         print(f"Error reading log file: {e}")
         
-    return thinking_entries
+    return messages
+
+
+def extract_thinking_from_messages(messages: List[Dict[str, Any]]) -> List[str]:
+    """Extract thinking content from a list of messages.
+    
+    Args:
+        messages: List of message dictionaries
+        
+    Returns:
+        List of thinking text strings
+    """
+    thinking_texts = []
+    
+    for message in messages:
+        if message.get('type') == 'assistant':
+            content = message.get('content', [])
+            for item in content:
+                if isinstance(item, dict) and item.get('type') == 'thinking':
+                    text = item.get('text', '').strip()
+                    if text:
+                        thinking_texts.append(text)
+    
+    return thinking_texts
 
 
 @mcp.tool
-def get_claude_thinking(
-    last_n: int = 1,
+def get_claude_messages(
+    last_n: int = 2,
     working_dir: Optional[str] = None,
-    include_metadata: bool = False
+    message_types: Optional[List[str]] = None,
+    format: str = "full"
 ) -> str:
-    """Extract thinking from Claude Code conversation logs.
+    """Extract messages from Claude Code conversation logs.
     
-    This tool reads Claude Code's conversation logs to extract thinking entries
-    that can be used for Think Out Loud mode. It's designed to work specifically
-    with Claude Code's log format.
+    This tool reads Claude Code's conversation logs to extract recent messages
+    for Think Out Loud mode and conversation analysis.
     
     Args:
-        last_n: Number of most recent thinking entries to return (default: 1)
+        last_n: Number of most recent messages to return (default: 2)
         working_dir: Working directory to find logs for (defaults to CWD)
-        include_metadata: Include timestamp and UUID metadata
+        message_types: Optional list to filter by type ('user', 'assistant'). 
+                       If None, returns all types.
+        format: Output format - 'full' (complete message), 'text' (just text content),
+                'thinking' (just thinking content)
         
     Returns:
-        The extracted thinking text, or an error message if not found
+        The extracted messages in the requested format
     """
     # Check if Think Out Loud mode is enabled
     if not THINK_OUT_LOUD_ENABLED:
@@ -124,34 +161,91 @@ def get_claude_thinking(
     if not log_file:
         return f"Could not find Claude Code logs for directory: {working_dir or os.getcwd()}"
     
-    # Extract thinking
-    thinking_entries = extract_thinking_from_log(log_file, last_n)
+    # Extract messages
+    messages = extract_messages_from_log(log_file, last_n, message_types)
     
-    if not thinking_entries:
-        return "No thinking entries found in recent Claude Code logs."
+    if not messages:
+        return f"No messages found in recent Claude Code logs."
     
-    # Format output
-    if len(thinking_entries) == 1 and not include_metadata:
-        return thinking_entries[0]['text']
+    # Format output based on requested format
+    if format == "thinking":
+        # Extract only thinking content
+        thinking_texts = extract_thinking_from_messages(messages)
+        if not thinking_texts:
+            return "No thinking content found in recent messages."
+        if len(thinking_texts) == 1:
+            return thinking_texts[0]
+        return "\n\n=== Next Thinking ===\n\n".join(thinking_texts)
     
-    # Multiple entries or metadata requested
-    result = []
-    for i, entry in enumerate(thinking_entries, 1):
-        if include_metadata:
-            timestamp = entry.get('timestamp', 'Unknown')
-            uuid = entry.get('uuid', 'Unknown')
-            result.append(f"=== Thinking Entry {i} ===")
-            result.append(f"Timestamp: {timestamp}")
-            result.append(f"UUID: {uuid}")
-            result.append(f"Text:\n{entry['text']}")
+    elif format == "text":
+        # Extract just the text content
+        result = []
+        for msg in messages:
+            content_text = []
+            for item in msg.get('content', []):
+                if isinstance(item, dict):
+                    if item.get('type') == 'text':
+                        content_text.append(item.get('text', ''))
+                    elif item.get('type') == 'thinking':
+                        content_text.append(f"[Thinking: {item.get('text', '')}]")
+            if content_text:
+                result.append(f"{msg['type'].title()}: {' '.join(content_text)}")
+        return "\n\n".join(result)
+    
+    else:  # format == "full"
+        # Return complete message structure
+        result = []
+        for i, msg in enumerate(messages, 1):
+            result.append(f"=== Message {i} ===")
+            result.append(f"Type: {msg['type']}")
+            result.append(f"Timestamp: {msg.get('timestamp', 'Unknown')}")
+            if msg.get('model'):
+                result.append(f"Model: {msg['model']}")
+            
+            # Format content
+            content = msg.get('content', [])
+            if content:
+                result.append("Content:")
+                for item in content:
+                    if isinstance(item, dict):
+                        item_type = item.get('type', 'unknown')
+                        if item_type == 'text':
+                            result.append(f"  [Text]: {item.get('text', '')}")
+                        elif item_type == 'thinking':
+                            result.append(f"  [Thinking]: {item.get('text', '')}")
+                        elif item_type == 'tool_use':
+                            result.append(f"  [Tool Use]: {item.get('name', '')}")
+                        elif item_type == 'tool_result':
+                            result.append(f"  [Tool Result]: {item.get('content', '')[:100]}...")
             result.append("")
-        else:
-            if len(thinking_entries) > 1:
-                result.append(f"=== Thinking Entry {i} ===")
-            result.append(entry['text'])
-            result.append("")
+        
+        return "\n".join(result).strip()
+
+
+@mcp.tool
+def get_claude_thinking(
+    last_n: int = 1,
+    working_dir: Optional[str] = None
+) -> str:
+    """Extract thinking content from Claude Code logs (legacy compatibility).
     
-    return "\n".join(result).strip()
+    This is a convenience wrapper that extracts only thinking content.
+    For more flexibility, use get_claude_messages instead.
+    
+    Args:
+        last_n: Number of messages to search for thinking (default: 1)
+        working_dir: Working directory to find logs for (defaults to CWD)
+        
+    Returns:
+        The extracted thinking text, or an error message if not found
+    """
+    # Use the more general function with thinking format
+    return get_claude_messages(
+        last_n=last_n,
+        working_dir=working_dir,
+        message_types=['assistant'],
+        format='thinking'
+    )
 
 
 @mcp.tool
