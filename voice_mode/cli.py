@@ -57,6 +57,14 @@ def voice_mode() -> None:
     voice_mode_main_cli()
 
 
+# Audio group for audio-related commands
+@voice_mode_main_cli.group()
+@click.help_option('-h', '--help', help='Show this message and exit')
+def audio():
+    """Audio transcription and playback commands."""
+    pass
+
+
 # Service group commands
 @voice_mode_main_cli.group()
 @click.help_option('-h', '--help', help='Show this message and exit')
@@ -1372,15 +1380,25 @@ cli.add_command(claude.claude_group)
 
 # Add exchanges to main CLI
 voice_mode_main_cli.add_command(exchanges_cmd.exchanges)
-voice_mode_main_cli.add_command(pronounce_commands.pronounce_group)
 voice_mode_main_cli.add_command(claude.claude_group)
 
-# Add transcribe to main CLI
-voice_mode_main_cli.add_command(transcribe_cmd.transcribe)
+# Note: We'll add these commands after the groups are defined
+# audio group will get transcribe and play commands
+# claude group will get hook command  
+# config group will get pronounce command
 
-# Add hook command to main CLI
-voice_mode_main_cli.add_command(hook_cmd.hook)
 
+# Now add the subcommands to their respective groups
+# Add transcribe command to audio group
+transcribe_audio_cmd = transcribe_cmd.transcribe.commands['audio']
+transcribe_audio_cmd.name = 'transcribe'
+audio.add_command(transcribe_audio_cmd)
+
+# Add hook command under claude group  
+claude.claude_group.add_command(hook_cmd.hook)
+
+# Add pronounce under config group
+config.add_command(pronounce_commands.pronounce_group)
 
 # Converse command - direct voice conversation from CLI
 @voice_mode_main_cli.command()
@@ -1759,7 +1777,7 @@ def update(force):
 
 
 # Sound Fonts command
-@voice_mode_main_cli.command("play-sound")
+@audio.command("play")
 @click.help_option('-h', '--help')
 @click.option('-t', '--tool', help='Tool name for direct command-line usage')
 @click.option('-a', '--action', default='start', type=click.Choice(['start', 'end']), help='Action type')

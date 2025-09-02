@@ -86,25 +86,32 @@ def stdin_receiver(tool_name, action, subagent_type, event, debug):
         print(f"[DEBUG] Processing: event={event_name}, tool={tool_name}, "
               f"action={action}, subagent={subagent_type}", file=sys.stderr)
     
-    # Find sound file using filesystem conventions
-    sound_file = find_sound_file(event_name, tool_name, subagent_type)
+    # Check if sound fonts are enabled
+    from voice_mode.config import SOUND_FONTS_ENABLED
     
-    if sound_file:
+    if not SOUND_FONTS_ENABLED:
         if debug:
-            print(f"[DEBUG] Found sound file: {sound_file}", file=sys.stderr)
-        
-        # Play the sound
-        player = Player()
-        success = player.play(str(sound_file))
-        
-        if debug:
-            if success:
-                print(f"[DEBUG] Sound played successfully", file=sys.stderr)
-            else:
-                print(f"[DEBUG] Failed to play sound", file=sys.stderr)
+            print(f"[DEBUG] Sound fonts are disabled (VOICEMODE_SOUND_FONTS_ENABLED=false)", file=sys.stderr)
     else:
-        if debug:
-            print(f"[DEBUG] No sound file found for this event", file=sys.stderr)
+        # Find sound file using filesystem conventions
+        sound_file = find_sound_file(event_name, tool_name, subagent_type)
+        
+        if sound_file:
+            if debug:
+                print(f"[DEBUG] Found sound file: {sound_file}", file=sys.stderr)
+            
+            # Play the sound
+            player = Player()
+            success = player.play(str(sound_file))
+            
+            if debug:
+                if success:
+                    print(f"[DEBUG] Sound played successfully", file=sys.stderr)
+                else:
+                    print(f"[DEBUG] Failed to play sound", file=sys.stderr)
+        else:
+            if debug:
+                print(f"[DEBUG] No sound file found for this event", file=sys.stderr)
     
     # Always exit 0 to not disrupt Claude Code
     sys.exit(0)
@@ -114,11 +121,11 @@ def find_sound_file(event: str, tool: str, subagent: Optional[str] = None) -> Op
     """
     Find sound file using filesystem conventions.
     
-    Tries paths in order:
-    1. Most specific: {event}/{tool}/subagent/{subagent}.wav (Task tool only)
-    2. Tool default: {event}/{tool}/default.wav
-    3. Event default: {event}/default.wav
-    4. Global fallback: fallback.wav
+    Tries paths in order (mp3 preferred over wav for size):
+    1. Most specific: {event}/{tool}/subagent/{subagent}.{mp3,wav} (Task tool only)
+    2. Tool default: {event}/{tool}/default.{mp3,wav}
+    3. Event default: {event}/default.{mp3,wav}
+    4. Global fallback: fallback.{mp3,wav}
     
     Args:
         event: Event name (PreToolUse, PostToolUse)
@@ -157,15 +164,20 @@ def find_sound_file(event: str, tool: str, subagent: Optional[str] = None) -> Op
     
     # 1. Most specific: subagent sound (Task tool only)
     if tool == 'task' and subagent:
+        # Try mp3 first (smaller), then wav
+        paths_to_try.append(base_path / event_dir / tool / 'subagent' / f'{subagent}.mp3')
         paths_to_try.append(base_path / event_dir / tool / 'subagent' / f'{subagent}.wav')
     
     # 2. Tool-specific default
+    paths_to_try.append(base_path / event_dir / tool / 'default.mp3')
     paths_to_try.append(base_path / event_dir / tool / 'default.wav')
     
     # 3. Event-level default
+    paths_to_try.append(base_path / event_dir / 'default.mp3')
     paths_to_try.append(base_path / event_dir / 'default.wav')
     
     # 4. Global fallback
+    paths_to_try.append(base_path / 'fallback.mp3')
     paths_to_try.append(base_path / 'fallback.wav')
     
     # Find first existing file

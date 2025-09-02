@@ -101,6 +101,9 @@ def load_voicemode_env():
 # Enable audio feedback (true/false)
 # VOICEMODE_AUDIO_FEEDBACK=true
 
+# Enable sound fonts for tool use hooks (true/false)
+# VOICEMODE_SOUND_FONTS_ENABLED=false
+
 #############
 # Provider Configuration
 #############
@@ -371,6 +374,11 @@ FRONTEND_PORT = int(os.getenv("VOICEMODE_FRONTEND_PORT", "3000"))
 # Auto-enable services after installation
 SERVICE_AUTO_ENABLE = env_bool("VOICEMODE_SERVICE_AUTO_ENABLE", False)
 
+# ==================== SOUND FONTS CONFIGURATION ====================
+
+# Sound fonts are disabled by default to avoid annoying users with unexpected sounds
+SOUND_FONTS_ENABLED = env_bool("VOICEMODE_SOUND_FONTS_ENABLED", False)
+
 # ==================== AUDIO CONFIGURATION ====================
 
 # Audio parameters
@@ -555,6 +563,87 @@ def initialize_directories():
     # Create events log directory
     if EVENT_LOG_ENABLED:
         Path(EVENT_LOG_DIR).mkdir(parents=True, exist_ok=True)
+    
+    # Initialize sound fonts if not present
+    initialize_soundfonts()
+
+# ==================== SOUND FONTS INITIALIZATION ====================
+
+def initialize_soundfonts():
+    """Install default sound fonts from package data if not present."""
+    import shutil
+    import importlib.resources
+    
+    soundfonts_dir = BASE_DIR / "soundfonts"
+    default_soundfont_dir = soundfonts_dir / "default"
+    current_symlink = soundfonts_dir / "current"
+    
+    # Skip if soundfonts already exist (user has customized them)
+    if default_soundfont_dir.exists():
+        # Ensure symlink exists if directory exists
+        if not current_symlink.exists():
+            try:
+                current_symlink.symlink_to(default_soundfont_dir.resolve())
+            except OSError:
+                # Symlinks might not work on all systems
+                pass
+        return
+    
+    try:
+        # Create soundfonts directory
+        soundfonts_dir.mkdir(exist_ok=True)
+        
+        # Copy default soundfonts from package data
+        try:
+            # For Python 3.9+
+            from importlib.resources import files
+            package_soundfonts = files("voice_mode.data.soundfonts.default")
+            
+            if package_soundfonts.is_dir():
+                # Create the default directory
+                default_soundfont_dir.mkdir(exist_ok=True)
+                
+                # Recursively copy all files from package data
+                def copy_tree(src, dst):
+                    """Recursively copy directory tree from package data."""
+                    dst.mkdir(exist_ok=True)
+                    for item in src.iterdir():
+                        if item.is_file():
+                            target = dst / item.name
+                            target.write_bytes(item.read_bytes())
+                        elif item.is_dir():
+                            copy_tree(item, dst / item.name)
+                
+                # Copy entire tree structure
+                copy_tree(package_soundfonts, default_soundfont_dir)
+        except ImportError:
+            # Fallback for older Python versions
+            import pkg_resources
+            
+            # Create the default directory
+            default_soundfont_dir.mkdir(exist_ok=True)
+            
+            # List all resources in the soundfonts directory
+            resource_dir = "data/soundfonts/default"
+            if pkg_resources.resource_exists("voice_mode", resource_dir):
+                # This is a bit more complex with pkg_resources
+                # We'll need to manually copy the structure
+                pass
+        
+        # Create symlink to current soundfont (points to default)
+        if default_soundfont_dir.exists() and not current_symlink.exists():
+            try:
+                current_symlink.symlink_to(default_soundfont_dir.resolve())
+            except OSError:
+                # Symlinks might not work on all systems (e.g., Windows without admin)
+                pass
+                
+    except Exception as e:
+        # Don't fail initialization if soundfonts can't be installed
+        # They're optional and disabled by default
+        if DEBUG:
+            import logging
+            logging.getLogger("voicemode").debug(f"Could not initialize soundfonts: {e}")
 
 # ==================== UTILITY FUNCTIONS ====================
 

@@ -1,0 +1,3 @@
+recursive-include voice_mode/data/soundfonts *.mp3
+include voice_mode/data/*.yaml
+include voice_mode/data/*.json

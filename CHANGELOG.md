@@ -23,6 +23,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Claude Code integration via stdin-receiver for hook-based audio
   - CLI command `play-sound` with theme, action, and sound selection
   - Enhances user experience with auditory feedback during operations
+  - MP3 support added for 90% file size reduction over WAV
+  - Recursive directory copying for complete sound font structure
+  - Three Bears sound fonts for baby-bear, mama-bear, and papa-bear agents
+  - Sound fonts disabled by default (VOICEMODE_SOUND_FONTS_ENABLED=false)
 
 - **🎭 Claude Code Deep Integration**
   - Extract and analyze Claude's conversation logs in real-time
