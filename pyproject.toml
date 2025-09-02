@@ -47,6 +47,7 @@ dependencies = [
     "livekit-plugins-openai>=0.10.1",
     "livekit-plugins-silero>=0.6.5",
     "click>=8.0.0",
+    "pyyaml>=6.0.0",
 ]
 
 [project.optional-dependencies]

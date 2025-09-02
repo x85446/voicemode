@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = ">=3.10"
 resolution-markers = [
     "python_full_version >= '3.13'",
@@ -4714,6 +4714,7 @@ dependencies = [
     { name = "openai" },
     { name = "psutil" },
     { name = "pydub" },
+    { name = "pyyaml" },
     { name = "scipy" },
     { name = "setuptools" },
     { name = "simpleaudio" },
@@ -4803,6 +4804,7 @@ requires-dist = [
     { name = "pytest-mock", marker = "extra == 'test'", specifier = ">=3.10.0" },
     { name = "pytest-timeout", marker = "extra == 'test'", specifier = ">=2.2.0" },
     { name = "pytest-xdist", marker = "extra == 'test'", specifier = ">=3.5.0" },
+    { name = "pyyaml", specifier = ">=6.0.0" },
     { name = "scipy" },
     { name = "setuptools" },
     { name = "simpleaudio" },
