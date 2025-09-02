@@ -191,11 +191,12 @@ VOICEMODE_INITIAL_SILENCE_GRACE_PERIOD=4.0
 VOICEMODE_THINK_OUT_LOUD=false
 
 # Voice Persona Mappings (role:voice pairs)
-# Default: analytical:am_adam,creative:af_sky,critical:af_bella,synthesis:af_nova
+# Default: analytical:am_adam,creative:af_sarah,critical:af_bella,synthesis:af_nova
 # Maps thinking roles to specific voices for multi-voice reasoning
 # Available roles: analytical, creative, critical, synthesis
-# Kokoro voices: am_adam, af_sky, af_bella, af_nova, af_sarah, am_michael
-VOICEMODE_THINKING_VOICES=analytical:am_adam,creative:af_sky,critical:af_bella,synthesis:af_nova
+# Kokoro voices: am_adam, af_sarah, af_bella, af_nova, af_nicole, am_michael
+# Note: af_sky reserved for main conversation voice, not inner thinking
+VOICEMODE_THINKING_VOICES=analytical:am_adam,creative:af_sarah,critical:af_bella,synthesis:af_nova
 
 # Think Out Loud Style
 # Default: sequential

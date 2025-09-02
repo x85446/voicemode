@@ -60,7 +60,7 @@ THINKING_PERSONAS = {
         'triggers': ['analyzing', 'constraints', 'technical', 'requirements']
     },
     'creative': {
-        'voice': 'af_sky',
+        'voice': 'af_sarah',  # af_sky reserved for main conversation
         'provider': 'kokoro',
         'triggers': ['what if', 'alternatively', 'imagine', 'could']
     },
