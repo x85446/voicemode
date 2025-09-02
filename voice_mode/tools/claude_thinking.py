@@ -246,32 +246,6 @@ def get_claude_messages(
 
 
 @mcp.tool
-def get_claude_thinking(
-    last_n: int = 1,
-    working_dir: Optional[str] = None
-) -> str:
-    """Extract thinking content from Claude Code logs (legacy compatibility).
-    
-    This is a convenience wrapper that extracts only thinking content.
-    For more flexibility, use get_claude_messages instead.
-    
-    Args:
-        last_n: Number of messages to search for thinking (default: 1)
-        working_dir: Working directory to find logs for (defaults to CWD)
-        
-    Returns:
-        The extracted thinking text, or an error message if not found
-    """
-    # Use the more general function with thinking format
-    return get_claude_messages(
-        last_n=last_n,
-        working_dir=working_dir,
-        message_types=['assistant'],
-        format='thinking'
-    )
-
-
-@mcp.tool
 def check_claude_context() -> str:
     """Check if running in Claude Code context.
     
