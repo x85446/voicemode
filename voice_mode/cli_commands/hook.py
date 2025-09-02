@@ -87,11 +87,11 @@ def stdin_receiver(tool_name, action, subagent_type, event, debug):
               f"action={action}, subagent={subagent_type}", file=sys.stderr)
     
     # Check if sound fonts are enabled
-    from voice_mode.config import SOUND_FONTS_ENABLED
+    from voice_mode.config import SOUNDFONTS_ENABLED
     
-    if not SOUND_FONTS_ENABLED:
+    if not SOUNDFONTS_ENABLED:
         if debug:
-            print(f"[DEBUG] Sound fonts are disabled (VOICEMODE_SOUND_FONTS_ENABLED=false)", file=sys.stderr)
+            print(f"[DEBUG] Sound fonts are disabled (VOICEMODE_SOUNDFONTS_ENABLED=false)", file=sys.stderr)
     else:
         # Find sound file using filesystem conventions
         sound_file = find_sound_file(event_name, tool_name, subagent_type)

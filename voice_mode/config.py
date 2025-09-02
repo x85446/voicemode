@@ -102,7 +102,7 @@ def load_voicemode_env():
 # VOICEMODE_AUDIO_FEEDBACK=true
 
 # Enable sound fonts for tool use hooks (true/false)
-# VOICEMODE_SOUND_FONTS_ENABLED=false
+# VOICEMODE_SOUNDFONTS_ENABLED=false
 
 #############
 # Provider Configuration
@@ -377,7 +377,7 @@ SERVICE_AUTO_ENABLE = env_bool("VOICEMODE_SERVICE_AUTO_ENABLE", False)
 # ==================== SOUND FONTS CONFIGURATION ====================
 
 # Sound fonts are disabled by default to avoid annoying users with unexpected sounds
-SOUND_FONTS_ENABLED = env_bool("VOICEMODE_SOUND_FONTS_ENABLED", False)
+SOUNDFONTS_ENABLED = env_bool("VOICEMODE_SOUNDFONTS_ENABLED", False)
 
 # ==================== AUDIO CONFIGURATION ====================
 
