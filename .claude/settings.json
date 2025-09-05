@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "~/.local/bin/voicemode claude hook stdin-receiver"
+            "command": "voicemode claude hook stdin-receive || true"
           }
         ]
       }
@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "~/.local/bin/voicemode claude hook stdin-receiver"
+            "command": "voicemode claude hook stdin-receiver || true"
           }
         ]
       }
