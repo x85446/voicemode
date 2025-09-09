@@ -1394,8 +1394,9 @@ transcribe_audio_cmd = transcribe_cmd.transcribe.commands['audio']
 transcribe_audio_cmd.name = 'transcribe'
 audio.add_command(transcribe_audio_cmd)
 
-# Add hook command under claude group
-claude.claude_group.add_command(hook_cmd.hook)
+# Add hooks command under claude group
+from voice_mode.cli_commands.hook import hooks
+claude.claude_group.add_command(hooks)
 
 # Add pronounce under config group
 config.add_command(pronounce_commands.pronounce_group)

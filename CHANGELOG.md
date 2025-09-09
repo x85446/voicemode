@@ -26,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **🔊 Sound Fonts Integration - Audio Feedback for Every Action**
   - Play custom sounds for tool operations, errors, and completions
   - Filesystem-based sound font system with automatic discovery
-  - Claude Code integration via stdin-receiver for hook-based audio
+  - Claude Code integration via receiver for hook-based audio
   - CLI command `play-sound` with theme, action, and sound selection
   - Enhances user experience with auditory feedback during operations
   - MP3 support added for 90% file size reduction over WAV

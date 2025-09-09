@@ -12,18 +12,18 @@ from typing import Optional
 
 @click.group()
 @click.help_option('-h', '--help', help='Show this message and exit')
-def hook():
+def hooks():
     """Manage Voice Mode hooks and event handlers."""
     pass
 
 
-@hook.command('stdin-receiver')
+@hooks.command('receiver')
 @click.option('--tool-name', help='Override tool name (for testing)')
 @click.option('--action', type=click.Choice(['start', 'end']), help='Override action (for testing)')
 @click.option('--subagent-type', help='Override subagent type (for testing)')
 @click.option('--event', type=click.Choice(['PreToolUse', 'PostToolUse']), help='Override event (for testing)')
 @click.option('--debug', is_flag=True, help='Enable debug output')
-def stdin_receiver(tool_name, action, subagent_type, event, debug):
+def receiver(tool_name, action, subagent_type, event, debug):
     """Receive and process hook events from Claude Code via stdin.
     
     This command reads JSON from stdin when called by Claude Code hooks,
@@ -34,13 +34,13 @@ def stdin_receiver(tool_name, action, subagent_type, event, debug):
     
     Examples:
         # Called by Claude Code (reads JSON from stdin)
-        voicemode hook stdin-receiver
+        voicemode claude hooks receiver
         
         # Testing with defaults
-        voicemode hook stdin-receiver --debug
+        voicemode claude hooks receiver --debug
         
         # Testing with specific values
-        voicemode hook stdin-receiver --tool-name Task --action start --subagent-type mama-bear
+        voicemode claude hooks receiver --tool-name Task --action start --subagent-type mama-bear
     """
     from voice_mode.tools.sound_fonts.audio_player import Player
     
@@ -188,22 +188,19 @@ def find_sound_file(event: str, tool: str, subagent: Optional[str] = None) -> Op
     return None
 
 
-# Keep the old receiver command for backwards compatibility (deprecated)
-@hook.command('receiver', hidden=True)
+# Keep the old stdin-receiver command for backwards compatibility (deprecated)
+@hooks.command('stdin-receiver', hidden=True)
 @click.argument('tool_name')
 @click.argument('action', type=click.Choice(['start', 'end', 'complete']))
 @click.argument('subagent_type', required=False)
 @click.option('--debug', is_flag=True, help='Enable debug output')
-def receiver_deprecated(tool_name, action, subagent_type, debug):
-    """[DEPRECATED] Use stdin-receiver instead."""
-    # Map old action to event
-    event = 'PreToolUse' if action == 'start' else 'PostToolUse'
-    
-    # Call the new command
+def stdin_receiver_deprecated(tool_name, action, subagent_type, event, debug):
+    """[DEPRECATED] Use receiver instead."""
+    # Call the new receiver command
     ctx = click.get_current_context()
-    ctx.invoke(stdin_receiver, 
+    ctx.invoke(receiver, 
                tool_name=tool_name,
-               action=action if action != 'complete' else 'end',
+               action=action,
                subagent_type=subagent_type,
                event=event,
                debug=debug)
