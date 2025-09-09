@@ -4,13 +4,6 @@ Voice Mode supports multiple TTS providers with different voices. This guide hel
 
 ## Available Voices
 
-### OpenAI Voices
-- **alloy** - Balanced, neutral voice (default)
-- **nova** - Warm, expressive female voice
-- **shimmer** - Bright, energetic female voice
-- **fable** - Calm, storytelling voice
-- **echo** - Clear, professional voice
-- **onyx** - Deep, authoritative male voice
 
 ### Kokoro Voices (Local TTS)
 - **af_sky** - Natural female voice
@@ -18,6 +11,14 @@ Voice Mode supports multiple TTS providers with different voices. This guide hel
 - **am_adam** - Natural male voice
 - **af_nicole** - Additional female option
 - **am_michael** - Additional male option
+
+### OpenAI Voices
+- **alloy** - Balanced, neutral voice (default)
+- **nova** - Warm, expressive female voice
+- **shimmer** - Bright, energetic female voice
+- **fable** - Calm, storytelling voice
+- **echo** - Clear, professional voice
+- **onyx** - Deep, authoritative male voice
 
 ## Voice Selection Strategy
 
