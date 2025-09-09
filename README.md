@@ -35,7 +35,7 @@ Natural voice conversations for AI assistants. Voice Mode brings human-like voic
 
 ## Quick Start
 
-> 📖 **Using a different tool?** See our [Integration Guides](docs/integrations/README.md) for Cursor, VS Code, Gemini CLI, and more!
+> 📖 **Using a different tool?** See our [Getting Started Guide](docs/tutorials/getting-started.md) for setup instructions!
 
 ### Automatic Installation (Recommended)
 
@@ -62,7 +62,7 @@ This installer will:
 
 ### Manual Installation
 
-For manual setup steps, see the [Claude Code Integration Guide](docs/integrations/claude-code/README.md).
+For manual setup steps, see the [Getting Started Guide](docs/tutorials/getting-started.md).
 
 ## 🎬 Demo
 
@@ -102,16 +102,16 @@ The `converse` function makes voice interactions natural - it automatically wait
 
 Voice Mode works with your favorite AI coding assistants:
 
-- 🤖 **[Claude Code](docs/integrations/claude-code/README.md)** - Anthropic's official CLI
-- 🖥️ **[Claude Desktop](docs/integrations/claude-desktop/README.md)** - Desktop application
-- 🌟 **[Gemini CLI](docs/integrations/gemini-cli/README.md)** - Google's CLI tool
-- ⚡ **[Cursor](docs/integrations/cursor/README.md)** - AI-first code editor
-- 💻 **[VS Code](docs/integrations/vscode/README.md)** - With MCP preview support
-- 🦘 **[Roo Code](docs/integrations/roo-code/README.md)** - AI dev team in VS Code
-- 🔧 **[Cline](docs/integrations/cline/README.md)** - Autonomous coding agent
-- ⚡ **[Zed](docs/integrations/zed/README.md)** - High-performance editor
-- 🏄 **[Windsurf](docs/integrations/windsurf/README.md)** - Agentic IDE by Codeium
-- 🔄 **[Continue](docs/integrations/continue/README.md)** - Open-source AI assistant
+- 🤖 **Claude Code** - Anthropic's official CLI
+- 🖥️ **Claude Desktop** - Desktop application
+- 🌟 **Gemini CLI** - Google's CLI tool
+- ⚡ **Cursor** - AI-first code editor
+- 💻 **VS Code** - With MCP preview support
+- 🦘 **Roo Code** - AI dev team in VS Code
+- 🔧 **Cline** - Autonomous coding agent
+- ⚡ **Zed** - High-performance editor
+- 🏄 **Windsurf** - Agentic IDE by Codeium
+- 🔄 **Continue** - Open-source AI assistant
 
 ## Installation
 
@@ -130,7 +130,7 @@ sudo apt update
 sudo apt install -y python3-dev libasound2-dev libasound2-plugins libportaudio2 portaudio19-dev ffmpeg pulseaudio pulseaudio-utils
 ```
 
-**Note for WSL2 users**: WSL2 requires additional audio packages (pulseaudio, libasound2-plugins) for microphone access. See our [WSL2 Microphone Access Guide](docs/troubleshooting/wsl2-microphone-access.md) if you encounter issues.
+**Note for WSL2 users**: WSL2 requires additional audio packages (pulseaudio, libasound2-plugins) for microphone access.
 </details>
 
 <details>
@@ -193,7 +193,7 @@ nix run github:mbailey/voicemode
 
 ### Configuration for AI Coding Assistants
 
-> 📖 **Looking for detailed setup instructions?** Check our comprehensive [Integration Guides](docs/integrations/README.md) for step-by-step instructions for each tool!
+> 📖 **Looking for detailed setup instructions?** Check our comprehensive [Getting Started Guide](docs/tutorials/getting-started.md) for step-by-step instructions!
 
 Below are quick configuration snippets. For full installation and setup instructions, see the integration guides above.
 
@@ -471,12 +471,12 @@ nix run github:mbailey/voicemode
 
 **Note:** The `converse` tool is the primary interface for voice interactions, combining speaking and listening in a natural flow.
 
-**New:** The `install_whisper_cpp` and `install_kokoro_fastapi` tools help you set up free, private, open-source voice services locally. See [Installation Tools Documentation](docs/installation-tools.md) for detailed usage.
+**New:** The `install_whisper_cpp` and `install_kokoro_fastapi` tools help you set up free, private, open-source voice services locally.
 
 ## Configuration
 
-- 📖 **[Integration Guides](docs/integrations/README.md)** - Step-by-step setup for each tool
-- 🔧 **[Configuration Reference](docs/configuration.md)** - All environment variables
+- 📖 **[Getting Started](docs/tutorials/getting-started.md)** - Step-by-step setup guide
+- 🔧 **[Configuration Reference](docs/guides/configuration.md)** - All environment variables
 - 📁 **[Config Examples](config-examples/)** - Ready-to-use configuration files
 
 ### Quick Setup
@@ -538,8 +538,8 @@ The audio format is automatically validated against provider capabilities and wi
 
 For privacy-focused or offline usage, Voice Mode supports local speech services:
 
-- **[Whisper.cpp](docs/whisper.cpp.md)** - Local speech-to-text with OpenAI-compatible API
-- **[Kokoro](docs/kokoro.md)** - Local text-to-speech with multiple voice options
+- **[Whisper.cpp](docs/guides/whisper-setup.md)** - Local speech-to-text with OpenAI-compatible API
+- **[Kokoro](docs/guides/kokoro-setup.md)** - Local text-to-speech with multiple voice options
 
 These services provide the same API interface as OpenAI, allowing seamless switching between cloud and local processing.
 
@@ -585,7 +585,7 @@ The OpenAI SDK handles this automatically - no Voice Mode configuration needed!
 ### Common Issues
 
 - **No microphone access**: Check system permissions for terminal/application
-  - **WSL2 Users**: See [WSL2 Microphone Access Guide](docs/troubleshooting/wsl2-microphone-access.md)
+  - **WSL2 Users**: Additional audio packages (pulseaudio, libasound2-plugins) required for microphone access
 - **UV not found**: Install with `curl -LsSf https://astral.sh/uv/install.sh | sh`
 - **OpenAI API error**: Verify your `OPENAI_API_KEY` is set correctly
 - **No audio output**: Check system audio settings and available devices
@@ -625,24 +625,17 @@ Audio files are saved to: `~/.voicemode/audio/YYYY/MM/` with timestamps in the f
 📚 **[Read the full documentation at voice-mode.readthedocs.io](https://voice-mode.readthedocs.io)**
 
 ### Getting Started
-- **[Integration Guides](docs/integrations/README.md)** - Step-by-step setup for all supported tools
-- **[Configuration Guide](docs/configuration.md)** - Complete environment variable reference
+- **[Getting Started](docs/tutorials/getting-started.md)** - Step-by-step setup for all supported tools
+- **[Configuration Guide](docs/guides/configuration.md)** - Complete environment variable reference
 
 ### Development
-- **[Using uv/uvx](docs/uv.md)** - Package management with uv and uvx
-- **[Local Development](docs/local-development-uvx.md)** - Development setup guide
-- **[Audio Formats](docs/audio-format-migration.md)** - Audio format configuration and migration
-- **[Statistics Dashboard](docs/statistics-dashboard.md)** - Performance monitoring and metrics
+- **[Development Setup](docs/tutorials/development-setup.md)** - Local development guide
 
 ### Service Guides
-- **[Whisper.cpp Setup](docs/whisper.cpp.md)** - Local speech-to-text configuration
-- **[Kokoro Setup](docs/kokoro.md)** - Local text-to-speech configuration
-- **[Service Health Checks](docs/service-health-checks.md)** - Service readiness and health monitoring
-- **[LiveKit Integration](docs/livekit/README.md)** - Real-time voice communication
+- **[Whisper.cpp Setup](docs/guides/whisper-setup.md)** - Local speech-to-text configuration
+- **[Kokoro Setup](docs/guides/kokoro-setup.md)** - Local text-to-speech configuration
+- **[LiveKit Integration](docs/guides/livekit-setup.md)** - Real-time voice communication
 
-### Troubleshooting
-- **[WSL2 Microphone Access](docs/troubleshooting/wsl2-microphone-access.md)** - WSL2 audio setup
-- **[Migration Guide](docs/migration-guide.md)** - Upgrading from older versions
 
 ## Links
 
@@ -660,15 +653,12 @@ Audio files are saved to: `~/.voicemode/audio/YYYY/MM/` with timestamps in the f
 
 ## See Also
 
-- 🚀 [Integration Guides](docs/integrations/README.md) - Setup instructions for all supported tools
-- 🔧 [Configuration Reference](docs/configuration.md) - Environment variables and options
-- 🎤 [Local Services Setup](docs/kokoro.md) - Run TTS/STT locally for privacy
-- 🐛 [Troubleshooting](docs/troubleshooting/README.md) - Common issues and solutions
+- 🚀 [Getting Started](docs/tutorials/getting-started.md) - Setup instructions for all supported tools
+- 🔧 [Configuration Reference](docs/guides/configuration.md) - Environment variables and options
+- 🎤 [Local Services Setup](docs/guides/kokoro-setup.md) - Run TTS/STT locally for privacy
 
 ## License
 
 MIT - A [Failmode](https://failmode.com) Project
 
 ---
-
-<sub>[Project Statistics](docs/project-stats/README.md)</sub>
