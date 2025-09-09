@@ -39,8 +39,8 @@ pip install uv
 ```
 
 **Note**: You'll also need these system dependencies:
-- **macOS**: Node.js, PortAudio, FFmpeg (`brew install node portaudio ffmpeg`)
-- **Linux**: Node.js, PortAudio, FFmpeg, ALSA libraries
+- **macOS**: PortAudio, FFmpeg (`brew install portaudio ffmpeg`)
+- **Linux**: PortAudio, FFmpeg, ALSA libraries
 
 Learn more: [UV Installation Guide](https://docs.astral.sh/uv/getting-started/installation/)
 
@@ -52,25 +52,13 @@ claude mcp add --user voicemode --refresh
 
 ### 2. Configure Your API Key
 
-Edit your Claude MCP configuration to add your OpenAI API key:
+Set your OpenAI API key as an environment variable:
 
 ```bash
-# Open your MCP configuration
-claude mcp edit --user
-
-# Add your API key to the voice-mode server:
-{
-  "mcpServers": {
-    "voice-mode": {
-      "command": "uvx",
-      "args": ["voice-mode"],
-      "env": {
-        "OPENAI_API_KEY": "sk-your-api-key-here"
-      }
-    }
-  }
-}
+export OPENAI_API_KEY="sk-your-api-key-here"
 ```
+
+Or add it to your shell configuration file (`~/.bashrc`, `~/.zshrc`, etc.)
 
 ### 3. Verify Installation
 
@@ -79,13 +67,13 @@ claude mcp edit --user
 claude mcp list
 ```
 
-You should see `voice-mode` in the list of connected servers.
+You should see `voicemode` in the list of connected servers.
 
 ### 4. Start Using Voice
 
 In Claude Code, simply type:
 ```
-/voice
+/voicemode:converse
 ```
 
 Speak when you hear the chime, and Claude will respond with voice!
@@ -113,10 +101,10 @@ pip install -e .
 export OPENAI_API_KEY="sk-your-api-key-here"
 
 # Start a voice conversation
-voice-mode converse
+voicemode converse
 
 # Transcribe audio
-echo "Hello world" | voice-mode transcribe
+echo "Hello world" | voicemode transcribe
 ```
 
 ## Setting Up Local Services (Optional)
@@ -127,12 +115,12 @@ For complete privacy, you can run voice services locally instead of using OpenAI
 
 ```bash
 # Install local services
-voice-mode whisper install   # Speech-to-text
-voice-mode kokoro install    # Text-to-speech
+voicemode whisper install   # Speech-to-text
+voicemode kokoro install    # Text-to-speech
 
 # Start services
-voice-mode whisper start
-voice-mode kokoro start
+voicemode whisper start
+voicemode kokoro start
 ```
 
 VoiceMode will automatically detect and use these local services when available.
@@ -191,21 +179,21 @@ Learn more: [Configuration Guide](../guides/configuration.md)
 
 ```bash
 # List audio devices
-voice-mode audio devices
+voicemode audio devices
 
 # Test recording
-voice-mode audio test
+voicemode audio test
 ```
 
 ### Service Issues?
 
 ```bash
 # Check service status
-voice-mode whisper status
-voice-mode kokoro status
+voicemode whisper status
+voicemode kokoro status
 
 # View logs
-voice-mode logs --tail 50
+voicemode logs --tail 50
 ```
 
 ## Next Steps
