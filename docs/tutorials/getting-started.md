@@ -18,16 +18,12 @@ The fastest way to get started is using VoiceMode with Claude Code.
 The easiest way - installs UV and all dependencies automatically:
 
 ```bash
-# macOS (no sudo needed)
-curl -sSf https://voicemode.sh | sh
-
-# Linux (may need sudo for system packages)
 curl -sSf https://voicemode.sh | sh
 ```
 
 This installer will:
 - Install UV package manager
-- Install system dependencies (Node.js, FFmpeg, PortAudio, etc.)
+- Install missing system dependencies (Node.js, FFmpeg, PortAudio, etc.)
 - Set up your environment for VoiceMode
 
 ### Option 2: Manual UV Installation
