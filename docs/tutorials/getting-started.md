@@ -6,7 +6,7 @@ VoiceMode brings voice conversations to AI coding assistants. It works as both a
 
 VoiceMode provides:
 - **MCP Server**: Adds voice tools to Claude Code - no installation needed
-- **CLI Tool**: Command-line interface for voice transcription and synthesis
+- **CLI Tool**: Use VoiceMode's tools directly from your terminal
 - **Local Services**: Optional privacy-focused speech processing
 
 ## Quick Start: Using with Claude Code
