@@ -75,7 +75,7 @@ from voice_mode.core import (
     play_chime_start,
     play_chime_end
 )
-from voice_mode.tools.statistics import track_voice_interaction
+from voice_mode.statistics_tracking import track_voice_interaction
 from voice_mode.utils import (
     get_event_logger,
     log_recording_start,
