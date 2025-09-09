@@ -5,27 +5,26 @@ Complete reference for all VoiceMode command-line interface commands.
 ## Global Options
 
 ```bash
-voice-mode [OPTIONS] COMMAND [ARGS]...
+voicemode [OPTIONS] COMMAND [ARGS]...
 
 Options:
-  --version              Show version and exit
-  --help                 Show help message and exit
-  --debug                Enable debug output
-  --config FILE          Path to config file
+  --version   Show the version and exit
+  -h, --help  Show this message and exit
+  --debug     Enable debug mode and show all warnings
 ```
 
 ## Core Commands
 
-### voice-mode (default)
+### voicemode (default)
 Start the MCP server
 ```bash
-voice-mode
+voicemode
 ```
 
 ### converse
-Start an interactive voice conversation
+Have a voice conversation directly from the command line
 ```bash
-voice-mode converse [OPTIONS]
+voicemode converse [OPTIONS]
 
 Options:
   --voice TEXT          Override TTS voice
@@ -35,11 +34,49 @@ Options:
   --timeout INTEGER     Recording timeout in seconds
 ```
 
-### transcribe
-Transcribe audio from stdin
+### audio
+Audio transcription and playback commands
+
 ```bash
-echo "Hello" | voice-mode transcribe
-voice-mode transcribe < audio.wav
+voicemode audio [OPTIONS] COMMAND [ARGS]...
+
+Commands:
+  play        Play sound based on tool events
+  transcribe  Transcribe audio with optional word-level timestamps
+
+Examples:
+echo "Hello" | voicemode audio transcribe
+voicemode audio transcribe < audio.wav
+```
+
+## Diagnostic Commands
+
+### diag
+Diagnostic tools for voicemode
+
+```bash
+voicemode diag [OPTIONS] COMMAND [ARGS]...
+
+Commands:
+  dependencies  Check system audio dependencies and provide installation guidance
+  devices       List available audio input and output devices  
+  info          Show voicemode installation information
+  registry      Show voice provider registry with all discovered endpoints
+```
+
+## Claude Integration
+
+### claude
+Extract messages from Claude Code conversation logs
+
+```bash
+voicemode claude [OPTIONS] COMMAND [ARGS]...
+
+Commands:
+  check     Check if Claude Code context is available
+  hook      Manage Voice Mode hooks and event handlers
+  messages  Extract recent messages from Claude Code logs
+  thinking  Extract only thinking content from Claude Code logs
 ```
 
 ## Service Management
@@ -49,28 +86,28 @@ Manage Whisper STT service
 
 ```bash
 # Installation and setup
-voice-mode whisper install [--model MODEL]
-voice-mode whisper uninstall
+voicemode whisper install [--model MODEL]
+voicemode whisper uninstall
 
 # Service control
-voice-mode whisper start
-voice-mode whisper stop
-voice-mode whisper restart
-voice-mode whisper status
+voicemode whisper start
+voicemode whisper stop
+voicemode whisper restart
+voicemode whisper status
 
 # Service management
-voice-mode whisper enable    # Start at boot
-voice-mode whisper disable   # Don't start at boot
+voicemode whisper enable    # Start at boot
+voicemode whisper disable   # Don't start at boot
 
 # Model management
-voice-mode whisper models                    # List available models
-voice-mode whisper model active             # Show active model
-voice-mode whisper model active MODEL       # Set active model
-voice-mode whisper model install MODEL      # Install specific model
-voice-mode whisper model remove MODEL       # Remove model
+voicemode whisper models                    # List available models
+voicemode whisper model active             # Show active model
+voicemode whisper model active MODEL       # Set active model
+voicemode whisper model install MODEL      # Install specific model
+voicemode whisper model remove MODEL       # Remove model
 
 # Logs and debugging
-voice-mode whisper logs [--follow]
+voicemode whisper logs [--follow]
 ```
 
 Available models:
@@ -86,205 +123,119 @@ Manage Kokoro TTS service
 
 ```bash
 # Installation and setup
-voice-mode kokoro install
-voice-mode kokoro uninstall
+voicemode kokoro install
+voicemode kokoro uninstall
 
 # Service control
-voice-mode kokoro start
-voice-mode kokoro stop
-voice-mode kokoro restart
-voice-mode kokoro status
+voicemode kokoro start
+voicemode kokoro stop
+voicemode kokoro restart
+voicemode kokoro status
 
 # Service management
-voice-mode kokoro enable
-voice-mode kokoro disable
+voicemode kokoro enable
+voicemode kokoro disable
 
 # Information
-voice-mode kokoro voices     # List available voices
-voice-mode kokoro logs [--follow]
+voicemode kokoro voices     # List available voices
+voicemode kokoro logs [--follow]
 ```
 
 ### livekit
-Manage LiveKit server
+Manage LiveKit RTC service
 
 ```bash
 # Installation and setup
-voice-mode livekit install
-voice-mode livekit uninstall [--remove-all-data]
+voicemode livekit install
+voicemode livekit uninstall [--remove-all-data]
 
 # Service control
-voice-mode livekit start
-voice-mode livekit stop
-voice-mode livekit restart
-voice-mode livekit status
+voicemode livekit start
+voicemode livekit stop
+voicemode livekit restart
+voicemode livekit status
 
 # Service management
-voice-mode livekit enable
-voice-mode livekit disable
+voicemode livekit enable
+voicemode livekit disable
 
 # Configuration
-voice-mode livekit update    # Update service files
-voice-mode livekit logs [--follow]
+voicemode livekit update    # Update service files
+voicemode livekit logs [--follow]
 ```
 
-### frontend
-Manage Voice Assistant Frontend
-
-```bash
-# Service control
-voice-mode frontend start
-voice-mode frontend stop
-voice-mode frontend status
-
-# Service management
-voice-mode frontend enable
-voice-mode frontend disable
-
-# Utilities
-voice-mode frontend open     # Open in browser
-voice-mode frontend logs [--follow]
-voice-mode frontend build    # Build frontend
-```
-
-### service
-Unified service management
-
-```bash
-# Generic service commands
-voice-mode service SERVICE COMMAND
-
-Examples:
-voice-mode service whisper status
-voice-mode service kokoro start
-voice-mode service livekit enable
-
-Supported services:
-- whisper
-- kokoro
-- livekit
-- frontend
-```
 
 ## Configuration Commands
 
 ### config
-Manage configuration
+Manage voicemode configuration
 
 ```bash
 # Show current configuration
-voice-mode config show
+voicemode config show
 
 # Initialize default config
-voice-mode config init
+voicemode config init
 
 # Test configuration
-voice-mode config test
+voicemode config test
 
 # Edit configuration
-voice-mode config edit
+voicemode config edit
 ```
 
-### audio
-Audio device management
+## Conversation Management
+
+### exchanges
+Manage and view conversation exchange logs
 
 ```bash
-# List audio devices
-voice-mode audio devices
+# View recent exchanges
+voicemode exchanges
 
-# Test audio recording
-voice-mode audio test [--duration SECONDS]
+# View specific exchange
+voicemode exchanges show EXCHANGE_ID
 
-# Select audio device
-voice-mode audio select
-```
-
-## Development Commands
-
-### test
-Run tests
-
-```bash
-# Run all tests
-voice-mode test
-
-# Test specific component
-voice-mode test whisper
-voice-mode test kokoro
-voice-mode test audio
-
-# Test with coverage
-voice-mode test --coverage
-```
-
-### build
-Build package
-
-```bash
-# Build distribution packages
-voice-mode build
-
-# Build with specific version
-voice-mode build --version 2.3.0
-
-# Build development version
-voice-mode build --dev
-```
-
-### logs
-View VoiceMode logs
-
-```bash
-# View recent logs
-voice-mode logs
-
-# Follow logs in real-time
-voice-mode logs --follow
-
-# View last N lines
-voice-mode logs --tail 50
-
-# Filter by level
-voice-mode logs --level error
+# Clear exchange logs
+voicemode exchanges clear
 ```
 
 ## Utility Commands
 
 ### version
-Show version information
+Show Voice Mode version and check for updates
 
 ```bash
-voice-mode version
+voicemode version
 
-# Verbose output
-voice-mode version --verbose
+# Check for updates
+voicemode version --check
 ```
 
-### doctor
-Check system configuration
+### update
+Update Voice Mode to the latest version
 
 ```bash
-voice-mode doctor
+voicemode update
 
-# Checks:
-# - Python version
-# - Dependencies
-# - Service status
-# - API connectivity
-# - Audio devices
+# Update to specific version
+voicemode update --version 2.3.0
+
+# Force update even if up-to-date
+voicemode update --force
 ```
 
-### clean
-Clean up temporary files
+### completions
+Generate or install shell completion scripts
 
 ```bash
-# Clean cache and temp files
-voice-mode clean
+# Install completions for your shell
+voicemode completions install
 
-# Clean everything including logs
-voice-mode clean --all
-
-# Dry run (show what would be deleted)
-voice-mode clean --dry-run
+# Generate completion script for specific shell
+voicemode completions bash
+voicemode completions zsh
+voicemode completions fish
 ```
 
 ## Environment Variables
@@ -293,13 +244,13 @@ Commands respect environment variables for configuration:
 
 ```bash
 # Use specific API key
-OPENAI_API_KEY=sk-... voice-mode converse
+OPENAI_API_KEY=sk-... voicemode converse
 
 # Enable debug mode
-VOICEMODE_DEBUG=true voice-mode
+VOICEMODE_DEBUG=true voicemode
 
 # Use local services
-VOICEMODE_TTS_BASE_URLS=http://localhost:8880/v1 voice-mode converse
+VOICEMODE_TTS_BASE_URLS=http://localhost:8880/v1 voicemode converse
 ```
 
 ## Exit Codes
@@ -317,47 +268,51 @@ VOICEMODE_TTS_BASE_URLS=http://localhost:8880/v1 voice-mode converse
 ### Basic Usage
 ```bash
 # Start MCP server
-voice-mode
+voicemode
 
 # Have a conversation
-voice-mode converse
+voicemode converse
 
 # Transcribe audio file
-voice-mode transcribe < recording.wav
+voicemode audio transcribe < recording.wav
 ```
 
 ### Service Setup
 ```bash
 # Full local setup
-voice-mode whisper install
-voice-mode kokoro install
-voice-mode whisper enable
-voice-mode kokoro enable
+voicemode whisper install
+voicemode kokoro install
+voicemode whisper enable
+voicemode kokoro enable
 ```
 
 ### Development
 ```bash
 # Debug mode with all saves
-VOICEMODE_DEBUG=true VOICEMODE_SAVE_ALL=true voice-mode converse
+VOICEMODE_DEBUG=true VOICEMODE_SAVE_ALL=true voicemode converse
 
 # Test local changes
-uvx --from . voice-mode
+uvx --from . voicemode
 
-# Check everything is working
-voice-mode doctor
+# Check diagnostics
+voicemode diag info
+voicemode diag dependencies
 ```
 
 ### Troubleshooting
 ```bash
 # Check what's running
-voice-mode whisper status
-voice-mode kokoro status
+voicemode whisper status
+voicemode kokoro status
 
 # View logs
-voice-mode logs --tail 100
-voice-mode whisper logs --follow
+voicemode whisper logs --follow
+voicemode kokoro logs --follow
 
-# Clean and restart
-voice-mode clean
-voice-mode whisper restart
+# Check registry and providers
+voicemode diag registry
+
+# Restart services
+voicemode whisper restart
+voicemode kokoro restart
 ```

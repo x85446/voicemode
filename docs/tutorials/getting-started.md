@@ -73,7 +73,7 @@ You should see `voicemode` in the list of connected servers.
 
 In Claude Code, simply type:
 ```
-/voicemode:converse
+converse
 ```
 
 Speak when you hear the chime, and Claude will respond with voice!
@@ -86,12 +86,12 @@ If you want to use VoiceMode from the command line:
 
 ```bash
 # Install with pip
-pip install voice-mode
+uv tool install voice-mode
 
-# Or install from source
+# Or install from source in editable mode
 git clone https://github.com/mbailey/voicemode
 cd voicemode
-pip install -e .
+uv tool install -e .
 ```
 
 ### Basic Usage
