@@ -1,0 +1,68 @@
+MCP tools · /mcp
+
+- [ ] Compare master against current release
+- [ ] Separate branches for spearate things
+- [ ] Match against CLI commands
+- [ ] Remove provider registry
+- [ ] Test livekit
+
+## Remove
+
+! mcp__voicemode__check_claude_context (voicemode): 408 tokens
+! mcp__voicemode__get_claude_messages (voicemode): 654 tokens
+? mcp__voicemode__refresh_provider_registry (voicemode): 596 tokens
+? mcp__voicemode__get_provider_details (voicemode): 460 tokens
+
+? mcp__voicemode__list_tts_voices (voicemode): 455 tokens
+? mcp__voicemode__voice_status (voicemode): 447 tokens
+? mcp__voicemode__voice_registry (voicemode): 441 tokens
+? mcp__voicemode__voice_statistics (voicemode): 446 tokens
+? mcp__voicemode__voice_statistics_summary (voicemode): 438 tokens
+? mcp__voicemode__voice_statistics_reset (voicemode): 421 tokens
+? mcp__voicemode__voice_statistics_export (voicemode): 422 tokens
+? mcp__voicemode__voice_statistics_recent (voicemode): 439 tokens
+
+## Always
+
+mcp__voicemode__converse (voicemode): 4.2k tokens
+
+## Config
+└ mcp__voicemode__update_config (voicemode): 471 tokens
+└ mcp__voicemode__config_reload (voicemode): 453 tokens
+└ mcp__voicemode__list_config_keys (voicemode): 398 tokens
+└ mcp__voicemode__show_config_files (voicemode): 447 tokens
+
+## Pronounce
+
+mcp__voicemode__pronounce (voicemode): 1.2k tokens
+? mcp__voicemode__pronounce_status (voicemode): 406 tokens
+
+## Diagnostics
+
+mcp__voicemode__voice_mode_info (voicemode): 390 tokens
+mcp__voicemode__check_audio_devices (voicemode): 371 tokens
+mcp__voicemode__check_audio_dependencies (voicemode): 557 tokens
+
+
+## Services
+
+  mcp__voicemode__service (voicemode): 802 tokens
+
+  # kokoro
+  └ mcp__voicemode__kokoro_uninstall (voicemode): 592 tokens
+  └ mcp__voicemode__kokoro_install (voicemode): 932 tokens
+
+  # whisper
+  └ mcp__voicemode__whisper_install (voicemode): 780 tokens
+  └ mcp__voicemode__whisper_uninstall (voicemode): 588 tokens
+  └ mcp__voicemode__whisper_model_install (voicemode): 965 tokens
+
+  # livekit
+  └ mcp__voicemode__livekit_install (voicemode): 689 tokens
+  └ mcp__voicemode__livekit_uninstall (voicemode): 579 tokens
+  └ mcp__voicemode__livekit_frontend_start (voicemode): 538 tokens
+  └ mcp__voicemode__livekit_frontend_stop (voicemode): 401 tokens
+  └ mcp__voicemode__livekit_frontend_status (voicemode): 391 tokens
+  └ mcp__voicemode__livekit_frontend_open (voicemode): 411 tokens
+  └ mcp__voicemode__livekit_frontend_logs (voicemode): 466 tokens
+  └ mcp__voicemode__livekit_frontend_install (voicemode): 486 tokens
