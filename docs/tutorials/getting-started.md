@@ -13,9 +13,27 @@ VoiceMode provides:
 
 The fastest way to get started is using VoiceMode with Claude Code.
 
-### Prerequisites
+### Option 1: Universal Installer (Recommended)
 
-Install UV (if not already installed):
+The easiest way - installs UV and all dependencies automatically:
+
+```bash
+# macOS (no sudo needed)
+curl -sSf https://voicemode.sh | sh
+
+# Linux (may need sudo for system packages)
+curl -sSf https://voicemode.sh | sh
+```
+
+This installer will:
+- Install UV package manager
+- Install system dependencies (Node.js, FFmpeg, PortAudio, etc.)
+- Set up your environment for VoiceMode
+
+### Option 2: Manual UV Installation
+
+If you prefer to install UV manually:
+
 ```bash
 # macOS/Linux
 curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -23,6 +41,10 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 # Or with pip (if available)
 pip install uv
 ```
+
+**Note**: You'll also need these system dependencies:
+- **macOS**: Node.js, PortAudio, FFmpeg (`brew install node portaudio ffmpeg`)
+- **Linux**: Node.js, PortAudio, FFmpeg, ALSA libraries
 
 Learn more: [UV Installation Guide](https://docs.astral.sh/uv/getting-started/installation/)
 
