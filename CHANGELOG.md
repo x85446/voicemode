@@ -7,11 +7,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.4.0] - 2025-09-10
+
+### Added
+- **MCP Registry Support**
+  - Add server.json configuration for MCP registry publication
+  - Add mcp-name field to README for PyPI package validation
+  - Integrate MCP registry publishing into CI/CD workflow
+  - Support DNS-based namespace authentication (com.failmode/voicemode)
+  - Update Makefile to sync server.json version during releases
+  
+- **Cloudflare Worker for voicemode.sh**
+  - Serve install script via custom domain
+  - Smart user-agent detection for CLI vs browser
+  - Cached script delivery with fallback
+  
+- **Selective Tool Loading**
+  - Reduce token usage by loading tools on demand
+  - Implement smart tool filtering based on context
+  - Add tool loading configuration options
+
+- **Documentation Improvements**
+  - Complete documentation reorganization
+  - Add tutorials, guides, and reference sections
+  - Improve getting-started guide with clear paths
+  - Add universal installer as primary quick start
+  - Archive outdated documentation
+
+- **Three Bears Agent Support**
+  - Add baby-bear, mama-bear, and papa-bear agent configurations
+  - Integrate with sound fonts for agent-specific audio feedback
+
+### Changed
+- Consolidate PyPI and MCP Registry publishing workflows
+- Update branch references from 'main' to 'master'
+- Improve Cloudflare Worker error handling and caching
+- Rename hook to hooks, stdin-receiver to receiver
+
+### Fixed
+- Fix broken documentation links after refactor
+- Restore minimal claude command group for hook support
+- Fix Claude settings.json path configuration
+
 ## [4.3.2] - 2025-09-03
+
+### Fixed
+- Add missing pyyaml dependency to pyproject.toml
+- Remove macOS-only restriction from package
+- Add Claude hooks configuration to repository settings
 
 ## [4.3.1] - 2025-09-03
 
+### Fixed
+- Minor bug fixes and improvements
+
 ## [4.3.0] - 2025-09-03
+
+### Added
+- Sound fonts with MP3 support and Three Bears sounds integration
 
 ## [4.2.0] - 2025-09-03
 
