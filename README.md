@@ -1,5 +1,7 @@
 # Voice Mode
 
+mcp-name: com.failmode/voicemode
+
 > **Install via:** `uvx voice-mode` | `pip install voice-mode` | [getvoicemode.com](https://getvoicemode.com)
 
 [![PyPI Downloads](https://static.pepy.tech/badge/voice-mode)](https://pepy.tech/project/voice-mode)

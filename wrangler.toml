@@ -2,15 +2,16 @@
 name = "voicemode-installer"
 main = "cloudflare-worker.js"
 compatibility_date = "2024-01-01"
+workers_dev = false
 
-# Your Cloudflare account ID (get from dashboard)
-# account_id = "your-account-id"
+# Your Cloudflare account ID
+account_id = "2d152ec3e57b70274d69583b496e31ad"
 
-# Custom domain (temporarily commented to deploy - DNS records need to be managed separately)
-# routes = [
-#   { pattern = "voicemode.sh", custom_domain = true },
-#   { pattern = "www.voicemode.sh", custom_domain = true }
-# ]
+# Custom domain
+routes = [
+  { pattern = "voicemode.sh/*", zone_name = "voicemode.sh" },
+  { pattern = "www.voicemode.sh/*", zone_name = "voicemode.sh" }
+]
 
 # Environment variables (optional)
 [vars]

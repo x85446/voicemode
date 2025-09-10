@@ -55,7 +55,10 @@ if [[ "${DEBUG:-}" == "true" ]]; then
 fi
 
 # Reattach stdin to terminal for interactive prompts when run via curl | bash
-[ -t 0 ] || exec </dev/tty # reattach keyboard to STDIN
+# Only attempt this if /dev/tty exists and is accessible
+if [ ! -t 0 ] && [ -e /dev/tty ] && [ -r /dev/tty ]; then
+  exec </dev/tty 2>/dev/null || true
+fi
 
 # Colors for output
 RED='\033[0;31m'

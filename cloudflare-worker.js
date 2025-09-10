@@ -3,7 +3,7 @@
 // Deploy with: wrangler publish or via Cloudflare dashboard
 
 // The install script URL - we'll fetch from GitHub
-const INSTALL_SCRIPT_URL = 'https://raw.githubusercontent.com/mbailey/voicemode/main/docs/web/install.sh';
+const INSTALL_SCRIPT_URL = 'https://raw.githubusercontent.com/mbailey/voicemode/master/docs/web/install.sh';
 
 // Cache install script for 5 minutes to reduce GitHub requests
 const CACHE_TTL = 300;
@@ -196,14 +196,14 @@ export default {
     
     // Force install script at /install or /install.sh
     if (url.pathname === '/install' || url.pathname === '/install.sh') {
-      return await serveInstallScript(env);
+      return await serveInstallScript(env, ctx);
     }
     
     // Root path: detect user agent
     if (url.pathname === '/' || url.pathname === '') {
       if (isCLI) {
         // CLI tools get the installer script
-        return await serveInstallScript(env);
+        return await serveInstallScript(env, ctx);
       } else {
         // Browsers get the website
         return new Response(HTML_PAGE, {
@@ -226,7 +226,7 @@ export default {
   }
 };
 
-async function serveInstallScript(env) {
+async function serveInstallScript(env, ctx) {
   // Try to get from cache first
   const cache = caches.default;
   const cacheKey = new Request('https://voicemode.sh/install-script-cache');
@@ -259,7 +259,9 @@ async function serveInstallScript(env) {
       });
       
       // Cache it
-      ctx.waitUntil(cache.put(cacheKey, response.clone()));
+      if (ctx) {
+        ctx.waitUntil(cache.put(cacheKey, response.clone()));
+      }
       
     } catch (error) {
       // Fallback to embedded minimal script
