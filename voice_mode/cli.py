@@ -30,10 +30,12 @@ if not os.environ.get('VOICEMODE_DEBUG', '').lower() in ('true', '1', 'yes'):
 @click.version_option()
 @click.help_option('-h', '--help', help='Show this message and exit')
 @click.option('--debug', is_flag=True, help='Enable debug mode and show all warnings')
+@click.option('--tools-enabled', help='Comma-separated list of tools to enable (whitelist)')
+@click.option('--tools-disabled', help='Comma-separated list of tools to disable (blacklist)')
 @click.pass_context
-def voice_mode_main_cli(ctx, debug):
+def voice_mode_main_cli(ctx, debug, tools_enabled, tools_disabled):
     """Voice Mode - MCP server and service management.
-    
+
     Without arguments, starts the MCP server.
     With subcommands, executes service management operations.
     """
@@ -44,7 +46,13 @@ def voice_mode_main_cli(ctx, debug):
         # Re-enable INFO logging
         import logging
         logging.getLogger("voice-mode").setLevel(logging.INFO)
-    
+
+    # Set environment variables from CLI args
+    if tools_enabled:
+        os.environ['VOICEMODE_TOOLS_ENABLED'] = tools_enabled
+    if tools_disabled:
+        os.environ['VOICEMODE_TOOLS_DISABLED'] = tools_disabled
+
     if ctx.invoked_subcommand is None:
         # No subcommand - run MCP server
         # Note: warnings are already suppressed at module level unless debug is enabled

@@ -5580,6 +5580,14 @@ test = [
     { name = "pytest-xdist" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "pytest-mock" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "ane-transformers", marker = "extra == 'coreml'" },
@@ -5631,6 +5639,14 @@ requires-dist = [
     { name = "webrtcvad", specifier = ">=2.0.10" },
 ]
 provides-extras = ["coreml", "dev", "docs", "notebooks", "scripts", "test"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "pytest", specifier = ">=8.4.2" },
+    { name = "pytest-asyncio", specifier = ">=1.2.0" },
+    { name = "pytest-cov", specifier = ">=7.0.0" },
+    { name = "pytest-mock", specifier = ">=3.15.0" },
+]
 
 [[package]]
 name = "watchdog"
