@@ -5,6 +5,8 @@ import asyncio
 import sys
 import os
 import warnings
+import subprocess
+import shutil
 import click
 
 
@@ -1283,6 +1285,72 @@ def config_set(key, value):
     from voice_mode.tools.configuration_management import update_config
     result = asyncio.run(update_config.fn(key, value))
     click.echo(result)
+
+
+@config.command("edit")
+@click.help_option('-h', '--help')
+@click.option('--editor', help='Editor to use (overrides $EDITOR)')
+def config_edit(editor):
+    """Open the configuration file in your default editor.
+
+    Opens ~/.voicemode/voicemode.env in your configured editor.
+    Uses $EDITOR environment variable by default, or you can specify with --editor.
+
+    Examples:
+        voicemode config edit           # Use $EDITOR
+        voicemode config edit --editor vim
+        voicemode config edit --editor "code --wait"
+    """
+    from pathlib import Path
+
+    # Find the config file
+    config_path = Path.home() / ".voicemode" / "voicemode.env"
+
+    # Create default config if it doesn't exist
+    if not config_path.exists():
+        config_path.parent.mkdir(parents=True, exist_ok=True)
+        from voice_mode.config import load_voicemode_env
+        # This will create the default config
+        load_voicemode_env()
+
+    # Determine which editor to use
+    if editor:
+        editor_cmd = editor
+    else:
+        # Try environment variables in order of preference
+        editor_cmd = (
+            os.environ.get('EDITOR') or
+            os.environ.get('VISUAL') or
+            shutil.which('nano') or
+            shutil.which('vim') or
+            shutil.which('vi')
+        )
+
+    if not editor_cmd:
+        click.echo("❌ No editor found. Please set $EDITOR or use --editor")
+        click.echo("   Example: export EDITOR=vim")
+        click.echo("   Or use: voicemode config edit --editor vim")
+        return
+
+    # Handle complex editor commands (e.g., "code --wait")
+    if ' ' in editor_cmd:
+        import shlex
+        cmd_parts = shlex.split(editor_cmd)
+        cmd = cmd_parts + [str(config_path)]
+    else:
+        cmd = [editor_cmd, str(config_path)]
+
+    # Open the editor
+    try:
+        click.echo(f"Opening {config_path} in {editor_cmd}...")
+        subprocess.run(cmd, check=True)
+        click.echo("✅ Configuration file edited successfully")
+        click.echo("\nChanges will take effect when voicemode is restarted.")
+    except subprocess.CalledProcessError:
+        click.echo(f"❌ Editor exited with an error")
+    except FileNotFoundError:
+        click.echo(f"❌ Editor not found: {editor_cmd}")
+        click.echo("   Please check that the editor is installed and in your PATH")
 
 
 # Diagnostics group

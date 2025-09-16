@@ -24,6 +24,25 @@ uv run pytest tests/test_voice_mode.py -v
 make clean
 ```
 
+### Configuration Management
+```bash
+# Edit configuration file in default editor
+voicemode config edit
+
+# Or specify a different editor
+voicemode config edit --editor vim
+voicemode config edit --editor "code --wait"
+
+# List available configuration keys
+voicemode config list
+
+# Get a specific configuration value
+voicemode config get VOICEMODE_TTS_VOICE
+
+# Set a configuration value
+voicemode config set VOICEMODE_TTS_VOICE nova
+```
+
 ### Building & Publishing
 ```bash
 # Build Python package
