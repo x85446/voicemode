@@ -6,12 +6,6 @@ import asyncio
 from pathlib import Path
 from typing import Optional
 
-from voice_mode.tools.transcription import (
-    transcribe_audio,
-    TranscriptionBackend,
-    OutputFormat
-)
-
 
 @click.group()
 def transcribe():
@@ -61,6 +55,13 @@ def audio_command(
         voice-mode transcribe audio spanish.mp3 --language es --backend whisperx
     """
     async def run():
+        # Import here to avoid loading tools at module level
+        from voice_mode.tools.transcription import (
+            transcribe_audio,
+            TranscriptionBackend,
+            OutputFormat
+        )
+
         # Perform transcription
         result = await transcribe_audio(
             audio_file=audio_file,

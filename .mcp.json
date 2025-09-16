@@ -9,7 +9,7 @@
       ],
       "env": {
         "VOICEMODE_SAVE_ALL": "true",
-        "VOICEMODE_TOOLS": "converse",
+        "VOICEMODE_TOOLS_ENABLED": "converse",
         "XVOICEMODE_DEBUG": "trace"
       }
     }

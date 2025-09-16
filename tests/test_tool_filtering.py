@@ -197,7 +197,7 @@ class TestCLIArguments:
         """Test --tools-enabled CLI argument."""
         # This test would need to run the CLI in a subprocess
         result = subprocess.run(
-            [sys.executable, "-m", "voice_mode.cli", "--tools-enabled", "converse", "--help"],
+            [sys.executable, "-m", "voice_mode", "--tools-enabled", "converse", "--help"],
             capture_output=True,
             text=True,
             env={**os.environ, 'PYTHONPATH': str(Path(__file__).parent.parent)}
@@ -209,7 +209,7 @@ class TestCLIArguments:
     def test_cli_tools_disabled(self):
         """Test --tools-disabled CLI argument."""
         result = subprocess.run(
-            [sys.executable, "-m", "voice_mode.cli", "--tools-disabled", "kokoro_install", "--help"],
+            [sys.executable, "-m", "voice_mode", "--tools-disabled", "kokoro_install", "--help"],
             capture_output=True,
             text=True,
             env={**os.environ, 'PYTHONPATH': str(Path(__file__).parent.parent)}

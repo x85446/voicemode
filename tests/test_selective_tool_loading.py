@@ -40,12 +40,12 @@ print('SUCCESS')
 
 
 def test_selective_loading_multiple_tools():
-    """Test that VOICEMODE_TOOLS can load multiple specified tools."""
+    """Test that VOICEMODE_TOOLS_ENABLED can load multiple specified tools."""
     result = subprocess.run(
         [sys.executable, "-c", """
 import os
 import sys
-os.environ['VOICEMODE_TOOLS'] = 'converse,statistics'
+os.environ['VOICEMODE_TOOLS_ENABLED'] = 'converse,statistics'
 
 from voice_mode import tools
 
@@ -59,20 +59,22 @@ print('SUCCESS')
         capture_output=True,
         text=True
     )
-    
+
     assert result.returncode == 0, f"Failed: {result.stderr}"
     assert "SUCCESS" in result.stdout
 
 
 def test_all_tools_loaded_by_default():
-    """Test that all tools are loaded when VOICEMODE_TOOLS is not set."""
+    """Test that all tools are loaded when no filter variables are set."""
     result = subprocess.run(
         [sys.executable, "-c", """
 import os
 import sys
 
-# Ensure VOICEMODE_TOOLS is not set
+# Ensure no filter variables are set
 os.environ.pop('VOICEMODE_TOOLS', None)
+os.environ.pop('VOICEMODE_TOOLS_ENABLED', None)
+os.environ.pop('VOICEMODE_TOOLS_DISABLED', None)
 
 from voice_mode import tools
 
@@ -88,7 +90,7 @@ print('SUCCESS')
         capture_output=True,
         text=True
     )
-    
+
     assert result.returncode == 0, f"Failed: {result.stderr}"
     assert "SUCCESS" in result.stdout
 
@@ -104,7 +106,7 @@ import logging
 # Set up logging to capture warnings
 logging.basicConfig(level=logging.WARNING)
 
-os.environ['VOICEMODE_TOOLS'] = 'converse,nonexistent_tool'
+os.environ['VOICEMODE_TOOLS_ENABLED'] = 'converse,nonexistent_tool'
 
 from voice_mode import tools
 
@@ -115,7 +117,7 @@ print('SUCCESS')
         capture_output=True,
         text=True
     )
-    
+
     assert result.returncode == 0, f"Failed: {result.stderr}"
     assert "SUCCESS" in result.stdout
     # Check for warning about nonexistent tool
@@ -149,13 +151,13 @@ print('SUCCESS')
 
 
 def test_empty_voicemode_tools():
-    """Test that empty VOICEMODE_TOOLS loads all tools (same as not set)."""
+    """Test that empty VOICEMODE_TOOLS_ENABLED loads all tools (same as not set)."""
     result = subprocess.run(
         [sys.executable, "-c", """
 import os
 import sys
 
-os.environ['VOICEMODE_TOOLS'] = ''
+os.environ['VOICEMODE_TOOLS_ENABLED'] = ''
 
 from voice_mode import tools
 
@@ -168,7 +170,7 @@ print('SUCCESS')
         capture_output=True,
         text=True
     )
-    
+
     assert result.returncode == 0, f"Failed: {result.stderr}"
     assert "SUCCESS" in result.stdout
 
@@ -180,7 +182,7 @@ def test_whitespace_handling_in_tool_list():
 import os
 import sys
 
-os.environ['VOICEMODE_TOOLS'] = ' converse , statistics '
+os.environ['VOICEMODE_TOOLS_ENABLED'] = ' converse , statistics '
 
 from voice_mode import tools
 
@@ -191,6 +193,6 @@ print('SUCCESS')
         capture_output=True,
         text=True
     )
-    
+
     assert result.returncode == 0, f"Failed: {result.stderr}"
     assert "SUCCESS" in result.stdout
