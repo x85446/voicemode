@@ -141,3 +141,33 @@ Services can be installed and managed through MCP tools, with automatic service 
 - Use `pytest` for running tests, with fixtures for mocking external services
 - Integration tests verify service discovery and provider selection
 - The project includes comprehensive test coverage for configuration, providers, and tools
+
+## Logging
+
+VoiceMode maintains comprehensive logs in the `~/.voicemode/` directory:
+
+```
+~/.voicemode/
+├── logs/
+│   ├── conversations/     # JSONL files with daily conversation exchanges
+│   │   └── exchanges_YYYY-MM-DD.jsonl
+│   ├── events/           # JSONL files with detailed event logs
+│   │   └── voicemode_events_YYYY-MM-DD.jsonl
+│   └── debug/            # Debug logs when debug mode is enabled
+├── audio/                # Saved audio recordings organized by date
+│   └── YYYY/MM/         # TTS and STT audio files (.wav format)
+├── config/               # User configuration files
+│   ├── config.yaml       # Main configuration
+│   └── pronunciation.yaml # Custom pronunciation rules
+└── services/             # Installed voice services (Whisper, Kokoro, LiveKit)
+    ├── whisper/         # Whisper.cpp installation and models
+    ├── kokoro/          # Kokoro TTS service
+    └── livekit/         # LiveKit server and agents
+```
+
+### Log Types
+
+- **Conversation Logs** (`logs/conversations/`): Records of voice exchanges including timestamps, text, and metadata
+- **Event Logs** (`logs/events/`): Detailed operational events including TTS/STT operations, errors, and provider selection
+- **Audio Recordings** (`audio/`): Saved TTS outputs and STT inputs for debugging and review
+- **Debug Logs** (`logs/debug/`): Verbose debugging information when running with `--debug` flag
