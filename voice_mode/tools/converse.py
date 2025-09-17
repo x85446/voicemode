@@ -57,13 +57,6 @@ from voice_mode.config import (
     TTS_MODELS
 )
 import voice_mode.config
-from voice_mode.providers import (
-    get_tts_client_and_voice,
-    get_stt_client,
-    is_provider_available,
-    get_provider_by_voice,
-    select_best_voice
-)
 from voice_mode.provider_discovery import provider_registry
 from voice_mode.core import (
     get_openai_clients,
@@ -159,89 +152,70 @@ async def startup_initialization():
 
 
 async def get_tts_config(provider: Optional[str] = None, voice: Optional[str] = None, model: Optional[str] = None, instructions: Optional[str] = None):
-    """Get TTS configuration based on provider selection"""
-    logger.info(f"[DEBUG] get_tts_config called with provider={provider}, voice={voice}, model={model}")
-    
+    """Get TTS configuration - simplified to use direct config"""
+    from voice_mode.provider_discovery import detect_provider_type
+
     # Validate instructions usage
     if instructions and model != "gpt-4o-mini-tts":
         logger.warning(f"Instructions parameter is only supported with gpt-4o-mini-tts model, ignoring for model: {model}")
         instructions = None
-    
+
     # Map provider names to base URLs
     provider_urls = {
         'openai': 'https://api.openai.com/v1',
         'kokoro': 'http://127.0.0.1:8880/v1'
     }
-    
+
     # Convert provider name to URL if it's a known provider
-    base_url = provider_urls.get(provider, provider)
-    
-    # Use new provider selection logic
-    try:
-        client, selected_voice, selected_model, endpoint_info = await get_tts_client_and_voice(
-            voice=voice,
-            model=model,
-            base_url=base_url  # Now using mapped URL
-        )
-        
-        # Return configuration compatible with existing code
-        logger.info(f"[DEBUG] TTS endpoint selected: {endpoint_info.base_url} (provider: {endpoint_info.provider_type})")
-        logger.info(f"[DEBUG] Using voice: {selected_voice}, model: {selected_model}")
-        
-        return {
-            'client': client,
-            'base_url': endpoint_info.base_url,
-            'model': selected_model,
-            'voice': selected_voice,
-            'instructions': instructions,
-            'provider': endpoint_info.base_url,  # For logging
-            'provider_type': endpoint_info.provider_type
-        }
-    except Exception as e:
-        logger.error(f"Failed to get TTS client: {e}")
-        logger.warning(f"Falling back to OpenAI API for TTS (original error: {e})")
-        # Fallback to legacy behavior
-        return {
-            'client_key': 'tts',
-            'base_url': 'https://api.openai.com/v1',  # Fallback to OpenAI
-            'model': model or 'tts-1',
-            'voice': voice or 'alloy',
-            'instructions': instructions,
-            'provider_type': 'openai',
-            'is_fallback': True,
-            'fallback_reason': str(e)
-        }
+    base_url = None
+    if provider:
+        base_url = provider_urls.get(provider, provider)
+
+    # Use first available endpoint from config
+    if not base_url:
+        base_url = TTS_BASE_URLS[0] if TTS_BASE_URLS else 'https://api.openai.com/v1'
+
+    provider_type = detect_provider_type(base_url)
+
+    # Return simplified configuration
+    return {
+        'base_url': base_url,
+        'model': model or TTS_MODELS[0] if TTS_MODELS else 'tts-1',
+        'voice': voice or TTS_VOICES[0] if TTS_VOICES else 'alloy',
+        'instructions': instructions,
+        'provider_type': provider_type
+    }
 
 
 async def get_stt_config(provider: Optional[str] = None):
-    """Get STT configuration based on provider selection"""
-    try:
-        # Use new provider selection logic
-        client, selected_model, endpoint_info = await get_stt_client(
-            model=None,  # Let system select
-            base_url=provider  # Allow provider to be a base URL
-        )
-        
-        return {
-            'client': client,
-            'base_url': endpoint_info.base_url,
-            'model': selected_model,
-            'provider': endpoint_info.base_url,  # For logging
-            'provider_type': endpoint_info.provider_type
-        }
-    except Exception as e:
-        logger.error(f"Failed to get STT client: {e}")
-        logger.warning(f"Falling back to OpenAI API for STT (original error: {e})")
-        # Fallback to legacy behavior
-        return {
-            'client_key': 'stt',
-            'base_url': 'https://api.openai.com/v1',  # Fallback to OpenAI
-            'model': 'whisper-1',
-            'provider': 'openai-whisper',
-            'provider_type': 'openai',
-            'is_fallback': True,
-            'fallback_reason': str(e)
-        }
+    """Get STT configuration - simplified to use direct config"""
+    from voice_mode.provider_discovery import detect_provider_type
+    from voice_mode.config import STT_BASE_URLS
+
+    # Map provider names to base URLs
+    provider_urls = {
+        'whisper-local': 'http://127.0.0.1:2022/v1',
+        'openai-whisper': 'https://api.openai.com/v1'
+    }
+
+    # Convert provider name to URL if it's a known provider
+    base_url = None
+    if provider:
+        base_url = provider_urls.get(provider, provider)
+
+    # Use first available endpoint from config
+    if not base_url:
+        base_url = STT_BASE_URLS[0] if STT_BASE_URLS else 'https://api.openai.com/v1'
+
+    provider_type = detect_provider_type(base_url)
+
+    # Return simplified configuration
+    return {
+        'base_url': base_url,
+        'model': 'whisper-1',
+        'provider': 'whisper-local' if '127.0.0.1' in base_url or 'localhost' in base_url else 'openai-whisper',
+        'provider_type': provider_type
+    }
 
 
 
@@ -260,162 +234,25 @@ async def text_to_speech_with_failover(
     Returns:
         Tuple of (success, tts_metrics, tts_config)
     """
-    from voice_mode.config import SIMPLE_FAILOVER
-    
     # Apply pronunciation rules if enabled
     if pronounce_enabled():
         pronounce_mgr = get_pronounce_manager()
         message = pronounce_mgr.process_tts(message)
-    
-    # Use simple failover if enabled
-    if SIMPLE_FAILOVER:
-        from voice_mode.simple_failover import simple_tts_failover
-        return await simple_tts_failover(
-            text=message,
-            voice=voice or TTS_VOICES[0],
-            model=model or TTS_MODELS[0],
-            instructions=instructions,
-            audio_format=audio_format,
-            debug=DEBUG,
-            debug_dir=DEBUG_DIR if DEBUG else None,
-            save_audio=SAVE_AUDIO,
-            audio_dir=AUDIO_DIR if SAVE_AUDIO else None,
-            speed=speed
-        )
-    
-    # Original implementation with health checks
-    from voice_mode.provider_discovery import provider_registry
-    
-    # Track which URLs we've tried
-    tried_urls = set()
-    last_error = None
-    
-    # If initial_provider specified, try it first
-    if initial_provider:
-        provider_urls = {'openai': 'https://api.openai.com/v1', 'kokoro': 'http://127.0.0.1:8880/v1'}
-        initial_url = provider_urls.get(initial_provider, initial_provider)
-        if initial_url:
-            tried_urls.add(initial_url)
-            try:
-                tts_config = await get_tts_config(initial_provider, voice, model, instructions)
-                
-                # Handle both new client object and legacy client_key
-                if 'client' in tts_config:
-                    openai_clients['_temp_tts'] = tts_config['client']
-                    client_key = '_temp_tts'
-                else:
-                    client_key = tts_config.get('client_key', 'tts')
-                
-                # Get conversation ID from logger
-                conversation_logger = get_conversation_logger()
-                conversation_id = conversation_logger.conversation_id
-                
-                success, tts_metrics = await text_to_speech(
-                    text=message,
-                    openai_clients=openai_clients,
-                    tts_model=tts_config['model'],
-                    tts_base_url=tts_config['base_url'],
-                    tts_voice=tts_config['voice'],
-                    debug=DEBUG,
-                    debug_dir=DEBUG_DIR if DEBUG else None,
-                    save_audio=SAVE_AUDIO,
-                    audio_dir=AUDIO_DIR if SAVE_AUDIO else None,
-                    client_key=client_key,
-                    instructions=tts_config.get('instructions'),
-                    audio_format=audio_format,
-                    conversation_id=conversation_id,
-                    speed=speed
-                )
-                
-                # Clean up temporary client
-                if '_temp_tts' in openai_clients:
-                    del openai_clients['_temp_tts']
-                
-                if success:
-                    return success, tts_metrics, tts_config
-                
-                # Mark endpoint as unhealthy
-                await provider_registry.mark_unhealthy('tts', tts_config['base_url'], 'TTS request failed')
-                
-            except Exception as e:
-                last_error = str(e)
-                logger.warning(f"Initial provider {initial_provider} failed: {e}")
-                logger.debug(f"Full error details for {initial_provider}:", exc_info=True)
-    
-    # Try remaining endpoints in order
-    from voice_mode.config import TTS_BASE_URLS
-    
-    for base_url in TTS_BASE_URLS:
-        if base_url in tried_urls:
-            continue
-            
-        tried_urls.add(base_url)
-        
-        try:
-            # Try to get config for this specific base URL
-            tts_config = await get_tts_config(None, voice, model, instructions)
-            
-            # Skip if we got a different URL than requested (means our preferred wasn't available)
-            if tts_config.get('base_url') != base_url:
-                continue
-            
-            # Handle both new client object and legacy client_key
-            if 'client' in tts_config:
-                openai_clients['_temp_tts'] = tts_config['client']
-                client_key = '_temp_tts'
-            else:
-                client_key = tts_config.get('client_key', 'tts')
-            
-            # Get conversation ID from logger
-            conversation_logger = get_conversation_logger()
-            conversation_id = conversation_logger.conversation_id
-            
-            success, tts_metrics = await text_to_speech(
-                text=message,
-                openai_clients=openai_clients,
-                tts_model=tts_config['model'],
-                tts_base_url=tts_config['base_url'],
-                tts_voice=tts_config['voice'],
-                debug=DEBUG,
-                debug_dir=DEBUG_DIR if DEBUG else None,
-                save_audio=SAVE_AUDIO,
-                audio_dir=AUDIO_DIR if SAVE_AUDIO else None,
-                client_key=client_key,
-                instructions=tts_config.get('instructions'),
-                audio_format=audio_format,
-                conversation_id=conversation_id,
-                speed=speed
-            )
-            
-            # Clean up temporary client
-            if '_temp_tts' in openai_clients:
-                del openai_clients['_temp_tts']
-            
-            if success:
-                logger.info(f"TTS succeeded with failover to: {base_url}")
-                return success, tts_metrics, tts_config
-            else:
-                # Mark endpoint as unhealthy
-                await provider_registry.mark_unhealthy('tts', base_url, 'TTS request failed')
-                
-        except Exception as e:
-            last_error = str(e)
-            logger.warning(f"TTS failed for {base_url}: {e}")
-            # Mark endpoint as unhealthy
-            await provider_registry.mark_unhealthy('tts', base_url, str(e))
-    
-    # All endpoints failed
-    logger.error(f"All TTS endpoints failed. Last error: {last_error}")
-    
-    # Create a config dict with error information
-    from voice_mode.config import TTS_BASE_URLS as CONFIG_TTS_BASE_URLS
-    error_config = {
-        'error': last_error,
-        'tried_urls': list(tried_urls),
-        'base_url': CONFIG_TTS_BASE_URLS[0] if CONFIG_TTS_BASE_URLS else 'https://api.openai.com/v1'
-    }
-    
-    return False, None, error_config
+
+    # Always use simple failover (the only mode now)
+    from voice_mode.simple_failover import simple_tts_failover
+    return await simple_tts_failover(
+        text=message,
+        voice=voice or TTS_VOICES[0],
+        model=model or TTS_MODELS[0],
+        instructions=instructions,
+        audio_format=audio_format,
+        debug=DEBUG,
+        debug_dir=DEBUG_DIR if DEBUG else None,
+        save_audio=SAVE_AUDIO,
+        audio_dir=AUDIO_DIR if SAVE_AUDIO else None,
+        speed=speed
+    )
 
 
 async def speech_to_text(audio_data: np.ndarray, save_audio: bool = False, audio_dir: Optional[Path] = None, transport: str = "local") -> Optional[str]:
@@ -436,122 +273,71 @@ async def speech_to_text_with_failover(
     Returns:
         Transcribed text or None if all endpoints fail
     """
-    from voice_mode.config import SIMPLE_FAILOVER, STT_BASE_URLS
-    
-    # Use simple failover if enabled
-    if SIMPLE_FAILOVER:
-        import tempfile
-        from voice_mode.conversation_logger import get_conversation_logger
-        from voice_mode.core import save_debug_file, get_debug_filename
-        
-        # Determine if we should save the file permanently or use a temp file
-        if save_audio and audio_dir:
-            # Save directly to final location
-            conversation_logger = get_conversation_logger()
-            conversation_id = conversation_logger.conversation_id
-            
-            # Create year/month directory structure
-            now = datetime.now()
-            year_dir = audio_dir / str(now.year)
-            month_dir = year_dir / f"{now.month:02d}"
-            month_dir.mkdir(parents=True, exist_ok=True)
-            
-            # Generate filename and path
-            filename = get_debug_filename("stt", "wav", conversation_id)
-            wav_file_path = month_dir / filename
-            
-            # Write audio data directly to final location
-            write(str(wav_file_path), SAMPLE_RATE, audio_data)
-            logger.info(f"STT audio saved to: {wav_file_path}")
-            
-            # Use the saved file for STT
-            with open(wav_file_path, 'rb') as audio_file:
+    # Always use simple failover (the only mode now)
+    import tempfile
+    from voice_mode.conversation_logger import get_conversation_logger
+    from voice_mode.core import save_debug_file, get_debug_filename
+
+    # Determine if we should save the file permanently or use a temp file
+    if save_audio and audio_dir:
+        # Save directly to final location
+        conversation_logger = get_conversation_logger()
+        conversation_id = conversation_logger.conversation_id
+
+        # Create year/month directory structure
+        now = datetime.now()
+        year_dir = audio_dir / str(now.year)
+        month_dir = year_dir / f"{now.month:02d}"
+        month_dir.mkdir(parents=True, exist_ok=True)
+
+        # Generate filename and path
+        filename = get_debug_filename("stt", "wav", conversation_id)
+        wav_file_path = month_dir / filename
+
+        # Write audio data directly to final location
+        write(str(wav_file_path), SAMPLE_RATE, audio_data)
+        logger.info(f"STT audio saved to: {wav_file_path}")
+
+        # Use the saved file for STT
+        with open(wav_file_path, 'rb') as audio_file:
+            from voice_mode.simple_failover import simple_stt_failover
+            stt_result = await simple_stt_failover(
+                audio_file=audio_file,
+                model="whisper-1"
+            )
+            # Extract text and log provider info
+            if isinstance(stt_result, dict):
+                result = stt_result.get("text")
+                provider = stt_result.get("provider", "unknown")
+                logger.info(f"STT Provider Used: {provider}")
+            else:
+                # Backward compatibility if old version
+                result = stt_result
+        # Don't delete - it's our saved audio file
+    else:
+        # Use temporary file that will be deleted
+        with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as tmp_file:
+            write(tmp_file.name, SAMPLE_RATE, audio_data)
+            tmp_file.flush()
+
+            with open(tmp_file.name, 'rb') as audio_file:
                 from voice_mode.simple_failover import simple_stt_failover
-                result = await simple_stt_failover(
+                stt_result = await simple_stt_failover(
                     audio_file=audio_file,
                     model="whisper-1"
                 )
-            # Don't delete - it's our saved audio file
-        else:
-            # Use temporary file that will be deleted
-            with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as tmp_file:
-                write(tmp_file.name, SAMPLE_RATE, audio_data)
-                tmp_file.flush()
-                
-                with open(tmp_file.name, 'rb') as audio_file:
-                    from voice_mode.simple_failover import simple_stt_failover
-                    result = await simple_stt_failover(
-                        audio_file=audio_file,
-                        model="whisper-1"
-                    )
-                
-                # Clean up temp file
-                os.unlink(tmp_file.name)
-        
-        return result
-    
-    # Original implementation with health checks
-    from voice_mode.provider_discovery import provider_registry
-    
-    # Track which URLs we've tried
-    tried_urls = set()
-    last_error = None
-    
-    # Try configured endpoints in order
-    for base_url in STT_BASE_URLS:
-        if base_url in tried_urls:
-            continue
-            
-        tried_urls.add(base_url)
-        
-        try:
-            # Get STT config for this specific endpoint
-            client, selected_model, endpoint_info = await get_stt_client(base_url=base_url)
-            
-            if not client:
-                logger.warning(f"No STT client available for {base_url}")
-                continue
-            
-            from voice_mode.provider_discovery import detect_provider_type
-            
-            stt_config = {
-                'client': client,
-                'model': selected_model,
-                'base_url': endpoint_info.base_url if endpoint_info else base_url,
-                'provider': 'whisper-local' if '127.0.0.1' in base_url or 'localhost' in base_url else 'openai-whisper',
-                'provider_type': detect_provider_type(endpoint_info.base_url if endpoint_info else base_url)
-            }
-            
-            logger.info(f"Attempting STT with {stt_config['provider']} at {stt_config['base_url']}")
-            
-            # Create openai_clients dict with temporary STT client
-            openai_clients = {'_temp_stt': client}
-            
-            # Call original speech_to_text with this config
-            result = await _speech_to_text_internal(
-                audio_data, 
-                stt_config, 
-                openai_clients,
-                save_audio, 
-                audio_dir
-            )
-            
-            if result:
-                logger.info(f"STT succeeded with {stt_config['provider']}")
-                return result
-            else:
-                # Mark endpoint as unhealthy if it returned None
-                await provider_registry.mark_unhealthy('stt', base_url, 'STT returned no result')
-                
-        except Exception as e:
-            last_error = str(e)
-            logger.warning(f"STT failed for {base_url}: {e}")
-            # Mark endpoint as unhealthy
-            await provider_registry.mark_unhealthy('stt', base_url, str(e))
-    
-    # All endpoints failed
-    logger.error(f"All STT endpoints failed. Last error: {last_error}")
-    return None
+                # Return dict with text and provider
+                if isinstance(stt_result, dict):
+                    result = stt_result
+                    logger.info(f"STT Provider Used: {stt_result.get('provider', 'unknown')}")
+                else:
+                    # Backward compatibility - wrap in dict
+                    result = {"text": stt_result, "provider": "unknown"} if stt_result else None
+
+            # Clean up temp file
+            os.unlink(tmp_file.name)
+
+    return result
 
 
 async def _speech_to_text_internal(
@@ -2009,8 +1795,19 @@ async def converse(
                             event_logger.log_event(event_logger.STT_START)
                         
                         stt_start = time.perf_counter()
-                        response_text = await speech_to_text(audio_data, SAVE_AUDIO, AUDIO_DIR if SAVE_AUDIO else None, transport)
+                        stt_result = await speech_to_text(audio_data, SAVE_AUDIO, AUDIO_DIR if SAVE_AUDIO else None, transport)
                         timings['stt'] = time.perf_counter() - stt_start
+
+                        # Extract text and provider from result
+                        if isinstance(stt_result, dict):
+                            response_text = stt_result.get("text")
+                            stt_provider = stt_result.get("provider", "unknown")
+                            if stt_provider != "unknown":
+                                logger.info(f"📡 STT Provider: {stt_provider}")
+                        else:
+                            # Backward compatibility
+                            response_text = stt_result
+                            stt_provider = "unknown"
                     
                     # Log STT complete
                     if event_logger:
@@ -2122,7 +1919,9 @@ async def converse(
                     
                     # Logging already done immediately after TTS and STT complete
                     
-                    result = f"Voice response: {response_text} | Timing: {timing_str}"
+                    # Include STT provider in result if known
+                    stt_info = f" (STT: {stt_provider})" if 'stt_provider' in locals() and stt_provider != "unknown" else ""
+                    result = f"Voice response: {response_text}{stt_info} | Timing: {timing_str}"
                     success = True
                 else:
                     result = f"No speech detected | Timing: {timing_str}"

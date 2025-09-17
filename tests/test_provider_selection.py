@@ -118,11 +118,11 @@ class TestVoiceFirstSelection:
                     assert endpoint.provider_type == "kokoro"
     
     @pytest.mark.asyncio
-    async def test_unhealthy_endpoint_skipped(self, mock_registry):
-        """Test that unhealthy endpoints are skipped."""
-        # Mark Kokoro as unhealthy
-        mock_registry.registry["tts"]["http://127.0.0.1:8880/v1"].healthy = False
-        
+    async def test_endpoint_with_error_still_tried(self, mock_registry):
+        """Test that endpoints with errors are still tried (no health concept)."""
+        # Mark Kokoro as having an error (but it's still tried)
+        mock_registry.registry["tts"]["http://127.0.0.1:8880/v1"].last_error = "Previous connection failed"
+
         with patch('voice_mode.providers.provider_registry', mock_registry):
             with patch('voice_mode.providers.get_voice_preferences', return_value=['af_sky', 'nova']):
                 with patch('voice_mode.providers.TTS_BASE_URLS', [
@@ -130,10 +130,10 @@ class TestVoiceFirstSelection:
                     'https://api.openai.com/v1'
                 ]):
                     client, voice, model, endpoint = await get_tts_client_and_voice()
-                    
-                    # Should skip to OpenAI and use nova (second preference)
-                    assert voice == "nova"
-                    assert endpoint.provider_type == "openai"
+
+                    # Should still try Kokoro first since af_sky is preferred and available
+                    assert voice == "af_sky"
+                    assert endpoint.provider_type == "kokoro"
     
     @pytest.mark.asyncio
     async def test_model_selection_respects_provider_models(self, mock_registry):
@@ -159,11 +159,11 @@ class TestModelSelection:
     def test_select_requested_model_if_available(self):
         endpoint = EndpointInfo(
             base_url="test",
-            healthy=True,
             models=["tts-1", "tts-1-hd"],
             voices=[],
-            last_health_check="",
-            provider_type="test"
+            provider_type="test",
+            last_check="",
+            last_error=None
         )
         
         assert _select_model_for_endpoint(endpoint, "tts-1-hd") == "tts-1-hd"
@@ -171,11 +171,11 @@ class TestModelSelection:
     def test_select_preferred_model(self):
         endpoint = EndpointInfo(
             base_url="test",
-            healthy=True,
             models=["tts-1", "tts-1-hd"],
             voices=[],
-            last_health_check="",
-            provider_type="test"
+            provider_type="test",
+            last_check="",
+            last_error=None
         )
         
         with patch('voice_mode.providers.TTS_MODELS', ['gpt-4o-mini-tts', 'tts-1-hd', 'tts-1']):
@@ -185,11 +185,11 @@ class TestModelSelection:
     def test_fallback_to_first_available(self):
         endpoint = EndpointInfo(
             base_url="test",
-            healthy=True,
             models=["custom-model"],
             voices=[],
-            last_health_check="",
-            provider_type="test"
+            provider_type="test",
+            last_check="",
+            last_error=None
         )
         
         with patch('voice_mode.providers.TTS_MODELS', ['tts-1', 'tts-1-hd']):
@@ -199,11 +199,11 @@ class TestModelSelection:
     def test_default_fallback(self):
         endpoint = EndpointInfo(
             base_url="test",
-            healthy=True,
             models=[],
             voices=[],
-            last_health_check="",
-            provider_type="test"
+            provider_type="test",
+            last_check="",
+            last_error=None
         )
         
         # No models at all, fallback to tts-1

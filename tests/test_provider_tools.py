@@ -29,16 +29,15 @@ class TestRefreshProviderRegistry:
         
         endpoint = EndpointInfo(
             base_url="http://127.0.0.1:8880/v1",
-            healthy=True,
             models=["tts-1"],
             voices=["af_sky"],
-            last_health_check=datetime.now(timezone.utc).isoformat(),
-            response_time_ms=None,
-            error=None
+            provider_type="kokoro",
+            last_check=datetime.now(timezone.utc).isoformat(),
+            last_error=None
         )
         
         assert endpoint.base_url == "http://127.0.0.1:8880/v1"
-        assert endpoint.healthy is True
+        assert endpoint.last_error is None
         assert endpoint.models == ["tts-1"]
         assert endpoint.voices == ["af_sky"]
     
@@ -48,12 +47,11 @@ class TestRefreshProviderRegistry:
         # Create endpoint info with correct parameters
         endpoint = EndpointInfo(
             base_url="http://127.0.0.1:8880/v1",
-            healthy=True,
             models=["tts-1"],
             voices=["af_sky", "af_bella"],
-            last_health_check=datetime.now(timezone.utc).isoformat(),
-            response_time_ms=50.0,
-            error=None
+            provider_type="kokoro",
+            last_check=datetime.now(timezone.utc).isoformat(),
+            last_error=None
         )
         
         # Store in registry
@@ -62,8 +60,8 @@ class TestRefreshProviderRegistry:
         # Verify storage
         stored = mock_registry.registry["tts"]["http://127.0.0.1:8880/v1"]
         assert stored.base_url == "http://127.0.0.1:8880/v1"
-        assert stored.healthy is True
-        assert stored.response_time_ms == 50.0
+        assert stored.last_error is None
+        assert stored.last_check is not None
     
     def test_endpoint_info_parameter_validation(self):
         """Test that EndpointInfo raises TypeError for incorrect parameter names."""
@@ -71,10 +69,11 @@ class TestRefreshProviderRegistry:
         with pytest.raises(TypeError) as exc_info:
             EndpointInfo(
                 url="http://127.0.0.1:8880/v1",  # Wrong parameter name
-                healthy=True,
                 models=["tts-1"],
                 voices=[],
-                last_health_check=datetime.now(timezone.utc).isoformat()
+                provider_type="kokoro",
+                last_check=datetime.now(timezone.utc).isoformat(),
+                last_error=None
             )
         
         assert "unexpected keyword argument" in str(exc_info.value)
@@ -106,23 +105,21 @@ class TestProviderToolsIntegration:
             for url in test_tts_urls:
                 endpoint = EndpointInfo(
                     base_url=url,  # Correct parameter name after fix
-                    healthy=True,
                     models=["tts-1"],
                     voices=["af_sky"],
-                    last_health_check=datetime.now(timezone.utc).isoformat() + "Z",
-                    response_time_ms=None,
-                    error=None
+                    provider_type="kokoro",
+                    last_check=datetime.now(timezone.utc).isoformat() + "Z",
+                    last_error=None
                 )
                 assert endpoint.base_url == url
             
             for url in test_stt_urls:
                 endpoint = EndpointInfo(
                     base_url=url,  # Correct parameter name after fix
-                    healthy=True,
                     models=["whisper-1"],
                     voices=[],
-                    last_health_check=datetime.now(timezone.utc).isoformat() + "Z",
-                    response_time_ms=None,
-                    error=None
+                    provider_type="whisper",
+                    last_check=datetime.now(timezone.utc).isoformat() + "Z",
+                    last_error=None
                 )
                 assert endpoint.base_url == url

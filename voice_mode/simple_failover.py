@@ -8,11 +8,12 @@ Connection refused errors are instant, so there's no performance penalty.
 import logging
 from typing import Optional, Tuple, Dict, Any
 from openai import AsyncOpenAI
+from .provider_discovery import is_local_provider
 
 from .config import TTS_BASE_URLS, STT_BASE_URLS, OPENAI_API_KEY
 from .provider_discovery import detect_provider_type
 
-logger = logging.getLogger("voice-mode")
+logger = logging.getLogger("voicemode")
 
 
 async def simple_tts_failover(
@@ -71,10 +72,13 @@ async def simple_tts_failover(
             else:
                 selected_voice = voice  # Use original voice for Kokoro
             
+            # Disable retries for local endpoints - they either work or don't
+            max_retries = 0 if is_local_provider(base_url) else 2
             client = AsyncOpenAI(
                 api_key=api_key,
                 base_url=base_url,
-                timeout=30.0  # Reasonable timeout
+                timeout=30.0,  # Reasonable timeout
+                max_retries=max_retries
             )
             
             # Create clients dict for text_to_speech
@@ -132,19 +136,31 @@ async def simple_stt_failover(
     """
     last_error = None
     
+    # Log STT request details
+    logger.info("STT: Starting speech-to-text conversion")
+    logger.info(f"  Available endpoints: {STT_BASE_URLS}")
+
     # Try each STT endpoint in order
-    for base_url in STT_BASE_URLS:
+    for i, base_url in enumerate(STT_BASE_URLS):
         try:
-            logger.info(f"Trying STT endpoint: {base_url}")
-            
-            # Create client for this endpoint
+            # Detect provider type for logging
             provider_type = detect_provider_type(base_url)
+
+            if i == 0:
+                logger.info(f"STT: Attempting primary endpoint: {base_url} ({provider_type})")
+            else:
+                logger.warning(f"STT: Primary failed, attempting fallback #{i}: {base_url} ({provider_type})")
+
+            # Create client for this endpoint
             api_key = OPENAI_API_KEY if provider_type == "openai" else (OPENAI_API_KEY or "dummy-key-for-local")
             
+            # Disable retries for local endpoints - they either work or don't
+            max_retries = 0 if is_local_provider(base_url) else 2
             client = AsyncOpenAI(
                 api_key=api_key,
                 base_url=base_url,
-                timeout=30.0
+                timeout=30.0,
+                max_retries=max_retries
             )
             
             # Try STT with this endpoint
@@ -155,17 +171,30 @@ async def simple_stt_failover(
             )
             
             text = transcription.strip() if isinstance(transcription, str) else transcription.text.strip()
-            
+
             if text:
-                logger.info(f"STT succeeded with {base_url}")
-                return text
+                logger.info(f"✓ STT succeeded with {provider_type} at {base_url}")
+                logger.info(f"  Transcribed: {text[:100]}{'...' if len(text) > 100 else ''}")
+                # Return both text and provider info for display
+                return {"text": text, "provider": provider_type, "endpoint": base_url}
+            else:
+                logger.warning(f"STT returned empty result from {base_url} ({provider_type})")
                 
         except Exception as e:
             last_error = str(e)
-            logger.debug(f"STT failed for {base_url}: {e}")
+            provider_type = detect_provider_type(base_url)
+
+            # Log failure with appropriate level based on whether we have fallbacks
+            if i < len(STT_BASE_URLS) - 1:
+                logger.warning(f"STT failed for {base_url} ({provider_type}): {e}")
+                logger.info("  Will try next endpoint...")
+            else:
+                logger.error(f"STT failed for final endpoint {base_url} ({provider_type}): {e}")
+
             # Continue to next endpoint
             continue
     
     # All endpoints failed
-    logger.error(f"All STT endpoints failed. Last error: {last_error}")
+    logger.error(f"✗ All STT endpoints failed after {len(STT_BASE_URLS)} attempts")
+    logger.error(f"  Last error: {last_error}")
     return None

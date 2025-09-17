@@ -10,7 +10,7 @@ from typing import Dict, Optional, List, Any, Tuple
 from openai import AsyncOpenAI
 
 from .config import TTS_VOICES, TTS_MODELS, TTS_BASE_URLS, OPENAI_API_KEY, get_voice_preferences
-from .provider_discovery import provider_registry, EndpointInfo
+from .provider_discovery import provider_registry, EndpointInfo, is_local_provider
 
 logger = logging.getLogger("voice-mode")
 
@@ -49,21 +49,24 @@ async def get_tts_client_and_voice(
     if base_url:
         logger.info(f"TTS Provider Selection: Using specific base URL: {base_url}")
         endpoint_info = provider_registry.registry["tts"].get(base_url)
-        if not endpoint_info or not endpoint_info.healthy:
-            raise ValueError(f"Requested base URL {base_url} is not available")
-        
+        if not endpoint_info:
+            raise ValueError(f"Requested base URL {base_url} is not configured")
+
         selected_voice = voice or _select_voice_for_endpoint(endpoint_info)
         selected_model = model or _select_model_for_endpoint(endpoint_info)
-        
+
+        # Disable retries for local endpoints - they either work or don't
+        max_retries = 0 if is_local_provider(base_url) else 2
         client = AsyncOpenAI(
             api_key=OPENAI_API_KEY or "dummy-key-for-local",
-            base_url=base_url
+            base_url=base_url,
+            max_retries=max_retries
         )
-        
+
         logger.info(f"  • Selected endpoint: {base_url}")
         logger.info(f"  • Selected voice: {selected_voice}")
         logger.info(f"  • Selected model: {selected_model}")
-        
+
         return client, selected_voice, selected_model, endpoint_info
     
     # Voice-first selection algorithm
@@ -83,69 +86,75 @@ async def get_tts_client_and_voice(
         logger.info(f"  Specific voice requested: {voice}")
         for url in TTS_BASE_URLS:
             endpoint_info = provider_registry.registry["tts"].get(url)
-            if not endpoint_info or not endpoint_info.healthy:
+            if not endpoint_info:
                 continue
-            
+
             if voice in endpoint_info.voices:
                 selected_voice = voice
                 selected_model = _select_model_for_endpoint(endpoint_info, model)
-                
+
                 api_key = OPENAI_API_KEY if endpoint_info.provider_type == "openai" else (OPENAI_API_KEY or "dummy-key-for-local")
-                client = AsyncOpenAI(api_key=api_key, base_url=url)
-                
+                # Disable retries for local endpoints - they either work or don't
+                max_retries = 0 if is_local_provider(url) else 2
+                client = AsyncOpenAI(api_key=api_key, base_url=url, max_retries=max_retries)
+
                 logger.info(f"  ✓ Selected endpoint: {url} ({endpoint_info.provider_type})")
                 logger.info(f"  ✓ Selected voice: {selected_voice}")
                 logger.info(f"  ✓ Selected model: {selected_model}")
-                
+
                 return client, selected_voice, selected_model, endpoint_info
     
     # No specific voice requested - iterate through voice preferences
     logger.info("  No specific voice requested, checking voice preferences...")
     for preferred_voice in combined_voice_list:
         logger.debug(f"  Looking for voice: {preferred_voice}")
-        
+
         # Check each endpoint for this voice
         for url in TTS_BASE_URLS:
             endpoint_info = provider_registry.registry["tts"].get(url)
-            if not endpoint_info or not endpoint_info.healthy:
+            if not endpoint_info:
                 continue
-            
+
             if preferred_voice in endpoint_info.voices:
                 logger.info(f"  Found voice '{preferred_voice}' at {url} ({endpoint_info.provider_type})")
                 selected_voice = preferred_voice
                 selected_model = _select_model_for_endpoint(endpoint_info, model)
-                
+
                 api_key = OPENAI_API_KEY if endpoint_info.provider_type == "openai" else (OPENAI_API_KEY or "dummy-key-for-local")
-                client = AsyncOpenAI(api_key=api_key, base_url=url)
-                
+                # Disable retries for local endpoints - they either work or don't
+                max_retries = 0 if is_local_provider(url) else 2
+                client = AsyncOpenAI(api_key=api_key, base_url=url, max_retries=max_retries)
+
                 logger.info(f"  ✓ Selected endpoint: {url} ({endpoint_info.provider_type})")
                 logger.info(f"  ✓ Selected voice: {selected_voice}")
                 logger.info(f"  ✓ Selected model: {selected_model}")
-                
+
                 return client, selected_voice, selected_model, endpoint_info
     
     # No preferred voices found - fall back to any available endpoint
     logger.warning("  No preferred voices available, using any available endpoint...")
     for url in TTS_BASE_URLS:
         endpoint_info = provider_registry.registry["tts"].get(url)
-        if not endpoint_info or not endpoint_info.healthy:
+        if not endpoint_info:
             continue
-        
+
         if endpoint_info.voices:
             selected_voice = endpoint_info.voices[0]
             selected_model = _select_model_for_endpoint(endpoint_info, model)
-            
+
             api_key = OPENAI_API_KEY if endpoint_info.provider_type == "openai" else (OPENAI_API_KEY or "dummy-key-for-local")
-            client = AsyncOpenAI(api_key=api_key, base_url=url)
-            
+            # Disable retries for local endpoints - they either work or don't
+            max_retries = 0 if is_local_provider(url) else 2
+            client = AsyncOpenAI(api_key=api_key, base_url=url, max_retries=max_retries)
+
             logger.info(f"  ✓ Selected endpoint: {url} ({endpoint_info.provider_type})")
             logger.info(f"  ✓ Selected voice: {selected_voice}")
             logger.info(f"  ✓ Selected model: {selected_model}")
-            
+
             return client, selected_voice, selected_model, endpoint_info
-    
+
     # No suitable endpoint found
-    raise ValueError("No healthy TTS endpoints found that support requested voice/model preferences")
+    raise ValueError("No TTS endpoints found that support requested voice/model preferences")
 
 
 async def get_stt_client(
@@ -171,30 +180,36 @@ async def get_stt_client(
     # If specific base_url is requested, use it directly
     if base_url:
         endpoint_info = provider_registry.registry["stt"].get(base_url)
-        if not endpoint_info or not endpoint_info.healthy:
-            raise ValueError(f"Requested base URL {base_url} is not available")
-        
+        if not endpoint_info:
+            raise ValueError(f"Requested base URL {base_url} is not configured")
+
         selected_model = model or "whisper-1"  # Default STT model
-        
+
+        # Disable retries for local endpoints - they either work or don't
+        max_retries = 0 if is_local_provider(base_url) else 2
         client = AsyncOpenAI(
             api_key=OPENAI_API_KEY or "dummy-key-for-local",
-            base_url=base_url
+            base_url=base_url,
+            max_retries=max_retries
         )
-        
+
         return client, selected_model, endpoint_info
-    
-    # Get any healthy STT endpoint
-    healthy_endpoints = provider_registry.get_healthy_endpoints("stt")
-    if not healthy_endpoints:
-        raise ValueError("No healthy STT endpoints available")
-    
-    endpoint_info = healthy_endpoints[0]
+
+    # Get STT endpoints in priority order
+    endpoints = provider_registry.get_endpoints("stt")
+    if not endpoints:
+        raise ValueError("No STT endpoints available")
+
+    endpoint_info = endpoints[0]
     selected_model = model or "whisper-1"
     
     api_key = OPENAI_API_KEY if endpoint_info.provider_type == "openai" else (OPENAI_API_KEY or "dummy-key-for-local")
+    # Disable retries for local endpoints - they either work or don't
+    max_retries = 0 if is_local_provider(endpoint_info.base_url) else 2
     client = AsyncOpenAI(
         api_key=api_key,
-        base_url=endpoint_info.base_url
+        base_url=endpoint_info.base_url,
+        max_retries=max_retries
     )
     
     return client, selected_model, endpoint_info
@@ -256,8 +271,9 @@ async def is_provider_available(provider_id: str, timeout: float = 2.0) -> bool:
     # Check in appropriate registry
     service_type = "tts" if provider_id in ["kokoro", "openai"] else "stt"
     endpoint_info = provider_registry.registry[service_type].get(base_url)
-    
-    return endpoint_info.healthy if endpoint_info else False
+
+    # Without health checks, we just return if the endpoint is configured
+    return endpoint_info is not None
 
 
 def get_provider_by_voice(voice: str) -> Optional[Dict[str, Any]]:

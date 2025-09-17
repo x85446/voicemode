@@ -34,7 +34,8 @@ async def voice_mode_info() -> str:
     for service_type in ["tts", "stt"]:
         info.append(f"\n{service_type.upper()} Endpoints:")
         for url, endpoint in provider_registry.registry[service_type].items():
-            status = "✅" if endpoint.healthy else "❌"
+            # Show status based on whether endpoint has an error
+            status = "❌" if endpoint.last_error else "✅"
             info.append(f"  {status} {url} ({endpoint.provider_type})")
             if service_type == "tts" and endpoint.voices:
                 info.append(f"     Voices: {', '.join(endpoint.voices[:3])}...")

@@ -57,36 +57,36 @@ async def test_provider_resilience():
     local_url = "http://127.0.0.1:8880/v1"
     print(f"  Initial state of {local_url}:")
     initial_info = registry.registry["tts"][local_url]
-    print(f"    Healthy: {initial_info.healthy}")
-    print(f"    Error: {initial_info.error}")
+    print(f"    Last Error: {initial_info.last_error}")
+    print(f"    Last Check: {initial_info.last_check}")
     
-    # Mark as unhealthy
-    await registry.mark_unhealthy("tts", local_url, "Connection refused")
+    # Mark as failed
+    await registry.mark_failed("tts", local_url, "Connection refused")
     
-    print(f"  After marking unhealthy:")
+    print(f"  After marking failed:")
     updated_info = registry.registry["tts"][local_url]
-    print(f"    Healthy: {updated_info.healthy}")
-    print(f"    Error: {updated_info.error}")
+    print(f"    Last Error: {updated_info.last_error}")
+    print(f"    Last Check: {updated_info.last_check}")
     
-    # Test that it's still in healthy endpoints
-    healthy_endpoints = registry.get_healthy_endpoints("tts")
-    local_in_healthy = any(ep.base_url == local_url for ep in healthy_endpoints)
-    print(f"  Local provider still in healthy endpoints: {local_in_healthy}")
+    # Test that it's still in available endpoints
+    all_endpoints = registry.get_endpoints("tts")
+    local_in_endpoints = any(ep.base_url == local_url for ep in all_endpoints)
+    print(f"  Local provider still in available endpoints: {local_in_endpoints}")
     
     # Test 4: Remote provider behavior
     print("\n4. Testing remote provider behavior:")
     remote_url = "https://api.openai.com/v1"
     print(f"  Initial state of {remote_url}:")
     initial_remote = registry.registry["tts"][remote_url]
-    print(f"    Healthy: {initial_remote.healthy}")
+    print(f"    Last Error: {initial_remote.last_error}")
     
-    # Mark as unhealthy
-    await registry.mark_unhealthy("tts", remote_url, "API key invalid")
+    # Mark as failed
+    await registry.mark_failed("tts", remote_url, "API key invalid")
     
-    print(f"  After marking unhealthy:")
+    print(f"  After marking failed:")
     updated_remote = registry.registry["tts"][remote_url]
-    print(f"    Healthy: {updated_remote.healthy}")
-    print(f"    Error: {updated_remote.error}")
+    print(f"    Last Error: {updated_remote.last_error}")
+    print(f"    Last Check: {updated_remote.last_check}")
     
     print("\n" + "=" * 50)
     print("Test completed successfully!")

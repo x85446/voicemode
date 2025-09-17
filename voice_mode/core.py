@@ -18,6 +18,7 @@ from typing import Optional
 import numpy as np
 from pydub import AudioSegment
 from openai import AsyncOpenAI
+from .provider_discovery import is_local_provider
 import httpx
 
 from .config import SAMPLE_RATE
@@ -135,16 +136,22 @@ def get_openai_clients(api_key: str, stt_base_url: Optional[str] = None, tts_bas
         'limits': httpx.Limits(max_keepalive_connections=5, max_connections=10),
     }
     
+    # Disable retries for local endpoints - they either work or don't
+    stt_max_retries = 0 if is_local_provider(stt_base_url) else 2
+    tts_max_retries = 0 if is_local_provider(tts_base_url) else 2
+
     return {
         'stt': AsyncOpenAI(
             api_key=api_key,
             base_url=stt_base_url,
-            http_client=httpx.AsyncClient(**http_client_config)
+            http_client=httpx.AsyncClient(**http_client_config),
+            max_retries=stt_max_retries
         ),
         'tts': AsyncOpenAI(
             api_key=api_key,
             base_url=tts_base_url,
-            http_client=httpx.AsyncClient(**http_client_config)
+            http_client=httpx.AsyncClient(**http_client_config),
+            max_retries=tts_max_retries
         )
     }
 
