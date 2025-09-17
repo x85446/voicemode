@@ -199,6 +199,7 @@ async def get_tts_config(provider: Optional[str] = None, voice: Optional[str] = 
         }
     except Exception as e:
         logger.error(f"Failed to get TTS client: {e}")
+        logger.warning(f"Falling back to OpenAI API for TTS (original error: {e})")
         # Fallback to legacy behavior
         return {
             'client_key': 'tts',
@@ -206,7 +207,9 @@ async def get_tts_config(provider: Optional[str] = None, voice: Optional[str] = 
             'model': model or 'tts-1',
             'voice': voice or 'alloy',
             'instructions': instructions,
-            'provider_type': 'openai'
+            'provider_type': 'openai',
+            'is_fallback': True,
+            'fallback_reason': str(e)
         }
 
 
@@ -228,13 +231,16 @@ async def get_stt_config(provider: Optional[str] = None):
         }
     except Exception as e:
         logger.error(f"Failed to get STT client: {e}")
+        logger.warning(f"Falling back to OpenAI API for STT (original error: {e})")
         # Fallback to legacy behavior
         return {
             'client_key': 'stt',
             'base_url': 'https://api.openai.com/v1',  # Fallback to OpenAI
             'model': 'whisper-1',
             'provider': 'openai-whisper',
-            'provider_type': 'openai'
+            'provider_type': 'openai',
+            'is_fallback': True,
+            'fallback_reason': str(e)
         }
 
 
@@ -732,6 +738,8 @@ async def _speech_to_text_internal(
                         provider_type=stt_config.get('provider_type'),
                         audio_format=export_format,  # Use actual format from conversion
                         transport=transport,
+                        is_fallback=stt_config.get('is_fallback', False),
+                        fallback_reason=stt_config.get('fallback_reason'),
                         silence_detection={
                             "enabled": not DISABLE_SILENCE_DETECTION,
                             "vad_aggressiveness": VAD_AGGRESSIVENESS,
@@ -1771,6 +1779,8 @@ async def converse(
                             provider=tts_config.get('provider') if tts_config else (tts_provider if tts_provider else 'openai'),
                             provider_url=tts_config.get('base_url') if tts_config else None,
                             provider_type=tts_config.get('provider_type') if tts_config else None,
+                            is_fallback=tts_config.get('is_fallback', False) if tts_config else False,
+                            fallback_reason=tts_config.get('fallback_reason') if tts_config else None,
                             timing=timing_str,
                             audio_format=audio_format,
                             transport="speak-only",
@@ -1901,6 +1911,8 @@ async def converse(
                                 provider=tts_config.get('provider') if tts_config else (tts_provider if tts_provider else 'openai'),
                                 provider_url=tts_config.get('base_url') if tts_config else None,
                                 provider_type=tts_config.get('provider_type') if tts_config else None,
+                                is_fallback=tts_config.get('is_fallback', False) if tts_config else False,
+                                fallback_reason=tts_config.get('fallback_reason') if tts_config else None,
                                 timing=tts_timing_str,
                                 audio_format=audio_format,
                                 transport=transport,

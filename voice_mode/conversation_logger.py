@@ -189,6 +189,9 @@ class ConversationLogger:
             "timing": kwargs.get("timing"),
             "silence_detection": kwargs.get("silence_detection"),
             "error": kwargs.get("error"),
+            # Fallback information
+            "is_fallback": kwargs.get("is_fallback"),
+            "fallback_reason": kwargs.get("fallback_reason"),
             # Timing metrics
             "transcription_time": kwargs.get("transcription_time"),
             "total_turnaround_time": kwargs.get("total_turnaround_time"),
@@ -205,6 +208,9 @@ class ConversationLogger:
             "provider": kwargs.get("provider"),
             "provider_url": kwargs.get("provider_url"),
             "provider_type": kwargs.get("provider_type"),
+            # Fallback information
+            "is_fallback": kwargs.get("is_fallback"),
+            "fallback_reason": kwargs.get("fallback_reason"),
             "audio_format": kwargs.get("audio_format"),
             "timing": kwargs.get("timing"),
             "transport": kwargs.get("transport"),
