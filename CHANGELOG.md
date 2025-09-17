@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Enhanced STT Logging**
+  - Add comprehensive logging for speech-to-text operations
+  - Log provider selection and fallback attempts
+  - Include transcription details and provider info in logs
+
+- **Configuration Management**
+  - Add `voicemode config edit` command for easy configuration file editing
+  - Support custom editor selection via --editor flag
+  - Automatically open configuration file in default editor
+
+- **Tool Environment Variables**
+  - Replace VOICEMODE_TOOLS with VOICEMODE_ENABLED_TOOLS and VOICEMODE_DISABLED_TOOLS
+  - Allow fine-grained control over tool availability
+  - Support comma-separated lists for enabling/disabling specific tools
+
+### Changed
+- **Provider Selection Architecture**
+  - Consolidate dual provider selection systems into single simple failover approach
+  - Remove SIMPLE_FAILOVER configuration - simple failover is now the only mode
+  - Simplify get_tts_config and get_stt_config to use direct configuration
+  - Eliminate ~400 lines of unused provider registry selection logic
+  - Provider registry now only stores endpoint info without complex selection
+
+### Fixed
+- Disable OpenAI client retries for local endpoints to avoid delays
+- Fix logger name consistency (voicemode vs voice-mode) for STT logging
+- Prevent test_installers from killing running voice services during tests
+- Update tests to work with refactored provider system
+- Resolve test failures related to new environment variables
+
 ## [4.4.0] - 2025-09-10
 
 ### Added
