@@ -1,5 +1,8 @@
 # Development Setup
 
+
+*Note: These docs need review.*
+
 This guide covers setting up VoiceMode for development, including building from source, configuring your IDE, and contributing to the project.
 
 ## Prerequisites
@@ -25,30 +28,16 @@ pip install uv
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/voice-mode
-cd voice-mode
+git clone https://github.com/mbailey/voicemode
+cd voicemode
 
 # Install in development mode
-uv pip install -e .
-
-# Or using pip
-pip install -e .
+uv tool install -e .
 ```
 
 ## Development Workflow
 
 ### Running from Source
-
-```bash
-# Run directly from project directory
-uvx .
-
-# Or explicitly specify the command
-uvx --from . voice-mode
-
-# Force refresh after code changes
-uvx --refresh --from . voice-mode
-```
 
 ### Building the Package
 
@@ -80,145 +69,24 @@ pytest tests/test_converse.py
 pytest -v
 ```
 
-## IDE Configuration
-
-### VS Code Setup
-
-Create `.vscode/mcp.json` in your workspace:
-
-```json
-{
-  "servers": {
-    "voice-mode": {
-      "type": "stdio",
-      "command": "uvx",
-      "args": ["--from", ".", "voice-mode"],
-      "env": {
-        "OPENAI_API_KEY": "${input:openai-api-key}",
-        "VOICEMODE_DEBUG": "true"
-      }
-    }
-  },
-  "inputs": [
-    {
-      "type": "promptString",
-      "id": "openai-api-key",
-      "description": "OpenAI API Key",
-      "password": true
-    }
-  ]
-}
-```
-
-### PyCharm/IntelliJ Setup
-
-1. Open project settings
-2. Configure Python interpreter to use virtual environment
-3. Add environment variables:
-   - `OPENAI_API_KEY`
-   - `VOICEMODE_DEBUG=true`
-4. Set working directory to project root
-
-### Recommended Extensions
-
-#### VS Code
-- Python (Microsoft)
-- Pylance
-- Python Test Explorer
-- GitLens
-- EditorConfig
-
-#### PyCharm
-- Python (built-in)
-- Markdown support
-- .env files support
-
-## Environment Setup
-
-### Development Environment Variables
-
-Create a `.env` file in the project root:
-
-```bash
-# Development settings
-VOICEMODE_DEBUG=true
-VOICEMODE_LOG_LEVEL=debug
-VOICEMODE_SAVE_ALL=true
-
-# API keys (optional for local development)
-OPENAI_API_KEY=sk-...
-
-# Local service URLs
-VOICEMODE_TTS_BASE_URLS=http://127.0.0.1:8880/v1
-VOICEMODE_STT_BASE_URLS=http://127.0.0.1:2022/v1
-
-# Development paths
-VOICEMODE_DATA_DIR=./dev-data
-VOICEMODE_LOG_DIR=./dev-logs
-```
-
 ### Using Local Services
 
 For development without API keys:
 
 ```bash
-# Install local services
-make install-services
+# Or manually
+voicemode whisper install
+voicemode kokoro install
 
 # Or manually
-voice-mode whisper install
-voice-mode kokoro install
-
-# Start services
-make start-services
-
-# Or manually
-voice-mode whisper start
-voice-mode kokoro start
-```
-
-## Frontend Development
-
-### Setup
-
-```bash
-# Navigate to frontend directory
-cd voice_mode/frontend
-
-# Install dependencies
-npm install
-# or
-pnpm install
-
-# Start development server
-npm run dev
-```
-
-### Building Frontend
-
-```bash
-# Build for production
-npm run build
-
-# The built files are included in the Python package
-```
-
-### Frontend Environment
-
-Create `voice_mode/frontend/.env.local`:
-
-```bash
-# Development settings
-NEXT_PUBLIC_LIVEKIT_URL=ws://localhost:7880
-LIVEKIT_API_KEY=devkey
-LIVEKIT_API_SECRET=secret
-LIVEKIT_ACCESS_PASSWORD=dev123
+voicemode whisper start
+voicemode kokoro start
 ```
 
 ## Project Structure
 
 ```
-voice-mode/
+voicemode/
 ├── voice_mode/           # Main package
 │   ├── __init__.py
 │   ├── server.py         # MCP server
@@ -284,18 +152,9 @@ export VOICEMODE_LOG_LEVEL=debug
 ### Common Debug Commands
 
 ```bash
-# Test configuration
-voice-mode config test
-
 # Check service status
-voice-mode whisper status
-voice-mode kokoro status
-
-# View logs
-voice-mode logs --tail 50
-
-# Test audio devices
-voice-mode audio test
+voicemode whisper status
+voicemode kokoro status
 ```
 
 ## Testing
@@ -409,10 +268,6 @@ make docs-serve   # Serve docs locally
 ### Import Errors
 
 ```bash
-# Reinstall in editable mode
-pip install -e .
-
-# Or with uv
 uv pip install -e .
 ```
 
@@ -427,16 +282,6 @@ lsof -i :7880  # LiveKit
 # Kill stuck processes
 pkill -f kokoro
 pkill -f whisper
-```
-
-### Frontend Build Issues
-
-```bash
-# Clean and rebuild
-cd voice_mode/frontend
-rm -rf node_modules .next
-npm install
-npm run build
 ```
 
 ## Additional Resources
