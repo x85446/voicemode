@@ -2,6 +2,8 @@
 
 VoiceMode provides flexible configuration through environment variables and configuration files, following standard precedence rules while maintaining sensible defaults.
 
+*Note: The python package is called `voice-mode` but 
+
 ## Quick Start
 
 VoiceMode works out of the box with minimal configuration:
@@ -15,8 +17,8 @@ export OPENAI_API_KEY="your-api-key"
 ### Local Setup
 ```bash
 # Run local services (Whisper + Kokoro)
-voice-mode whisper start
-voice-mode kokoro start
+voicemode kokoro start
+voicemode whisper start
 # VoiceMode auto-detects them!
 ```
 
@@ -57,7 +59,7 @@ When used as an MCP server, add to your Claude or other MCP client configuration
 ```json
 {
   "mcpServers": {
-    "voice-mode": {
+    "voicemode": {
       "command": "uvx",
       "args": ["voice-mode"],
       "env": {
@@ -170,7 +172,7 @@ LIVEKIT_URL=ws://127.0.0.1:7880
 LIVEKIT_PORT=7880
 
 # Room settings
-VOICEMODE_LIVEKIT_ROOM_PREFIX=voice-mode
+VOICEMODE_LIVEKIT_ROOM_PREFIX=voicemode
 VOICEMODE_LIVEKIT_AUTO_CREATE=true
 ```
 
@@ -265,32 +267,16 @@ export VOICEMODE_TTS_MODEL=tts-1-hd
 export VOICEMODE_VOICES=nova,alloy
 ```
 
-### Development Mode
-```bash
-# Fast iteration without voice
-export VOICEMODE_DEBUG=true
-export VOICEMODE_SKIP_TTS=true
-export VOICEMODE_SAVE_ALL=true
-```
-
-### Production Deployment
-```bash
-# Robust setup with fallbacks
-export OPENAI_API_KEY=sk-...
-export VOICEMODE_TTS_BASE_URLS=http://127.0.0.1:8880/v1,https://api.openai.com/v1
-export VOICEMODE_STT_BASE_URLS=http://127.0.0.1:2022/v1,https://api.openai.com/v1
-export VOICEMODE_LOG_LEVEL=warning
-```
-
 ## Troubleshooting Configuration
 
 ### Check Active Configuration
 ```bash
-# View current settings
-voice-mode config show
+# List all configuration keys
+voicemode config list
 
-# Test service discovery
-voice-mode config test
+# Get specific settings
+voicemode config get VOICEMODE_TTS_VOICE
+voicemode config get OPENAI_API_KEY
 ```
 
 ### Configuration Not Working?
@@ -305,7 +291,8 @@ voice-mode config test
 ```bash
 # Backup and recreate default config
 mv ~/.voicemode/voicemode.env ~/.voicemode/voicemode.env.backup
-voice-mode config init
+# Edit the configuration file to reset
+voicemode config edit
 ```
 
 ## Security Considerations
