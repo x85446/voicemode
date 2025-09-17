@@ -29,12 +29,11 @@ async def test_stt_audio_saved_with_simple_failover():
         # Patch the config values to ensure saving is enabled
         with patch('voice_mode.config.SAVE_ALL', True), \
              patch('voice_mode.config.SAVE_AUDIO', True), \
-             patch('voice_mode.config.SIMPLE_FAILOVER', True), \
              patch('voice_mode.tools.converse.SAVE_AUDIO', True):
             
-            # Mock the simple_stt_failover to return test transcription
+            # Mock the simple_stt_failover to return test transcription dict
             with patch('voice_mode.simple_failover.simple_stt_failover', new_callable=AsyncMock) as mock_stt:
-                mock_stt.return_value = "Test transcription"
+                mock_stt.return_value = {"text": "Test transcription", "provider": "whisper", "endpoint": "http://127.0.0.1:2022/v1"}
                 
                 # Mock the conversation logger
                 with patch('voice_mode.tools.converse.get_conversation_logger') as mock_logger:
@@ -59,7 +58,7 @@ async def test_stt_audio_saved_with_simple_failover():
                             transport="local"
                         )
                         
-                        # Verify transcription was returned
+                        # Verify transcription was returned (when saving, returns just text)
                         assert result == "Test transcription"
                         
                         # Check that audio file was saved in year/month structure
@@ -101,8 +100,9 @@ async def test_stt_audio_not_saved_when_disabled():
                 transport="local"
             )
             
-            # Verify transcription was returned
-            assert result == "Test transcription"
+            # Verify transcription was returned (now returns dict)
+            assert isinstance(result, dict)
+            assert result["text"] == "Test transcription"
             
             # Verify no audio files were saved
             audio_files = list(test_audio_dir.rglob("*.wav"))

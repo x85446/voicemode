@@ -51,20 +51,16 @@ class TestVoiceFirstSelection:
         # Mock Kokoro endpoint with af_sky voice
         registry.registry["tts"]["http://127.0.0.1:8880/v1"] = EndpointInfo(
             base_url="http://127.0.0.1:8880/v1",
-            healthy=True,
             models=["tts-1"],
             voices=["af_sky", "af_sarah", "am_adam"],
-            last_health_check=datetime.now(timezone.utc).isoformat(),
             provider_type="kokoro"
         )
-        
+
         # Mock OpenAI endpoint with standard voices
         registry.registry["tts"]["https://api.openai.com/v1"] = EndpointInfo(
             base_url="https://api.openai.com/v1",
-            healthy=True,
             models=["tts-1", "tts-1-hd", "gpt-4o-mini-tts"],
             voices=["alloy", "echo", "fable", "nova", "onyx", "shimmer"],
-            last_health_check=datetime.now(timezone.utc).isoformat(),
             provider_type="openai"
         )
         

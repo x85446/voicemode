@@ -75,23 +75,14 @@ class TestProviderDetection:
     
     @pytest.mark.asyncio
     async def test_endpoint_info_attribute_usage(self):
-        """Test that get_stt_config uses endpoint_info.base_url not endpoint_info.url."""
-        # Create a mock EndpointInfo with base_url attribute
-        mock_endpoint_info = Mock(spec=EndpointInfo)
-        mock_endpoint_info.base_url = "http://127.0.0.1:2022/v1"
-        # Note: EndpointInfo doesn't have a 'url' attribute
-        
-        mock_client = AsyncMock()
-        mock_model = "whisper-1"
-        
-        with patch('voice_mode.tools.converse.get_stt_client') as mock_get_stt:
-            mock_get_stt.return_value = (mock_client, mock_model, mock_endpoint_info)
-            
+        """Test that get_stt_config returns proper configuration."""
+        # Mock STT_BASE_URLS to control the endpoint
+        with patch('voice_mode.config.STT_BASE_URLS', ["http://127.0.0.1:2022/v1"]):
             # Call get_stt_config
             config = await get_stt_config()
-            
-            # Verify it uses base_url, not url
+
+            # Verify it uses base_url from configuration
             assert config['base_url'] == "http://127.0.0.1:2022/v1"
-            assert config['provider'] == "http://127.0.0.1:2022/v1"  # For logging
-            assert config['client'] == mock_client
-            assert config['model'] == mock_model
+            assert config['model'] == "whisper-1"
+            assert config['provider'] == "whisper-local"
+            assert config['provider_type'] == "whisper"
