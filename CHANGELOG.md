@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Automatically open configuration file in default editor
 
 - **Tool Environment Variables**
-  - Replace VOICEMODE_TOOLS with VOICEMODE_ENABLED_TOOLS and VOICEMODE_DISABLED_TOOLS
+  - Replace VOICEMODE_TOOLS with VOICEMODE_TOOLS_ENABLED and VOICEMODE_TOOLS_DISABLED
   - Allow fine-grained control over tool availability
   - Support comma-separated lists for enabling/disabling specific tools
 
