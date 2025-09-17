@@ -5,6 +5,7 @@ VoiceMode brings voice conversations to AI coding assistants. It works as both a
 ## What is VoiceMode?
 
 VoiceMode provides:
+
 - **MCP Server**: Adds voice tools to Claude Code - no installation needed
 - **CLI Tool**: Use VoiceMode's tools directly from your terminal
 - **Local Services**: Optional privacy-focused speech processing
@@ -18,13 +19,15 @@ The fastest way to get started is using VoiceMode with Claude Code.
 The easiest way - installs UV and all dependencies automatically:
 
 ```bash
-curl -sSf https://voicemode.sh | sh
+curl -O https://getvoicemode.com/install.sh && bash install.sh
 ```
 
 This installer will:
+
 - Install UV package manager
 - Install missing system dependencies (Node.js, FFmpeg, PortAudio, etc.)
 - Set up your environment for VoiceMode
+- Offer to install local voice services (Whisper STT and Kokoro TTS)
 
 ### Option 2: Manual UV Installation
 
@@ -47,7 +50,7 @@ Learn more: [UV Installation Guide](https://docs.astral.sh/uv/getting-started/in
 ### 1. Add VoiceMode to Claude
 
 ```bash
-claude mcp add --user voicemode --refresh
+claude mcp add --user voicemode -- uvx --refresh voice-mode
 ```
 
 ### 2. Configure Your API Key
@@ -102,9 +105,6 @@ export OPENAI_API_KEY="sk-your-api-key-here"
 
 # Start a voice conversation
 voicemode converse
-
-# Transcribe audio
-echo "Hello world" | voicemode transcribe
 ```
 
 ## Setting Up Local Services (Optional)
@@ -148,8 +148,7 @@ Available OpenAI voices: alloy, echo, fable, onyx, nova, shimmer
 Create `.voicemode.env` in your project:
 
 ```bash
-# Example for a game project
-export VOICEMODE_VOICES="onyx"
+export VOICEMODE_VOICES="af_nova,nova"
 export VOICEMODE_TTS_SPEED=1.2
 ```
 
@@ -164,14 +163,12 @@ Learn more: [Configuration Guide](../guides/configuration.md)
    claude mcp list
    ```
    
-2. **Verify API key** is set in your MCP configuration
+2. **Verify OPENAI_API_KEY** is set in your MCP configuration
 
-3. **Test with debug mode**:
-   Add to your MCP config:
+3. Add to your MCP config:
    ```json
    "env": {
      "OPENAI_API_KEY": "sk-...",
-     "VOICEMODE_DEBUG": "true"
    }
    ```
 
@@ -179,10 +176,10 @@ Learn more: [Configuration Guide](../guides/configuration.md)
 
 ```bash
 # List audio devices
-voicemode audio devices
+voicemode diag devices
 
-# Test recording
-voicemode audio test
+# Test TTS and STT
+voicemode converse
 ```
 
 ### Service Issues?
