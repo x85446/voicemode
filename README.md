@@ -135,21 +135,6 @@ nix develop github:mbailey/voicemode
 ```bash
 # Using Claude Code (recommended)
 claude mcp add --scope user voicemode uvx --refresh voice-mode
-
-# Using Claude Code with Nix (NixOS)
-claude mcp add voice-mode nix run github:mbailey/voicemode
-
-# Using UV (recommended)
-uvx voice-mode
-
-# For cleanest experience with UV (no deprecation warnings):
-UV_PYTHON=python3.13 uvx voice-mode
-
-# Using pip
-pip install voice-mode
-
-# Using Nix (NixOS)
-nix run github:mbailey/voicemode
 ```
 
 ### Configuration for AI Coding Assistants
