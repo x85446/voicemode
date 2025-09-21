@@ -900,10 +900,14 @@ test_voice_setup() {
   local device_output=$(voicemode diag devices 2>&1)
 
   if echo "$device_output" | grep -q "Input Devices:"; then
-    local input_count=$(echo "$device_output" | grep -c "^\s*\[[0-9]\].*channels)")
+    # Extract only the input devices section (between "Input Devices:" and next empty line or "Output")
+    local input_section=$(echo "$device_output" | sed -n '/Input Devices:/,/^$/p' | sed -n '/Input Devices:/,/Output Devices:/p')
+    local input_count=$(echo "$input_section" | grep -c "^\s*\[[0-9]\].*channels)")
+
     if [ "$input_count" -gt 0 ]; then
       print_success "Found $input_count microphone(s)"
-      echo "$device_output" | grep "Default Input:" | head -1
+      # Show the default input device
+      echo "$device_output" | grep "Default Input:" | sed 's/^/  /'
     else
       print_warning "No microphones detected"
       echo "  Voice features require a microphone to be connected"
