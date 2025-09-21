@@ -175,13 +175,36 @@ check_homebrew() {
 
 confirm_action() {
   local action="$1"
+  local default_yes="${2:-true}"  # Default to yes unless specified
+
   echo ""
-  echo "About to: $action"
-  read -p "Continue? (y/n): " choice
+
+  # Check if action is already a question (contains "?")
+  if [[ "$action" == *"?"* ]]; then
+    echo "$action"
+  else
+    echo "About to: $action"
+  fi
+
+  if [[ "$default_yes" == "true" ]]; then
+    read -p "Continue? [Y/n]: " choice
+    # Empty response defaults to yes
+    if [[ -z "$choice" ]]; then
+      return 0
+    fi
+  else
+    read -p "Continue? [y/N]: " choice
+    # Empty response defaults to no
+    if [[ -z "$choice" ]]; then
+      echo "Skipping: $action"
+      return 1
+    fi
+  fi
+
   case $choice in
   [Yy]*) return 0 ;;
   *)
-    echo "Skipping: $action"
+    echo "Skipping..."
     return 1
     ;;
   esac
@@ -801,7 +824,7 @@ configure_api_key() {
 
     # Offer to open the page
     if command -v open >/dev/null 2>&1; then
-      if confirm_action "Open the OpenAI API keys page in your browser?"; then
+      if confirm_action "Would you like to open the OpenAI API keys page in your browser?"; then
         open "https://platform.openai.com/api-keys"
         echo ""
         echo "Waiting for you to create and copy your API key..."
@@ -1116,18 +1139,18 @@ install_all_services() {
 install_services_selective() {
   local voice_mode_cmd="$1"
 
-  if confirm_action "Install Whisper (Speech-to-Text)"; then
+  if confirm_action "Would you like to install Whisper (Speech-to-Text)?" false; then
     install_service "whisper" "$voice_mode_cmd" "Whisper"
     # CoreML acceleration setup for Apple Silicon Macs
     # DISABLED: CoreML build issues - users getting errors at 3:30am
     # setup_coreml_acceleration
   fi
 
-  if confirm_action "Install Kokoro (Text-to-Speech)"; then
+  if confirm_action "Would you like to install Kokoro (Text-to-Speech)?" false; then
     install_service "kokoro" "$voice_mode_cmd" "Kokoro"
   fi
 
-  if confirm_action "Install LiveKit (Real-time Communication)"; then
+  if confirm_action "Would you like to install LiveKit (Real-time Communication)?" false; then
     install_service "livekit" "$voice_mode_cmd" "LiveKit"
   fi
 }
@@ -1419,7 +1442,7 @@ main() {
       echo "Claude can help you with installation when you're ready."
       echo ""
 
-      if confirm_action "Would you like to explore local voice services?"; then
+      if confirm_action "Would you like to explore local voice services?" false; then
         install_voice_services
       else
         echo ""
