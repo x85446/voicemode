@@ -581,9 +581,21 @@ setup_shell_completion() {
       # Install completion file to user directory
       mkdir -p "$user_completions_dir"
 
-      # Generate and save completion file
+      # Generate and save completion file with bash version compatibility
       if command -v voicemode >/dev/null 2>&1; then
-        _VOICEMODE_COMPLETE=bash_source voicemode >"$user_completions_dir/voicemode" 2>/dev/null
+        # Check bash version - nosort option is only available in bash 4.4+
+        local bash_version="${BASH_VERSION%%.*}"
+        local bash_minor="${BASH_VERSION#*.}"
+        bash_minor="${bash_minor%%.*}"
+
+        if [[ $bash_version -gt 4 ]] || [[ $bash_version -eq 4 && $bash_minor -ge 4 ]]; then
+          # Bash 4.4+ supports nosort
+          _VOICEMODE_COMPLETE=bash_source voicemode >"$user_completions_dir/voicemode" 2>/dev/null
+        else
+          # Older bash - filter out nosort option to prevent errors
+          _VOICEMODE_COMPLETE=bash_source voicemode 2>/dev/null | sed 's/complete -o nosort/complete/g' >"$user_completions_dir/voicemode"
+        fi
+
         if [[ -s "$user_completions_dir/voicemode" ]]; then
           print_success "Installed bash completion to $user_completions_dir/"
           echo "   Tab completion will be available in new bash sessions"
@@ -596,10 +608,20 @@ setup_shell_completion() {
     fi
 
     if [[ "$has_bash_completion" == false ]]; then
-      # Fallback: Add to shell RC file
+      # Fallback: Add to shell RC file with bash version check
       local completion_line='# VoiceMode shell completion
 if command -v voicemode >/dev/null 2>&1; then
-    eval "$(_VOICEMODE_COMPLETE=bash_source voicemode)"
+    # Check bash version for nosort compatibility
+    bash_version="${BASH_VERSION%%.*}"
+    bash_minor="${BASH_VERSION#*.}"
+    bash_minor="${bash_minor%%.*}"
+
+    if [[ $bash_version -gt 4 ]] || [[ $bash_version -eq 4 && $bash_minor -ge 4 ]]; then
+        eval "$(_VOICEMODE_COMPLETE=bash_source voicemode)"
+    else
+        # Filter out nosort for older bash versions
+        eval "$(_VOICEMODE_COMPLETE=bash_source voicemode | sed '\''s/complete -o nosort/complete/g'\'')"
+    fi
 fi'
 
       if [[ -f "$shell_rc" ]] && grep -q "_VOICEMODE_COMPLETE\|_VOICE_MODE_COMPLETE" "$shell_rc" 2>/dev/null; then
