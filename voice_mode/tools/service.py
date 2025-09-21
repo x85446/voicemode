@@ -106,7 +106,7 @@ def get_service_config_vars(service_name: str) -> Dict[str, Any]:
         }
     else:  # frontend
         # Get frontend directory
-        from voice_mode.tools.services.livekit.frontend import find_frontend_dir
+        from voice_mode.tools.livekit.frontend import find_frontend_dir
         
         frontend_dir = find_frontend_dir()
         if not frontend_dir:

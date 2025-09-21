@@ -933,7 +933,7 @@ def update():
 @click.option('--auto-enable/--no-auto-enable', default=None, help='Enable service at boot/login')
 def install(install_dir, port, force, version, auto_enable):
     """Install LiveKit server with development configuration."""
-    from voice_mode.tools.services.livekit.install import livekit_install
+    from voice_mode.tools.livekit.install import livekit_install
     result = asyncio.run(livekit_install.fn(
         install_dir=install_dir,
         port=port,
@@ -972,7 +972,7 @@ def install(install_dir, port, force, version, auto_enable):
 @click.confirmation_option(prompt='Are you sure you want to uninstall LiveKit?')
 def uninstall(remove_config, remove_all_data):
     """Uninstall LiveKit server and optionally remove configuration and data."""
-    from voice_mode.tools.services.livekit.uninstall import livekit_uninstall
+    from voice_mode.tools.livekit.uninstall import livekit_uninstall
     result = asyncio.run(livekit_uninstall.fn(
         remove_config=remove_config,
         remove_all_data=remove_all_data
@@ -1007,7 +1007,7 @@ def frontend():
 @click.option('--auto-enable/--no-auto-enable', default=None, help='Enable service after installation (default: from config)')
 def frontend_install(auto_enable):
     """Install and setup LiveKit Voice Assistant Frontend."""
-    from voice_mode.tools.services.livekit.frontend import livekit_frontend_install
+    from voice_mode.tools.livekit.frontend import livekit_frontend_install
     result = asyncio.run(livekit_frontend_install.fn(auto_enable=auto_enable))
     
     if result.get('success'):
@@ -1036,7 +1036,7 @@ def frontend_install(auto_enable):
 @click.option('--host', default='127.0.0.1', help='Host to bind to (default: 127.0.0.1)')
 def frontend_start(port, host):
     """Start the LiveKit Voice Assistant Frontend."""
-    from voice_mode.tools.services.livekit.frontend import livekit_frontend_start
+    from voice_mode.tools.livekit.frontend import livekit_frontend_start
     result = asyncio.run(livekit_frontend_start.fn(port=port, host=host))
     
     if result.get('success'):
@@ -1058,7 +1058,7 @@ def frontend_start(port, host):
 @frontend.command("stop")
 def frontend_stop():
     """Stop the LiveKit Voice Assistant Frontend."""
-    from voice_mode.tools.services.livekit.frontend import livekit_frontend_stop
+    from voice_mode.tools.livekit.frontend import livekit_frontend_stop
     result = asyncio.run(livekit_frontend_stop.fn())
     
     if result.get('success'):
@@ -1070,7 +1070,7 @@ def frontend_stop():
 @frontend.command("status")
 def frontend_status():
     """Check status of the LiveKit Voice Assistant Frontend."""
-    from voice_mode.tools.services.livekit.frontend import livekit_frontend_status
+    from voice_mode.tools.livekit.frontend import livekit_frontend_status
     result = asyncio.run(livekit_frontend_status.fn())
     
     if 'error' in result:
@@ -1098,7 +1098,7 @@ def frontend_open():
     
     Starts the frontend if not already running, then opens it in the default browser.
     """
-    from voice_mode.tools.services.livekit.frontend import livekit_frontend_open
+    from voice_mode.tools.livekit.frontend import livekit_frontend_open
     result = asyncio.run(livekit_frontend_open.fn())
     
     if result.get('success'):
@@ -1122,7 +1122,7 @@ def frontend_logs(lines, follow):
     """
     if follow:
         # For following, run tail -f directly
-        from voice_mode.tools.services.livekit.frontend import livekit_frontend_logs
+        from voice_mode.tools.livekit.frontend import livekit_frontend_logs
         result = asyncio.run(livekit_frontend_logs.fn(follow=True))
         if result.get('success'):
             click.echo(f"📂 Log file: {result['log_file']}")
@@ -1136,7 +1136,7 @@ def frontend_logs(lines, follow):
             click.echo(f"❌ Error: {result.get('error', 'Unknown error')}")
     else:
         # Show last N lines
-        from voice_mode.tools.services.livekit.frontend import livekit_frontend_logs
+        from voice_mode.tools.livekit.frontend import livekit_frontend_logs
         result = asyncio.run(livekit_frontend_logs.fn(lines=lines, follow=False))
         if result.get('success'):
             click.echo(f"📂 Log file: {result['log_file']}")

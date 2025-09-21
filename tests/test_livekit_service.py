@@ -13,9 +13,9 @@ import json
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Import LiveKit-related functions
-from voice_mode.tools.services.livekit.install import livekit_install
-from voice_mode.tools.services.livekit.uninstall import livekit_uninstall
-from voice_mode.tools.services.livekit.frontend import (
+from voice_mode.tools.livekit.install import livekit_install
+from voice_mode.tools.livekit.uninstall import livekit_uninstall
+from voice_mode.tools.livekit.frontend import (
     livekit_frontend_start,
     livekit_frontend_stop,
     livekit_frontend_status,
