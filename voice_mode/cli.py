@@ -203,7 +203,7 @@ def health():
 @click.option('--auto-enable/--no-auto-enable', default=None, help='Enable service at boot/login')
 def install(install_dir, port, force, version, auto_enable):
     """Install kokoro-fastapi TTS service."""
-    from voice_mode.tools.services.kokoro.install import kokoro_install
+    from voice_mode.tools.kokoro.install import kokoro_install
     result = asyncio.run(kokoro_install.fn(
         install_dir=install_dir,
         port=port,
@@ -239,7 +239,7 @@ def install(install_dir, port, force, version, auto_enable):
 @click.confirmation_option(prompt='Are you sure you want to uninstall Kokoro?')
 def uninstall(remove_models, remove_all_data):
     """Uninstall kokoro-fastapi service and optionally remove data."""
-    from voice_mode.tools.services.kokoro.uninstall import kokoro_uninstall
+    from voice_mode.tools.kokoro.uninstall import kokoro_uninstall
     result = asyncio.run(kokoro_uninstall.fn(
         remove_models=remove_models,
         remove_all_data=remove_all_data
