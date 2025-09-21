@@ -872,6 +872,24 @@ test_voice_setup() {
     return 1
   fi
 
+  # Check for audio devices first
+  print_step "Checking audio devices..."
+  local device_output=$(voicemode diag devices 2>&1)
+
+  if echo "$device_output" | grep -q "Input Devices:"; then
+    local input_count=$(echo "$device_output" | grep -c "^\s*\[[0-9]\].*channels)")
+    if [ "$input_count" -gt 0 ]; then
+      print_success "Found $input_count microphone(s)"
+      echo "$device_output" | grep "Default Input:" | head -1
+    else
+      print_warning "No microphones detected"
+      echo "  Voice features require a microphone to be connected"
+      return 1
+    fi
+  else
+    print_warning "Could not detect audio devices"
+  fi
+
   # Check if we have an API key or local services
   local has_tts=false
   if [ -n "${OPENAI_API_KEY:-}" ]; then
