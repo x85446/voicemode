@@ -276,7 +276,7 @@ async def status_service(service_name: str) -> str:
         else:  # kokoro
             # Try to get version info
             try:
-                from voice_mode.tools.services.version_info import get_kokoro_version
+                from voice_mode.utils.services.version_info import get_kokoro_version
                 version_info = get_kokoro_version()
                 if version_info.get("api_version"):
                     extra_info_parts.append(f"API Version: {version_info['api_version']}")
