@@ -1,8 +1,6 @@
 #!/bin/bash
 # VoiceMode Universal Installer
-# Usage: curl -sSf https://getvoicemode.com/install.sh | sh
-
-# set -e
+# Usage: curl -sSfO https://getvoicemode.com/install.sh && bash install.sh
 
 # Parse command line arguments
 show_help() {
@@ -175,7 +173,7 @@ check_homebrew() {
 
 confirm_action() {
   local action="$1"
-  local default_yes="${2:-true}"  # Default to yes unless specified
+  local default_yes="${2:-true}" # Default to yes unless specified
 
   echo ""
 
@@ -866,9 +864,9 @@ configure_api_key() {
       fi
 
       if [ -n "$shell_profile" ]; then
-        echo "" >> "$shell_profile"
-        echo "# OpenAI API Key for VoiceMode" >> "$shell_profile"
-        echo "export OPENAI_API_KEY='$api_key'" >> "$shell_profile"
+        echo "" >>"$shell_profile"
+        echo "# OpenAI API Key for VoiceMode" >>"$shell_profile"
+        echo "export OPENAI_API_KEY='$api_key'" >>"$shell_profile"
         print_success "Added OPENAI_API_KEY to $shell_profile"
 
         # Export for current session
@@ -1445,14 +1443,15 @@ main() {
       echo "                    ✨ Ready to Use Claude Code!"
       echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
       echo ""
-      echo "Start using voice commands with Claude:"
+      echo "Two ways to start a Voice Conversation with Claude:"
       echo ""
-      echo "  claude converse    # Start a voice conversation"
+      echo "1. Start Claude with 'converse' prompt:"
       echo ""
-      echo "Tips:"
-      echo "  • Say 'Hey Claude' to get Claude's attention"
-      echo "  • Voice mode works in any project directory"
-      echo "  • Claude can help you code, debug, and answer questions"
+      echo "  claude converse    # Start claude with prompt to begin a voice conversation"
+      echo ""
+      echo "2. Prompt from within a Claude Code session:"
+      echo ""
+      echo "Type 'converse' or '/voicemode:converse'"
       echo ""
 
       # Local services as a footnote, not a prompt
