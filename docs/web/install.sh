@@ -1441,32 +1441,28 @@ main() {
       fi
 
       echo ""
-      echo "You can use voice commands with:"
-      echo "  claude converse"
-      echo ""
-
-      # Offer to install services (now positioned as advanced/optional)
       echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-      echo "                    🔧 Optional: Local Voice Services"
+      echo "                    ✨ Ready to Use Claude Code!"
       echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
       echo ""
-      echo "You can optionally install local services for:"
-      echo "  • Lower costs (no API usage)"
-      echo "  • Enhanced privacy (everything runs locally)"
-      echo "  • Offline capability"
+      echo "Start using voice commands with Claude:"
       echo ""
-      echo "Note: Local services require additional setup and may need troubleshooting."
-      echo "Claude can help you with installation when you're ready."
+      echo "  claude converse    # Start a voice conversation"
+      echo ""
+      echo "Tips:"
+      echo "  • Say 'Hey Claude' to get Claude's attention"
+      echo "  • Voice mode works in any project directory"
+      echo "  • Claude can help you code, debug, and answer questions"
       echo ""
 
-      if confirm_action "Would you like to explore local voice services?" false; then
-        install_voice_services
-      else
-        echo ""
-        echo "You can install local services later with:"
-        echo "  voicemode whisper install  # Speech-to-text"
-        echo "  voicemode kokoro install   # Text-to-speech"
-      fi
+      # Local services as a footnote, not a prompt
+      echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      echo ""
+      echo "📝 Advanced: Want to reduce costs or work offline?"
+      echo "   You can install local voice services later:"
+      echo "   • voicemode whisper install  # Local speech-to-text"
+      echo "   • voicemode kokoro install   # Local text-to-speech"
+      echo "   (Claude can help you set these up when you're ready)"
     else
       print_warning "VoiceMode configuration was skipped or failed."
       echo ""
