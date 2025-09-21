@@ -77,14 +77,14 @@ class TestWhisperCppInstaller:
              patch('os.chdir'), \
              patch('os.makedirs'), \
              patch('platform.system', return_value='Darwin'), \
-             patch('voice_mode.tools.services.whisper.install.detect_gpu', return_value=(True, 'metal')), \
-             patch('voice_mode.tools.services.whisper.install.get_git_tags', return_value=["v1.5.0", "v1.4.0"]), \
-             patch('voice_mode.tools.services.whisper.install.get_latest_stable_tag', return_value="v1.5.0"), \
-             patch('voice_mode.tools.services.whisper.install.checkout_version', return_value=True), \
-             patch('voice_mode.tools.services.whisper.install.get_current_version', return_value="v1.5.0"), \
-             patch('voice_mode.tools.services.whisper.install.is_version_installed', return_value=False), \
-             patch('voice_mode.tools.services.whisper.install.auto_migrate_if_needed', return_value=None), \
-             patch('voice_mode.tools.services.whisper.install.download_whisper_model') as mock_download:
+             patch('voice_mode.tools.whisper.install.detect_gpu', return_value=(True, 'metal')), \
+             patch('voice_mode.tools.whisper.install.get_git_tags', return_value=["v1.5.0", "v1.4.0"]), \
+             patch('voice_mode.tools.whisper.install.get_latest_stable_tag', return_value="v1.5.0"), \
+             patch('voice_mode.tools.whisper.install.checkout_version', return_value=True), \
+             patch('voice_mode.tools.whisper.install.get_current_version', return_value="v1.5.0"), \
+             patch('voice_mode.tools.whisper.install.is_version_installed', return_value=False), \
+             patch('voice_mode.tools.whisper.install.auto_migrate_if_needed', return_value=None), \
+             patch('voice_mode.tools.whisper.install.download_whisper_model') as mock_download:
             
             mock_run.return_value = MagicMock(returncode=0)
             mock_download.return_value = {
@@ -125,13 +125,13 @@ class TestWhisperCppInstaller:
              patch('platform.system', return_value='Darwin'), \
              patch('builtins.open', create=True), \
              patch('os.chmod'), \
-             patch('voice_mode.tools.services.whisper.install.download_whisper_model') as mock_download, \
-             patch('voice_mode.tools.services.whisper.install.get_git_tags', return_value=["v1.5.0", "v1.4.0"]), \
-             patch('voice_mode.tools.services.whisper.install.get_latest_stable_tag', return_value="v1.5.0"), \
-             patch('voice_mode.tools.services.kokoro.install.checkout_version', return_value=True), \
-             patch('voice_mode.tools.services.whisper.install.get_current_version', return_value="v1.5.0"), \
-             patch('voice_mode.tools.services.kokoro.install.is_version_installed', return_value=False), \
-             patch('voice_mode.tools.services.kokoro.install.auto_migrate_if_needed', return_value=None):
+             patch('voice_mode.tools.whisper.install.download_whisper_model') as mock_download, \
+             patch('voice_mode.tools.whisper.install.get_git_tags', return_value=["v1.5.0", "v1.4.0"]), \
+             patch('voice_mode.tools.whisper.install.get_latest_stable_tag', return_value="v1.5.0"), \
+             patch('voice_mode.tools.kokoro.install.checkout_version', return_value=True), \
+             patch('voice_mode.tools.whisper.install.get_current_version', return_value="v1.5.0"), \
+             patch('voice_mode.tools.kokoro.install.is_version_installed', return_value=False), \
+             patch('voice_mode.tools.kokoro.install.auto_migrate_if_needed', return_value=None):
             
             mock_run.return_value = MagicMock(returncode=0)
             mock_download.return_value = {
@@ -158,9 +158,9 @@ class TestWhisperCppInstaller:
             return False
             
         with patch('os.path.exists', side_effect=mock_exists), \
-             patch('voice_mode.tools.services.whisper.install.is_version_installed', return_value=True), \
-             patch('voice_mode.tools.services.whisper.install.get_current_version', return_value="v1.5.0"), \
-             patch('voice_mode.tools.services.whisper.install.auto_migrate_if_needed', return_value=None):
+             patch('voice_mode.tools.whisper.install.is_version_installed', return_value=True), \
+             patch('voice_mode.tools.whisper.install.get_current_version', return_value="v1.5.0"), \
+             patch('voice_mode.tools.whisper.install.auto_migrate_if_needed', return_value=None):
             result = await install_whisper_cpp()
             
             assert result["success"] is True
@@ -176,12 +176,12 @@ class TestWhisperCppInstaller:
              patch('shutil.which', return_value=True), \
              patch('os.chdir'), \
              patch('os.makedirs'), \
-             patch('voice_mode.tools.services.whisper.install.get_git_tags', return_value=["v1.5.0", "v1.4.0"]), \
-             patch('voice_mode.tools.services.whisper.install.get_latest_stable_tag', return_value="v1.5.0"), \
-             patch('voice_mode.tools.services.whisper.install.checkout_version', return_value=True), \
-             patch('voice_mode.tools.services.whisper.install.get_current_version', return_value="v1.5.0"), \
-             patch('voice_mode.tools.services.whisper.install.auto_migrate_if_needed', return_value=None), \
-             patch('voice_mode.tools.services.whisper.install.download_whisper_model') as mock_download:
+             patch('voice_mode.tools.whisper.install.get_git_tags', return_value=["v1.5.0", "v1.4.0"]), \
+             patch('voice_mode.tools.whisper.install.get_latest_stable_tag', return_value="v1.5.0"), \
+             patch('voice_mode.tools.whisper.install.checkout_version', return_value=True), \
+             patch('voice_mode.tools.whisper.install.get_current_version', return_value="v1.5.0"), \
+             patch('voice_mode.tools.whisper.install.auto_migrate_if_needed', return_value=None), \
+             patch('voice_mode.tools.whisper.install.download_whisper_model') as mock_download:
             
             mock_run.return_value = MagicMock(returncode=0)
             mock_download.return_value = {
@@ -268,7 +268,7 @@ class TestWhisperCppInstaller:
         with patch('platform.system', return_value='Darwin'), \
              patch('subprocess.run', side_effect=mock_subprocess_run), \
              patch('os.path.exists', return_value=False), \
-             patch('voice_mode.tools.services.whisper.install.auto_migrate_if_needed', return_value=None):
+             patch('voice_mode.tools.whisper.install.auto_migrate_if_needed', return_value=None):
             
             result = await install_whisper_cpp()
             
@@ -301,7 +301,7 @@ class TestWhisperCppInstaller:
                  patch('platform.system', return_value='Darwin'), \
                  patch('builtins.open', create=True), \
                  patch('os.chmod'), \
-                 patch('voice_mode.tools.services.whisper.install.download_whisper_model') as mock_download:
+                 patch('voice_mode.tools.whisper.install.download_whisper_model') as mock_download:
                 
                 mock_run.return_value = MagicMock(returncode=0)
                 mock_download.return_value = {
@@ -363,12 +363,12 @@ class TestKokoroFastAPIInstaller:
              patch('builtins.open', create=True), \
              patch('os.chmod'), \
              patch('platform.system', return_value='Darwin'), \
-             patch('voice_mode.tools.services.kokoro.install.get_git_tags', return_value=["v0.10.0", "v0.9.0"]), \
-             patch('voice_mode.tools.services.kokoro.install.get_latest_stable_tag', return_value="v0.10.0"), \
-             patch('voice_mode.tools.services.kokoro.install.checkout_version', return_value=True), \
-             patch('voice_mode.tools.services.kokoro.install.get_current_version', return_value="v0.10.0"), \
-             patch('voice_mode.tools.services.kokoro.install.is_version_installed', return_value=False), \
-             patch('voice_mode.tools.services.kokoro.install.auto_migrate_if_needed', return_value=None):
+             patch('voice_mode.tools.kokoro.install.get_git_tags', return_value=["v0.10.0", "v0.9.0"]), \
+             patch('voice_mode.tools.kokoro.install.get_latest_stable_tag', return_value="v0.10.0"), \
+             patch('voice_mode.tools.kokoro.install.checkout_version', return_value=True), \
+             patch('voice_mode.tools.kokoro.install.get_current_version', return_value="v0.10.0"), \
+             patch('voice_mode.tools.kokoro.install.is_version_installed', return_value=False), \
+             patch('voice_mode.tools.kokoro.install.auto_migrate_if_needed', return_value=None):
             
             mock_run.return_value = MagicMock(returncode=0)
             
@@ -393,7 +393,7 @@ class TestKokoroFastAPIInstaller:
     async def test_python_version_check(self):
         """Test Python version requirement"""
         with patch('sys.version_info', (3, 9)), \
-             patch('voice_mode.tools.services.kokoro.install.auto_migrate_if_needed', return_value=None):
+             patch('voice_mode.tools.kokoro.install.auto_migrate_if_needed', return_value=None):
             result = await install_kokoro_fastapi()
             
             assert result["success"] is False
@@ -403,7 +403,7 @@ class TestKokoroFastAPIInstaller:
     async def test_git_requirement(self):
         """Test git requirement check"""
         with patch('shutil.which', return_value=None), \
-             patch('voice_mode.tools.services.kokoro.install.auto_migrate_if_needed', return_value=None):
+             patch('voice_mode.tools.kokoro.install.auto_migrate_if_needed', return_value=None):
             result = await install_kokoro_fastapi()
             
             assert result["success"] is False
@@ -429,12 +429,12 @@ class TestKokoroFastAPIInstaller:
              patch('builtins.open', create=True), \
              patch('os.chmod'), \
              patch('platform.system', return_value='Darwin'), \
-             patch('voice_mode.tools.services.kokoro.install.get_git_tags', return_value=["v0.10.0", "v0.9.0"]), \
-             patch('voice_mode.tools.services.kokoro.install.get_latest_stable_tag', return_value="v0.10.0"), \
-             patch('voice_mode.tools.services.kokoro.install.checkout_version', return_value=True), \
-             patch('voice_mode.tools.services.kokoro.install.get_current_version', return_value="v0.10.0"), \
-             patch('voice_mode.tools.services.kokoro.install.is_version_installed', return_value=False), \
-             patch('voice_mode.tools.services.kokoro.install.auto_migrate_if_needed', return_value=None):
+             patch('voice_mode.tools.kokoro.install.get_git_tags', return_value=["v0.10.0", "v0.9.0"]), \
+             patch('voice_mode.tools.kokoro.install.get_latest_stable_tag', return_value="v0.10.0"), \
+             patch('voice_mode.tools.kokoro.install.checkout_version', return_value=True), \
+             patch('voice_mode.tools.kokoro.install.get_current_version', return_value="v0.10.0"), \
+             patch('voice_mode.tools.kokoro.install.is_version_installed', return_value=False), \
+             patch('voice_mode.tools.kokoro.install.auto_migrate_if_needed', return_value=None):
             
             # Mock which calls: git (True), uv (False), then True for others
             def which_side_effect(cmd):
@@ -486,12 +486,12 @@ class TestKokoroFastAPIInstaller:
              patch('builtins.open', create=True), \
              patch('os.chmod'), \
              patch('platform.system', return_value='Darwin'), \
-             patch('voice_mode.tools.services.kokoro.install.get_git_tags', return_value=["v0.10.0", "v0.9.0"]), \
-             patch('voice_mode.tools.services.kokoro.install.get_latest_stable_tag', return_value="v0.10.0"), \
-             patch('voice_mode.tools.services.kokoro.install.checkout_version', return_value=True), \
-             patch('voice_mode.tools.services.kokoro.install.get_current_version', return_value="v0.10.0"), \
-             patch('voice_mode.tools.services.kokoro.install.is_version_installed', return_value=False), \
-             patch('voice_mode.tools.services.kokoro.install.auto_migrate_if_needed', return_value=None):
+             patch('voice_mode.tools.kokoro.install.get_git_tags', return_value=["v0.10.0", "v0.9.0"]), \
+             patch('voice_mode.tools.kokoro.install.get_latest_stable_tag', return_value="v0.10.0"), \
+             patch('voice_mode.tools.kokoro.install.checkout_version', return_value=True), \
+             patch('voice_mode.tools.kokoro.install.get_current_version', return_value="v0.10.0"), \
+             patch('voice_mode.tools.kokoro.install.is_version_installed', return_value=False), \
+             patch('voice_mode.tools.kokoro.install.auto_migrate_if_needed', return_value=None):
             
             mock_run.return_value = MagicMock(returncode=0)
             
@@ -528,11 +528,11 @@ class TestKokoroFastAPIInstaller:
              patch('aiohttp.ClientSession') as mock_session, \
              patch('builtins.open', create=True), \
              patch('os.chmod'), \
-             patch('voice_mode.tools.services.kokoro.install.get_git_tags', return_value=["v0.10.0", "v0.9.0"]), \
-             patch('voice_mode.tools.services.kokoro.install.get_latest_stable_tag', return_value="v0.10.0"), \
-             patch('voice_mode.tools.services.kokoro.install.checkout_version', return_value=True), \
-             patch('voice_mode.tools.services.kokoro.install.get_current_version', return_value="v0.10.0"), \
-             patch('voice_mode.tools.services.kokoro.install.auto_migrate_if_needed', return_value=None):
+             patch('voice_mode.tools.kokoro.install.get_git_tags', return_value=["v0.10.0", "v0.9.0"]), \
+             patch('voice_mode.tools.kokoro.install.get_latest_stable_tag', return_value="v0.10.0"), \
+             patch('voice_mode.tools.kokoro.install.checkout_version', return_value=True), \
+             patch('voice_mode.tools.kokoro.install.get_current_version', return_value="v0.10.0"), \
+             patch('voice_mode.tools.kokoro.install.auto_migrate_if_needed', return_value=None):
             
             mock_run.return_value = MagicMock(returncode=0)
             
@@ -563,12 +563,12 @@ class TestKokoroFastAPIInstaller:
              patch('os.chmod'), \
              patch('asyncio.sleep'), \
              patch('platform.system', return_value='Linux'), \
-             patch('voice_mode.tools.services.kokoro.install.get_git_tags', return_value=["v0.10.0", "v0.9.0"]), \
-             patch('voice_mode.tools.services.kokoro.install.get_latest_stable_tag', return_value="v0.10.0"), \
-             patch('voice_mode.tools.services.kokoro.install.checkout_version', return_value=True), \
-             patch('voice_mode.tools.services.kokoro.install.get_current_version', return_value="v0.10.0"), \
-             patch('voice_mode.tools.services.kokoro.install.is_version_installed', return_value=False), \
-             patch('voice_mode.tools.services.kokoro.install.auto_migrate_if_needed', return_value=None):  # Linux to test auto_start
+             patch('voice_mode.tools.kokoro.install.get_git_tags', return_value=["v0.10.0", "v0.9.0"]), \
+             patch('voice_mode.tools.kokoro.install.get_latest_stable_tag', return_value="v0.10.0"), \
+             patch('voice_mode.tools.kokoro.install.checkout_version', return_value=True), \
+             patch('voice_mode.tools.kokoro.install.get_current_version', return_value="v0.10.0"), \
+             patch('voice_mode.tools.kokoro.install.is_version_installed', return_value=False), \
+             patch('voice_mode.tools.kokoro.install.auto_migrate_if_needed', return_value=None):  # Linux to test auto_start
             
             mock_run.return_value = MagicMock(returncode=0)
             mock_popen.return_value = MagicMock(pid=12345)
@@ -624,12 +624,12 @@ class TestKokoroFastAPIInstaller:
              patch('builtins.open', create=True) as mock_open, \
              patch('os.chmod'), \
              patch('platform.system', return_value='Darwin'), \
-             patch('voice_mode.tools.services.kokoro.install.get_git_tags', return_value=["v0.10.0", "v0.9.0"]), \
-             patch('voice_mode.tools.services.kokoro.install.get_latest_stable_tag', return_value="v0.10.0"), \
-             patch('voice_mode.tools.services.kokoro.install.checkout_version', return_value=True), \
-             patch('voice_mode.tools.services.kokoro.install.get_current_version', return_value="v0.10.0"), \
-             patch('voice_mode.tools.services.kokoro.install.is_version_installed', return_value=False), \
-             patch('voice_mode.tools.services.kokoro.install.auto_migrate_if_needed', return_value=None):
+             patch('voice_mode.tools.kokoro.install.get_git_tags', return_value=["v0.10.0", "v0.9.0"]), \
+             patch('voice_mode.tools.kokoro.install.get_latest_stable_tag', return_value="v0.10.0"), \
+             patch('voice_mode.tools.kokoro.install.checkout_version', return_value=True), \
+             patch('voice_mode.tools.kokoro.install.get_current_version', return_value="v0.10.0"), \
+             patch('voice_mode.tools.kokoro.install.is_version_installed', return_value=False), \
+             patch('voice_mode.tools.kokoro.install.auto_migrate_if_needed', return_value=None):
             
             mock_run.return_value = MagicMock(returncode=0)
             
@@ -670,12 +670,12 @@ class TestKokoroFastAPIInstaller:
              patch('builtins.open', create=True) as mock_open, \
              patch('os.chmod'), \
              patch('platform.system', return_value='Linux'), \
-             patch('voice_mode.tools.services.kokoro.install.get_git_tags', return_value=["v0.10.0", "v0.9.0"]), \
-             patch('voice_mode.tools.services.kokoro.install.get_latest_stable_tag', return_value="v0.10.0"), \
-             patch('voice_mode.tools.services.kokoro.install.checkout_version', return_value=True), \
-             patch('voice_mode.tools.services.kokoro.install.get_current_version', return_value="v0.10.0"), \
-             patch('voice_mode.tools.services.kokoro.install.is_version_installed', return_value=False), \
-             patch('voice_mode.tools.services.kokoro.install.auto_migrate_if_needed', return_value=None):
+             patch('voice_mode.tools.kokoro.install.get_git_tags', return_value=["v0.10.0", "v0.9.0"]), \
+             patch('voice_mode.tools.kokoro.install.get_latest_stable_tag', return_value="v0.10.0"), \
+             patch('voice_mode.tools.kokoro.install.checkout_version', return_value=True), \
+             patch('voice_mode.tools.kokoro.install.get_current_version', return_value="v0.10.0"), \
+             patch('voice_mode.tools.kokoro.install.is_version_installed', return_value=False), \
+             patch('voice_mode.tools.kokoro.install.auto_migrate_if_needed', return_value=None):
             
             mock_run.return_value = MagicMock(returncode=0)
             
@@ -712,11 +712,11 @@ class TestKokoroFastAPIInstaller:
              patch('aiohttp.ClientSession') as mock_session, \
              patch('builtins.open', create=True), \
              patch('os.chmod'), \
-             patch('voice_mode.tools.services.kokoro.install.get_git_tags', return_value=["v0.10.0", "v0.9.0"]), \
-             patch('voice_mode.tools.services.kokoro.install.get_latest_stable_tag', return_value="v0.10.0"), \
-             patch('voice_mode.tools.services.kokoro.install.checkout_version', return_value=True), \
-             patch('voice_mode.tools.services.kokoro.install.get_current_version', return_value="v0.10.0"), \
-             patch('voice_mode.tools.services.kokoro.install.auto_migrate_if_needed', return_value=None):
+             patch('voice_mode.tools.kokoro.install.get_git_tags', return_value=["v0.10.0", "v0.9.0"]), \
+             patch('voice_mode.tools.kokoro.install.get_latest_stable_tag', return_value="v0.10.0"), \
+             patch('voice_mode.tools.kokoro.install.checkout_version', return_value=True), \
+             patch('voice_mode.tools.kokoro.install.get_current_version', return_value="v0.10.0"), \
+             patch('voice_mode.tools.kokoro.install.auto_migrate_if_needed', return_value=None):
             
             mock_run.return_value = MagicMock(returncode=0)
             
