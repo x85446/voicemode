@@ -373,7 +373,7 @@ def health():
 @click.option('--auto-enable/--no-auto-enable', default=None, help='Enable service at boot/login')
 def install(install_dir, model, use_gpu, force, version, auto_enable):
     """Install whisper.cpp STT service with automatic system detection."""
-    from voice_mode.tools.services.whisper.install import whisper_install
+    from voice_mode.tools.whisper.install import whisper_install
     result = asyncio.run(whisper_install.fn(
         install_dir=install_dir,
         model=model,
@@ -419,7 +419,7 @@ def install(install_dir, model, use_gpu, force, version, auto_enable):
 @click.confirmation_option(prompt='Are you sure you want to uninstall Whisper?')
 def uninstall(remove_models, remove_all_data):
     """Uninstall whisper.cpp and optionally remove models and data."""
-    from voice_mode.tools.services.whisper.uninstall import whisper_uninstall
+    from voice_mode.tools.whisper.uninstall import whisper_uninstall
     result = asyncio.run(whisper_uninstall.fn(
         remove_models=remove_models,
         remove_all_data=remove_all_data
@@ -471,7 +471,7 @@ def whisper_model_active(model_name):
     Without arguments: Shows the current active model
     With MODEL_NAME: Sets the active model (updates VOICEMODE_WHISPER_MODEL)
     """
-    from voice_mode.tools.services.whisper.models import (
+    from voice_mode.tools.whisper.models import (
         get_active_model,
         WHISPER_MODEL_REGISTRY,
         is_whisper_model_installed,
@@ -553,7 +553,7 @@ def whisper_model_active(model_name):
 @whisper.command("models")
 def whisper_models():
     """List available Whisper models and their installation status."""
-    from voice_mode.tools.services.whisper.models import (
+    from voice_mode.tools.whisper.models import (
         WHISPER_MODEL_REGISTRY, 
         get_model_directory,
         get_active_model,
@@ -714,7 +714,7 @@ def whisper_model_remove(model, force):
     
     MODEL is the name of the model to remove (e.g., 'large-v2').
     """
-    from voice_mode.tools.services.whisper.models import (
+    from voice_mode.tools.whisper.models import (
         WHISPER_MODEL_REGISTRY,
         is_whisper_model_installed,
         get_model_directory,
@@ -785,7 +785,7 @@ def whisper_model_benchmark_cmd(models, sample, runs):
     Runs performance tests on specified models to help choose the optimal model
     for your use case based on speed vs accuracy trade-offs.
     """
-    from voice_mode.tools.services.whisper.model_benchmark import whisper_model_benchmark
+    from voice_mode.tools.whisper.model_benchmark import whisper_model_benchmark
     
     # Parse models parameter
     if ',' in models:
