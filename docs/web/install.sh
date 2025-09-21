@@ -175,13 +175,36 @@ check_homebrew() {
 
 confirm_action() {
   local action="$1"
+  local default_yes="${2:-true}"  # Default to yes unless specified
+
   echo ""
-  echo "About to: $action"
-  read -p "Continue? (y/n): " choice
+
+  # Check if action is already a question (contains "?")
+  if [[ "$action" == *"?"* ]]; then
+    echo "$action"
+  else
+    echo "About to: $action"
+  fi
+
+  if [[ "$default_yes" == "true" ]]; then
+    read -p "Continue? [Y/n]: " choice
+    # Empty response defaults to yes
+    if [[ -z "$choice" ]]; then
+      return 0
+    fi
+  else
+    read -p "Continue? [y/N]: " choice
+    # Empty response defaults to no
+    if [[ -z "$choice" ]]; then
+      echo "Skipping: $action"
+      return 1
+    fi
+  fi
+
   case $choice in
   [Yy]*) return 0 ;;
   *)
-    echo "Skipping: $action"
+    echo "Skipping..."
     return 1
     ;;
   esac
@@ -284,26 +307,65 @@ check_system_dependencies() {
 install_system_dependencies() {
   if ! check_system_dependencies; then
     if [[ "$OS" == "macos" ]]; then
-      if confirm_action "Install missing system dependencies via Homebrew"; then
-        print_step "Installing system dependencies..."
+      # Build list of what needs to be installed
+      local needs_homebrew=false
+      local needs_deps=false
+      local install_message=""
 
-        # Update Homebrew
-        brew update
+      if [ "$HOMEBREW_INSTALLED" = false ]; then
+        needs_homebrew=true
+        install_message="• Homebrew (package manager)\n  • Xcode Command Line Tools (automatically installed)\n  "
+      fi
 
-        # Install required packages
-        local packages=("node" "portaudio" "ffmpeg" "cmake" "coreutils")
+      # Check for missing audio dependencies
+      local missing_packages=()
+      for package in ffmpeg portaudio; do
+        if ! brew list $package &>/dev/null; then
+          missing_packages+=($package)
+          needs_deps=true
+        fi
+      done
 
-        for package in "${packages[@]}"; do
-          if brew list "$package" >/dev/null 2>&1; then
-            print_success "$package is already installed"
-          else
-            print_step "Installing $package..."
-            brew install "$package"
-            print_success "$package installed"
+      if [ "$needs_homebrew" = true ] || [ "$needs_deps" = true ]; then
+        echo ""
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo "                    📦 System Dependencies Required"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo ""
+        echo "VoiceMode needs to install the following:"
+        if [ "$needs_homebrew" = true ]; then
+          echo -e "$install_message"
+        fi
+        if [ "$needs_deps" = true ]; then
+          echo "• Audio dependencies: ${missing_packages[*]}"
+        fi
+        echo ""
+
+        if confirm_action "Install all required dependencies?"; then
+          # Install Homebrew if needed
+          if [ "$needs_homebrew" = true ]; then
+            install_homebrew
+            if [ "$HOMEBREW_INSTALLED" = false ]; then
+              print_warning "Failed to install Homebrew. Cannot proceed."
+              return 1
+            fi
           fi
-        done
-      else
-        print_warning "Skipping system dependencies. VoiceMode may not work properly without them."
+
+          # Install missing packages
+          if [ "$needs_deps" = true ]; then
+            print_step "Installing audio dependencies..."
+            brew update
+
+            for package in "${missing_packages[@]}"; do
+              print_step "Installing $package..."
+              brew install "$package"
+              print_success "$package installed"
+            done
+          fi
+        else
+          print_warning "Skipping system dependencies. VoiceMode may not work properly without them."
+          return 1
+        fi
       fi
     elif [[ "$OS" == "fedora" ]]; then
       if confirm_action "Install missing system dependencies via DNF"; then
@@ -708,6 +770,210 @@ fi'
   return 0
 }
 
+configure_api_key() {
+  print_step "Checking OpenAI API key configuration..."
+
+  # Track if we have an API key configured
+  local api_key_configured=false
+
+  # Check if OPENAI_API_KEY is already set
+  if [ -n "${OPENAI_API_KEY:-}" ]; then
+    print_success "OPENAI_API_KEY is already set in environment"
+    echo ""
+    echo "Your OpenAI API key is configured. VoiceMode will use OpenAI for speech"
+    echo "recognition and text-to-speech, with automatic fallback support."
+    api_key_configured=true
+    # Export a flag for later use
+    export VOICEMODE_API_KEY_CONFIGURED=true
+    return 0
+  fi
+
+  # Check if it's in shell config files
+  for file in ~/.bashrc ~/.zshrc ~/.bash_profile; do
+    if [ -f "$file" ] && grep -q "export OPENAI_API_KEY" "$file" 2>/dev/null; then
+      print_success "OPENAI_API_KEY found in $file"
+      echo ""
+      echo "Your OpenAI API key is configured. VoiceMode will use OpenAI for speech"
+      echo "recognition and text-to-speech, with automatic fallback support."
+      api_key_configured=true
+      # Export a flag for later use
+      export VOICEMODE_API_KEY_CONFIGURED=true
+      return 0
+    fi
+  done
+
+  # API key not found - recommend setting it up
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "                    🎯 Quick Start with OpenAI (Recommended)"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo ""
+  echo "For the best first experience, we recommend using OpenAI's API:"
+  echo "  ✓ Works immediately - no complex setup required"
+  echo "  ✓ High-quality speech recognition and natural voices"
+  echo "  ✓ Automatic fallback when local services are unavailable"
+  echo ""
+  echo "Local services (Whisper/Kokoro) can be added later for:"
+  echo "  • Reduced costs"
+  echo "  • Enhanced privacy"
+  echo "  • Offline capability"
+  echo "  (Claude can help you set these up when you're ready)"
+  echo ""
+
+  if confirm_action "Would you like to set up your OpenAI API key now? (recommended)"; then
+    echo ""
+    echo "To get an API key:"
+    echo "  1. Visit: https://platform.openai.com/api-keys"
+    echo "  2. Sign in or create an account"
+    echo "  3. Click 'Create new secret key'"
+    echo "  4. Copy the key (it starts with 'sk-')"
+    echo ""
+
+    # Offer to open the page
+    if command -v open >/dev/null 2>&1; then
+      if confirm_action "Would you like to open the OpenAI API keys page in your browser?"; then
+        open "https://platform.openai.com/api-keys"
+        echo ""
+        echo "Waiting for you to create and copy your API key..."
+        sleep 2
+      fi
+    fi
+
+    echo ""
+    echo "Please paste your OpenAI API key (or press Enter to skip):"
+    echo "(The key will be hidden as you type)"
+    read -s api_key
+    echo ""
+
+    if [ -n "$api_key" ]; then
+      # Validate that it looks like an API key
+      if [[ ! "$api_key" =~ ^sk- ]]; then
+        print_warning "That doesn't look like an OpenAI API key (should start with 'sk-')"
+        echo "Skipping API key configuration"
+        return 1
+      fi
+
+      # Add to shell configuration
+      local shell_profile=""
+      if [[ "$SHELL" == *"zsh"* ]]; then
+        shell_profile="$HOME/.zshrc"
+      elif [[ "$SHELL" == *"bash"* ]]; then
+        if [[ "$OS" == "macos" ]]; then
+          shell_profile="$HOME/.bash_profile"
+        else
+          shell_profile="$HOME/.bashrc"
+        fi
+      fi
+
+      if [ -n "$shell_profile" ]; then
+        echo "" >> "$shell_profile"
+        echo "# OpenAI API Key for VoiceMode" >> "$shell_profile"
+        echo "export OPENAI_API_KEY='$api_key'" >> "$shell_profile"
+        print_success "Added OPENAI_API_KEY to $shell_profile"
+
+        # Export for current session
+        export OPENAI_API_KEY="$api_key"
+        export VOICEMODE_API_KEY_CONFIGURED=true
+
+        echo ""
+        print_success "OpenAI API key configured successfully!"
+        return 0
+      fi
+    else
+      print_warning "Skipping OpenAI API key configuration"
+    fi
+  else
+    print_warning "Skipping OpenAI API key configuration"
+    echo ""
+    echo "You can add it later to your shell configuration:"
+    echo "  export OPENAI_API_KEY='your-api-key-here'"
+    echo ""
+    echo "Without an API key, only local services will work (after installation)."
+  fi
+
+  return 1
+}
+
+test_voice_setup() {
+  print_step "Testing voice setup..."
+
+  # Check if voicemode command is available
+  if ! command -v voicemode >/dev/null 2>&1; then
+    print_warning "voicemode command not found in PATH"
+    return 1
+  fi
+
+  # Check for audio devices first
+  print_step "Checking audio devices..."
+  local device_output=$(voicemode diag devices 2>&1)
+
+  if echo "$device_output" | grep -q "Input Devices:"; then
+    # Extract only the input devices section (between "Input Devices:" and next empty line or "Output")
+    local input_section=$(echo "$device_output" | sed -n '/Input Devices:/,/^$/p' | sed -n '/Input Devices:/,/Output Devices:/p')
+    local input_count=$(echo "$input_section" | grep -c "^\s*\[[0-9]\].*channels)")
+
+    if [ "$input_count" -gt 0 ]; then
+      print_success "Found $input_count microphone(s)"
+      # Show the default input device
+      echo "$device_output" | grep "Default Input:" | sed 's/^/  /'
+    else
+      print_warning "No microphones detected"
+      echo "  Voice features require a microphone to be connected"
+      return 1
+    fi
+  else
+    print_warning "Could not detect audio devices"
+  fi
+
+  # Check if we have an API key or local services
+  local has_tts=false
+  if [ -n "${OPENAI_API_KEY:-}" ]; then
+    has_tts=true
+    echo "  OpenAI API key is configured ✓"
+  fi
+
+  # Quick check for local services
+  if voicemode whisper status 2>/dev/null | grep -q "running"; then
+    has_tts=true
+    echo "  Whisper (STT) is running ✓"
+  fi
+
+  if voicemode kokoro status 2>/dev/null | grep -q "available"; then
+    has_tts=true
+    echo "  Kokoro (TTS) is running ✓"
+  fi
+
+  if [ "$has_tts" = false ]; then
+    print_warning "No TTS/STT services available yet"
+    echo "  You'll need either an OpenAI API key or local services to use voice features"
+    return 1
+  fi
+
+  echo ""
+  if confirm_action "Would you like to test voice mode now?"; then
+    echo ""
+    echo "Starting voice test..."
+    echo "  • Say 'Hello' when you hear the chime"
+    echo "  • The test will confirm your microphone and API are working"
+    echo "  • Press Ctrl+C to exit the test"
+    echo ""
+
+    # Run a voice test
+    echo ""
+    echo "Running voice test..."
+    echo ""
+
+    # Run a single interaction test
+    # This will speak, then listen for a response (default 120 seconds)
+    voicemode converse --message "Hello! Testing voice mode. Say something to test your microphone." 2>&1 || true
+
+    echo ""
+    print_success "Voice test complete!"
+  fi
+
+  return 0
+}
+
 configure_claude_voicemode() {
   if command -v claude >/dev/null 2>&1; then
     # Check if voicemode is already configured
@@ -890,18 +1156,18 @@ install_all_services() {
 install_services_selective() {
   local voice_mode_cmd="$1"
 
-  if confirm_action "Install Whisper (Speech-to-Text)"; then
+  if confirm_action "Would you like to install Whisper (Speech-to-Text)?" false; then
     install_service "whisper" "$voice_mode_cmd" "Whisper"
     # CoreML acceleration setup for Apple Silicon Macs
     # DISABLED: CoreML build issues - users getting errors at 3:30am
     # setup_coreml_acceleration
   fi
 
-  if confirm_action "Install Kokoro (Text-to-Speech)"; then
+  if confirm_action "Would you like to install Kokoro (Text-to-Speech)?" false; then
     install_service "kokoro" "$voice_mode_cmd" "Kokoro"
   fi
 
-  if confirm_action "Install LiveKit (Real-time Communication)"; then
+  if confirm_action "Would you like to install LiveKit (Real-time Communication)?" false; then
     install_service "livekit" "$voice_mode_cmd" "LiveKit"
   fi
 }
@@ -1141,16 +1407,13 @@ main() {
   # OS-specific setup
   if [[ "$OS" == "macos" ]]; then
     check_homebrew
-    # Skip Xcode tools check if Homebrew will handle it
-    if [ "$HOMEBREW_INSTALLED" = false ]; then
-      install_homebrew # This installs Xcode tools automatically
-    fi
+    # Don't install Homebrew here - let install_system_dependencies handle it
   fi
 
   check_python
   install_uv
 
-  # Install dependencies
+  # Install dependencies (handles Homebrew installation if needed)
   install_system_dependencies
 
   # Install VoiceMode package locally
@@ -1161,17 +1424,45 @@ main() {
     setup_local_npm
   fi
 
+  # Configure OpenAI API key for quick start
+  configure_api_key
+
   # Install Claude Code if needed, then configure VoiceMode
   if install_claude_if_needed; then
     if configure_claude_voicemode; then
       # VoiceMode configured successfully
       echo ""
-      echo "🎉 VoiceMode is ready! You can use voice commands with:"
-      echo "  claude converse"
+      echo "🎉 VoiceMode is ready!"
       echo ""
 
-      # Offer to install services
-      install_voice_services
+      # Test voice setup if API key is configured (from environment or config file)
+      if [ -n "${OPENAI_API_KEY:-}" ] || [ "${VOICEMODE_API_KEY_CONFIGURED:-}" = "true" ]; then
+        test_voice_setup
+      fi
+
+      echo ""
+      echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      echo "                    ✨ Ready to Use Claude Code!"
+      echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      echo ""
+      echo "Start using voice commands with Claude:"
+      echo ""
+      echo "  claude converse    # Start a voice conversation"
+      echo ""
+      echo "Tips:"
+      echo "  • Say 'Hey Claude' to get Claude's attention"
+      echo "  • Voice mode works in any project directory"
+      echo "  • Claude can help you code, debug, and answer questions"
+      echo ""
+
+      # Local services as a footnote, not a prompt
+      echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      echo ""
+      echo "📝 Advanced: Want to reduce costs or work offline?"
+      echo "   You can install local voice services later:"
+      echo "   • voicemode whisper install  # Local speech-to-text"
+      echo "   • voicemode kokoro install   # Local text-to-speech"
+      echo "   (Claude can help you set these up when you're ready)"
     else
       print_warning "VoiceMode configuration was skipped or failed."
       echo ""
