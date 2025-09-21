@@ -957,7 +957,7 @@ test_voice_setup() {
 
     # Run a single interaction test with a message and short duration
     # This will speak, then listen for up to 5 seconds
-    voicemode converse -m "Hello! Testing voice mode. Say something to test your microphone." -d 5 2>&1 || true
+    voicemode converse --message "Hello! Testing voice mode. Say something to test your microphone." --duration 5 2>&1 || true
 
     echo ""
     print_success "Voice test complete!"
