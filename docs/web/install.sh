@@ -984,7 +984,7 @@ configure_claude_voicemode() {
         print_step "Adding VoiceMode to Claude Code..."
 
         # Try with --scope flag first (newer versions)
-        if claude mcp add --scope user -- uvx --refresh voice-mode 2>/dev/null; then
+        if claude mcp add --scope user voicemode -- uvx --refresh voice-mode 2>/dev/null; then
           print_success "VoiceMode added to Claude Code"
           setup_shell_completion
           return 0
@@ -995,7 +995,7 @@ configure_claude_voicemode() {
       else
         print_step "Skipping VoiceMode configuration"
         echo "You can configure it later with:"
-        echo "  claude mcp add --scope user -- uvx --refresh voice-mode"
+        echo "  claude mcp add --scope user voicemode -- uvx --refresh voice-mode"
         return 1
       fi
     fi
@@ -1501,7 +1501,7 @@ main() {
       print_warning "VoiceMode configuration was skipped or failed."
       echo ""
       echo "You can manually configure VoiceMode later with:"
-      echo "  claude mcp add --scope user -- uvx --refresh voice-mode"
+      echo "  claude mcp add --scope user voicemode -- uvx --refresh voice-mode"
       echo ""
       echo "Then install services with:"
       echo "  voicemode whisper install"
