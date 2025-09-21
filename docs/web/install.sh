@@ -821,7 +821,7 @@ configure_api_key() {
   if confirm_action "Would you like to set up your OpenAI API key now? (recommended)"; then
     echo ""
     echo "To get an API key:"
-    echo "  1. Visit: https://platform.openai.com/api-keys"
+    echo "  1. Visit: https://platform.openai.com"
     echo "  2. Sign in or create an account"
     echo "  3. Click 'Create new secret key'"
     echo "  4. Copy the key (it starts with 'sk-')"
