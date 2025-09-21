@@ -950,9 +950,14 @@ test_voice_setup() {
     echo "  • Press Ctrl+C to exit the test"
     echo ""
 
-    # Run a quick voice test
-    # Using echo to pipe a test message, timeout after 10 seconds
-    echo "Testing voice mode. Say hello to test your microphone." | timeout 10 voicemode converse 2>&1 || true
+    # Run a voice test
+    echo ""
+    echo "Running voice test..."
+    echo ""
+
+    # Run a single interaction test with a message and short duration
+    # This will speak, then listen for up to 5 seconds
+    voicemode converse -m "Hello! Testing voice mode. Say something to test your microphone." -d 5 2>&1 || true
 
     echo ""
     print_success "Voice test complete!"
