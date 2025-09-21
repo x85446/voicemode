@@ -1457,11 +1457,13 @@ main() {
       # Local services as a footnote, not a prompt
       echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
       echo ""
-      echo "📝 Advanced: Want to reduce costs or work offline?"
-      echo "   You can install local voice services later:"
+      echo "📝 Advanced: Want to reduce latency / costs while improving privacy?"
+      echo "   If your hardware (and ability to problem solve) allow it, it's possible to install local open source voice services"
+      echo "   VoiceMode CLI provides commands to help you install kokoro and whisper."
       echo "   • voicemode whisper install  # Local speech-to-text"
       echo "   • voicemode kokoro install   # Local text-to-speech"
-      echo "   (Claude can help you set these up when you're ready)"
+      echo "   These are not required to use VoiceMode"
+      echo "   - Ask Claude for more info"
     else
       print_warning "VoiceMode configuration was skipped or failed."
       echo ""
