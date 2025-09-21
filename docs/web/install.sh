@@ -708,6 +708,175 @@ fi'
   return 0
 }
 
+configure_api_key() {
+  print_step "Checking OpenAI API key configuration..."
+
+  # Check if OPENAI_API_KEY is already set
+  if [ -n "${OPENAI_API_KEY:-}" ]; then
+    print_success "OPENAI_API_KEY is already set in environment"
+    echo ""
+    echo "Your OpenAI API key is configured. VoiceMode will use OpenAI for speech"
+    echo "recognition and text-to-speech, with automatic fallback support."
+    return 0
+  fi
+
+  # Check if it's in shell config files
+  local has_api_key=false
+  for file in ~/.bashrc ~/.zshrc ~/.bash_profile; do
+    if [ -f "$file" ] && grep -q "export OPENAI_API_KEY" "$file" 2>/dev/null; then
+      has_api_key=true
+      print_success "OPENAI_API_KEY found in $file"
+      echo ""
+      echo "Your OpenAI API key is configured. VoiceMode will use OpenAI for speech"
+      echo "recognition and text-to-speech, with automatic fallback support."
+      return 0
+    fi
+  done
+
+  # API key not found - recommend setting it up
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "                    🎯 Quick Start with OpenAI (Recommended)"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo ""
+  echo "For the best first experience, we recommend using OpenAI's API:"
+  echo "  ✓ Works immediately - no complex setup required"
+  echo "  ✓ High-quality speech recognition and natural voices"
+  echo "  ✓ Automatic fallback when local services are unavailable"
+  echo ""
+  echo "Local services (Whisper/Kokoro) can be added later for:"
+  echo "  • Reduced costs"
+  echo "  • Enhanced privacy"
+  echo "  • Offline capability"
+  echo "  (Claude can help you set these up when you're ready)"
+  echo ""
+
+  if confirm_action "Would you like to set up your OpenAI API key now? (recommended)"; then
+    echo ""
+    echo "To get an API key:"
+    echo "  1. Visit: https://platform.openai.com/api-keys"
+    echo "  2. Sign in or create an account"
+    echo "  3. Click 'Create new secret key'"
+    echo "  4. Copy the key (it starts with 'sk-')"
+    echo ""
+
+    # Offer to open the page
+    if command -v open >/dev/null 2>&1; then
+      if confirm_action "Open the OpenAI API keys page in your browser?"; then
+        open "https://platform.openai.com/api-keys"
+        echo ""
+        echo "Waiting for you to create and copy your API key..."
+        sleep 2
+      fi
+    fi
+
+    echo ""
+    echo "Please paste your OpenAI API key (or press Enter to skip):"
+    echo "(The key will be hidden as you type)"
+    read -s api_key
+    echo ""
+
+    if [ -n "$api_key" ]; then
+      # Validate that it looks like an API key
+      if [[ ! "$api_key" =~ ^sk- ]]; then
+        print_warning "That doesn't look like an OpenAI API key (should start with 'sk-')"
+        echo "Skipping API key configuration"
+        return 1
+      fi
+
+      # Add to shell configuration
+      local shell_profile=""
+      if [[ "$SHELL" == *"zsh"* ]]; then
+        shell_profile="$HOME/.zshrc"
+      elif [[ "$SHELL" == *"bash"* ]]; then
+        if [[ "$OS" == "macos" ]]; then
+          shell_profile="$HOME/.bash_profile"
+        else
+          shell_profile="$HOME/.bashrc"
+        fi
+      fi
+
+      if [ -n "$shell_profile" ]; then
+        echo "" >> "$shell_profile"
+        echo "# OpenAI API Key for VoiceMode" >> "$shell_profile"
+        echo "export OPENAI_API_KEY='$api_key'" >> "$shell_profile"
+        print_success "Added OPENAI_API_KEY to $shell_profile"
+
+        # Export for current session
+        export OPENAI_API_KEY="$api_key"
+
+        echo ""
+        print_success "OpenAI API key configured successfully!"
+        return 0
+      fi
+    else
+      print_warning "Skipping OpenAI API key configuration"
+    fi
+  else
+    print_warning "Skipping OpenAI API key configuration"
+    echo ""
+    echo "You can add it later to your shell configuration:"
+    echo "  export OPENAI_API_KEY='your-api-key-here'"
+    echo ""
+    echo "Without an API key, only local services will work (after installation)."
+  fi
+
+  return 1
+}
+
+test_voice_setup() {
+  print_step "Testing voice setup..."
+
+  # Check if voicemode command is available
+  if ! command -v voicemode >/dev/null 2>&1; then
+    print_warning "voicemode command not found in PATH"
+    return 1
+  fi
+
+  # Check if we have an API key or local services
+  local has_tts=false
+  if [ -n "${OPENAI_API_KEY:-}" ]; then
+    has_tts=true
+    echo "  OpenAI API key is configured ✓"
+  fi
+
+  # Quick check for local services
+  if voicemode whisper status 2>/dev/null | grep -q "running"; then
+    has_tts=true
+    echo "  Whisper (STT) is running ✓"
+  fi
+
+  if voicemode kokoro status 2>/dev/null | grep -q "available"; then
+    has_tts=true
+    echo "  Kokoro (TTS) is running ✓"
+  fi
+
+  if [ "$has_tts" = false ]; then
+    print_warning "No TTS/STT services available yet"
+    echo "  You'll need either an OpenAI API key or local services to use voice features"
+    return 1
+  fi
+
+  echo ""
+  if confirm_action "Would you like to test voice mode now?"; then
+    echo ""
+    echo "Starting voice test..."
+    echo "  • Say 'Hello' when you hear the chime"
+    echo "  • The test will confirm your microphone and API are working"
+    echo "  • Press Ctrl+C to exit the test"
+    echo ""
+
+    # Run a quick voice test
+    # Using echo to pipe a test message, timeout after 10 seconds
+    echo "Testing voice mode. Say hello to test your microphone." | timeout 10 voicemode converse 2>&1 || true
+
+    echo ""
+    print_success "Voice test complete!"
+  fi
+
+  return 0
+}
+
 configure_claude_voicemode() {
   if command -v claude >/dev/null 2>&1; then
     # Check if voicemode is already configured
@@ -1161,17 +1330,49 @@ main() {
     setup_local_npm
   fi
 
+  # Configure OpenAI API key for quick start
+  configure_api_key
+
   # Install Claude Code if needed, then configure VoiceMode
   if install_claude_if_needed; then
     if configure_claude_voicemode; then
       # VoiceMode configured successfully
       echo ""
-      echo "🎉 VoiceMode is ready! You can use voice commands with:"
+      echo "🎉 VoiceMode is ready!"
+      echo ""
+
+      # Test voice setup if API key is configured
+      if [ -n "${OPENAI_API_KEY:-}" ]; then
+        test_voice_setup
+      fi
+
+      echo ""
+      echo "You can use voice commands with:"
       echo "  claude converse"
       echo ""
 
-      # Offer to install services
-      install_voice_services
+      # Offer to install services (now positioned as advanced/optional)
+      echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      echo "                    🔧 Optional: Local Voice Services"
+      echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      echo ""
+      echo "You can optionally install local services for:"
+      echo "  • Lower costs (no API usage)"
+      echo "  • Enhanced privacy (everything runs locally)"
+      echo "  • Offline capability"
+      echo ""
+      echo "Note: Local services require additional setup and may need troubleshooting."
+      echo "Claude can help you with installation when you're ready."
+      echo ""
+
+      if confirm_action "Would you like to explore local voice services?"; then
+        install_voice_services
+      else
+        echo ""
+        echo "You can install local services later with:"
+        echo "  voicemode whisper install  # Speech-to-text"
+        echo "  voicemode kokoro install   # Text-to-speech"
+      fi
     else
       print_warning "VoiceMode configuration was skipped or failed."
       echo ""
