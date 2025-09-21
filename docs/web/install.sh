@@ -236,7 +236,7 @@ check_system_dependencies() {
   print_step "Checking system dependencies..."
 
   if [[ "$OS" == "macos" ]]; then
-    local packages=("node" "portaudio" "ffmpeg" "cmake" "coreutils")
+    local packages=("node" "portaudio" "ffmpeg")
     local missing_packages=()
 
     for package in "${packages[@]}"; do
