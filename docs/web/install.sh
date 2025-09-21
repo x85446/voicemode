@@ -284,26 +284,65 @@ check_system_dependencies() {
 install_system_dependencies() {
   if ! check_system_dependencies; then
     if [[ "$OS" == "macos" ]]; then
-      if confirm_action "Install missing system dependencies via Homebrew"; then
-        print_step "Installing system dependencies..."
+      # Build list of what needs to be installed
+      local needs_homebrew=false
+      local needs_deps=false
+      local install_message=""
 
-        # Update Homebrew
-        brew update
+      if [ "$HOMEBREW_INSTALLED" = false ]; then
+        needs_homebrew=true
+        install_message="• Homebrew (package manager)\n  • Xcode Command Line Tools (automatically installed)\n  "
+      fi
 
-        # Install required packages
-        local packages=("node" "portaudio" "ffmpeg" "cmake" "coreutils")
+      # Check for missing audio dependencies
+      local missing_packages=()
+      for package in ffmpeg portaudio; do
+        if ! brew list $package &>/dev/null; then
+          missing_packages+=($package)
+          needs_deps=true
+        fi
+      done
 
-        for package in "${packages[@]}"; do
-          if brew list "$package" >/dev/null 2>&1; then
-            print_success "$package is already installed"
-          else
-            print_step "Installing $package..."
-            brew install "$package"
-            print_success "$package installed"
+      if [ "$needs_homebrew" = true ] || [ "$needs_deps" = true ]; then
+        echo ""
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo "                    📦 System Dependencies Required"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo ""
+        echo "VoiceMode needs to install the following:"
+        if [ "$needs_homebrew" = true ]; then
+          echo -e "$install_message"
+        fi
+        if [ "$needs_deps" = true ]; then
+          echo "• Audio dependencies: ${missing_packages[*]}"
+        fi
+        echo ""
+
+        if confirm_action "Install all required dependencies?"; then
+          # Install Homebrew if needed
+          if [ "$needs_homebrew" = true ]; then
+            install_homebrew
+            if [ "$HOMEBREW_INSTALLED" = false ]; then
+              print_warning "Failed to install Homebrew. Cannot proceed."
+              return 1
+            fi
           fi
-        done
-      else
-        print_warning "Skipping system dependencies. VoiceMode may not work properly without them."
+
+          # Install missing packages
+          if [ "$needs_deps" = true ]; then
+            print_step "Installing audio dependencies..."
+            brew update
+
+            for package in "${missing_packages[@]}"; do
+              print_step "Installing $package..."
+              brew install "$package"
+              print_success "$package installed"
+            done
+          fi
+        else
+          print_warning "Skipping system dependencies. VoiceMode may not work properly without them."
+          return 1
+        fi
       fi
     elif [[ "$OS" == "fedora" ]]; then
       if confirm_action "Install missing system dependencies via DNF"; then
@@ -1310,16 +1349,13 @@ main() {
   # OS-specific setup
   if [[ "$OS" == "macos" ]]; then
     check_homebrew
-    # Skip Xcode tools check if Homebrew will handle it
-    if [ "$HOMEBREW_INSTALLED" = false ]; then
-      install_homebrew # This installs Xcode tools automatically
-    fi
+    # Don't install Homebrew here - let install_system_dependencies handle it
   fi
 
   check_python
   install_uv
 
-  # Install dependencies
+  # Install dependencies (handles Homebrew installation if needed)
   install_system_dependencies
 
   # Install VoiceMode package locally
