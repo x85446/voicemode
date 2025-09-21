@@ -1473,30 +1473,58 @@ main() {
 
       echo ""
       echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-      echo "                    ✨ Ready to Use Claude Code!"
+      echo "                    ✨ VoiceMode Installation Complete!"
       echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-      echo ""
-      echo "Two ways to start a Voice Conversation with Claude:"
-      echo ""
-      echo "1. Start Claude with 'converse' prompt:"
-      echo ""
-      echo "  claude converse    # Start claude with prompt to begin a voice conversation"
-      echo ""
-      echo "2. Prompt from within a Claude Code session:"
-      echo ""
-      echo "Type 'converse' or '/voicemode:converse'"
       echo ""
 
-      # Local services as a footnote, not a prompt
-      echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-      echo ""
-      echo "📝 Advanced: Want to reduce latency / costs while improving privacy?"
-      echo "   If your hardware (and ability to problem solve) allow it, it's possible to install local open source voice services"
-      echo "   VoiceMode CLI provides commands to help you install kokoro and whisper."
+      # Advanced options as a side note
+      echo "📝 Advanced Options (not required):"
+      echo "   Local voice services can reduce latency/costs and improve privacy:"
       echo "   • voicemode whisper install  # Local speech-to-text"
       echo "   • voicemode kokoro install   # Local text-to-speech"
-      echo "   These are not required to use VoiceMode"
-      echo "   - Ask Claude for more info"
+      echo ""
+
+      # Main instructions
+      echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      echo ""
+      echo "🎯 How to use VoiceMode with Claude:"
+      echo ""
+      echo "1. From terminal: claude converse"
+      echo "2. From Claude Code: Type 'converse' or '/voicemode:converse'"
+      echo ""
+      echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      echo ""
+
+      # Important note about shell restart
+      echo "⚠️  IMPORTANT: You'll need to restart your terminal for the 'claude' command to work."
+      echo ""
+      echo "But we can start a conversation right now without restarting!"
+      echo ""
+
+      # Offer to start Claude immediately
+      if confirm_action "Would you like to start a voice conversation with Claude now? [Y/n]"; then
+        echo ""
+        print_step "Starting Claude with voice mode..."
+        echo "  • Say something when you hear the chime"
+        echo "  • Press Ctrl+C to exit when done"
+        echo ""
+
+        # Use the full path to claude since PATH may not be updated yet
+        if [ -f "$HOME/.npm-global/bin/claude" ]; then
+          "$HOME/.npm-global/bin/claude" converse
+        elif command -v claude >/dev/null 2>&1; then
+          claude converse
+        else
+          print_warning "Claude command not found in expected location."
+          echo "After restarting your terminal, run: claude converse"
+        fi
+      else
+        echo ""
+        echo "To start using VoiceMode:"
+        echo "  1. Close and reopen your terminal"
+        echo "  2. Run: claude converse"
+        echo ""
+      fi
     else
       print_warning "VoiceMode configuration was skipped or failed."
       echo ""
