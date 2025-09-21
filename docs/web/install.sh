@@ -1009,11 +1009,44 @@ install_claude_if_needed() {
   if ! command -v claude >/dev/null 2>&1; then
     if confirm_action "Install Claude Code (required for VoiceMode)"; then
       print_step "Installing Claude Code..."
+
+      # Check for npm and install Node.js if missing
+      if ! command -v npm >/dev/null 2>&1; then
+        print_step "npm not found. Installing Node.js..."
+
+        if [[ "$OS" == "macos" ]]; then
+          # Install Node.js via Homebrew on macOS
+          if command -v brew >/dev/null 2>&1; then
+            brew install node
+            print_success "Node.js installed via Homebrew"
+          else
+            print_error "Homebrew not found. Please install Homebrew first."
+            return 1
+          fi
+        elif [[ "$OS" == "linux" ]]; then
+          # Install Node.js on Linux
+          if command -v apt-get >/dev/null 2>&1; then
+            sudo apt-get update && sudo apt-get install -y nodejs npm
+            print_success "Node.js installed via apt"
+          elif command -v dnf >/dev/null 2>&1; then
+            sudo dnf install -y nodejs npm
+            print_success "Node.js installed via dnf"
+          else
+            print_error "Unable to install Node.js. Please install it manually."
+            return 1
+          fi
+        fi
+
+        # Set up local npm configuration to avoid sudo for global installs
+        setup_local_npm
+      fi
+
+      # Now install Claude Code
       if command -v npm >/dev/null 2>&1; then
         npm install -g @anthropic-ai/claude-code
         print_success "Claude Code installed"
       else
-        print_error "npm not found. Please install Node.js first."
+        print_error "Failed to install npm. Please install Node.js manually."
         return 1
       fi
     else
