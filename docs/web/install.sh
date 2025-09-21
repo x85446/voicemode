@@ -773,24 +773,31 @@ fi'
 configure_api_key() {
   print_step "Checking OpenAI API key configuration..."
 
+  # Track if we have an API key configured
+  local api_key_configured=false
+
   # Check if OPENAI_API_KEY is already set
   if [ -n "${OPENAI_API_KEY:-}" ]; then
     print_success "OPENAI_API_KEY is already set in environment"
     echo ""
     echo "Your OpenAI API key is configured. VoiceMode will use OpenAI for speech"
     echo "recognition and text-to-speech, with automatic fallback support."
+    api_key_configured=true
+    # Export a flag for later use
+    export VOICEMODE_API_KEY_CONFIGURED=true
     return 0
   fi
 
   # Check if it's in shell config files
-  local has_api_key=false
   for file in ~/.bashrc ~/.zshrc ~/.bash_profile; do
     if [ -f "$file" ] && grep -q "export OPENAI_API_KEY" "$file" 2>/dev/null; then
-      has_api_key=true
       print_success "OPENAI_API_KEY found in $file"
       echo ""
       echo "Your OpenAI API key is configured. VoiceMode will use OpenAI for speech"
       echo "recognition and text-to-speech, with automatic fallback support."
+      api_key_configured=true
+      # Export a flag for later use
+      export VOICEMODE_API_KEY_CONFIGURED=true
       return 0
     fi
   done
@@ -866,6 +873,7 @@ configure_api_key() {
 
         # Export for current session
         export OPENAI_API_KEY="$api_key"
+        export VOICEMODE_API_KEY_CONFIGURED=true
 
         echo ""
         print_success "OpenAI API key configured successfully!"
@@ -1427,8 +1435,8 @@ main() {
       echo "🎉 VoiceMode is ready!"
       echo ""
 
-      # Test voice setup if API key is configured
-      if [ -n "${OPENAI_API_KEY:-}" ]; then
+      # Test voice setup if API key is configured (from environment or config file)
+      if [ -n "${OPENAI_API_KEY:-}" ] || [ "${VOICEMODE_API_KEY_CONFIGURED:-}" = "true" ]; then
         test_voice_setup
       fi
 
