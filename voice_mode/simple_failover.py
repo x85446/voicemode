@@ -127,15 +127,20 @@ async def simple_stt_failover(
     audio_file,
     model: str = "whisper-1",
     **kwargs
-) -> Optional[str]:
+) -> Optional[Dict[str, Any]]:
     """
     Simple STT failover - try each endpoint in order until one works.
-    
+
     Returns:
-        Transcribed text or None
+        Dict with transcription result or error information:
+        - Success: {"text": "...", "provider": "...", "endpoint": "..."}
+        - No speech: {"error_type": "no_speech", "provider": "..."}
+        - All failed: {"error_type": "connection_failed", "attempted_endpoints": [...]}
     """
-    last_error = None
-    
+    connection_errors = []
+    successful_but_empty = False
+    successful_provider = None
+
     # Log STT request details
     logger.info("STT: Starting speech-to-text conversion")
     logger.info(f"  Available endpoints: {STT_BASE_URLS}")
@@ -153,7 +158,7 @@ async def simple_stt_failover(
 
             # Create client for this endpoint
             api_key = OPENAI_API_KEY if provider_type == "openai" else (OPENAI_API_KEY or "dummy-key-for-local")
-            
+
             # Disable retries for local endpoints - they either work or don't
             max_retries = 0 if is_local_provider(base_url) else 2
             client = AsyncOpenAI(
@@ -162,14 +167,14 @@ async def simple_stt_failover(
                 timeout=30.0,
                 max_retries=max_retries
             )
-            
+
             # Try STT with this endpoint
             transcription = await client.audio.transcriptions.create(
                 model=model,
                 file=audio_file,
                 response_format="text"
             )
-            
+
             text = transcription.strip() if isinstance(transcription, str) else transcription.text.strip()
 
             if text:
@@ -178,11 +183,22 @@ async def simple_stt_failover(
                 # Return both text and provider info for display
                 return {"text": text, "provider": provider_type, "endpoint": base_url}
             else:
+                # Successful connection but no speech detected
                 logger.warning(f"STT returned empty result from {base_url} ({provider_type})")
-                
+                successful_but_empty = True
+                successful_provider = provider_type
+
         except Exception as e:
-            last_error = str(e)
+            error_str = str(e)
             provider_type = detect_provider_type(base_url)
+
+            # Track connection/auth errors
+            full_endpoint = f"{base_url}/audio/transcriptions" if not base_url.endswith("/v1") else f"{base_url}/audio/transcriptions"
+            connection_errors.append({
+                "endpoint": full_endpoint,
+                "provider": provider_type,
+                "error": error_str
+            })
 
             # Log failure with appropriate level based on whether we have fallbacks
             if i < len(STT_BASE_URLS) - 1:
@@ -193,8 +209,17 @@ async def simple_stt_failover(
 
             # Continue to next endpoint
             continue
-    
-    # All endpoints failed
-    logger.error(f"✗ All STT endpoints failed after {len(STT_BASE_URLS)} attempts")
-    logger.error(f"  Last error: {last_error}")
-    return None
+
+    # Determine what to return based on results
+    if successful_but_empty:
+        # At least one endpoint connected successfully but returned no speech
+        logger.info("STT: No speech detected (successful connection)")
+        return {"error_type": "no_speech", "provider": successful_provider}
+    elif connection_errors:
+        # All endpoints failed with connection/auth errors
+        logger.error(f"✗ All STT endpoints failed after {len(STT_BASE_URLS)} attempts")
+        return {"error_type": "connection_failed", "attempted_endpoints": connection_errors}
+    else:
+        # Should not reach here, but handle it gracefully
+        logger.error("STT: Unexpected state - no successful connections and no errors tracked")
+        return None

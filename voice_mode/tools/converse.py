@@ -255,23 +255,23 @@ async def text_to_speech_with_failover(
     )
 
 
-async def speech_to_text(audio_data: np.ndarray, save_audio: bool = False, audio_dir: Optional[Path] = None, transport: str = "local") -> Optional[str]:
+async def speech_to_text(audio_data: np.ndarray, save_audio: bool = False, audio_dir: Optional[Path] = None, transport: str = "local") -> Optional[Dict]:
     """Convert audio to text with automatic failover"""
     # Use the new failover implementation
     return await speech_to_text_with_failover(audio_data, save_audio, audio_dir, transport)
 
 
 async def speech_to_text_with_failover(
-    audio_data: np.ndarray, 
-    save_audio: bool = False, 
+    audio_data: np.ndarray,
+    save_audio: bool = False,
     audio_dir: Optional[Path] = None,
     transport: str = "local"
-) -> Optional[str]:
+) -> Optional[Dict]:
     """
     Speech to text with automatic failover to next available endpoint.
-    
+
     Returns:
-        Transcribed text or None if all endpoints fail
+        Dict with transcription result or error information
     """
     # Always use simple failover (the only mode now)
     import tempfile
@@ -305,14 +305,8 @@ async def speech_to_text_with_failover(
                 audio_file=audio_file,
                 model="whisper-1"
             )
-            # Extract text and log provider info
-            if isinstance(stt_result, dict):
-                result = stt_result.get("text")
-                provider = stt_result.get("provider", "unknown")
-                logger.info(f"STT Provider Used: {provider}")
-            else:
-                # Backward compatibility if old version
-                result = stt_result
+            # Return the full structured result
+            result = stt_result
         # Don't delete - it's our saved audio file
     else:
         # Use temporary file that will be deleted
@@ -326,13 +320,8 @@ async def speech_to_text_with_failover(
                     audio_file=audio_file,
                     model="whisper-1"
                 )
-                # Return dict with text and provider
-                if isinstance(stt_result, dict):
-                    result = stt_result
-                    logger.info(f"STT Provider Used: {stt_result.get('provider', 'unknown')}")
-                else:
-                    # Backward compatibility - wrap in dict
-                    result = {"text": stt_result, "provider": "unknown"} if stt_result else None
+                # Return the full structured result
+                result = stt_result
 
             # Clean up temp file
             os.unlink(tmp_file.name)
@@ -1226,23 +1215,19 @@ async def converse(
     pip_trailing_silence: Optional[float] = None
 ) -> str:
     """Have a voice conversation - speak a message and optionally listen for response.
-    
-    🌍 LANGUAGE SUPPORT - ALWAYS SELECT APPROPRIATE VOICE FOR NON-ENGLISH TEXT:
-    When speaking non-English languages, you MUST specify the appropriate voice and provider:
-    - Spanish: voice="ef_dora" (or "em_alex"), tts_provider="kokoro"
+
+    🔌 ENDPOINT REQUIREMENTS: STT/TTS services must expose OpenAI-compatible endpoints:
+    - Whisper/Kokoro must serve on: /v1/audio/transcriptions and /v1/audio/speech
+    - Connection errors will be clearly reported with attempted endpoints
+
+    🌍 NON-ENGLISH LANGUAGES: Specify voice & provider for proper pronunciation:
+    - Spanish: voice="ef_dora", tts_provider="kokoro"
     - French: voice="ff_siwis", tts_provider="kokoro"
-    - Italian: voice="if_sara" (or "im_nicola"), tts_provider="kokoro"
-    - Portuguese: voice="pf_dora" (or "pm_alex"), tts_provider="kokoro"
-    - Chinese: voice="zf_xiaobei" (female) or "zm_yunjian" (male), tts_provider="kokoro"
-    - Japanese: voice="jf_alpha" (female) or "jm_kumo" (male), tts_provider="kokoro"
-    - Hindi: voice="hf_alpha" (female) or "hm_omega" (male), tts_provider="kokoro"
-    
-    ⚠️ IMPORTANT: Default voices (OpenAI) will speak non-English text with an American accent.
-    Always check the message content and select language-appropriate voices for natural pronunciation.
-    
-    PRIVACY NOTICE: When wait_for_response is True, this tool will access your microphone
-    to record audio for speech-to-text conversion. Audio is processed using the configured
-    STT service and is not permanently stored. Do not use upper case except for acronyms as the TTS will spell these out.
+    - Chinese: voice="zf_xiaobei", tts_provider="kokoro"
+    - Japanese: voice="jf_alpha", tts_provider="kokoro"
+    (Default OpenAI voices speak non-English with American accent)
+
+    PRIVACY: Microphone access required when wait_for_response=True. Audio processed via STT service, not stored.
     
     Args:
         message: The message to speak
@@ -1798,15 +1783,35 @@ async def converse(
                         stt_result = await speech_to_text(audio_data, SAVE_AUDIO, AUDIO_DIR if SAVE_AUDIO else None, transport)
                         timings['stt'] = time.perf_counter() - stt_start
 
-                        # Extract text and provider from result
+                        # Handle structured STT result
                         if isinstance(stt_result, dict):
-                            response_text = stt_result.get("text")
-                            stt_provider = stt_result.get("provider", "unknown")
-                            if stt_provider != "unknown":
-                                logger.info(f"📡 STT Provider: {stt_provider}")
+                            if "error_type" in stt_result:
+                                # Handle connection failures vs no speech
+                                if stt_result["error_type"] == "connection_failed":
+                                    # Build helpful error message
+                                    error_lines = ["STT service connection failed:"]
+                                    for attempt in stt_result.get("attempted_endpoints", []):
+                                        error_lines.append(f"  - {attempt['endpoint']}: {attempt['error']}")
+
+                                    error_msg = "\n".join(error_lines)
+                                    logger.error(error_msg)
+
+                                    # Return error immediately
+                                    return error_msg
+
+                                elif stt_result["error_type"] == "no_speech":
+                                    # Genuine no speech detected
+                                    response_text = None
+                                    stt_provider = stt_result.get("provider", "unknown")
+                            else:
+                                # Successful transcription
+                                response_text = stt_result.get("text")
+                                stt_provider = stt_result.get("provider", "unknown")
+                                if stt_provider != "unknown":
+                                    logger.info(f"📡 STT Provider: {stt_provider}")
                         else:
-                            # Backward compatibility
-                            response_text = stt_result
+                            # Should not happen with new code, but handle gracefully
+                            response_text = None
                             stt_provider = "unknown"
                     
                     # Log STT complete
