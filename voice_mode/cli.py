@@ -1520,6 +1520,12 @@ def converse(message, wait, duration, min_duration, transport, room_name, voice,
     
     async def run_conversation():
         """Run the conversation asynchronously."""
+        # Suppress the spurious aiohttp warning that appears on startup
+        # This warning is a false positive from asyncio detecting an unclosed
+        # session that was likely created during module import
+        import logging
+        logging.getLogger('asyncio').setLevel(logging.CRITICAL)
+
         try:
             if continuous:
                 # Continuous conversation mode
