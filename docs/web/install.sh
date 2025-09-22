@@ -1074,11 +1074,11 @@ check_and_suggest_working_directory() {
     echo "You're currently in your home directory."
     echo "Claude Code works best when launched from a project directory."
     echo ""
-    echo "Would you like to create a dedicated directory for Claude Code projects?"
-    echo "This will create ~/claude/ as your main workspace."
+    echo "Would you like to create a directory for testing things out with Claude?"
+    echo "This will create ~/claude/ as a sandbox workspace for experiments."
     echo ""
 
-    if confirm_action "Create ~/claude/ directory for Claude Code projects?"; then
+    if confirm_action "Create ~/claude/ directory for testing with Claude?"; then
       mkdir -p "$HOME/claude"
       print_success "Created ~/claude/ directory"
       echo ""
@@ -1086,6 +1086,7 @@ check_and_suggest_working_directory() {
       echo "  1. cd ~/claude"
       echo "  2. claude converse"
       echo ""
+      echo "This is your sandbox for trying things out with Claude!"
       export CLAUDE_SUGGESTED_DIR="$HOME/claude"
     else
       print_warning "Skipping directory creation"
@@ -1627,7 +1628,7 @@ main() {
         echo ""
         echo "  1. Restart your terminal (or run: source ~/.bashrc)"
         if [[ -n "${CLAUDE_SUGGESTED_DIR:-}" ]]; then
-          echo "  2. cd ~/claude  (your new workspace)"
+          echo "  2. cd ~/claude  (your sandbox for testing)"
           echo "  3. claude converse"
         else
           echo "  2. cd to a project directory"
