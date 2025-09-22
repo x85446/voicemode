@@ -1697,8 +1697,14 @@ async def converse(
                             logger.error(f"Failed to log TTS to JSONL: {e}")
                     
                     if not tts_success:
+                        # Check if we have detailed error information
+                        if tts_config and tts_config.get('error_type') == 'all_providers_failed':
+                            error_lines = ["Error: Could not speak message. TTS service connection failed:"]
+                            for attempt in tts_config.get('attempted_endpoints', []):
+                                error_lines.append(f"  - {attempt['endpoint']}: {attempt['error']}")
+                            result = "\n".join(error_lines)
                         # Check if we have config info that might indicate why it failed
-                        if tts_config and 'openai.com' in tts_config.get('base_url', ''):
+                        elif tts_config and 'openai.com' in tts_config.get('base_url', ''):
                             # Check if API key is missing for OpenAI
                             from voice_mode.config import OPENAI_API_KEY
                             if not OPENAI_API_KEY:

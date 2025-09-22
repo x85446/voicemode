@@ -33,13 +33,14 @@ async def simple_tts_failover(
     
     from .core import text_to_speech
     from .conversation_logger import get_conversation_logger
-    
-    last_error = None
-    
+
+    # Track attempted endpoints and their errors
+    attempted_endpoints = []
+
     # Get conversation ID from logger
     conversation_logger = get_conversation_logger()
     conversation_id = conversation_logger.conversation_id
-    
+
     # Try each TTS endpoint in order
     logger.info(f"simple_tts_failover: Starting with TTS_BASE_URLS = {TTS_BASE_URLS}")
     for base_url in TTS_BASE_URLS:
@@ -100,25 +101,33 @@ async def simple_tts_failover(
                     'base_url': base_url,
                     'provider': provider_type,
                     'voice': selected_voice,  # Return the voice actually used
-                    'model': model
+                    'model': model,
+                    'endpoint': f"{base_url}/audio/speech"
                 }
                 logger.info(f"TTS succeeded with {base_url} using voice {selected_voice}")
                 return True, metrics, config
-                
+
         except Exception as e:
-            last_error = str(e)
-            logger.error(f"TTS failed for {base_url}: {e}")
-            logger.error(f"Exception type: {type(e).__name__}")
-            if hasattr(e, '__dict__'):
-                logger.error(f"Exception attributes: {e.__dict__}")
+            error_message = str(e)
+            logger.error(f"TTS failed for {base_url}: {error_message}")
+
+            # Add to attempted endpoints with error details
+            attempted_endpoints.append({
+                'endpoint': f"{base_url}/audio/speech",
+                'provider': provider_type,
+                'voice': selected_voice,
+                'model': model,
+                'error': error_message
+            })
+
             # Continue to next endpoint
             continue
-    
-    # All endpoints failed
-    logger.error(f"All TTS endpoints failed. Last error: {last_error}")
+
+    # All endpoints failed - return detailed error info
+    logger.error(f"All TTS endpoints failed after {len(attempted_endpoints)} attempts")
     error_config = {
-        'error': last_error,
-        'tried_urls': TTS_BASE_URLS
+        'error_type': 'all_providers_failed',
+        'attempted_endpoints': attempted_endpoints
     }
     return False, None, error_config
 
