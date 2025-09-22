@@ -837,19 +837,74 @@ configure_api_key() {
       fi
     fi
 
+    # Platform-specific paste instructions
     echo ""
-    echo "Please paste your OpenAI API key (or press Enter to skip):"
+    if [[ "$OS" == "macos" ]]; then
+      echo "Please paste your OpenAI API key (press Cmd+V to paste, or press Enter to skip):"
+    elif [[ "$IS_WSL" == true ]]; then
+      echo "Please paste your OpenAI API key (right-click to paste, or press Enter to skip):"
+    else
+      echo "Please paste your OpenAI API key (Ctrl+Shift+V or right-click to paste, or press Enter to skip):"
+    fi
     echo "(The key will be hidden as you type)"
-    read -s api_key
-    echo ""
 
-    if [ -n "$api_key" ]; then
+    # Allow up to 3 attempts for API key entry
+    local attempts=0
+    local max_attempts=3
+    local api_key=""
+
+    while [[ $attempts -lt $max_attempts ]]; do
+      read -s api_key
+      echo ""
+
+      if [ -z "$api_key" ]; then
+        # User pressed Enter to skip
+        break
+      fi
+
       # Validate that it looks like an API key
       if [[ ! "$api_key" =~ ^sk- ]]; then
-        print_warning "That doesn't look like an OpenAI API key (should start with 'sk-')"
-        echo "Skipping API key configuration"
-        return 1
+        ((attempts++))
+        if [[ $attempts -lt $max_attempts ]]; then
+          print_warning "That doesn't look like an OpenAI API key (should start with 'sk-')"
+          echo "Please try again (attempt $((attempts + 1)) of $max_attempts):"
+          echo "(Make sure to copy the entire key, it should start with 'sk-')"
+        else
+          print_warning "Invalid API key format after $max_attempts attempts"
+          echo "You can add it manually later to your shell configuration"
+          return 1
+        fi
+      else
+        # Validate the API key by making a test request
+        print_step "Validating API key with OpenAI..."
+        local http_code=$(curl -s -o /dev/null -w "%{http_code}" \
+          -H "Authorization: Bearer $api_key" \
+          -H "Content-Type: application/json" \
+          "https://api.openai.com/v1/models" 2>/dev/null)
+
+        if [[ "$http_code" == "200" ]]; then
+          print_success "API key validated successfully!"
+          break
+        elif [[ "$http_code" == "401" ]]; then
+          ((attempts++))
+          if [[ $attempts -lt $max_attempts ]]; then
+            print_warning "Invalid API key - authentication failed"
+            echo "Please check your key and try again (attempt $((attempts + 1)) of $max_attempts):"
+          else
+            print_error "Invalid API key after $max_attempts attempts"
+            echo "You can add a valid key later to your shell configuration"
+            return 1
+          fi
+        else
+          # Network error or other issue - proceed anyway
+          print_warning "Could not validate API key (network issue?)"
+          echo "Proceeding with configuration anyway..."
+          break
+        fi
       fi
+    done
+
+    if [ -n "$api_key" ] && [[ "$api_key" =~ ^sk- ]]; then
 
       # Add to shell configuration
       local shell_profile=""
@@ -1002,6 +1057,41 @@ configure_claude_voicemode() {
   else
     print_warning "Claude Code not found. Please install it first to use VoiceMode."
     return 1
+  fi
+}
+
+check_and_suggest_working_directory() {
+  # Check if user is in home directory
+  local current_dir=$(pwd)
+  local home_dir="$HOME"
+
+  if [[ "$current_dir" == "$home_dir" ]]; then
+    echo ""
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "                    📁 Working Directory Setup"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+    echo "You're currently in your home directory."
+    echo "Claude Code works best when launched from a project directory."
+    echo ""
+    echo "Would you like to create a dedicated directory for Claude Code projects?"
+    echo "This will create ~/claude/ as your main workspace."
+    echo ""
+
+    if confirm_action "Create ~/claude/ directory for Claude Code projects?"; then
+      mkdir -p "$HOME/claude"
+      print_success "Created ~/claude/ directory"
+      echo ""
+      echo "After installation completes, you can:"
+      echo "  1. cd ~/claude"
+      echo "  2. claude converse"
+      echo ""
+      export CLAUDE_SUGGESTED_DIR="$HOME/claude"
+    else
+      print_warning "Skipping directory creation"
+      echo "Remember to cd to a project directory before starting Claude Code"
+    fi
+    echo ""
   fi
 }
 
@@ -1458,6 +1548,9 @@ main() {
   # Configure OpenAI API key for quick start
   configure_api_key
 
+  # Check if user is in home directory and suggest creating a workspace
+  check_and_suggest_working_directory
+
   # Install Claude Code if needed, then configure VoiceMode
   if install_claude_if_needed; then
     if configure_claude_voicemode; then
@@ -1496,7 +1589,15 @@ main() {
       echo ""
 
       # Important note about shell restart
-      echo "⚠️  IMPORTANT: You'll need to restart your terminal for the 'claude' command to work."
+      echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      echo ""
+      echo "⚠️  IMPORTANT: Terminal Restart Required"
+      echo ""
+      echo "The 'claude' command won't work until you:"
+      echo "  Option 1: Close and reopen your terminal (recommended)"
+      echo "  Option 2: Run: source ~/.bashrc  (or source ~/.zshrc for zsh)"
+      echo ""
+      echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
       echo ""
       echo "But we can start a conversation right now without restarting!"
       echo ""
@@ -1520,9 +1621,20 @@ main() {
         fi
       else
         echo ""
-        echo "To start using VoiceMode:"
-        echo "  1. Close and reopen your terminal"
-        echo "  2. Run: claude converse"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo ""
+        echo "🚀 To start using VoiceMode:"
+        echo ""
+        echo "  1. Restart your terminal (or run: source ~/.bashrc)"
+        if [[ -n "${CLAUDE_SUGGESTED_DIR:-}" ]]; then
+          echo "  2. cd ~/claude  (your new workspace)"
+          echo "  3. claude converse"
+        else
+          echo "  2. cd to a project directory"
+          echo "  3. claude converse"
+        fi
+        echo ""
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
         echo ""
       fi
     else
