@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.7.1] - 2025-09-23
+
 ### Fixed
 - **CLI Commands**
   - Fix broken whisper model install command import path after services refactoring
