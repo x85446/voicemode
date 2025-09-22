@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Voice Interaction**
+  - Distinguish STT connection errors from genuine "no speech detected" scenarios (#62)
+  - Display detailed error messages showing attempted endpoints and specific failures
+  - Fix misleading "[no speech detected]" messages when services are unavailable
+  - Simplify STT function architecture from 3 layers to 2
+  - Clean up "Unclosed client session" asyncio warning on startup
+
+### Added
+- **Testing**
+  - Add comprehensive test coverage for STT error scenarios
+  - Test connection failures, authentication errors, and fallback behavior
+
+### Documentation
+- Add troubleshooting guide index with diagnostic flowchart
+
 ## [4.7.0] - 2025-09-22
 
 ## [4.6.0] - 2025-09-21
