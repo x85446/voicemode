@@ -255,32 +255,38 @@ async def text_to_speech_with_failover(
     )
 
 
-async def speech_to_text(audio_data: np.ndarray, save_audio: bool = False, audio_dir: Optional[Path] = None, transport: str = "local") -> Optional[Dict]:
-    """Convert audio to text with automatic failover"""
-    # Use the new failover implementation
-    return await speech_to_text_with_failover(audio_data, save_audio, audio_dir, transport)
-
-
-async def speech_to_text_with_failover(
+async def speech_to_text(
     audio_data: np.ndarray,
     save_audio: bool = False,
     audio_dir: Optional[Path] = None,
     transport: str = "local"
 ) -> Optional[Dict]:
     """
-    Speech to text with automatic failover to next available endpoint.
+    Convert audio to text with automatic failover.
+
+    Handles audio file preparation (saving permanently or using temp file) and
+    delegates to simple_stt_failover for the actual transcription attempts.
+
+    Args:
+        audio_data: Raw audio data as numpy array
+        save_audio: Whether to save the audio file permanently
+        audio_dir: Directory to save audio files (if save_audio is True)
+        transport: Transport method (for logging context)
 
     Returns:
-        Dict with transcription result or error information
+        Dict with transcription result or error information:
+        - Success: {"text": "...", "provider": "...", "endpoint": "..."}
+        - No speech: {"error_type": "no_speech", "provider": "..."}
+        - All failed: {"error_type": "connection_failed", "attempted_endpoints": [...]}
     """
-    # Always use simple failover (the only mode now)
     import tempfile
     from voice_mode.conversation_logger import get_conversation_logger
     from voice_mode.core import save_debug_file, get_debug_filename
+    from voice_mode.simple_failover import simple_stt_failover
 
     # Determine if we should save the file permanently or use a temp file
     if save_audio and audio_dir:
-        # Save directly to final location
+        # Save directly to final location for debugging/analysis
         conversation_logger = get_conversation_logger()
         conversation_id = conversation_logger.conversation_id
 
@@ -300,13 +306,10 @@ async def speech_to_text_with_failover(
 
         # Use the saved file for STT
         with open(wav_file_path, 'rb') as audio_file:
-            from voice_mode.simple_failover import simple_stt_failover
-            stt_result = await simple_stt_failover(
+            result = await simple_stt_failover(
                 audio_file=audio_file,
                 model="whisper-1"
             )
-            # Return the full structured result
-            result = stt_result
         # Don't delete - it's our saved audio file
     else:
         # Use temporary file that will be deleted
@@ -315,13 +318,10 @@ async def speech_to_text_with_failover(
             tmp_file.flush()
 
             with open(tmp_file.name, 'rb') as audio_file:
-                from voice_mode.simple_failover import simple_stt_failover
-                stt_result = await simple_stt_failover(
+                result = await simple_stt_failover(
                     audio_file=audio_file,
                     model="whisper-1"
                 )
-                # Return the full structured result
-                result = stt_result
 
             # Clean up temp file
             os.unlink(tmp_file.name)
