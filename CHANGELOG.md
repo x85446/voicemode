@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **CLI Commands**
+  - Fix broken whisper model install command import path after services refactoring
+
+### Changed
+- **Testing**
+  - Move comprehensive help test from manual to automated testing for CI coverage
+
+## [4.7.0] - 2025-09-22
+
+### Fixed
 - **Voice Interaction**
   - Distinguish STT connection errors from genuine "no speech detected" scenarios (#62)
   - Display detailed error messages showing attempted endpoints and specific failures
@@ -22,8 +32,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Documentation
 - Add troubleshooting guide index with diagnostic flowchart
-
-## [4.7.0] - 2025-09-22
 
 ## [4.6.0] - 2025-09-21
 
