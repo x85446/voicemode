@@ -1074,25 +1074,50 @@ check_and_suggest_working_directory() {
     echo "You're currently in your home directory."
     echo "Claude Code works best when launched from a project directory."
     echo ""
-    echo "Would you like to create a directory for testing things out with Claude?"
-    echo "This will create ~/claude/ as a sandbox workspace for experiments."
+    echo "Where would you like to start Claude from?"
+    echo "  • Press Enter for ~/claude (recommended sandbox)"
+    echo "  • Type a path like ~/projects or ~/code"
+    echo "  • Type 'here' to use your home directory"
     echo ""
 
-    if confirm_action "Create ~/claude/ directory for testing with Claude?"; then
-      mkdir -p "$HOME/claude"
-      print_success "Created ~/claude/ directory"
+    read -p "Directory [~/claude]: " chosen_dir
+
+    # Handle the user's choice
+    if [[ -z "$chosen_dir" ]]; then
+      # Default to ~/claude
+      chosen_dir="$HOME/claude"
+    elif [[ "$chosen_dir" == "here" ]] || [[ "$chosen_dir" == "." ]]; then
+      # Use current directory (home)
+      chosen_dir="$HOME"
+    else
+      # Expand tilde if present
+      chosen_dir="${chosen_dir/#\~/$HOME}"
+    fi
+
+    # Create directory if it doesn't exist (unless it's home)
+    if [[ "$chosen_dir" != "$HOME" ]]; then
+      if [[ ! -d "$chosen_dir" ]]; then
+        print_step "Creating directory: $chosen_dir"
+        mkdir -p "$chosen_dir"
+        print_success "Created $chosen_dir"
+      else
+        print_success "Using existing directory: $chosen_dir"
+      fi
+
+      # Save for later reference
+      export CLAUDE_SUGGESTED_DIR="$chosen_dir"
+
       echo ""
       echo "After installation completes, you can:"
-      echo "  1. cd ~/claude"
+      echo "  1. cd $chosen_dir"
       echo "  2. claude converse"
       echo ""
-      echo "This is your sandbox for trying things out with Claude!"
-      export CLAUDE_SUGGESTED_DIR="$HOME/claude"
     else
-      print_warning "Skipping directory creation"
-      echo "Remember to cd to a project directory before starting Claude Code"
+      print_success "Will use home directory"
+      echo ""
+      echo "You can start Claude from your home directory after installation."
+      echo ""
     fi
-    echo ""
   fi
 }
 
@@ -1628,11 +1653,10 @@ main() {
         echo ""
         echo "  1. Restart your terminal (or run: source ~/.bashrc)"
         if [[ -n "${CLAUDE_SUGGESTED_DIR:-}" ]]; then
-          echo "  2. cd ~/claude  (your sandbox for testing)"
+          echo "  2. cd ${CLAUDE_SUGGESTED_DIR}"
           echo "  3. claude converse"
         else
-          echo "  2. cd to a project directory"
-          echo "  3. claude converse"
+          echo "  2. claude converse  (from your current directory)"
         fi
         echo ""
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
