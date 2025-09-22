@@ -643,7 +643,7 @@ def whisper_model_install(model, force, skip_core_ml, install_torch):
     medium, medium.en, large-v1, large-v2, large-v3, large-v3-turbo
     """
     import json
-    import voice_mode.tools.services.whisper.model_install as install_module
+    import voice_mode.tools.whisper.model_install as install_module
     # Get the actual function from the MCP tool wrapper
     tool = install_module.whisper_model_install
     install_func = tool.fn if hasattr(tool, 'fn') else tool
