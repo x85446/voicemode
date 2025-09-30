@@ -736,11 +736,30 @@ check_python() {
     local python_version=$(python3 --version | cut -d' ' -f2)
     print_success "Python 3 found: $python_version"
 
-    # Check if pip3 is available
+    # Check if pip is available (pip3 or pip)
+    # Note: We primarily use UV for package management, so pip is optional
     if command -v pip3 >/dev/null 2>&1; then
       print_success "pip3 is available"
+    elif command -v pip >/dev/null 2>&1; then
+      print_success "pip is available"
     else
-      print_error "pip3 not found. Please install pip for Python 3."
+      # pip is not strictly required since we use UV, but warn the user
+      print_warning "pip not found. This is usually OK since VoiceMode uses UV for package management."
+
+      # Provide platform-specific installation instructions
+      if [[ "$OS" == "linux" ]]; then
+        if [[ -f /etc/debian_version ]] || [[ -f /etc/ubuntu-release ]]; then
+          echo "  To install pip on Ubuntu/Debian, run: sudo apt-get update && sudo apt-get install python3-pip"
+        elif [[ -f /etc/redhat-release ]] || [[ -f /etc/fedora-release ]]; then
+          echo "  To install pip on RHEL/Fedora, run: sudo dnf install python3-pip"
+        elif [[ -f /etc/arch-release ]]; then
+          echo "  To install pip on Arch, run: sudo pacman -S python-pip"
+        else
+          echo "  To install pip, consult your distribution's package manager"
+        fi
+      elif [[ "$OS" == "macos" ]]; then
+        echo "  To install pip on macOS, run: python3 -m ensurepip"
+      fi
     fi
   else
     print_error "Python 3 not found. Please install Python 3 first."
