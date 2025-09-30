@@ -366,7 +366,7 @@ display_dependency_status() {
   echo ""
 
   # Required dependencies
-  echo "${BOLD}Required Dependencies:${NC}"
+  echo -e "${BOLD}Required Dependencies:${NC}"
   echo ""
 
   # Node.js
@@ -405,7 +405,7 @@ display_dependency_status() {
   fi
 
   echo ""
-  echo "${BOLD}Package Managers:${NC}"
+  echo -e "${BOLD}Package Managers:${NC}"
   echo ""
 
   # Platform-specific package managers
@@ -424,11 +424,11 @@ display_dependency_status() {
   fi
 
   echo ""
-  echo "${BOLD}System Information:${NC}"
+  echo -e "${BOLD}System Information:${NC}"
   echo ""
   echo "  • OS:          $SYSTEM_INFO_OS_VERSION"
   echo "  • Architecture: $SYSTEM_INFO_ARCH"
-  echo "  • Shell:       ${SYSTEM_INFO_SHELL##*/} ${DIM}(${SYSTEM_INFO_SHELL_RC_FILE})${NC}"
+  echo -e "  • Shell:       ${SYSTEM_INFO_SHELL##*/} ${DIM}(${SYSTEM_INFO_SHELL_RC_FILE})${NC}"
   echo "  • Terminal:    $SYSTEM_INFO_TERMINAL_APP"
   echo "  • Disk Space:  $SYSTEM_INFO_DISK_AVAILABLE available"
 
