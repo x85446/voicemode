@@ -358,6 +358,118 @@ collect_system_info() {
   print_success "System information collected"
 }
 
+display_dependency_status() {
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "                    📋 System Dependency Status"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo ""
+
+  # Required dependencies
+  echo "${BOLD}Required Dependencies:${NC}"
+  echo ""
+
+  # Node.js
+  if [[ "$SYSTEM_INFO_NODE_VERSION" != "not installed" ]]; then
+    echo -e "  ${GREEN}✅${NC} Node.js     ${DIM}$SYSTEM_INFO_NODE_VERSION${NC}"
+  else
+    echo -e "  ${RED}❌${NC} Node.js     ${DIM}(required for Claude Code)${NC}"
+  fi
+
+  # npm
+  if [[ "$SYSTEM_INFO_NPM_VERSION" != "not installed" ]]; then
+    echo -e "  ${GREEN}✅${NC} npm         ${DIM}v$SYSTEM_INFO_NPM_VERSION${NC}"
+  else
+    echo -e "  ${RED}❌${NC} npm         ${DIM}(required for package management)${NC}"
+  fi
+
+  # Python
+  if [[ "$SYSTEM_INFO_PYTHON_VERSION" != "not installed" ]]; then
+    echo -e "  ${GREEN}✅${NC} Python      ${DIM}$SYSTEM_INFO_PYTHON_VERSION${NC}"
+  else
+    echo -e "  ${RED}❌${NC} Python      ${DIM}(required for VoiceMode)${NC}"
+  fi
+
+  # FFmpeg
+  if [[ "$SYSTEM_INFO_FFMPEG_INSTALLED" == "yes" ]]; then
+    echo -e "  ${GREEN}✅${NC} FFmpeg      ${DIM}(audio processing)${NC}"
+  else
+    echo -e "  ${RED}❌${NC} FFmpeg      ${DIM}(required for audio processing)${NC}"
+  fi
+
+  # Git
+  if [[ "$SYSTEM_INFO_GIT_VERSION" != "not installed" ]]; then
+    echo -e "  ${GREEN}✅${NC} Git         ${DIM}v$SYSTEM_INFO_GIT_VERSION${NC}"
+  else
+    echo -e "  ${YELLOW}⚠️ ${NC} Git         ${DIM}(recommended for development)${NC}"
+  fi
+
+  echo ""
+  echo "${BOLD}Package Managers:${NC}"
+  echo ""
+
+  # Platform-specific package managers
+  if [[ "$OS" == "macos" ]]; then
+    if [[ "$SYSTEM_INFO_HOMEBREW_VERSION" != "not installed" ]]; then
+      echo -e "  ${GREEN}✅${NC} Homebrew    ${DIM}v$SYSTEM_INFO_HOMEBREW_VERSION${NC}"
+    else
+      echo -e "  ${RED}❌${NC} Homebrew    ${DIM}(required for macOS dependencies)${NC}"
+    fi
+  elif [[ "$OS" == "linux" ]]; then
+    if [[ "$SYSTEM_INFO_APT_INSTALLED" == "yes" ]]; then
+      echo -e "  ${GREEN}✅${NC} APT         ${DIM}(system package manager)${NC}"
+    else
+      echo -e "  ${YELLOW}⚠️ ${NC} APT         ${DIM}(package manager not detected)${NC}"
+    fi
+  fi
+
+  echo ""
+  echo "${BOLD}System Information:${NC}"
+  echo ""
+  echo "  • OS:          $SYSTEM_INFO_OS_VERSION"
+  echo "  • Architecture: $SYSTEM_INFO_ARCH"
+  echo "  • Shell:       ${SYSTEM_INFO_SHELL##*/} ${DIM}(${SYSTEM_INFO_SHELL_RC_FILE})${NC}"
+  echo "  • Terminal:    $SYSTEM_INFO_TERMINAL_APP"
+  echo "  • Disk Space:  $SYSTEM_INFO_DISK_AVAILABLE available"
+
+  if [[ "$IS_WSL" == true ]]; then
+    echo ""
+    echo -e "  ${YELLOW}⚠️  WSL2 Detected${NC} - Additional audio setup may be required"
+  fi
+
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo ""
+}
+
+check_missing_dependencies() {
+  # Returns 0 if all required dependencies are met, 1 if any are missing
+  local missing=0
+
+  if [[ "$SYSTEM_INFO_NODE_VERSION" == "not installed" ]]; then
+    missing=1
+  fi
+
+  if [[ "$SYSTEM_INFO_NPM_VERSION" == "not installed" ]]; then
+    missing=1
+  fi
+
+  if [[ "$SYSTEM_INFO_PYTHON_VERSION" == "not installed" ]]; then
+    missing=1
+  fi
+
+  if [[ "$SYSTEM_INFO_FFMPEG_INSTALLED" != "yes" ]]; then
+    missing=1
+  fi
+
+  # Platform-specific requirements
+  if [[ "$OS" == "macos" ]] && [[ "$SYSTEM_INFO_HOMEBREW_VERSION" == "not installed" ]]; then
+    missing=1
+  fi
+
+  return $missing
+}
+
 confirm_action() {
   local action="$1"
   local default_yes="${2:-true}" # Default to yes unless specified
@@ -1707,6 +1819,16 @@ main() {
 
   # Collect comprehensive system information
   collect_system_info
+
+  # Display dependency status
+  display_dependency_status
+
+  # Check if we have missing dependencies
+  if check_missing_dependencies; then
+    echo "All required dependencies are installed!"
+  else
+    print_warning "Some dependencies are missing and will be installed"
+  fi
 
   # Early sudo caching for service installation (Linux only)
   if [[ "$OS" == "linux" ]] && command -v sudo >/dev/null 2>&1; then
