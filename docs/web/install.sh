@@ -3,6 +3,9 @@
 # Usage: curl -sSfO https://getvoicemode.com/install.sh && bash install.sh
 
 # Parse command line arguments
+NON_INTERACTIVE=false
+CI_MODE=false
+
 show_help() {
   cat <<EOF
 VoiceMode Universal Installer
@@ -10,21 +13,30 @@ VoiceMode Universal Installer
 Usage: $0 [OPTIONS]
 
 Options:
-  -h, --help     Show this help message
-  -d, --debug    Enable debug output
-  
+  -h, --help           Show this help message
+  -d, --debug          Enable debug output
+  -n, --non-interactive Run without prompts (assumes yes to all)
+  --ci                 CI mode (non-interactive + skip audio/API checks)
+
 Environment variables:
   VOICEMODE_INSTALL_DEBUG=true    Enable debug output
   DEBUG=true                      Enable debug output
+  CI=true                         Enables CI mode automatically
 
 Examples:
   # Normal installation
   curl -O https://getvoicemode.com/install.sh && bash install.sh
-  
+
   # Debug mode
   VOICEMODE_INSTALL_DEBUG=true ./install.sh
   ./install.sh --debug
-  
+
+  # Non-interactive mode
+  ./install.sh --non-interactive
+
+  # CI mode
+  ./install.sh --ci
+
 EOF
   exit 0
 }
@@ -37,6 +49,15 @@ while [[ $# -gt 0 ]]; do
     ;;
   -d | --debug)
     export VOICEMODE_INSTALL_DEBUG=true
+    shift
+    ;;
+  -n | --non-interactive)
+    NON_INTERACTIVE=true
+    shift
+    ;;
+  --ci)
+    CI_MODE=true
+    NON_INTERACTIVE=true
     shift
     ;;
   *)
@@ -52,9 +73,15 @@ if [[ "${DEBUG:-}" == "true" ]]; then
   export VOICEMODE_INSTALL_DEBUG=true
 fi
 
+# Detect CI environment
+if [[ "${CI:-}" == "true" ]] || [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
+  CI_MODE=true
+  NON_INTERACTIVE=true
+fi
+
 # Reattach stdin to terminal for interactive prompts when run via curl | bash
-# Only attempt this if /dev/tty exists and is accessible
-if [ ! -t 0 ] && [ -e /dev/tty ] && [ -r /dev/tty ]; then
+# Only attempt this if /dev/tty exists and is accessible (skip in CI mode)
+if [ ! -t 0 ] && [ -e /dev/tty ] && [ -r /dev/tty ] && [ "$CI_MODE" != "true" ]; then
   exec </dev/tty 2>/dev/null || true
 fi
 
@@ -473,6 +500,18 @@ check_missing_dependencies() {
 confirm_action() {
   local action="$1"
   local default_yes="${2:-true}" # Default to yes unless specified
+
+  # In non-interactive mode, always return success
+  if [[ "$NON_INTERACTIVE" == "true" ]]; then
+    echo ""
+    if [[ "$action" == *"?"* ]]; then
+      echo "$action"
+    else
+      echo "About to: $action"
+    fi
+    echo "→ Auto-accepting (non-interactive mode)"
+    return 0
+  fi
 
   echo ""
 
@@ -1046,6 +1085,14 @@ fi'
 }
 
 configure_api_key() {
+  # Skip API key configuration in CI mode
+  if [[ "$CI_MODE" == "true" ]]; then
+    print_step "Skipping OpenAI API key configuration (CI mode)"
+    echo "→ API key can be configured later if needed"
+    export VOICEMODE_API_KEY_CONFIGURED=false
+    return 0
+  fi
+
   print_step "Checking OpenAI API key configuration..."
 
   # Track if we have an API key configured
@@ -1859,7 +1906,15 @@ main() {
   check_and_suggest_working_directory
 
   # Install Claude Code if needed, then configure VoiceMode
-  if install_claude_if_needed; then
+  # Skip Claude Code installation in CI mode
+  if [[ "$CI_MODE" == "true" ]]; then
+    print_step "Skipping Claude Code installation (CI mode)"
+    echo ""
+    echo "✅ VoiceMode installation completed successfully!"
+    echo ""
+    echo "VoiceMode has been installed to: $(which voicemode)"
+    echo "Version: $(voicemode --version 2>/dev/null || echo 'unknown')"
+  elif install_claude_if_needed; then
     if configure_claude_voicemode; then
       # VoiceMode configured successfully
       echo ""
