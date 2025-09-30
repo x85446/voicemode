@@ -147,16 +147,17 @@ detect_os() {
     print_success "Detected Fedora $fedora_version on $ARCH$([[ "$IS_WSL" == "true" ]] && echo " (WSL2)" || echo "")"
   elif [[ -f /etc/os-release ]]; then
     source /etc/os-release
-    if [[ "$ID" == "ubuntu" ]] || [[ "$ID_LIKE" == *"ubuntu"* ]]; then
-      OS="ubuntu"
+    if [[ "$ID" == "ubuntu" ]] || [[ "$ID_LIKE" == *"ubuntu"* ]] || [[ "$ID" == "debian" ]] || [[ "$ID_LIKE" == *"debian"* ]]; then
+      OS="debian"  # Use debian for all Debian-based distros (Ubuntu, Debian, etc - they use apt)
       ARCH=$(uname -m)
-      print_success "Detected Ubuntu $VERSION_ID on $ARCH$([[ "$IS_WSL" == "true" ]] && echo " (WSL2)" || echo "")"
+      local distro_name="$NAME"
+      print_success "Detected $distro_name $VERSION_ID on $ARCH$([[ "$IS_WSL" == "true" ]] && echo " (WSL2)" || echo "")"
     elif [[ "$ID" == "fedora" ]]; then
       OS="fedora"
       ARCH=$(uname -m)
       print_success "Detected Fedora $VERSION_ID on $ARCH$([[ "$IS_WSL" == "true" ]] && echo " (WSL2)" || echo "")"
     else
-      print_error "Unsupported Linux distribution: $ID. Currently only Ubuntu and Fedora are supported."
+      print_error "Unsupported Linux distribution: $ID. Currently only Ubuntu, Debian and Fedora are supported."
     fi
   else
     print_error "Unsupported operating system: $OSTYPE"
@@ -618,7 +619,7 @@ check_system_dependencies() {
       echo "Missing packages: ${missing_packages[*]}"
       return 1
     fi
-  elif [[ "$OS" == "ubuntu" ]]; then
+  elif [[ "$OS" == "debian" ]]; then
     local packages=("nodejs" "npm" "portaudio19-dev" "ffmpeg" "cmake" "python3-dev" "libasound2-dev" "libasound2-plugins")
     local missing_packages=()
 
@@ -719,7 +720,7 @@ install_system_dependencies() {
       else
         print_warning "Skipping system dependencies. VoiceMode may not work properly without them."
       fi
-    elif [[ "$OS" == "ubuntu" ]]; then
+    elif [[ "$OS" == "debian" ]]; then
       if confirm_action "Install missing system dependencies via APT"; then
         print_step "Installing system dependencies..."
 
