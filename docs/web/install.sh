@@ -171,6 +171,193 @@ check_homebrew() {
   fi
 }
 
+collect_system_info() {
+  print_step "Collecting system information..."
+
+  # Initialize global variables for system info
+  SYSTEM_INFO_OS=""
+  SYSTEM_INFO_OS_VERSION=""
+  SYSTEM_INFO_ARCH=""
+  SYSTEM_INFO_SHELL=""
+  SYSTEM_INFO_SHELL_VERSION=""
+  SYSTEM_INFO_SHELL_RC_FILE=""
+  SYSTEM_INFO_NODE_VERSION=""
+  SYSTEM_INFO_NPM_VERSION=""
+  SYSTEM_INFO_PYTHON_VERSION=""
+  SYSTEM_INFO_PIP_VERSION=""
+  SYSTEM_INFO_CURL_VERSION=""
+  SYSTEM_INFO_GIT_VERSION=""
+  SYSTEM_INFO_FFMPEG_INSTALLED=""
+  SYSTEM_INFO_DOCKER_INSTALLED=""
+  SYSTEM_INFO_HOMEBREW_VERSION=""
+  SYSTEM_INFO_APT_INSTALLED=""
+  SYSTEM_INFO_TERMINAL_APP=""
+  SYSTEM_INFO_USER_HOME="$HOME"
+  SYSTEM_INFO_CURRENT_DIR="$(pwd)"
+  SYSTEM_INFO_DISK_AVAILABLE=""
+
+  # OS and Architecture (already detected)
+  SYSTEM_INFO_OS="$OS"
+  SYSTEM_INFO_ARCH="$ARCH"
+
+  # OS Version details
+  if [[ "$OS" == "macos" ]]; then
+    SYSTEM_INFO_OS_VERSION="$(sw_vers -productVersion 2>/dev/null || echo 'unknown')"
+  elif [[ "$OS" == "linux" ]]; then
+    if [ -f /etc/os-release ]; then
+      . /etc/os-release
+      SYSTEM_INFO_OS_VERSION="${PRETTY_NAME:-${NAME:-unknown}}"
+    else
+      SYSTEM_INFO_OS_VERSION="$(uname -v 2>/dev/null || echo 'unknown')"
+    fi
+  else
+    SYSTEM_INFO_OS_VERSION="$(uname -v 2>/dev/null || echo 'unknown')"
+  fi
+
+  # Default shell and version
+  SYSTEM_INFO_SHELL="${SHELL:-/bin/bash}"
+  if command -v "$SYSTEM_INFO_SHELL" >/dev/null 2>&1; then
+    if [[ "$SYSTEM_INFO_SHELL" == *"zsh"* ]]; then
+      SYSTEM_INFO_SHELL_VERSION="$($SYSTEM_INFO_SHELL --version 2>/dev/null | head -n1 || echo 'unknown')"
+    elif [[ "$SYSTEM_INFO_SHELL" == *"bash"* ]]; then
+      SYSTEM_INFO_SHELL_VERSION="$($SYSTEM_INFO_SHELL --version 2>/dev/null | head -n1 || echo 'unknown')"
+    elif [[ "$SYSTEM_INFO_SHELL" == *"fish"* ]]; then
+      SYSTEM_INFO_SHELL_VERSION="$($SYSTEM_INFO_SHELL --version 2>/dev/null || echo 'unknown')"
+    else
+      SYSTEM_INFO_SHELL_VERSION="unknown"
+    fi
+  fi
+
+  # Determine shell RC file
+  if [[ "$SYSTEM_INFO_SHELL" == *"zsh"* ]]; then
+    SYSTEM_INFO_SHELL_RC_FILE="$HOME/.zshrc"
+  elif [[ "$SYSTEM_INFO_SHELL" == *"bash"* ]]; then
+    if [[ "$OS" == "macos" ]]; then
+      # macOS uses .bash_profile for login shells
+      SYSTEM_INFO_SHELL_RC_FILE="$HOME/.bash_profile"
+    else
+      SYSTEM_INFO_SHELL_RC_FILE="$HOME/.bashrc"
+    fi
+  elif [[ "$SYSTEM_INFO_SHELL" == *"fish"* ]]; then
+    SYSTEM_INFO_SHELL_RC_FILE="$HOME/.config/fish/config.fish"
+  else
+    # Fallback to .profile
+    SYSTEM_INFO_SHELL_RC_FILE="$HOME/.profile"
+  fi
+
+  # Check if RC file exists, if not try alternatives
+  if [[ ! -f "$SYSTEM_INFO_SHELL_RC_FILE" ]]; then
+    if [[ "$SYSTEM_INFO_SHELL" == *"bash"* ]]; then
+      # Try alternative bash files
+      for rcfile in "$HOME/.bash_profile" "$HOME/.bashrc" "$HOME/.profile"; do
+        if [[ -f "$rcfile" ]]; then
+          SYSTEM_INFO_SHELL_RC_FILE="$rcfile"
+          break
+        fi
+      done
+    fi
+  fi
+
+  # Node.js and npm versions
+  if command -v node >/dev/null 2>&1; then
+    SYSTEM_INFO_NODE_VERSION="$(node --version 2>/dev/null || echo 'not installed')"
+  else
+    SYSTEM_INFO_NODE_VERSION="not installed"
+  fi
+
+  if command -v npm >/dev/null 2>&1; then
+    SYSTEM_INFO_NPM_VERSION="$(npm --version 2>/dev/null || echo 'not installed')"
+  else
+    SYSTEM_INFO_NPM_VERSION="not installed"
+  fi
+
+  # Python and pip versions
+  if command -v python3 >/dev/null 2>&1; then
+    SYSTEM_INFO_PYTHON_VERSION="$(python3 --version 2>&1 | cut -d' ' -f2 || echo 'not installed')"
+  elif command -v python >/dev/null 2>&1; then
+    SYSTEM_INFO_PYTHON_VERSION="$(python --version 2>&1 | cut -d' ' -f2 || echo 'not installed')"
+  else
+    SYSTEM_INFO_PYTHON_VERSION="not installed"
+  fi
+
+  if command -v pip3 >/dev/null 2>&1; then
+    SYSTEM_INFO_PIP_VERSION="$(pip3 --version 2>/dev/null | cut -d' ' -f2 || echo 'not installed')"
+  elif command -v pip >/dev/null 2>&1; then
+    SYSTEM_INFO_PIP_VERSION="$(pip --version 2>/dev/null | cut -d' ' -f2 || echo 'not installed')"
+  else
+    SYSTEM_INFO_PIP_VERSION="not installed"
+  fi
+
+  # Curl version
+  if command -v curl >/dev/null 2>&1; then
+    SYSTEM_INFO_CURL_VERSION="$(curl --version 2>/dev/null | head -n1 | cut -d' ' -f2 || echo 'not installed')"
+  else
+    SYSTEM_INFO_CURL_VERSION="not installed"
+  fi
+
+  # Git version
+  if command -v git >/dev/null 2>&1; then
+    SYSTEM_INFO_GIT_VERSION="$(git --version 2>/dev/null | cut -d' ' -f3 || echo 'not installed')"
+  else
+    SYSTEM_INFO_GIT_VERSION="not installed"
+  fi
+
+  # FFmpeg installed
+  if command -v ffmpeg >/dev/null 2>&1; then
+    SYSTEM_INFO_FFMPEG_INSTALLED="yes"
+  else
+    SYSTEM_INFO_FFMPEG_INSTALLED="no"
+  fi
+
+  # Docker installed
+  if command -v docker >/dev/null 2>&1; then
+    SYSTEM_INFO_DOCKER_INSTALLED="yes"
+  else
+    SYSTEM_INFO_DOCKER_INSTALLED="no"
+  fi
+
+  # Package managers
+  if [[ "$OS" == "macos" ]] && command -v brew >/dev/null 2>&1; then
+    SYSTEM_INFO_HOMEBREW_VERSION="$(brew --version 2>/dev/null | head -n1 | cut -d' ' -f2 || echo 'not installed')"
+  else
+    SYSTEM_INFO_HOMEBREW_VERSION="not installed"
+  fi
+
+  if command -v apt >/dev/null 2>&1; then
+    SYSTEM_INFO_APT_INSTALLED="yes"
+  else
+    SYSTEM_INFO_APT_INSTALLED="no"
+  fi
+
+  # Terminal application (if detectable)
+  SYSTEM_INFO_TERMINAL_APP="${TERM_PROGRAM:-${TERMINAL_EMULATOR:-unknown}}"
+
+  # Available disk space (in GB) on home partition
+  if [[ "$OS" == "macos" ]]; then
+    SYSTEM_INFO_DISK_AVAILABLE="$(df -h "$HOME" 2>/dev/null | awk 'NR==2 {print $4}' || echo 'unknown')"
+  else
+    SYSTEM_INFO_DISK_AVAILABLE="$(df -h "$HOME" 2>/dev/null | awk 'NR==2 {print $4}' || echo 'unknown')"
+  fi
+
+  if [[ "${VOICEMODE_INSTALL_DEBUG:-}" == "true" ]]; then
+    echo "System Information:"
+    echo "  OS: $SYSTEM_INFO_OS"
+    echo "  OS Version: $SYSTEM_INFO_OS_VERSION"
+    echo "  Architecture: $SYSTEM_INFO_ARCH"
+    echo "  Shell: $SYSTEM_INFO_SHELL"
+    echo "  Shell Version: $SYSTEM_INFO_SHELL_VERSION"
+    echo "  Shell RC File: $SYSTEM_INFO_SHELL_RC_FILE"
+    echo "  Node Version: $SYSTEM_INFO_NODE_VERSION"
+    echo "  NPM Version: $SYSTEM_INFO_NPM_VERSION"
+    echo "  Python Version: $SYSTEM_INFO_PYTHON_VERSION"
+    echo "  FFmpeg: $SYSTEM_INFO_FFMPEG_INSTALLED"
+    echo "  Terminal: $SYSTEM_INFO_TERMINAL_APP"
+    echo "  Disk Available: $SYSTEM_INFO_DISK_AVAILABLE"
+  fi
+
+  print_success "System information collected"
+}
+
 confirm_action() {
   local action="$1"
   local default_yes="${2:-true}" # Default to yes unless specified
@@ -472,16 +659,7 @@ install_uv() {
       fi
 
       # Add to shell profile if not already there
-      local shell_profile=""
-      if [[ "$SHELL" == *"zsh"* ]]; then
-        shell_profile="$HOME/.zshrc"
-      elif [[ "$SHELL" == *"bash"* ]]; then
-        if [[ "$OS" == "macos" ]]; then
-          shell_profile="$HOME/.bash_profile"
-        else
-          shell_profile="$HOME/.bashrc"
-        fi
-      fi
+      local shell_profile="${SYSTEM_INFO_SHELL_RC_FILE:-$HOME/.bashrc}"
 
       if [ -n "$shell_profile" ] && [ -f "$shell_profile" ]; then
         if ! grep -q "\.local/bin" "$shell_profile"; then
@@ -525,10 +703,8 @@ install_voicemode() {
       export PATH="$HOME/.local/bin:$PATH"
 
       # Source shell profile for immediate availability
-      if [[ "$SHELL" == *"zsh"* ]] && [[ -f "$HOME/.zshrc" ]]; then
-        source "$HOME/.zshrc" 2>/dev/null || true
-      elif [[ "$SHELL" == *"bash"* ]] && [[ -f "$HOME/.bashrc" ]]; then
-        source "$HOME/.bashrc" 2>/dev/null || true
+      if [[ -n "${SYSTEM_INFO_SHELL_RC_FILE}" ]] && [[ -f "${SYSTEM_INFO_SHELL_RC_FILE}" ]]; then
+        source "${SYSTEM_INFO_SHELL_RC_FILE}" 2>/dev/null || true
       fi
     else
       print_warning "Could not update shell PATH automatically"
@@ -540,7 +716,11 @@ install_voicemode() {
       return 0
     else
       print_warning "VoiceMode installed but command not immediately available"
-      echo "  You may need to restart your shell or run: source ~/.bashrc"
+      if [[ -n "${SYSTEM_INFO_SHELL_RC_FILE}" ]]; then
+        echo "  You may need to restart your shell or run: source ${SYSTEM_INFO_SHELL_RC_FILE}"
+      else
+        echo "  You may need to restart your shell"
+      fi
       return 0
     fi
   else
@@ -560,16 +740,7 @@ setup_local_npm() {
   export PATH="$HOME/.npm-global/bin:$PATH"
 
   # Add to shell profile if not already there
-  local shell_profile=""
-  if [[ "$SHELL" == *"zsh"* ]]; then
-    shell_profile="$HOME/.zshrc"
-  elif [[ "$SHELL" == *"bash"* ]]; then
-    if [[ "$OS" == "macos" ]]; then
-      shell_profile="$HOME/.bash_profile"
-    else
-      shell_profile="$HOME/.bashrc"
-    fi
-  fi
+  local shell_profile="${SYSTEM_INFO_SHELL_RC_FILE:-$HOME/.bashrc}"
 
   if [ -n "$shell_profile" ] && [ -f "$shell_profile" ]; then
     if ! grep -q "\.npm-global/bin" "$shell_profile"; then
@@ -907,16 +1078,7 @@ configure_api_key() {
     if [ -n "$api_key" ] && [[ "$api_key" =~ ^sk- ]]; then
 
       # Add to shell configuration
-      local shell_profile=""
-      if [[ "$SHELL" == *"zsh"* ]]; then
-        shell_profile="$HOME/.zshrc"
-      elif [[ "$SHELL" == *"bash"* ]]; then
-        if [[ "$OS" == "macos" ]]; then
-          shell_profile="$HOME/.bash_profile"
-        else
-          shell_profile="$HOME/.bashrc"
-        fi
-      fi
+      local shell_profile="${SYSTEM_INFO_SHELL_RC_FILE:-$HOME/.bashrc}"
 
       if [ -n "$shell_profile" ]; then
         echo "" >>"$shell_profile"
@@ -1543,6 +1705,9 @@ main() {
   # Pre-flight checks
   detect_os
 
+  # Collect comprehensive system information
+  collect_system_info
+
   # Early sudo caching for service installation (Linux only)
   if [[ "$OS" == "linux" ]] && command -v sudo >/dev/null 2>&1; then
     print_step "Requesting administrator access for system configuration..."
@@ -1621,14 +1786,8 @@ main() {
       echo ""
       echo "The 'claude' command won't work until you:"
       echo "  Option 1: Close and reopen your terminal (recommended)"
-      if [[ "$SHELL" == *"zsh"* ]]; then
-        echo "  Option 2: Run: source ~/.zshrc"
-      elif [[ "$SHELL" == *"bash"* ]]; then
-        if [[ "$OS" == "macos" ]]; then
-          echo "  Option 2: Run: source ~/.bash_profile"
-        else
-          echo "  Option 2: Run: source ~/.bashrc"
-        fi
+      if [[ -n "${SYSTEM_INFO_SHELL_RC_FILE}" ]]; then
+        echo "  Option 2: Run: source ${SYSTEM_INFO_SHELL_RC_FILE}"
       else
         echo "  Option 2: Run: source your shell configuration file"
       fi
@@ -1661,14 +1820,8 @@ main() {
         echo ""
         echo "🚀 To start using VoiceMode:"
         echo ""
-        if [[ "$SHELL" == *"zsh"* ]]; then
-          echo "  1. Restart your terminal (or run: source ~/.zshrc)"
-        elif [[ "$SHELL" == *"bash"* ]]; then
-          if [[ "$OS" == "macos" ]]; then
-            echo "  1. Restart your terminal (or run: source ~/.bash_profile)"
-          else
-            echo "  1. Restart your terminal (or run: source ~/.bashrc)"
-          fi
+        if [[ -n "${SYSTEM_INFO_SHELL_RC_FILE}" ]]; then
+          echo "  1. Restart your terminal (or run: source ${SYSTEM_INFO_SHELL_RC_FILE})"
         else
           echo "  1. Restart your terminal"
         fi
