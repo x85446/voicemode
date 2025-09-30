@@ -1621,7 +1621,17 @@ main() {
       echo ""
       echo "The 'claude' command won't work until you:"
       echo "  Option 1: Close and reopen your terminal (recommended)"
-      echo "  Option 2: Run: source ~/.bashrc  (or source ~/.zshrc for zsh)"
+      if [[ "$SHELL" == *"zsh"* ]]; then
+        echo "  Option 2: Run: source ~/.zshrc"
+      elif [[ "$SHELL" == *"bash"* ]]; then
+        if [[ "$OS" == "macos" ]]; then
+          echo "  Option 2: Run: source ~/.bash_profile"
+        else
+          echo "  Option 2: Run: source ~/.bashrc"
+        fi
+      else
+        echo "  Option 2: Run: source your shell configuration file"
+      fi
       echo ""
       echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
       echo ""
@@ -1651,7 +1661,17 @@ main() {
         echo ""
         echo "🚀 To start using VoiceMode:"
         echo ""
-        echo "  1. Restart your terminal (or run: source ~/.bashrc)"
+        if [[ "$SHELL" == *"zsh"* ]]; then
+          echo "  1. Restart your terminal (or run: source ~/.zshrc)"
+        elif [[ "$SHELL" == *"bash"* ]]; then
+          if [[ "$OS" == "macos" ]]; then
+            echo "  1. Restart your terminal (or run: source ~/.bash_profile)"
+          else
+            echo "  1. Restart your terminal (or run: source ~/.bashrc)"
+          fi
+        else
+          echo "  1. Restart your terminal"
+        fi
         if [[ -n "${CLAUDE_SUGGESTED_DIR:-}" ]]; then
           echo "  2. cd ${CLAUDE_SUGGESTED_DIR}"
           echo "  3. claude converse"
