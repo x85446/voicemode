@@ -453,13 +453,102 @@ def uninstall(remove_models, remove_all_data):
 @click.help_option('-h', '--help', help='Show this message and exit')
 def whisper_model():
     """Manage Whisper models.
-    
+
     Subcommands:
-      active   - Show or set the active model
-      install  - Download and install models
-      remove   - Remove installed models
+      list      - List all available models and their status
+      active    - Show or set the active model
+      install   - Download and install models
+      remove    - Remove installed models
+      benchmark - Benchmark model performance
     """
     pass
+
+
+@whisper_model.command("list")
+@click.help_option('-h', '--help')
+def whisper_model_list():
+    """List available Whisper models and their installation status.
+
+    Shows all available models with:
+    - Installation status (installed/available)
+    - Core ML acceleration status on Apple Silicon
+    - File sizes
+    - Language support
+    - Performance characteristics
+    """
+    from voice_mode.tools.whisper.models import (
+        WHISPER_MODEL_REGISTRY,
+        get_model_directory,
+        get_active_model,
+        is_whisper_model_installed,
+        get_installed_whisper_models,
+        format_size,
+        has_whisper_coreml_model
+    )
+
+    model_dir = get_model_directory()
+    current_model = get_active_model()
+    installed_models = get_installed_whisper_models()
+
+    # Calculate totals
+    total_installed_size = sum(
+        (model_dir / f"ggml-{name}.bin").stat().st_size
+        for name in installed_models
+        if (model_dir / f"ggml-{name}.bin").exists()
+    )
+
+    total_available_size = sum(
+        info["size_mb"] * 1024 * 1024
+        for info in WHISPER_MODEL_REGISTRY.values()
+    )
+
+    click.echo("\nWhisper Models:\n")
+
+    # Display each model
+    for model_name, model_info in WHISPER_MODEL_REGISTRY.items():
+        # Check installation status
+        is_installed = is_whisper_model_installed(model_name)
+        has_coreml = has_whisper_coreml_model(model_name)
+
+        # Status indicator
+        if is_installed and has_coreml:
+            status = "[✓ Installed+ML]"
+        elif is_installed:
+            status = "[✓ Installed]"
+        else:
+            status = "[ Download ]"
+
+        # Active model indicator
+        prefix = "→ " if model_name == current_model else "  "
+
+        # Format size
+        size_mb = model_info["size_mb"]
+        if size_mb >= 1000:
+            size_str = f"{size_mb / 1000:.1f} GB"
+        else:
+            size_str = f"{size_mb} MB"
+
+        # Format description
+        desc = model_info["description"]
+        if model_name == current_model:
+            desc += " (active)"
+
+        # Print model line
+        click.echo(
+            f"{prefix}{model_name:15} {status:16} {size_str:7} "
+            f"{model_info['languages']:20} {desc}"
+        )
+
+    # Show summary
+    click.echo(f"\nModels directory: {model_dir}")
+    if total_installed_size > 0:
+        click.echo(
+            f"Total size: {format_size(total_installed_size)} installed / "
+            f"{format_size(total_available_size)} available"
+        )
+
+    click.echo("\nTo download a model: voicemode whisper model install <model-name>")
+    click.echo("To set default model: voicemode whisper model active <model-name>")
 
 
 @whisper_model.command("active")
@@ -550,9 +639,12 @@ def whisper_model_active(model_name):
         click.echo(f"To list all models: voicemode whisper models")
 
 
-@whisper.command("models")
+@whisper.command("models", hidden=True)  # Hidden - use 'whisper model list' instead
 def whisper_models():
-    """List available Whisper models and their installation status."""
+    """List available Whisper models and their installation status.
+
+    DEPRECATED: Use 'voicemode whisper model list' instead.
+    """
     from voice_mode.tools.whisper.models import (
         WHISPER_MODEL_REGISTRY, 
         get_model_directory,
