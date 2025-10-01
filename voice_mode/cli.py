@@ -9,6 +9,12 @@ import subprocess
 import shutil
 import click
 
+# Import version info
+try:
+    from voice_mode.version import __version__
+except ImportError:
+    __version__ = "unknown"
+
 
 # Suppress known deprecation warnings for better user experience
 # These apply to both CLI commands and MCP server operation
@@ -29,7 +35,7 @@ if not os.environ.get('VOICEMODE_DEBUG', '').lower() in ('true', '1', 'yes'):
 
 # Service management CLI - runs MCP server by default, subcommands override
 @click.group(invoke_without_command=True)
-@click.version_option()
+@click.version_option(version=__version__, prog_name="VoiceMode")
 @click.help_option('-h', '--help', help='Show this message and exit')
 @click.option('--debug', is_flag=True, help='Enable debug mode and show all warnings')
 @click.option('--tools-enabled', help='Comma-separated list of tools to enable (whitelist)')
@@ -1723,20 +1729,14 @@ def converse(message, wait, duration, min_duration, transport, room_name, voice,
 # Version command
 @voice_mode_main_cli.command()
 def version():
-    """Show Voice Mode version and check for updates."""
+    """Show VoiceMode version and check for updates."""
     import requests
-    from importlib.metadata import version as get_version, PackageNotFoundError
-    
-    try:
-        current_version = get_version("voice-mode")
-    except PackageNotFoundError:
-        # Fallback for development installations
-        current_version = "development"
-    
-    click.echo(f"Voice Mode version: {current_version}")
-    
+
+    # Use the same version that --version shows
+    click.echo(f"VoiceMode version: {__version__}")
+
     # Check for updates if not in development mode
-    if current_version != "development":
+    if not ("dev" in __version__ or "dirty" in __version__):
         try:
             response = requests.get(
                 "https://pypi.org/pypi/voice-mode/json",

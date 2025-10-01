@@ -19,7 +19,9 @@ This PR massively simplifies Core ML acceleration for Whisper on Apple Silicon M
 - Model download failures are non-fatal (whisper still installs)
 
 ### Code Cleanup
-- Removed `install_torch` parameter from `whisper_model_install`
+- Removed `install_torch` parameter from `whisper_model_install` MCP tool
+- Removed `--install-torch` option from CLI
+- Removed PyTorch installation prompts from CLI
 - Removed `_handle_coreml_dependencies()` function
 - Removed dependency on `coreml_setup.py`
 - Deprecated `convert_to_coreml()` (now calls download function)
