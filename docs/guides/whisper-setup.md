@@ -5,19 +5,26 @@ Whisper is a local speech recognition service that converts audio to text for Vo
 ## Quick Start
 
 ```bash
-# Install whisper service with default model
+# Install whisper service with default base model (includes Core ML on Apple Silicon!)
 voice-mode whisper install
+
+# Install with a different model
+voice-mode whisper install --model large-v3
+
+# Install without any model
+voice-mode whisper install --no-model
 
 # List available models and their status
 voice-mode whisper models
 
-# Download and set a specific model
+# Download additional models (with Core ML support on Apple Silicon)
 voice-mode whisper model install large-v2
-voice-mode whisper model active large-v2
 
 # Start the service
 voice-mode whisper start
 ```
+
+**Apple Silicon Bonus:** On M1/M2/M3/M4 Macs, VoiceMode automatically downloads pre-built Core ML models for 2-3x faster performance. No Xcode or Python dependencies required!
 
 Default endpoint: `http://127.0.0.1:2022/v1`
 
@@ -28,16 +35,23 @@ Default endpoint: `http://127.0.0.1:2022/v1`
 VoiceMode includes an installation tool that sets up Whisper.cpp automatically:
 
 ```bash
-# Install with default large-v2 model
+# Install with default base model (142MB) - good balance of speed and accuracy
 voice-mode whisper install
 
 # Install with a specific model
-voice-mode whisper install --model base.en
+voice-mode whisper install --model small
+
+# Skip Core ML on Apple Silicon (not recommended)
+voice-mode whisper install --skip-core-ml
+
+# Install without downloading any model
+voice-mode whisper install --no-model
 ```
 
 This will:
 - Clone and build Whisper.cpp with GPU support (if available)
-- Download the specified model
+- Download the specified model (default: base)
+- **On Apple Silicon:** Automatically download pre-built Core ML models for 2-3x faster performance
 - Create a start script with environment variable support
 - Set up automatic startup (launchd on macOS, systemd on Linux)
 
@@ -70,12 +84,28 @@ wget https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v2.bin
 ### Prerequisites
 
 **macOS**:
-- Xcode Command Line Tools (`xcode-select --install`)
+- Xcode Command Line Tools (`xcode-select --install`) - Only for building whisper.cpp
 - Homebrew (https://brew.sh)
 - cmake (`brew install cmake`)
 
+**Note for Apple Silicon users:** Core ML models are pre-built and downloaded automatically. No Xcode, PyTorch, or coremltools required!
+
 **Linux**:
 - Build essentials (`sudo apt install build-essential` on Ubuntu/Debian)
+
+## Core ML Acceleration (Apple Silicon)
+
+On Apple Silicon Macs (M1/M2/M3/M4), VoiceMode automatically downloads pre-built Core ML models from Hugging Face for 2-3x faster transcription:
+
+- **Automatic:** Core ML models download alongside regular models
+- **No Dependencies:** No PyTorch, Xcode, or coremltools needed
+- **Pre-built:** Models are pre-compiled and ready to use
+- **Performance:** 2-3x faster than Metal acceleration alone
+
+To skip Core ML (not recommended):
+```bash
+voice-mode whisper model install large-v3 --skip-core-ml
+```
 
 ## Model Management
 
