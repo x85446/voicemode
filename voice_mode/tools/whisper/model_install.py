@@ -20,24 +20,21 @@ logger = logging.getLogger("voice-mode")
 async def whisper_model_install(
     model: Union[str, List[str]] = "large-v2",
     force_download: Union[bool, str] = False,
-    skip_core_ml: Union[bool, str] = False,
-    install_torch: Union[bool, str] = False,
-    auto_confirm: Union[bool, str] = False
+    skip_core_ml: Union[bool, str] = False
 ) -> str:
-    """Download Whisper model(s) with optional Core ML conversion.
-    
+    """Download Whisper model(s) with pre-built Core ML support.
+
     Downloads whisper.cpp models to the configured directory. On Apple Silicon,
-    automatically converts models to Core ML format for better performance.
-    
+    automatically downloads pre-built Core ML models from Hugging Face for
+    2-3x better performance. No Python dependencies or Xcode required!
+
     Args:
         model: Model name(s) to download. Can be:
                - Single model: "large-v2"
                - List of models: ["base", "small"]
                - "all" to download all available models
         force_download: Re-download even if model exists (default: False)
-        skip_core_ml: Skip Core ML conversion on Apple Silicon (default: False)
-        install_torch: Install PyTorch for CoreML (adds ~2.5GB) (default: False)
-        auto_confirm: Skip all confirmation prompts (default: False)
+        skip_core_ml: Skip Core ML download on Apple Silicon (default: False)
         
     Available models:
         - tiny, tiny.en
@@ -84,19 +81,12 @@ async def whisper_model_install(
                 "error": "Whisper.cpp not installed. Please run whisper_install first."
             }, indent=2)
         
-        # Handle CoreML dependencies if needed
-        coreml_status = await _handle_coreml_dependencies(
-            install_torch=install_torch,
-            auto_confirm=auto_confirm,
-            skip_core_ml=skip_core_ml
-        )
-        
-        if not coreml_status["continue"]:
-            return json.dumps(coreml_status, indent=2)
-        
-        # If CoreML deps were installed, skip_core_ml may have been updated
-        if coreml_status.get("coreml_deps_failed"):
-            skip_core_ml = True
+        # CoreML dependencies no longer needed - using pre-built models from Hugging Face!
+        # Just check if we're on Apple Silicon and should download Core ML models
+        if platform.system() == "Darwin" and platform.machine() == "arm64" and not skip_core_ml:
+            logger.info("Apple Silicon detected - will download pre-built Core ML models for optimal performance")
+        elif skip_core_ml:
+            logger.info("Skipping Core ML models as requested")
         
         # Parse model input
         available_models = get_available_models()
@@ -147,8 +137,7 @@ async def whisper_model_install(
                     "success": core_ml.get("success", False),
                     "error_category": core_ml.get("error_category") if not core_ml.get("success") else None,
                     "error": core_ml.get("error") if not core_ml.get("success") else None,
-                    "fix_command": core_ml.get("install_command") if not core_ml.get("success") else None,
-                    "package_size": core_ml.get("package_size") if not core_ml.get("success") else None
+                    "method": "pre-built download" if core_ml.get("success") else None
                 }
             elif skip_core_ml:
                 model_result["core_ml"] = {
@@ -179,16 +168,16 @@ async def whisper_model_install(
                     error_categories[category] = failure["core_ml"]
             
             # Add warnings for each category
-            if "missing_pytorch" in error_categories:
-                warnings.append("PyTorch not installed - Core ML acceleration unavailable")
-                recommendations.append(f"Install PyTorch for Core ML: {error_categories['missing_pytorch'].get('fix_command', 'uv pip install torch')}")
-            elif "missing_coremltools" in error_categories:
-                warnings.append("CoreMLTools not installed - Core ML acceleration unavailable")
-                recommendations.append(f"Install CoreMLTools: {error_categories['missing_coremltools'].get('fix_command', 'uv pip install coremltools')}")
-            
+            if "not_available" in error_categories:
+                warnings.append("Pre-built Core ML model not available for this model")
+                recommendations.append("Model will use Metal acceleration which is still fast")
+            elif "download_failed" in error_categories:
+                warnings.append("Core ML model download failed - check network connection")
+                recommendations.append("Try again later or use --skip-coreml to proceed without Core ML")
+
             # General Core ML recommendation
             if len(core_ml_failures) == len(results):
-                recommendations.append("Models will use Metal acceleration. Core ML provides better performance on Apple Silicon.")
+                recommendations.append("Models will use Metal acceleration. Core ML would provide 2-3x better performance.")
         
         summary = {
             "success": success_count > 0,
@@ -209,9 +198,9 @@ async def whisper_model_install(
         # Add overall status message
         if success_count == total_models:
             if core_ml_failures:
-                summary["status"] = "Models downloaded successfully but Core ML conversion failed. Using Metal acceleration."
+                summary["status"] = "Models downloaded successfully but Core ML download failed. Using Metal acceleration."
             else:
-                summary["status"] = "Models downloaded and converted successfully. Ready to use with whisper_start."
+                summary["status"] = "Models downloaded successfully with Core ML acceleration. Ready to use!"
         else:
             summary["status"] = "Some models failed to download. Check the results for details."
         
@@ -225,66 +214,3 @@ async def whisper_model_install(
         }, indent=2)
 
 
-async def _handle_coreml_dependencies(
-    install_torch: bool = False,
-    auto_confirm: bool = False,
-    skip_core_ml: bool = False
-) -> Dict[str, Any]:
-    """Handle CoreML dependency installation for Apple Silicon Macs.
-    
-    Returns:
-        Dict with 'continue' key indicating whether to proceed with model download
-    """
-    # Check if we're on Apple Silicon Mac
-    if platform.system() != "Darwin" or platform.machine() != "arm64":
-        return {"continue": True}
-    
-    # If skipping CoreML, no need to check dependencies
-    if skip_core_ml:
-        return {"continue": True}
-    
-    # Check if the CoreML environment already exists
-    whisper_dir = Path.home() / ".voicemode" / "services" / "whisper"
-    venv_coreml = whisper_dir / "venv-coreml" / "bin" / "python"
-    
-    if venv_coreml.exists():
-        # Test if it has the required packages
-        try:
-            result = subprocess.run(
-                [str(venv_coreml), "-c", "import torch, coremltools, whisper"],
-                capture_output=True,
-                timeout=5
-            )
-            if result.returncode == 0:
-                logger.info("CoreML environment already exists and is valid")
-                # Return with a flag indicating CoreML is ready
-                return {
-                    "continue": True,
-                    "coreml_ready": True,
-                    "coreml_deps_note": "CoreML environment exists and is valid"
-                }
-        except:
-            pass
-    
-    # Check if user wants to create CoreML environment
-    if not install_torch and not auto_confirm:
-        return {
-            "continue": False,
-            "success": False,
-            "requires_confirmation": True,
-            "message": "CoreML conversion requires a dedicated Python environment with PyTorch. Setup may download up to 2.5GB if packages aren't cached.",
-            "recommendation": "💡 Set install_torch=True for CoreML acceleration (2-3x faster)"
-        }
-    
-    # Note: We don't actually install CoreML dependencies in the voicemode environment anymore
-    # The CoreML conversion uses its own dedicated environment in ~/.voicemode/services/whisper/venv-coreml
-    # This is handled automatically by whisper_helpers.convert_to_coreml()
-    
-    logger.info("CoreML dependencies will be handled by the conversion process")
-    
-    # We still return success to continue with the model download
-    # The actual CoreML environment setup happens during conversion
-    return {
-        "continue": True,
-        "coreml_deps_note": "CoreML environment will be created during conversion if needed"
-    }
