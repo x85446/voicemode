@@ -455,23 +455,25 @@ def uninstall(remove_models, remove_all_data):
             click.echo(f"   Details: {result['details']}")
 
 
-@whisper.group("model")
-@click.help_option('-h', '--help', help='Show this message and exit')
-def whisper_model():
-    """Manage Whisper models.
+# Import the unified model command
+from voice_mode.whisper_model_unified import whisper_model_unified
 
-    Subcommands:
-      list      - List all available models and their status
-      active    - Show or set the active model
-      install   - Download and install models
-      remove    - Remove installed models
-      benchmark - Benchmark model performance
-    """
-    pass
+# Add it directly to the whisper group
+whisper.add_command(whisper_model_unified, name="model")
 
 
-@whisper_model.command("list")
-@click.help_option('-h', '--help')
+# Old subcommand structure removed - replaced by unified model command
+# The old @whisper_model group and all its subcommands have been replaced
+# by the unified whisper_model_unified command above
+
+# Note: The old model group commands (list, active, install, remove, benchmark)
+# have been removed in favor of the unified model command that works as:
+#   voicemode whisper model           # show current
+#   voicemode whisper model --all     # list all
+#   voicemode whisper model <name>    # set/install model
+
+# Skip the old definitions to prevent errors
+'''
 def whisper_model_list():
     """List available Whisper models and their installation status.
 
@@ -929,6 +931,7 @@ def whisper_model_benchmark_cmd(models, sample, runs):
     
     click.echo("\nNote: Speed values show real-time factor (higher is better)")
     click.echo("      1.0x = real-time, 10x = 10 times faster than real-time")
+''' # End of old model subcommands
 
 
 # LiveKit service commands
