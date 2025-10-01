@@ -279,20 +279,7 @@ def uninstall(remove_models, remove_all_data):
 @whisper.group("service")
 @click.help_option('-h', '--help', help='Show this message and exit')
 def whisper_service():
-    """Manage Whisper service.
-
-    Subcommands:
-      install   - Install whisper service
-      uninstall - Uninstall whisper service
-      start     - Start service
-      stop      - Stop service
-      restart   - Restart service
-      status    - Show service status
-      enable    - Enable at boot
-      disable   - Disable at boot
-      logs      - View service logs
-      health    - Check health endpoint
-    """
+    """Manage Whisper service."""
     pass
 
 # Service commands under the group
