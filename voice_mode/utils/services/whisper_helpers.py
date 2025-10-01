@@ -12,6 +12,8 @@ from typing import Optional, List, Dict, Union
 # Core ML setup no longer needed - using pre-built models from Hugging Face
 # from .coreml_setup import setup_coreml_venv, get_coreml_python
 
+from voice_mode.utils.download import download_with_progress_async
+
 logger = logging.getLogger("voice-mode")
 
 def find_whisper_server() -> Optional[str]:
@@ -110,52 +112,24 @@ async def download_whisper_model(
             "message": "Model already exists"
         }
     
-    # Use the download script from whisper.cpp
-    download_script = models_dir / "download-ggml-model.sh"
-    
-    if not download_script.exists():
-        # Create the download script if it doesn't exist
-        # This happens when downloading models to a custom directory
-        # Check both possible whisper installation locations
-        whisper_dirs = [
-            Path.home() / ".voicemode" / "services" / "whisper",
-            Path.home() / ".voicemode" / "whisper.cpp"  # legacy
-        ]
-        
-        original_script = None
-        for whisper_dir in whisper_dirs:
-            script_path = whisper_dir / "models" / "download-ggml-model.sh"
-            if script_path.exists():
-                original_script = script_path
-                break
-        
-        if original_script:
-            shutil.copy2(original_script, download_script)
-            os.chmod(download_script, 0o755)
-        else:
-            # Check if we're in the whisper.cpp directory already
-            # (happens during install when models_dir is install_dir/models)
-            parent_script = models_dir.parent / "models" / "download-ggml-model.sh"
-            if parent_script.exists() and parent_script != download_script:
-                shutil.copy2(parent_script, download_script)
-                os.chmod(download_script, 0o755)
-            else:
-                return {
-                    "success": False,
-                    "error": "Download script not found. Please run whisper_install first."
-                }
-    
+    # Download directly from Hugging Face with progress bar
+    model_url = f"https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-{model}.bin"
+
     logger.info(f"Downloading model: {model}")
-    
+
     try:
-        # Run download script
-        result = subprocess.run(
-            ["bash", str(download_script), model],
-            cwd=str(models_dir),
-            capture_output=True,
-            text=True,
-            check=True
+        # Download with progress bar
+        success = await download_with_progress_async(
+            url=model_url,
+            destination=model_path,
+            description=f"Downloading Whisper model {model}"
         )
+
+        if not success:
+            return {
+                "success": False,
+                "error": f"Failed to download model {model}"
+            }
         
         # Verify download
         if not model_path.exists():
@@ -248,28 +222,18 @@ async def download_coreml_model(
     logger.info(f"Downloading pre-built Core ML model for {model} from Hugging Face...")
 
     try:
-        # Download using urllib (available in stdlib)
-        import urllib.request
-        import urllib.error
+        # Download with progress bar
+        success = await download_with_progress_async(
+            url=coreml_url,
+            destination=coreml_zip,
+            description=f"Downloading Core ML model for {model}"
+        )
 
-        # Try to download with progress reporting
-        response = urllib.request.urlopen(coreml_url)
-        total_size = int(response.headers.get('Content-Length', 0))
-
-        downloaded = 0
-        block_size = 8192
-
-        with open(coreml_zip, 'wb') as f:
-            while True:
-                chunk = response.read(block_size)
-                if not chunk:
-                    break
-                f.write(chunk)
-                downloaded += len(chunk)
-                if total_size > 0:
-                    progress = (downloaded / total_size) * 100
-                    if downloaded % (block_size * 128) == 0:  # Log every ~1MB
-                        logger.info(f"Downloading Core ML model: {progress:.1f}% ({downloaded / 1024 / 1024:.1f}MB / {total_size / 1024 / 1024:.1f}MB)")
+        if not success:
+            return {
+                "success": False,
+                "error": "Failed to download Core ML model"
+            }
 
         logger.info(f"Download complete. Extracting Core ML model...")
 
@@ -293,8 +257,10 @@ async def download_coreml_model(
             "message": f"Core ML model downloaded and extracted for {model}"
         }
 
-    except urllib.error.HTTPError as e:
-        if e.code == 404:
+    except Exception as e:
+        # Check if it's a 404 error (model not available)
+        error_msg = str(e)
+        if "404" in error_msg or "Not Found" in error_msg:
             logger.info(f"No pre-built Core ML model available for {model} (404)")
             return {
                 "success": False,
@@ -302,19 +268,12 @@ async def download_coreml_model(
                 "error_category": "not_available"
             }
         else:
-            logger.error(f"HTTP error downloading Core ML model: {e}")
+            logger.error(f"Error downloading Core ML model: {e}")
             return {
                 "success": False,
-                "error": f"HTTP {e.code} error downloading Core ML model",
+                "error": str(e),
                 "error_category": "download_failed"
             }
-    except Exception as e:
-        logger.error(f"Error downloading Core ML model: {e}")
-        return {
-            "success": False,
-            "error": str(e),
-            "error_category": "download_failed"
-        }
 
 
 async def convert_to_coreml(
