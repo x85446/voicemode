@@ -134,11 +134,10 @@ def download_with_progress(
                 label=full_label,
                 show_eta=True,
                 show_percent=True,
-                show_pos=True,
+                show_pos=False,  # Disable raw byte position
                 width=40,
                 fill_char='█',
-                empty_char='░',
-                item_show_func=lambda x: f"{format_size(x) if x else '0 B'}/{size_str}" if x is not None else ""
+                empty_char='░'
             ) as bar:
                 with open(destination, 'wb') as f:
                     while chunk := response.read(8192):

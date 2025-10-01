@@ -12,7 +12,14 @@ def model_name_completion(ctx, args, incomplete):
     return [name for name in WHISPER_MODEL_REGISTRY.keys() if name.startswith(incomplete)]
 
 
-@click.command("model")
+@click.command("model",
+    epilog="""
+Examples:
+  voicemode whisper model              # Show current model
+  voicemode whisper model --all        # List all models
+  voicemode whisper model large-v2     # Switch to (and install) large-v2
+  voicemode whisper model tiny --no-install  # Switch to tiny (must be installed)
+""")
 @click.help_option('-h', '--help')
 @click.argument('model_name', required=False, shell_complete=model_name_completion)
 @click.option('--all', '-a', is_flag=True, help='List all available models')
@@ -24,12 +31,6 @@ def whisper_model_unified(model_name, all, no_install, no_activate):
     Without arguments: Shows the current active model
     With MODEL_NAME: Sets the active model (auto-installs if needed)
     With --all/-a: Lists all available models with status
-
-    Examples:
-        voicemode whisper model              # Show current model
-        voicemode whisper model --all        # List all models
-        voicemode whisper model large-v2     # Switch to (and install) large-v2
-        voicemode whisper model tiny --no-install  # Switch to tiny (must be installed)
     """
     from voice_mode.tools.whisper.models import (
         WHISPER_MODEL_REGISTRY,
