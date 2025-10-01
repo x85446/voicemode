@@ -25,7 +25,8 @@ Examples:
 @click.option('--all', '-a', is_flag=True, help='List all available models')
 @click.option('--no-install', is_flag=True, help="Don't auto-install missing models")
 @click.option('--no-activate', is_flag=True, help="Don't auto-activate after installing")
-def whisper_model_unified(model_name, all, no_install, no_activate):
+@click.option('--no-restart', is_flag=True, help="Don't auto-restart whisper service after changing model")
+def whisper_model_unified(model_name, all, no_install, no_activate, no_restart):
     """Show, set, or list Whisper models.
 
     Without arguments: Shows the current active model
@@ -166,14 +167,36 @@ def whisper_model_unified(model_name, all, no_install, no_activate):
             if previous_model != model_name:
                 click.echo(f"  (was: {previous_model})")
 
-            # Check if whisper service is running
-            try:
-                result = subprocess.run(['pgrep', '-f', 'whisper-server'], capture_output=True)
-                if result.returncode == 0:
-                    click.echo(f"\n⚠️  Please restart the whisper service for changes to take effect:")
-                    click.echo(f"  {click.style('voicemode whisper restart', fg='yellow', bold=True)}")
-            except:
-                pass
+            # Check if whisper service is running and restart if needed
+            if not no_restart:
+                try:
+                    result = subprocess.run(['pgrep', '-f', 'whisper-server'], capture_output=True)
+                    if result.returncode == 0:
+                        # Service is running, restart it
+                        click.echo(f"\nRestarting whisper service...")
+
+                        # Import and use the restart function
+                        from voice_mode.tools.service import restart_service
+                        restart_result = asyncio.run(restart_service("whisper"))
+
+                        if "✅" in restart_result or "started" in restart_result.lower():
+                            click.echo(f"✓ Whisper service restarted with {model_name} model")
+                        else:
+                            click.echo(f"⚠️  Could not restart whisper service automatically")
+                            click.echo(f"  Please run: {click.style('voicemode whisper restart', fg='yellow', bold=True)}")
+                except Exception as e:
+                    click.echo(f"⚠️  Could not restart whisper service: {e}")
+                    click.echo(f"  Please run: {click.style('voicemode whisper restart', fg='yellow', bold=True)}")
+            else:
+                # no_restart flag was used
+                try:
+                    result = subprocess.run(['pgrep', '-f', 'whisper-server'], capture_output=True)
+                    if result.returncode == 0:
+                        click.echo(f"\n⚠️  Please restart the whisper service for changes to take effect:")
+                        click.echo(f"  {click.style('voicemode whisper restart', fg='yellow', bold=True)}")
+                        click.echo(f"  (auto-restart skipped due to --no-restart flag)")
+                except:
+                    pass
 
         return
 
