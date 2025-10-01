@@ -275,66 +275,86 @@ def uninstall(remove_models, remove_all_data):
             click.echo(f"   Details: {result['details']}")
 
 
-# Whisper service commands  
-@whisper.command()
-def status():
+# Create service group for whisper
+@whisper.group("service")
+@click.help_option('-h', '--help', help='Show this message and exit')
+def whisper_service():
+    """Manage Whisper service.
+
+    Subcommands:
+      install   - Install whisper service
+      uninstall - Uninstall whisper service
+      start     - Start service
+      stop      - Stop service
+      restart   - Restart service
+      status    - Show service status
+      enable    - Enable at boot
+      disable   - Disable at boot
+      logs      - View service logs
+      health    - Check health endpoint
+    """
+    pass
+
+# Service commands under the group
+@whisper_service.command("status")
+def whisper_service_status():
     """Show Whisper service status."""
     from voice_mode.tools.service import status_service
     result = asyncio.run(status_service("whisper"))
     click.echo(result)
 
 
-@whisper.command()
-def start():
+@whisper_service.command("start")
+def whisper_service_start():
     """Start Whisper service."""
     from voice_mode.tools.service import start_service
     result = asyncio.run(start_service("whisper"))
     click.echo(result)
 
 
-@whisper.command()
-def stop():
+@whisper_service.command("stop")
+def whisper_service_stop():
     """Stop Whisper service."""
     from voice_mode.tools.service import stop_service
     result = asyncio.run(stop_service("whisper"))
     click.echo(result)
 
 
-@whisper.command()
-def restart():
+@whisper_service.command("restart")
+def whisper_service_restart():
     """Restart Whisper service."""
     from voice_mode.tools.service import restart_service
     result = asyncio.run(restart_service("whisper"))
     click.echo(result)
 
 
-@whisper.command()
-def enable():
+@whisper_service.command("enable")
+def whisper_service_enable():
     """Enable Whisper service to start at boot/login."""
     from voice_mode.tools.service import enable_service
     result = asyncio.run(enable_service("whisper"))
     click.echo(result)
 
 
-@whisper.command()
-def disable():
+@whisper_service.command("disable")
+def whisper_service_disable():
     """Disable Whisper service from starting at boot/login."""
     from voice_mode.tools.service import disable_service
     result = asyncio.run(disable_service("whisper"))
     click.echo(result)
 
 
-@whisper.command()
+@whisper_service.command("logs")
 @click.help_option('-h', '--help')
 @click.option('--lines', '-n', default=50, help='Number of log lines to show')
-def logs(lines):
+def whisper_service_logs(lines):
     """View Whisper service logs."""
     from voice_mode.tools.service import view_logs
     result = asyncio.run(view_logs("whisper", lines))
     click.echo(result)
 
 
-@whisper.command("update-service-files")
+@whisper_service.command("update-files")
 def whisper_update_service_files():
     """Update Whisper service files to latest version."""
     from voice_mode.tools.service import update_service_files
@@ -342,8 +362,8 @@ def whisper_update_service_files():
     click.echo(result)
 
 
-@whisper.command()
-def health():
+@whisper_service.command("health")
+def whisper_service_health():
     """Check Whisper health endpoint."""
     import subprocess
     try:
@@ -369,7 +389,7 @@ def health():
         click.echo(f"❌ Health check failed: {e}")
 
 
-@whisper.command()
+@whisper_service.command("install")
 @click.help_option('-h', '--help')
 @click.option('--install-dir', help='Directory to install whisper.cpp')
 @click.option('--model', default='large-v2', help='Whisper model to download (default: large-v2)')
@@ -377,7 +397,7 @@ def health():
 @click.option('--force', '-f', is_flag=True, help='Force reinstall even if already installed')
 @click.option('--version', default='latest', help='Version to install (default: latest)')
 @click.option('--auto-enable/--no-auto-enable', default=None, help='Enable service at boot/login')
-def install(install_dir, model, use_gpu, force, version, auto_enable):
+def whisper_service_install(install_dir, model, use_gpu, force, version, auto_enable):
     """Install whisper.cpp STT service with automatic system detection."""
     from voice_mode.tools.whisper.install import whisper_install
     result = asyncio.run(whisper_install.fn(
@@ -418,12 +438,12 @@ def install(install_dir, model, use_gpu, force, version, auto_enable):
             click.echo(f"   Details: {result['details']}")
 
 
-@whisper.command()
+@whisper_service.command("uninstall")
 @click.help_option('-h', '--help')
 @click.option('--remove-models', is_flag=True, help='Also remove downloaded Whisper models')
 @click.option('--remove-all-data', is_flag=True, help='Remove all Whisper data including logs and transcriptions')
 @click.confirmation_option(prompt='Are you sure you want to uninstall Whisper?')
-def uninstall(remove_models, remove_all_data):
+def whisper_service_uninstall(remove_models, remove_all_data):
     """Uninstall whisper.cpp and optionally remove models and data."""
     from voice_mode.tools.whisper.uninstall import whisper_uninstall
     result = asyncio.run(whisper_uninstall.fn(
@@ -460,6 +480,82 @@ from voice_mode.whisper_model_unified import whisper_model_unified
 
 # Add it directly to the whisper group
 whisper.add_command(whisper_model_unified, name="model")
+
+# Backward compatibility: Add hidden aliases for old direct commands
+# These allow "whisper start" to work as "whisper service start"
+@whisper.command("status", hidden=True)
+@click.pass_context
+def whisper_status_alias(ctx):
+    """(Deprecated) Show Whisper service status. Use 'whisper service status' instead."""
+    ctx.forward(whisper_service_status)
+
+@whisper.command("start", hidden=True)
+@click.pass_context
+def whisper_start_alias(ctx):
+    """(Deprecated) Start Whisper service. Use 'whisper service start' instead."""
+    ctx.forward(whisper_service_start)
+
+@whisper.command("stop", hidden=True)
+@click.pass_context
+def whisper_stop_alias(ctx):
+    """(Deprecated) Stop Whisper service. Use 'whisper service stop' instead."""
+    ctx.forward(whisper_service_stop)
+
+@whisper.command("restart", hidden=True)
+@click.pass_context
+def whisper_restart_alias(ctx):
+    """(Deprecated) Restart Whisper service. Use 'whisper service restart' instead."""
+    ctx.forward(whisper_service_restart)
+
+@whisper.command("enable", hidden=True)
+@click.pass_context
+def whisper_enable_alias(ctx):
+    """(Deprecated) Enable Whisper service. Use 'whisper service enable' instead."""
+    ctx.forward(whisper_service_enable)
+
+@whisper.command("disable", hidden=True)
+@click.pass_context
+def whisper_disable_alias(ctx):
+    """(Deprecated) Disable Whisper service. Use 'whisper service disable' instead."""
+    ctx.forward(whisper_service_disable)
+
+@whisper.command("logs", hidden=True)
+@click.help_option('-h', '--help')
+@click.option('--lines', '-n', default=50, help='Number of log lines to show')
+@click.pass_context
+def whisper_logs_alias(ctx, lines):
+    """(Deprecated) View Whisper logs. Use 'whisper service logs' instead."""
+    ctx.forward(whisper_service_logs, lines=lines)
+
+@whisper.command("health", hidden=True)
+@click.pass_context
+def whisper_health_alias(ctx):
+    """(Deprecated) Check Whisper health. Use 'whisper service health' instead."""
+    ctx.forward(whisper_service_health)
+
+@whisper.command("install", hidden=True)
+@click.help_option('-h', '--help')
+@click.option('--install-dir', help='Directory to install whisper.cpp')
+@click.option('--model', default='large-v2', help='Whisper model to download (default: large-v2)')
+@click.option('--use-gpu/--no-gpu', default=None, help='Enable GPU support if available')
+@click.option('--force', '-f', is_flag=True, help='Force reinstall even if already installed')
+@click.option('--version', default='latest', help='Version to install (default: latest)')
+@click.option('--auto-enable/--no-auto-enable', default=None, help='Enable service at boot/login')
+@click.pass_context
+def whisper_install_alias(ctx, install_dir, model, use_gpu, force, version, auto_enable):
+    """(Deprecated) Install Whisper. Use 'whisper service install' instead."""
+    ctx.forward(whisper_service_install, install_dir=install_dir, model=model, use_gpu=use_gpu,
+                force=force, version=version, auto_enable=auto_enable)
+
+@whisper.command("uninstall", hidden=True)
+@click.help_option('-h', '--help')
+@click.option('--remove-models', is_flag=True, help='Also remove downloaded Whisper models')
+@click.option('--remove-all-data', is_flag=True, help='Remove all Whisper data including logs and transcriptions')
+@click.confirmation_option(prompt='Are you sure you want to uninstall Whisper?')
+@click.pass_context
+def whisper_uninstall_alias(ctx, remove_models, remove_all_data):
+    """(Deprecated) Uninstall Whisper. Use 'whisper service uninstall' instead."""
+    ctx.forward(whisper_service_uninstall, remove_models=remove_models, remove_all_data=remove_all_data)
 
 
 # Old subcommand structure removed - replaced by unified model command
