@@ -632,9 +632,8 @@ def whisper_models():
 @click.argument('model', default='large-v2')
 @click.option('--force', '-f', is_flag=True, help='Re-download even if model exists')
 @click.option('--skip-core-ml', is_flag=True, help='Skip Core ML conversion on Apple Silicon')
-@click.option('--install-torch', is_flag=True, help='Install PyTorch for Core ML conversion (~2.5GB)')
-def whisper_model_install(model, force, skip_core_ml, install_torch):
-    """Install Whisper model(s) with optional Core ML conversion.
+def whisper_model_install(model, force, skip_core_ml):
+    """Install Whisper model(s) with automatic Core ML support on Apple Silicon.
     
     MODEL can be a model name (e.g., 'large-v2'), 'all' to download all models,
     or omitted to use the default (large-v2).
@@ -648,35 +647,18 @@ def whisper_model_install(model, force, skip_core_ml, install_torch):
     tool = install_module.whisper_model_install
     install_func = tool.fn if hasattr(tool, 'fn') else tool
     
-    # First attempt without install_torch to check if it's needed
+    # Call the install function
     result = asyncio.run(install_func(
         model=model,
         force_download=force,
-        skip_core_ml=skip_core_ml,
-        install_torch=install_torch,
-        auto_confirm=install_torch  # If user passed --install-torch, skip confirmation
+        skip_core_ml=skip_core_ml
     ))
     
     try:
         # Parse JSON response
         data = json.loads(result)
         
-        # Check if PyTorch installation is required for Core ML
-        if data.get('requires_confirmation') and not install_torch and not skip_core_ml:
-            click.echo("\n" + data.get('message', 'Core ML requires PyTorch (~2.5GB)'))
-            if data.get('recommendation'):
-                click.echo(f"💡 {data['recommendation']}")
-            
-            if click.confirm("\nWould you like to install PyTorch for Core ML acceleration?"):
-                # Retry with install_torch=True
-                result = asyncio.run(install_func(
-                    model=model,
-                    force_download=force,
-                    skip_core_ml=skip_core_ml,
-                    install_torch=True,
-                    auto_confirm=True
-                ))
-                data = json.loads(result)
+        # Core ML is now automatic with pre-built models - no prompts needed!
         if data.get('success'):
             click.echo("✅ Model download completed!")
             
