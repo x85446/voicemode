@@ -4,7 +4,7 @@ import logging
 from typing import Optional, Union, Dict, Any
 
 from voice_mode.server import mcp
-from voice_mode.provider_discovery import provider_registry
+from voice_mode.provider_discovery import provider_registry, detect_provider_type
 from voice_mode.config import TTS_BASE_URLS, STT_BASE_URLS
 
 logger = logging.getLogger("voice-mode")
@@ -58,41 +58,52 @@ async def refresh_provider_registry(
             
             for url in urls:
                 if optimistic:
-                    # In optimistic mode, just mark everything as healthy
+                    # In optimistic mode, just mark everything as available
                     from voice_mode.provider_discovery import EndpointInfo
                     from datetime import datetime
-                    
+
                     provider_registry.registry[service][url] = EndpointInfo(
                         base_url=url,
-                        healthy=True,
                         models=["whisper-1"] if service == "stt" else (["tts-1", "tts-1-hd"] if "openai.com" in url else ["tts-1"]),
                         voices=[] if service == "stt" else (["alloy", "echo", "fable", "nova", "onyx", "shimmer"] if "openai.com" in url else ["af_alloy", "af_aoede", "af_bella", "af_heart", "af_jadzia", "af_jessica", "af_kore", "af_nicole", "af_nova", "af_river", "af_sarah", "af_sky", "af_v0", "af_v0bella", "af_v0irulan", "af_v0nicole", "af_v0sarah", "af_v0sky", "am_adam", "am_echo", "am_eric", "am_fenrir", "am_liam", "am_michael", "am_onyx", "am_puck", "am_santa", "am_v0adam", "am_v0gurney", "am_v0michael", "bf_alice", "bf_emma", "bf_lily", "bf_v0emma", "bf_v0isabella", "bm_daniel", "bm_fable", "bm_george", "bm_lewis", "bm_v0george", "bm_v0lewis", "ef_dora", "em_alex", "em_santa", "ff_siwis", "hf_alpha", "hf_beta", "hm_omega", "hm_psi", "if_sara", "im_nicola", "jf_alpha", "jf_gongitsune", "jf_nezumi", "jf_tebukuro", "jm_kumo", "pf_dora", "pm_alex", "pm_santa", "zf_xiaobei", "zf_xiaoni", "zf_xiaoxiao", "zf_xiaoyi", "zm_yunjian", "zm_yunxi", "zm_yunxia", "zm_yunyang"]),
-                        last_health_check=datetime.utcnow().isoformat() + "Z",
-                        response_time_ms=None,
-                        error=None
+                        provider_type=detect_provider_type(url),
+                        last_check=datetime.utcnow().isoformat() + "Z"
                     )
                     results.append(f"\n  ✅ {url}")
-                    results.append(f"     Status: Marked as healthy (optimistic mode)")
+                    results.append(f"     Status: Available (optimistic mode)")
                 else:
-                    # Perform actual health check
-                    healthy = await provider_registry.check_health(service, url)
-                    endpoint_info = provider_registry.registry[service].get(url)
-                    
-                    if endpoint_info:
-                        emoji = "✅" if healthy else "❌"
-                        results.append(f"\n  {emoji} {url}")
-                        
-                        if healthy:
-                            if service == 'tts':
-                                results.append(f"     Models: {', '.join(endpoint_info.models) if endpoint_info.models else 'none detected'}")
-                                results.append(f"     Voices: {', '.join(endpoint_info.voices[:5])}{'...' if len(endpoint_info.voices) > 5 else ''}")
-                            else:
-                                results.append(f"     Models: {', '.join(endpoint_info.models) if endpoint_info.models else 'none detected'}")
-                            
-                            if endpoint_info.response_time_ms:
-                                results.append(f"     Response Time: {endpoint_info.response_time_ms:.0f}ms")
-                        else:
-                            results.append(f"     Error: {endpoint_info.error or 'Unknown error'}")
+                    # Non-optimistic mode: Try to discover actual models/voices
+                    # Since check_health doesn't exist, we'll just try to discover
+                    from voice_mode.provider_discovery import discover_models, discover_voices, EndpointInfo
+                    from datetime import datetime
+
+                    try:
+                        models = await discover_models(service, url)
+                        voices = await discover_voices(url) if service == "tts" else []
+
+                        provider_registry.registry[service][url] = EndpointInfo(
+                            base_url=url,
+                            models=models if models else ["whisper-1"] if service == "stt" else ["tts-1"],
+                            voices=voices,
+                            provider_type=detect_provider_type(url),
+                            last_check=datetime.utcnow().isoformat() + "Z"
+                        )
+                        results.append(f"\n  ✅ {url}")
+                        results.append(f"     Models: {', '.join(models) if models else 'default'}")
+                        if service == 'tts' and voices:
+                            results.append(f"     Voices: {', '.join(voices[:5])}{'...' if len(voices) > 5 else ''}")
+                    except Exception as e:
+                        # Failed to discover - mark with error
+                        provider_registry.registry[service][url] = EndpointInfo(
+                            base_url=url,
+                            models=[],
+                            voices=[],
+                            provider_type=detect_provider_type(url),
+                            last_check=datetime.utcnow().isoformat() + "Z",
+                            last_error=str(e)
+                        )
+                        results.append(f"\n  ❌ {url}")
+                        results.append(f"     Error: {str(e)}")
         
         results.append("\n✨ Refresh complete!")
         return "\n".join(results)
@@ -133,14 +144,13 @@ async def get_provider_details(base_url: str) -> str:
         results.append("=" * 50)
         
         results.append(f"\nService Type: {service_type}")
-        results.append(f"Status: {'✅ Healthy' if endpoint_info.healthy else '❌ Unhealthy'}")
-        results.append(f"Last Health Check: {endpoint_info.last_health_check}")
-        
-        if endpoint_info.response_time_ms:
-            results.append(f"Response Time: {endpoint_info.response_time_ms:.0f}ms")
-        
-        if endpoint_info.error:
-            results.append(f"\n⚠️  Error: {endpoint_info.error}")
+        results.append(f"Provider Type: {endpoint_info.provider_type or 'unknown'}")
+        results.append(f"Last Check: {endpoint_info.last_check or 'Never'}")
+
+        if endpoint_info.last_error:
+            results.append(f"\n⚠️  Error: {endpoint_info.last_error}")
+        else:
+            results.append(f"Status: ✅ Available")
         
         if endpoint_info.models:
             results.append(f"\n📦 Models ({len(endpoint_info.models)}):")

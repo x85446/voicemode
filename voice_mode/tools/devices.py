@@ -69,21 +69,31 @@ async def voice_status() -> str:
         for url in TTS_BASE_URLS:
             endpoint_info = provider_registry.registry["tts"].get(url)
             if endpoint_info:
-                emoji = "✅" if endpoint_info.healthy else "❌"
-                status_lines.append(f"  {emoji} {url}")
-                if endpoint_info.healthy:
+                # Check if there's an error
+                if endpoint_info.last_error:
+                    status_lines.append(f"  ❌ {url}")
+                    status_lines.append(f"     Error: {endpoint_info.last_error}")
+                else:
+                    status_lines.append(f"  ✅ {url}")
                     status_lines.append(f"     Models: {', '.join(endpoint_info.models[:3]) if endpoint_info.models else 'none'}")
                     status_lines.append(f"     Voices: {len(endpoint_info.voices)} available")
-        
+            else:
+                status_lines.append(f"  ⚪ {url} (not discovered)")
+
         # STT Endpoints
         status_lines.append("\nSTT Endpoints:")
         for url in STT_BASE_URLS:
             endpoint_info = provider_registry.registry["stt"].get(url)
             if endpoint_info:
-                emoji = "✅" if endpoint_info.healthy else "❌"
-                status_lines.append(f"  {emoji} {url}")
-                if endpoint_info.healthy:
+                # Check if there's an error
+                if endpoint_info.last_error:
+                    status_lines.append(f"  ❌ {url}")
+                    status_lines.append(f"     Error: {endpoint_info.last_error}")
+                else:
+                    status_lines.append(f"  ✅ {url}")
                     status_lines.append(f"     Models: {', '.join(endpoint_info.models) if endpoint_info.models else 'none'}")
+            else:
+                status_lines.append(f"  ⚪ {url} (not discovered)")
         
         # Configuration
         from voice_mode.config import (
