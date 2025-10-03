@@ -17,22 +17,20 @@ class TestConverseOpenAIErrors:
         """Test that insufficient quota errors are clearly reported to users."""
         from voice_mode.tools.converse import converse
 
-        # Mock the OpenAI client to return a quota error
-        with patch('voice_mode.simple_failover.AsyncOpenAI') as MockClient:
-            mock_client = AsyncMock()
-            MockClient.return_value = mock_client
-
+        # Mock at the core.text_to_speech level to avoid streaming complications
+        with patch('voice_mode.core.text_to_speech') as mock_tts:
             # Simulate OpenAI quota exceeded error
-            mock_client.audio.speech.create.side_effect = Exception(
+            mock_tts.side_effect = Exception(
                 "Error code: 429 - {'error': {'message': 'You exceeded your current quota, "
                 "please check your plan and billing details.', 'type': 'insufficient_quota'}}"
             )
 
             with patch('voice_mode.config.TTS_BASE_URLS', ['https://api.openai.com/v1']):
-                result = await converse.fn(
-                    message="Test message",
-                    wait_for_response=False
-                )
+                with patch('voice_mode.config.OPENAI_API_KEY', 'test-api-key'):
+                    result = await converse.fn(
+                        message="Test message",
+                        wait_for_response=False
+                    )
 
                 # User should see a clear message about quota/credit issue
                 assert any(keyword in result.lower() for keyword in [
@@ -44,12 +42,10 @@ class TestConverseOpenAIErrors:
         """Test that invalid API key errors are clearly reported."""
         from voice_mode.tools.converse import converse
 
-        with patch('voice_mode.simple_failover.AsyncOpenAI') as MockClient:
-            mock_client = AsyncMock()
-            MockClient.return_value = mock_client
-
+        # Mock at the core.text_to_speech level to avoid streaming complications
+        with patch('voice_mode.core.text_to_speech') as mock_tts:
             # Simulate invalid API key error
-            mock_client.audio.speech.create.side_effect = Exception(
+            mock_tts.side_effect = Exception(
                 "Error code: 401 - {'error': {'message': 'Incorrect API key provided', "
                 "'type': 'invalid_request_error'}}"
             )
@@ -71,12 +67,10 @@ class TestConverseOpenAIErrors:
         """Test that rate limit errors are clearly reported."""
         from voice_mode.tools.converse import converse
 
-        with patch('voice_mode.simple_failover.AsyncOpenAI') as MockClient:
-            mock_client = AsyncMock()
-            MockClient.return_value = mock_client
-
+        # Mock at the core.text_to_speech level to avoid streaming complications
+        with patch('voice_mode.core.text_to_speech') as mock_tts:
             # Simulate rate limit error
-            mock_client.audio.speech.create.side_effect = Exception(
+            mock_tts.side_effect = Exception(
                 "Error code: 429 - {'error': {'message': 'Rate limit reached', "
                 "'type': 'rate_limit_exceeded'}}"
             )

@@ -1523,7 +1523,44 @@ async def converse(
                         timing_parts.append(f"tts_play {tts_metrics['playback']:.1f}s")
                     timing_str = ", ".join(timing_parts)
                 
-                result = f"✓ Message spoken successfully{timing_info}" if success else "✗ Failed to speak message"
+                # Format result with error details if available
+                if success:
+                    result = f"✓ Message spoken successfully{timing_info}"
+                else:
+                    # Check if we have error details from failover
+                    if tts_config and 'error_type' in tts_config:
+                        if tts_config['error_type'] == 'all_providers_failed':
+                            # Extract error details from attempted endpoints
+                            error_messages = []
+                            for attempt in tts_config.get('attempted_endpoints', []):
+                                if attempt.get('error_details'):
+                                    # We have parsed OpenAI error details
+                                    error_details = attempt['error_details']
+                                    error_messages.append(error_details.get('message', attempt.get('error', 'Unknown error')))
+                                else:
+                                    error_messages.append(attempt.get('error', 'Unknown error'))
+
+                            # Use the first meaningful error message
+                            if error_messages:
+                                # Prioritize OpenAI parsed errors
+                                for attempt in tts_config.get('attempted_endpoints', []):
+                                    if attempt.get('error_details'):
+                                        from voice_mode.openai_error_parser import OpenAIErrorParser
+                                        formatted_error = OpenAIErrorParser.format_error_message(
+                                            attempt['error_details'],
+                                            include_fallback=True
+                                        )
+                                        result = formatted_error
+                                        break
+                                else:
+                                    # No parsed errors, use raw error
+                                    result = f"✗ Failed to speak message: {error_messages[0]}"
+                            else:
+                                result = "✗ Failed to speak message"
+                        else:
+                            result = f"✗ Failed to speak message: {tts_config.get('error_type', 'Unknown error')}"
+                    else:
+                        result = "✗ Failed to speak message"
                 
                 # Track statistics for speak-only interaction
                 track_voice_interaction(
