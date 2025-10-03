@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **CI Mode for Installer** - GitHub Actions integration for automated testing
+  - New `--ci` flag for non-interactive installer operation
+  - Automatic dependency installation and configuration
+  - Status display showing installed dependencies with pass/fail indicators
+  - Comprehensive system information collection for debugging
+
+- **Enhanced Installer UX**
+  - Detailed TTS error reporting with provider-specific failure information
+  - Better error handling and user feedback throughout installation
+  - Improved shell-specific source command display
+  - Flexible working directory selection
+  - Status checking for all dependencies before installation
+
+### Fixed
+- **Platform Compatibility**
+  - Added Debian/Ubuntu support to installer alongside Fedora
+  - Simplified Python version checking (UV manages Python installation)
+  - Corrected echo escape sequence handling across different shells
+  - Made pip optional since UV handles package management
+
+### Documentation
+- **Core ML Improvements**
+  - Enhanced Core ML specification with pre-built model download strategy
+  - Simplified voice selection guide by removing redundant examples
+  - Clarified ~/claude directory usage (sandbox for testing, not projects)
+
 ## [4.7.1] - 2025-09-23
 
 ### Fixed
