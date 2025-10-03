@@ -8,6 +8,7 @@ Connection refused errors are instant, so there's no performance penalty.
 import logging
 from typing import Optional, Tuple, Dict, Any
 from openai import AsyncOpenAI
+from .openai_error_parser import OpenAIErrorParser
 from .provider_discovery import is_local_provider
 
 from .config import TTS_BASE_URLS, STT_BASE_URLS, OPENAI_API_KEY
@@ -111,13 +112,24 @@ async def simple_tts_failover(
             error_message = str(e)
             logger.error(f"TTS failed for {base_url}: {error_message}")
 
+            # Parse OpenAI errors for better user feedback
+            error_details = None
+            if provider_type == "openai":
+                error_details = OpenAIErrorParser.parse_error(e, endpoint=f"{base_url}/audio/speech")
+                # Log the user-friendly error message
+                if error_details.get('title'):
+                    logger.error(f"  {error_details['title']}: {error_details.get('message', '')}")
+                    if error_details.get('suggestion'):
+                        logger.info(f"  💡 {error_details['suggestion']}")
+
             # Add to attempted endpoints with error details
             attempted_endpoints.append({
                 'endpoint': f"{base_url}/audio/speech",
                 'provider': provider_type,
                 'voice': selected_voice,
                 'model': model,
-                'error': error_message
+                'error': error_message,
+                'error_details': error_details  # Include parsed error details
             })
 
             # Continue to next endpoint
@@ -201,12 +213,24 @@ async def simple_stt_failover(
             error_str = str(e)
             provider_type = detect_provider_type(base_url)
 
+            # Parse OpenAI errors for better user feedback
+            error_details = None
+            if provider_type == "openai":
+                full_endpoint = f"{base_url}/audio/transcriptions" if not base_url.endswith("/v1") else f"{base_url}/audio/transcriptions"
+                error_details = OpenAIErrorParser.parse_error(e, endpoint=full_endpoint)
+                # Log the user-friendly error message
+                if error_details.get('title'):
+                    logger.error(f"  {error_details['title']}: {error_details.get('message', '')}")
+                    if error_details.get('suggestion'):
+                        logger.info(f"  💡 {error_details['suggestion']}")
+
             # Track connection/auth errors
             full_endpoint = f"{base_url}/audio/transcriptions" if not base_url.endswith("/v1") else f"{base_url}/audio/transcriptions"
             connection_errors.append({
                 "endpoint": full_endpoint,
                 "provider": provider_type,
-                "error": error_str
+                "error": error_str,
+                "error_details": error_details  # Include parsed error details
             })
 
             # Log failure with appropriate level based on whether we have fallbacks
