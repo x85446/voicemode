@@ -126,7 +126,8 @@ detect_os() {
 
   # Check if running in WSL
   # More robust WSL detection to avoid false positives
-  if [[ -n "$WSL_DISTRO_NAME" ]] || [[ -n "$WSL_INTEROP" ]] || [[ -f "/proc/sys/fs/binfmt_misc/WSLInterop" ]]; then
+  # Note: WSLInterop-late is used on newer systems with systemd
+  if [[ -n "$WSL_DISTRO_NAME" ]] || [[ -n "$WSL_INTEROP" ]] || [[ -f "/proc/sys/fs/binfmt_misc/WSLInterop" ]] || [[ -f "/proc/sys/fs/binfmt_misc/WSLInterop-late" ]]; then
     IS_WSL=true
     print_warning "Running in WSL2 - additional audio setup may be required"
   elif grep -qi "microsoft.*WSL" /proc/version 2>/dev/null; then
