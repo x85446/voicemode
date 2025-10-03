@@ -1832,7 +1832,7 @@ def version():
                 latest_version = response.json()["info"]["version"]
                 
                 # Simple version comparison (works for semantic versioning)
-                if latest_version != current_version:
+                if latest_version != __version__:
                     click.echo(f"Latest version: {latest_version} available")
                     click.echo("Run 'voicemode update' to update")
                 else:
