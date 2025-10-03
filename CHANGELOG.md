@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.0.0] - 2025-10-04
+
+### Added
+- **Pre-built Core ML Model Support** - Major improvement for Apple Silicon users
+  - Downloads pre-built Core ML models from Hugging Face instead of building locally
+  - Eliminates need for full Xcode installation (saves ~15GB disk space)
+  - Significantly faster whisper model installation (minutes vs hours)
+  - Automatic Core ML support detection and installation
+  - Progress indicators for all model downloads
+
+- **OpenAI Error Handling** - Clear, actionable error messages
+  - Dedicated error parser for OpenAI API failures
+  - User-friendly messages for quota exceeded, invalid API key, and rate limits
+  - Helpful suggestions and fallback options displayed
+  - Improved error reporting throughout TTS/STT pipeline
+
+- **Whisper CLI Improvements**
+  - Unified `whisper model` command as getter/setter for active model
+  - Auto-restart whisper service when changing models
+  - Better command organization with service groups
+  - Enhanced progress bars and help text formatting
+  - Default model download during whisper installation
+
+### Changed
+- **Version Display** - Now shows "VoiceMode" name and git status
+- **CLI Structure** - Reorganized whisper commands for better UX
+- **Installation** - Automatic Core ML support without manual configuration
+
+### Fixed
+- **WSL Detection** - Improved detection to handle WSLInterop-late
+- **Error Messages** - Integration of OpenAIErrorParser for clear user feedback
+- **CLI Help** - Removed redundant subcommands list from whisper service help
+- **Progress Bars** - Improved formatting and reliability
+
+### Removed
+- **install_torch Parameter** - No longer needed with automatic Core ML support
+- **Legacy Health Check Code** - Cleaned up leftover code from provider system refactoring
+
+### Internal
+- **Project Structure** - Cleaned up project root and reorganized files
+- **Documentation** - Updated Core ML documentation with new download strategy
+
 ## [4.8.0] - 2025-10-03
 
 ### Added
