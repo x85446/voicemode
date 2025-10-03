@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.0.1] - 2025-10-04
+
+### Fixed
+- **Version Command** - Fixed NameError caused by undefined `current_version` variable
+
 ## [5.0.0] - 2025-10-04
 
 ### Added
