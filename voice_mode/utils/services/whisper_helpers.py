@@ -9,7 +9,10 @@ import shutil
 from pathlib import Path
 from typing import Optional, List, Dict, Union
 
-from .coreml_setup import setup_coreml_venv, get_coreml_python
+# Core ML setup no longer needed - using pre-built models from Hugging Face
+# from .coreml_setup import setup_coreml_venv, get_coreml_python
+
+from voice_mode.utils.download import download_with_progress_async
 
 logger = logging.getLogger("voice-mode")
 
@@ -109,52 +112,24 @@ async def download_whisper_model(
             "message": "Model already exists"
         }
     
-    # Use the download script from whisper.cpp
-    download_script = models_dir / "download-ggml-model.sh"
-    
-    if not download_script.exists():
-        # Create the download script if it doesn't exist
-        # This happens when downloading models to a custom directory
-        # Check both possible whisper installation locations
-        whisper_dirs = [
-            Path.home() / ".voicemode" / "services" / "whisper",
-            Path.home() / ".voicemode" / "whisper.cpp"  # legacy
-        ]
-        
-        original_script = None
-        for whisper_dir in whisper_dirs:
-            script_path = whisper_dir / "models" / "download-ggml-model.sh"
-            if script_path.exists():
-                original_script = script_path
-                break
-        
-        if original_script:
-            shutil.copy2(original_script, download_script)
-            os.chmod(download_script, 0o755)
-        else:
-            # Check if we're in the whisper.cpp directory already
-            # (happens during install when models_dir is install_dir/models)
-            parent_script = models_dir.parent / "models" / "download-ggml-model.sh"
-            if parent_script.exists() and parent_script != download_script:
-                shutil.copy2(parent_script, download_script)
-                os.chmod(download_script, 0o755)
-            else:
-                return {
-                    "success": False,
-                    "error": "Download script not found. Please run whisper_install first."
-                }
-    
+    # Download directly from Hugging Face with progress bar
+    model_url = f"https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-{model}.bin"
+
     logger.info(f"Downloading model: {model}")
-    
+
     try:
-        # Run download script
-        result = subprocess.run(
-            ["bash", str(download_script), model],
-            cwd=str(models_dir),
-            capture_output=True,
-            text=True,
-            check=True
+        # Download with progress bar
+        success = await download_with_progress_async(
+            url=model_url,
+            destination=model_path,
+            description=f"Downloading Whisper model {model}"
         )
+
+        if not success:
+            return {
+                "success": False,
+                "error": f"Failed to download model {model}"
+            }
         
         # Verify download
         if not model_path.exists():
@@ -168,35 +143,9 @@ async def download_whisper_model(
         
         # Check for Core ML support on Apple Silicon (unless explicitly skipped)
         if platform.system() == "Darwin" and platform.machine() == "arm64" and not skip_core_ml:
-            # Check if Core ML dependencies are needed
-            requirements_file = Path(models_dir) / "requirements-coreml.txt"
-            if requirements_file.exists() and shutil.which("uv"):
-                # Try to check if torch is available
-                try:
-                    subprocess.run(
-                        ["uv", "run", "python", "-c", "import torch"],
-                        capture_output=True,
-                        check=True,
-                        timeout=5
-                    )
-                    torch_available = True
-                except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
-                    torch_available = False
-                
-                if not torch_available:
-                    logger.info("Installing Core ML dependencies for optimal performance...")
-                    try:
-                        subprocess.run(
-                            ["uv", "pip", "install", "-r", str(requirements_file)],
-                            capture_output=True,
-                            check=True,
-                            timeout=120
-                        )
-                        logger.info("Core ML dependencies installed successfully")
-                    except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as e:
-                        logger.info("Could not install Core ML dependencies automatically. Whisper will still work with Metal acceleration.")
-            
-            core_ml_result = await convert_to_coreml(model, models_dir)
+            # Download pre-built Core ML model from Hugging Face
+            # No Python dependencies or Xcode required!
+            core_ml_result = await download_coreml_model(model, models_dir)
             if core_ml_result["success"]:
                 logger.info(f"Core ML conversion completed for {model}")
             else:
@@ -237,17 +186,129 @@ async def download_whisper_model(
         }
 
 
+async def download_coreml_model(
+    model: str,
+    models_dir: Union[str, Path]
+) -> Dict[str, Union[bool, str]]:
+    """
+    Download pre-built Core ML model from Hugging Face.
+
+    No Python dependencies or Xcode required - models are pre-compiled
+    and ready to use on all Apple Silicon Macs.
+
+    Args:
+        model: Model name
+        models_dir: Directory to download model to
+
+    Returns:
+        Dict with 'success' and optional 'error' or 'path'
+    """
+    models_dir = Path(models_dir)
+    coreml_dir = models_dir / f"ggml-{model}-encoder.mlmodelc"
+    coreml_zip = models_dir / f"ggml-{model}-encoder.mlmodelc.zip"
+
+    # Check if already exists
+    if coreml_dir.exists():
+        logger.info(f"Core ML model already exists for {model}")
+        return {
+            "success": True,
+            "path": str(coreml_dir),
+            "message": "Core ML model already exists"
+        }
+
+    # Construct Hugging Face URL
+    coreml_url = f"https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-{model}-encoder.mlmodelc.zip"
+
+    logger.info(f"Downloading pre-built Core ML model for {model} from Hugging Face...")
+
+    try:
+        # Download with progress bar
+        success = await download_with_progress_async(
+            url=coreml_url,
+            destination=coreml_zip,
+            description=f"Downloading Core ML model for {model}"
+        )
+
+        if not success:
+            return {
+                "success": False,
+                "error": "Failed to download Core ML model"
+            }
+
+        logger.info(f"Download complete. Extracting Core ML model...")
+
+        # Extract the zip file
+        shutil.unpack_archive(coreml_zip, models_dir, 'zip')
+
+        # Clean up zip file
+        coreml_zip.unlink()
+        logger.info(f"Core ML model extracted to {coreml_dir}")
+
+        # Verify extraction
+        if not coreml_dir.exists():
+            return {
+                "success": False,
+                "error": f"Extraction failed - {coreml_dir} not found after unpacking"
+            }
+
+        return {
+            "success": True,
+            "path": str(coreml_dir),
+            "message": f"Core ML model downloaded and extracted for {model}"
+        }
+
+    except Exception as e:
+        # Check if it's a 404 error (model not available)
+        error_msg = str(e)
+        if "404" in error_msg or "Not Found" in error_msg:
+            logger.info(f"No pre-built Core ML model available for {model} (404)")
+            return {
+                "success": False,
+                "error": f"No pre-built Core ML model available for {model}",
+                "error_category": "not_available"
+            }
+        else:
+            logger.error(f"Error downloading Core ML model: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "error_category": "download_failed"
+            }
+
+
 async def convert_to_coreml(
     model: str,
     models_dir: Union[str, Path]
 ) -> Dict[str, Union[bool, str]]:
     """
-    Convert a Whisper model to Core ML format for Apple Silicon.
-    
+    DEPRECATED: Use download_coreml_model instead.
+
+    This function is kept for backward compatibility but now just
+    calls download_coreml_model to get pre-built models from Hugging Face.
+
     Args:
         model: Model name
         models_dir: Directory containing the model
-        
+
+    Returns:
+        Dict with 'success' and optional 'error' or 'path'
+    """
+    logger.info(f"convert_to_coreml is deprecated - using download_coreml_model instead")
+    return await download_coreml_model(model, models_dir)
+
+
+async def convert_to_coreml_legacy(
+    model: str,
+    models_dir: Union[str, Path]
+) -> Dict[str, Union[bool, str]]:
+    """
+    Legacy Core ML conversion that builds models locally.
+    Kept for reference but should not be used.
+
+    Args:
+        model: Model name
+        models_dir: Directory containing the model
+
     Returns:
         Dict with 'success' and optional 'error' or 'path'
     """
@@ -284,18 +345,25 @@ async def convert_to_coreml(
     logger.info(f"Converting {model} to Core ML format...")
     
     try:
-        # First, try to get existing CoreML Python environment
-        coreml_python = get_coreml_python(whisper_dir)
-        
-        # If no suitable environment exists, set one up
-        if not coreml_python:
-            logger.info("Setting up CoreML Python environment...")
-            setup_result = setup_coreml_venv(whisper_dir)
-            if setup_result["success"]:
-                coreml_python = setup_result.get("python_path")
-            else:
-                logger.warning(f"Could not setup CoreML environment: {setup_result.get('error')}")
-        
+        # Legacy conversion - now deprecated in favor of pre-built models
+        # This code path should not be used anymore
+        logger.warning("Legacy Core ML conversion attempted - use download_coreml_model instead")
+
+        # Try to find existing Python with Core ML deps (legacy)
+        coreml_python = None
+        venv_coreml_python = whisper_dir / "venv-coreml" / "bin" / "python"
+        if venv_coreml_python.exists():
+            try:
+                result = subprocess.run(
+                    [str(venv_coreml_python), "-c", "import torch, coremltools"],
+                    capture_output=True,
+                    timeout=5
+                )
+                if result.returncode == 0:
+                    coreml_python = str(venv_coreml_python)
+            except:
+                pass
+
         if coreml_python:
             # Use the CoreML-enabled Python environment
             logger.info(f"Using CoreML Python environment: {coreml_python}")

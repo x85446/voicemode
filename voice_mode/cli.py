@@ -9,6 +9,12 @@ import subprocess
 import shutil
 import click
 
+# Import version info
+try:
+    from voice_mode.version import __version__
+except ImportError:
+    __version__ = "unknown"
+
 
 # Suppress known deprecation warnings for better user experience
 # These apply to both CLI commands and MCP server operation
@@ -29,7 +35,7 @@ if not os.environ.get('VOICEMODE_DEBUG', '').lower() in ('true', '1', 'yes'):
 
 # Service management CLI - runs MCP server by default, subcommands override
 @click.group(invoke_without_command=True)
-@click.version_option()
+@click.version_option(version=__version__, prog_name="VoiceMode")
 @click.help_option('-h', '--help', help='Show this message and exit')
 @click.option('--debug', is_flag=True, help='Enable debug mode and show all warnings')
 @click.option('--tools-enabled', help='Comma-separated list of tools to enable (whitelist)')
@@ -269,66 +275,73 @@ def uninstall(remove_models, remove_all_data):
             click.echo(f"   Details: {result['details']}")
 
 
-# Whisper service commands  
-@whisper.command()
-def status():
+# Create service group for whisper
+@whisper.group("service")
+@click.help_option('-h', '--help', help='Show this message and exit')
+def whisper_service():
+    """Manage Whisper service."""
+    pass
+
+# Service commands under the group
+@whisper_service.command("status")
+def whisper_service_status():
     """Show Whisper service status."""
     from voice_mode.tools.service import status_service
     result = asyncio.run(status_service("whisper"))
     click.echo(result)
 
 
-@whisper.command()
-def start():
+@whisper_service.command("start")
+def whisper_service_start():
     """Start Whisper service."""
     from voice_mode.tools.service import start_service
     result = asyncio.run(start_service("whisper"))
     click.echo(result)
 
 
-@whisper.command()
-def stop():
+@whisper_service.command("stop")
+def whisper_service_stop():
     """Stop Whisper service."""
     from voice_mode.tools.service import stop_service
     result = asyncio.run(stop_service("whisper"))
     click.echo(result)
 
 
-@whisper.command()
-def restart():
+@whisper_service.command("restart")
+def whisper_service_restart():
     """Restart Whisper service."""
     from voice_mode.tools.service import restart_service
     result = asyncio.run(restart_service("whisper"))
     click.echo(result)
 
 
-@whisper.command()
-def enable():
+@whisper_service.command("enable")
+def whisper_service_enable():
     """Enable Whisper service to start at boot/login."""
     from voice_mode.tools.service import enable_service
     result = asyncio.run(enable_service("whisper"))
     click.echo(result)
 
 
-@whisper.command()
-def disable():
+@whisper_service.command("disable")
+def whisper_service_disable():
     """Disable Whisper service from starting at boot/login."""
     from voice_mode.tools.service import disable_service
     result = asyncio.run(disable_service("whisper"))
     click.echo(result)
 
 
-@whisper.command()
+@whisper_service.command("logs")
 @click.help_option('-h', '--help')
 @click.option('--lines', '-n', default=50, help='Number of log lines to show')
-def logs(lines):
+def whisper_service_logs(lines):
     """View Whisper service logs."""
     from voice_mode.tools.service import view_logs
     result = asyncio.run(view_logs("whisper", lines))
     click.echo(result)
 
 
-@whisper.command("update-service-files")
+@whisper_service.command("update-files")
 def whisper_update_service_files():
     """Update Whisper service files to latest version."""
     from voice_mode.tools.service import update_service_files
@@ -336,8 +349,8 @@ def whisper_update_service_files():
     click.echo(result)
 
 
-@whisper.command()
-def health():
+@whisper_service.command("health")
+def whisper_service_health():
     """Check Whisper health endpoint."""
     import subprocess
     try:
@@ -363,7 +376,7 @@ def health():
         click.echo(f"❌ Health check failed: {e}")
 
 
-@whisper.command()
+@whisper_service.command("install")
 @click.help_option('-h', '--help')
 @click.option('--install-dir', help='Directory to install whisper.cpp')
 @click.option('--model', default='large-v2', help='Whisper model to download (default: large-v2)')
@@ -371,7 +384,7 @@ def health():
 @click.option('--force', '-f', is_flag=True, help='Force reinstall even if already installed')
 @click.option('--version', default='latest', help='Version to install (default: latest)')
 @click.option('--auto-enable/--no-auto-enable', default=None, help='Enable service at boot/login')
-def install(install_dir, model, use_gpu, force, version, auto_enable):
+def whisper_service_install(install_dir, model, use_gpu, force, version, auto_enable):
     """Install whisper.cpp STT service with automatic system detection."""
     from voice_mode.tools.whisper.install import whisper_install
     result = asyncio.run(whisper_install.fn(
@@ -412,12 +425,12 @@ def install(install_dir, model, use_gpu, force, version, auto_enable):
             click.echo(f"   Details: {result['details']}")
 
 
-@whisper.command()
+@whisper_service.command("uninstall")
 @click.help_option('-h', '--help')
 @click.option('--remove-models', is_flag=True, help='Also remove downloaded Whisper models')
 @click.option('--remove-all-data', is_flag=True, help='Remove all Whisper data including logs and transcriptions')
 @click.confirmation_option(prompt='Are you sure you want to uninstall Whisper?')
-def uninstall(remove_models, remove_all_data):
+def whisper_service_uninstall(remove_models, remove_all_data):
     """Uninstall whisper.cpp and optionally remove models and data."""
     from voice_mode.tools.whisper.uninstall import whisper_uninstall
     result = asyncio.run(whisper_uninstall.fn(
@@ -449,17 +462,184 @@ def uninstall(remove_models, remove_all_data):
             click.echo(f"   Details: {result['details']}")
 
 
-@whisper.group("model")
-@click.help_option('-h', '--help', help='Show this message and exit')
-def whisper_model():
-    """Manage Whisper models.
-    
-    Subcommands:
-      active   - Show or set the active model
-      install  - Download and install models
-      remove   - Remove installed models
+# Import the unified model command
+from voice_mode.whisper_model_unified import whisper_model_unified
+
+# Add it directly to the whisper group
+whisper.add_command(whisper_model_unified, name="model")
+
+# Backward compatibility: Add hidden aliases for old direct commands
+# These allow "whisper start" to work as "whisper service start"
+@whisper.command("status", hidden=True)
+@click.pass_context
+def whisper_status_alias(ctx):
+    """(Deprecated) Show Whisper service status. Use 'whisper service status' instead."""
+    ctx.forward(whisper_service_status)
+
+@whisper.command("start", hidden=True)
+@click.pass_context
+def whisper_start_alias(ctx):
+    """(Deprecated) Start Whisper service. Use 'whisper service start' instead."""
+    ctx.forward(whisper_service_start)
+
+@whisper.command("stop", hidden=True)
+@click.pass_context
+def whisper_stop_alias(ctx):
+    """(Deprecated) Stop Whisper service. Use 'whisper service stop' instead."""
+    ctx.forward(whisper_service_stop)
+
+@whisper.command("restart", hidden=True)
+@click.pass_context
+def whisper_restart_alias(ctx):
+    """(Deprecated) Restart Whisper service. Use 'whisper service restart' instead."""
+    ctx.forward(whisper_service_restart)
+
+@whisper.command("enable", hidden=True)
+@click.pass_context
+def whisper_enable_alias(ctx):
+    """(Deprecated) Enable Whisper service. Use 'whisper service enable' instead."""
+    ctx.forward(whisper_service_enable)
+
+@whisper.command("disable", hidden=True)
+@click.pass_context
+def whisper_disable_alias(ctx):
+    """(Deprecated) Disable Whisper service. Use 'whisper service disable' instead."""
+    ctx.forward(whisper_service_disable)
+
+@whisper.command("logs", hidden=True)
+@click.help_option('-h', '--help')
+@click.option('--lines', '-n', default=50, help='Number of log lines to show')
+@click.pass_context
+def whisper_logs_alias(ctx, lines):
+    """(Deprecated) View Whisper logs. Use 'whisper service logs' instead."""
+    ctx.forward(whisper_service_logs, lines=lines)
+
+@whisper.command("health", hidden=True)
+@click.pass_context
+def whisper_health_alias(ctx):
+    """(Deprecated) Check Whisper health. Use 'whisper service health' instead."""
+    ctx.forward(whisper_service_health)
+
+@whisper.command("install", hidden=True)
+@click.help_option('-h', '--help')
+@click.option('--install-dir', help='Directory to install whisper.cpp')
+@click.option('--model', default='large-v2', help='Whisper model to download (default: large-v2)')
+@click.option('--use-gpu/--no-gpu', default=None, help='Enable GPU support if available')
+@click.option('--force', '-f', is_flag=True, help='Force reinstall even if already installed')
+@click.option('--version', default='latest', help='Version to install (default: latest)')
+@click.option('--auto-enable/--no-auto-enable', default=None, help='Enable service at boot/login')
+@click.pass_context
+def whisper_install_alias(ctx, install_dir, model, use_gpu, force, version, auto_enable):
+    """(Deprecated) Install Whisper. Use 'whisper service install' instead."""
+    ctx.forward(whisper_service_install, install_dir=install_dir, model=model, use_gpu=use_gpu,
+                force=force, version=version, auto_enable=auto_enable)
+
+@whisper.command("uninstall", hidden=True)
+@click.help_option('-h', '--help')
+@click.option('--remove-models', is_flag=True, help='Also remove downloaded Whisper models')
+@click.option('--remove-all-data', is_flag=True, help='Remove all Whisper data including logs and transcriptions')
+@click.confirmation_option(prompt='Are you sure you want to uninstall Whisper?')
+@click.pass_context
+def whisper_uninstall_alias(ctx, remove_models, remove_all_data):
+    """(Deprecated) Uninstall Whisper. Use 'whisper service uninstall' instead."""
+    ctx.forward(whisper_service_uninstall, remove_models=remove_models, remove_all_data=remove_all_data)
+
+
+# Old subcommand structure removed - replaced by unified model command
+# The old @whisper_model group and all its subcommands have been replaced
+# by the unified whisper_model_unified command above
+
+# Note: The old model group commands (list, active, install, remove, benchmark)
+# have been removed in favor of the unified model command that works as:
+#   voicemode whisper model           # show current
+#   voicemode whisper model --all     # list all
+#   voicemode whisper model <name>    # set/install model
+
+# Skip the old definitions to prevent errors
+'''
+def whisper_model_list():
+    """List available Whisper models and their installation status.
+
+    Shows all available models with:
+    - Installation status (installed/available)
+    - Core ML acceleration status on Apple Silicon
+    - File sizes
+    - Language support
+    - Performance characteristics
     """
-    pass
+    from voice_mode.tools.whisper.models import (
+        WHISPER_MODEL_REGISTRY,
+        get_model_directory,
+        get_active_model,
+        is_whisper_model_installed,
+        get_installed_whisper_models,
+        format_size,
+        has_whisper_coreml_model
+    )
+
+    model_dir = get_model_directory()
+    current_model = get_active_model()
+    installed_models = get_installed_whisper_models()
+
+    # Calculate totals
+    total_installed_size = sum(
+        (model_dir / f"ggml-{name}.bin").stat().st_size
+        for name in installed_models
+        if (model_dir / f"ggml-{name}.bin").exists()
+    )
+
+    total_available_size = sum(
+        info["size_mb"] * 1024 * 1024
+        for info in WHISPER_MODEL_REGISTRY.values()
+    )
+
+    click.echo("\nWhisper Models:\n")
+
+    # Display each model
+    for model_name, model_info in WHISPER_MODEL_REGISTRY.items():
+        # Check installation status
+        is_installed = is_whisper_model_installed(model_name)
+        has_coreml = has_whisper_coreml_model(model_name)
+
+        # Status indicator
+        if is_installed and has_coreml:
+            status = "[✓ Installed+ML]"
+        elif is_installed:
+            status = "[✓ Installed]"
+        else:
+            status = "[ Download ]"
+
+        # Active model indicator
+        prefix = "→ " if model_name == current_model else "  "
+
+        # Format size
+        size_mb = model_info["size_mb"]
+        if size_mb >= 1000:
+            size_str = f"{size_mb / 1000:.1f} GB"
+        else:
+            size_str = f"{size_mb} MB"
+
+        # Format description
+        desc = model_info["description"]
+        if model_name == current_model:
+            desc += " (active)"
+
+        # Print model line
+        click.echo(
+            f"{prefix}{model_name:15} {status:16} {size_str:7} "
+            f"{model_info['languages']:20} {desc}"
+        )
+
+    # Show summary
+    click.echo(f"\nModels directory: {model_dir}")
+    if total_installed_size > 0:
+        click.echo(
+            f"Total size: {format_size(total_installed_size)} installed / "
+            f"{format_size(total_available_size)} available"
+        )
+
+    click.echo("\nTo download a model: voicemode whisper model install <model-name>")
+    click.echo("To set default model: voicemode whisper model active <model-name>")
 
 
 @whisper_model.command("active")
@@ -550,9 +730,12 @@ def whisper_model_active(model_name):
         click.echo(f"To list all models: voicemode whisper models")
 
 
-@whisper.command("models")
+@whisper.command("models", hidden=True)  # Hidden - use 'whisper model list' instead
 def whisper_models():
-    """List available Whisper models and their installation status."""
+    """List available Whisper models and their installation status.
+
+    DEPRECATED: Use 'voicemode whisper model list' instead.
+    """
     from voice_mode.tools.whisper.models import (
         WHISPER_MODEL_REGISTRY, 
         get_model_directory,
@@ -632,9 +815,8 @@ def whisper_models():
 @click.argument('model', default='large-v2')
 @click.option('--force', '-f', is_flag=True, help='Re-download even if model exists')
 @click.option('--skip-core-ml', is_flag=True, help='Skip Core ML conversion on Apple Silicon')
-@click.option('--install-torch', is_flag=True, help='Install PyTorch for Core ML conversion (~2.5GB)')
-def whisper_model_install(model, force, skip_core_ml, install_torch):
-    """Install Whisper model(s) with optional Core ML conversion.
+def whisper_model_install(model, force, skip_core_ml):
+    """Install Whisper model(s) with automatic Core ML support on Apple Silicon.
     
     MODEL can be a model name (e.g., 'large-v2'), 'all' to download all models,
     or omitted to use the default (large-v2).
@@ -648,35 +830,18 @@ def whisper_model_install(model, force, skip_core_ml, install_torch):
     tool = install_module.whisper_model_install
     install_func = tool.fn if hasattr(tool, 'fn') else tool
     
-    # First attempt without install_torch to check if it's needed
+    # Call the install function
     result = asyncio.run(install_func(
         model=model,
         force_download=force,
-        skip_core_ml=skip_core_ml,
-        install_torch=install_torch,
-        auto_confirm=install_torch  # If user passed --install-torch, skip confirmation
+        skip_core_ml=skip_core_ml
     ))
     
     try:
         # Parse JSON response
         data = json.loads(result)
         
-        # Check if PyTorch installation is required for Core ML
-        if data.get('requires_confirmation') and not install_torch and not skip_core_ml:
-            click.echo("\n" + data.get('message', 'Core ML requires PyTorch (~2.5GB)'))
-            if data.get('recommendation'):
-                click.echo(f"💡 {data['recommendation']}")
-            
-            if click.confirm("\nWould you like to install PyTorch for Core ML acceleration?"):
-                # Retry with install_torch=True
-                result = asyncio.run(install_func(
-                    model=model,
-                    force_download=force,
-                    skip_core_ml=skip_core_ml,
-                    install_torch=True,
-                    auto_confirm=True
-                ))
-                data = json.loads(result)
+        # Core ML is now automatic with pre-built models - no prompts needed!
         if data.get('success'):
             click.echo("✅ Model download completed!")
             
@@ -849,6 +1014,7 @@ def whisper_model_benchmark_cmd(models, sample, runs):
     
     click.echo("\nNote: Speed values show real-time factor (higher is better)")
     click.echo("      1.0x = real-time, 10x = 10 times faster than real-time")
+''' # End of old model subcommands
 
 
 # LiveKit service commands
@@ -1649,20 +1815,14 @@ def converse(message, wait, duration, min_duration, transport, room_name, voice,
 # Version command
 @voice_mode_main_cli.command()
 def version():
-    """Show Voice Mode version and check for updates."""
+    """Show VoiceMode version and check for updates."""
     import requests
-    from importlib.metadata import version as get_version, PackageNotFoundError
-    
-    try:
-        current_version = get_version("voice-mode")
-    except PackageNotFoundError:
-        # Fallback for development installations
-        current_version = "development"
-    
-    click.echo(f"Voice Mode version: {current_version}")
-    
+
+    # Use the same version that --version shows
+    click.echo(f"VoiceMode version: {__version__}")
+
     # Check for updates if not in development mode
-    if current_version != "development":
+    if not ("dev" in __version__ or "dirty" in __version__):
         try:
             response = requests.get(
                 "https://pypi.org/pypi/voice-mode/json",

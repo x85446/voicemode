@@ -285,25 +285,32 @@ WantedBy=default.target
 async def whisper_install(
     install_dir: Optional[str] = None,
     model: str = "base",
+    no_model: Union[bool, str] = False,
     use_gpu: Optional[Union[bool, str]] = None,
     force_reinstall: Union[bool, str] = False,
     auto_enable: Optional[Union[bool, str]] = None,
-    version: str = "latest"
+    version: str = "latest",
+    skip_core_ml: Union[bool, str] = False
 ) -> Dict[str, Any]:
     """
     Install whisper.cpp with automatic system detection and configuration.
-    
+
     Supports macOS (with Metal) and Linux (with CUDA if available).
-    
+    On Apple Silicon Macs, automatically downloads pre-built Core ML models
+    for 2-3x better performance (no Python dependencies or Xcode required!).
+
     Args:
         install_dir: Directory to install whisper.cpp (default: ~/.voicemode/whisper.cpp)
         model: Whisper model to download (tiny, base, small, medium, large-v2, large-v3, etc.)
                Default is base for good balance of speed and accuracy (142MB).
+               On Apple Silicon, also downloads pre-built Core ML model.
+        no_model: Skip model download entirely (default: False)
         use_gpu: Enable GPU support if available (default: auto-detect)
         force_reinstall: Force reinstallation even if already installed
         auto_enable: Enable service after install. If None, uses VOICEMODE_SERVICE_AUTO_ENABLE config.
         version: Version to install (default: "latest" for latest stable release)
-    
+        skip_core_ml: Skip Core ML model download on Apple Silicon (default: False)
+
     Returns:
         Installation status with paths and configuration details
     """
@@ -351,8 +358,24 @@ async def whisper_install(
                         auto_enable=auto_enable
                     )
                     
-                    model_path = os.path.join(install_dir, "models", f"ggml-{model}.bin")
-                    
+                    # Check for model if not skipping
+                    if not no_model:
+                        model_path = os.path.join(install_dir, "models", f"ggml-{model}.bin")
+                        if not os.path.exists(model_path):
+                            logger.info(f"Downloading model {model}...")
+                            download_result = await download_whisper_model(
+                                model=model,
+                                models_dir=os.path.join(install_dir, "models"),
+                                force_download=False,
+                                skip_core_ml=skip_core_ml
+                            )
+                            if download_result["success"]:
+                                model_path = download_result["path"]
+                                if download_result.get("core_ml_status", {}).get("success"):
+                                    logger.info(f"✅ Core ML model downloaded for 2-3x faster performance!")
+                    else:
+                        model_path = None
+
                     # Build response message
                     message = f"whisper.cpp version {current_version} already installed."
                     if service_update_result.get("updated"):
@@ -543,29 +566,35 @@ async def whisper_install(
         
         # Note: whisper-server is now built as part of the main build target
         
-        # Download model using shared helper
-        logger.info(f"Downloading default model: {model}")
-        models_dir = os.path.join(install_dir, "models")
+        # Download model unless --no-model specified
+        if not no_model:
+            logger.info(f"Downloading default model: {model}")
+            models_dir = os.path.join(install_dir, "models")
+
+            download_result = await download_whisper_model(
+                model=model,
+                models_dir=models_dir,
+                force_download=False,
+                skip_core_ml=skip_core_ml
+            )
+
+            if not download_result["success"]:
+                logger.warning(f"Failed to download model: {download_result.get('error', 'Unknown error')}")
+                logger.info("You can download models later using 'voicemode whisper model install'")
+                model_path = None
+            else:
+                model_path = download_result["path"]
+                if download_result.get("core_ml_status", {}).get("success"):
+                    logger.info(f"✅ Core ML model downloaded for 2-3x faster performance!")
+        else:
+            logger.info("Skipping model download (--no-model specified)")
+            model_path = None
         
-        download_result = await download_whisper_model(
-            model=model,
-            models_dir=models_dir,
-            force_download=False
-        )
-        
-        if not download_result["success"]:
-            return {
-                "success": False,
-                "error": f"Failed to download model: {download_result.get('error', 'Unknown error')}"
-            }
-        
-        model_path = download_result["path"]
-        
-        # Test whisper with sample if available
+        # Test whisper with sample if available (only if we have a model)
         # With CMake build, binaries are in build/bin/
         main_path = os.path.join(install_dir, "build", "bin", "whisper-cli")
         sample_path = os.path.join(install_dir, "samples", "jfk.wav")
-        if os.path.exists(sample_path) and os.path.exists(main_path):
+        if model_path and os.path.exists(sample_path) and os.path.exists(main_path):
             try:
                 result = subprocess.run([
                     main_path, "-m", model_path, "-f", sample_path, "-np"
