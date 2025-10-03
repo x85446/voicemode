@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.8.0] - 2025-10-03
+
 ### Added
 - **CI Mode for Installer** - GitHub Actions integration for automated testing
   - New `--ci` flag for non-interactive installer operation
