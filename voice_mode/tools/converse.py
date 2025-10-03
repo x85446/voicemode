@@ -1700,8 +1700,24 @@ async def converse(
                         # Check if we have detailed error information
                         if tts_config and tts_config.get('error_type') == 'all_providers_failed':
                             error_lines = ["Error: Could not speak message. TTS service connection failed:"]
+                            openai_error_shown = False
+
                             for attempt in tts_config.get('attempted_endpoints', []):
-                                error_lines.append(f"  - {attempt['endpoint']}: {attempt['error']}")
+                                # Check if we have parsed OpenAI error details
+                                if attempt.get('error_details') and not openai_error_shown and attempt.get('provider') == 'openai':
+                                    error_details = attempt['error_details']
+                                    error_lines.append("")
+                                    error_lines.append(error_details.get('title', 'OpenAI Error'))
+                                    error_lines.append(error_details.get('message', ''))
+                                    if error_details.get('suggestion'):
+                                        error_lines.append(f"💡 {error_details['suggestion']}")
+                                    if error_details.get('fallback'):
+                                        error_lines.append(f"ℹ️ {error_details['fallback']}")
+                                    openai_error_shown = True
+                                else:
+                                    # Show raw error for non-OpenAI or if we already showed OpenAI error
+                                    error_lines.append(f"  - {attempt['endpoint']}: {attempt['error']}")
+
                             result = "\n".join(error_lines)
                         # Check if we have config info that might indicate why it failed
                         elif tts_config and 'openai.com' in tts_config.get('base_url', ''):
@@ -1796,8 +1812,23 @@ async def converse(
                                 if stt_result["error_type"] == "connection_failed":
                                     # Build helpful error message
                                     error_lines = ["STT service connection failed:"]
+                                    openai_error_shown = False
+
                                     for attempt in stt_result.get("attempted_endpoints", []):
-                                        error_lines.append(f"  - {attempt['endpoint']}: {attempt['error']}")
+                                        # Check if we have parsed OpenAI error details
+                                        if attempt.get('error_details') and not openai_error_shown and attempt.get('provider') == 'openai':
+                                            error_details = attempt['error_details']
+                                            error_lines.append("")
+                                            error_lines.append(error_details.get('title', 'OpenAI Error'))
+                                            error_lines.append(error_details.get('message', ''))
+                                            if error_details.get('suggestion'):
+                                                error_lines.append(f"💡 {error_details['suggestion']}")
+                                            if error_details.get('fallback'):
+                                                error_lines.append(f"ℹ️ {error_details['fallback']}")
+                                            openai_error_shown = True
+                                        else:
+                                            # Show raw error for non-OpenAI or if we already showed OpenAI error
+                                            error_lines.append(f"  - {attempt['endpoint']}: {attempt['error']}")
 
                                     error_msg = "\n".join(error_lines)
                                     logger.error(error_msg)
