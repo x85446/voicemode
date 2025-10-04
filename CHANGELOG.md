@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.0.3] - 2025-10-05
+
 ### Fixed
 - **Whisper Model Default** - Consolidated default Whisper model to single constant
   - Fixed inconsistency where CLI defaulted to `large-v2` while tool used `base`
