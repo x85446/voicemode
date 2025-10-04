@@ -499,13 +499,13 @@ async def text_to_speech(
         logger.error(f"TTS failed: {e}")
         logger.error(f"TTS config when error occurred - Model: {tts_model}, Voice: {tts_voice}, Base URL: {tts_base_url}")
         logger.debug(f"Full TTS error details:", exc_info=True)
-        
+
         # Check for authentication errors
         error_message = str(e).lower()
         if hasattr(e, 'response'):
             logger.error(f"HTTP status: {e.response.status_code if hasattr(e.response, 'status_code') else 'unknown'}")
             logger.error(f"Response text: {e.response.text if hasattr(e.response, 'text') else 'unknown'}")
-            
+
             # Check for 401 Unauthorized specifically on OpenAI endpoints
             if hasattr(e.response, 'status_code') and e.response.status_code == 401:
                 if 'openai.com' in tts_base_url:
@@ -515,7 +515,13 @@ async def text_to_speech(
             if 'openai.com' in tts_base_url:
                 logger.error("⚠️  Authentication issue detected. Please check your OPENAI_API_KEY.")
                 logger.error("   For local-only usage, ensure Kokoro is running and configured.")
-        
+
+        # Re-raise API errors so simple_tts_failover can parse them properly
+        # This allows proper error messages to be shown to users
+        # We'll only return False for local playback errors
+        if hasattr(e, 'response') or 'Error code:' in str(e) or isinstance(e, Exception) and not error_message.startswith('error playing audio'):
+            raise
+
         return False, metrics
 
 

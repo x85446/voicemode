@@ -1527,6 +1527,8 @@ async def converse(
                 if success:
                     result = f"✓ Message spoken successfully{timing_info}"
                 else:
+                    # Debug logging
+                    logger.debug(f"TTS failed - tts_config: {tts_config}")
                     # Check if we have error details from failover
                     if tts_config and 'error_type' in tts_config:
                         if tts_config['error_type'] == 'all_providers_failed':
