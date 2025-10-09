@@ -317,7 +317,26 @@ async def whisper_install(
     try:
         # Check for and migrate old installations
         migration_msg = auto_migrate_if_needed("whisper")
-        
+
+        # Check whisper build dependencies
+        from voice_mode.utils.dependencies.checker import (
+            check_component_dependencies,
+            install_missing_dependencies
+        )
+
+        results = check_component_dependencies('whisper')
+        missing = [pkg for pkg, installed in results.items() if not installed]
+
+        if missing:
+            logger.info(f"Missing whisper build dependencies: {', '.join(missing)}")
+            success, output = install_missing_dependencies(missing, interactive=True)
+            if not success:
+                return {
+                    "success": False,
+                    "error": "Required build dependencies not installed",
+                    "missing_dependencies": missing
+                }
+
         # Set default install directory under ~/.voicemode
         voicemode_dir = os.path.expanduser("~/.voicemode")
         os.makedirs(voicemode_dir, exist_ok=True)
