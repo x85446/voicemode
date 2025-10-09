@@ -210,7 +210,8 @@ def health():
 @click.option('--force', '-f', is_flag=True, help='Force reinstall even if already installed')
 @click.option('--version', default='latest', help='Version to install (default: latest)')
 @click.option('--auto-enable/--no-auto-enable', default=None, help='Enable service at boot/login')
-def install(install_dir, port, force, version, auto_enable):
+@click.option('--skip-deps', is_flag=True, help='Skip dependency checks (for advanced users)')
+def install(install_dir, port, force, version, auto_enable, skip_deps):
     """Install kokoro-fastapi TTS service."""
     from voice_mode.tools.kokoro.install import kokoro_install
     result = asyncio.run(kokoro_install.fn(
@@ -218,7 +219,8 @@ def install(install_dir, port, force, version, auto_enable):
         port=port,
         force_reinstall=force,
         version=version,
-        auto_enable=auto_enable
+        auto_enable=auto_enable,
+        skip_deps=skip_deps
     ))
     
     if result.get('success'):
@@ -387,7 +389,8 @@ def whisper_service_health():
 @click.option('--force', '-f', is_flag=True, help='Force reinstall even if already installed')
 @click.option('--version', default='latest', help='Version to install (default: latest)')
 @click.option('--auto-enable/--no-auto-enable', default=None, help='Enable service at boot/login')
-def whisper_service_install(install_dir, model, use_gpu, force, version, auto_enable):
+@click.option('--skip-deps', is_flag=True, help='Skip dependency checks (for advanced users)')
+def whisper_service_install(install_dir, model, use_gpu, force, version, auto_enable, skip_deps):
     """Install whisper.cpp STT service with automatic system detection."""
     from voice_mode.tools.whisper.install import whisper_install
     result = asyncio.run(whisper_install.fn(
@@ -396,7 +399,8 @@ def whisper_service_install(install_dir, model, use_gpu, force, version, auto_en
         use_gpu=use_gpu,
         force_reinstall=force,
         version=version,
-        auto_enable=auto_enable
+        auto_enable=auto_enable,
+        skip_deps=skip_deps
     ))
     
     if result.get('success'):
@@ -531,11 +535,12 @@ def whisper_health_alias(ctx):
 @click.option('--force', '-f', is_flag=True, help='Force reinstall even if already installed')
 @click.option('--version', default='latest', help='Version to install (default: latest)')
 @click.option('--auto-enable/--no-auto-enable', default=None, help='Enable service at boot/login')
+@click.option('--skip-deps', is_flag=True, help='Skip dependency checks (for advanced users)')
 @click.pass_context
-def whisper_install_alias(ctx, install_dir, model, use_gpu, force, version, auto_enable):
+def whisper_install_alias(ctx, install_dir, model, use_gpu, force, version, auto_enable, skip_deps):
     """(Deprecated) Install Whisper. Use 'whisper service install' instead."""
     ctx.forward(whisper_service_install, install_dir=install_dir, model=model, use_gpu=use_gpu,
-                force=force, version=version, auto_enable=auto_enable)
+                force=force, version=version, auto_enable=auto_enable, skip_deps=skip_deps)
 
 @whisper.command("uninstall", hidden=True)
 @click.help_option('-h', '--help')
