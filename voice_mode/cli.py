@@ -1522,6 +1522,70 @@ def config_edit(editor):
         click.echo("   Please check that the editor is installed and in your PATH")
 
 
+# Dependency management group
+@voice_mode_main_cli.command()
+@click.help_option('-h', '--help')
+@click.option('--component', type=click.Choice(['core', 'whisper', 'kokoro']),
+              help='Check specific component only')
+@click.option('--yes', '-y', is_flag=True, help='Install without prompting')
+@click.option('--dry-run', is_flag=True, help='Show what would be installed')
+def deps(component, yes, dry_run):
+    """Check and install system dependencies.
+
+    Shows dependency status and offers to install missing ones.
+    Checks core dependencies by default, or specify --component.
+
+    Examples:
+        voicemode deps                    # Check all dependencies
+        voicemode deps --component whisper  # Check whisper dependencies only
+        voicemode deps --yes              # Install without prompting
+    """
+    from voice_mode.utils.dependencies.checker import (
+        check_component_dependencies,
+        load_dependencies,
+        install_missing_dependencies
+    )
+
+    deps_yaml = load_dependencies()
+    components = [component] if component else ['core', 'whisper', 'kokoro']
+
+    all_missing = []
+
+    for comp in components:
+        click.echo(f"\n{comp.capitalize()} Dependencies:")
+        results = check_component_dependencies(comp, deps_yaml)
+
+        if not results:
+            click.echo("  (No required dependencies for this platform)")
+            continue
+
+        for pkg, installed in results.items():
+            status = "✓" if installed else "✗"
+            click.echo(f"  {status} {pkg}")
+
+            if not installed:
+                all_missing.append(pkg)
+
+    if not all_missing:
+        click.echo("\n✅ All dependencies satisfied")
+        return
+
+    if dry_run:
+        click.echo(f"\nWould install: {', '.join(all_missing)}")
+        return
+
+    # Offer to install
+    success, message = install_missing_dependencies(
+        all_missing,
+        interactive=not yes
+    )
+
+    if success:
+        click.echo("\n✅ Dependencies installed successfully")
+    else:
+        click.echo(f"\n❌ Installation failed: {message}")
+
+
 # Diagnostics group
 @voice_mode_main_cli.group()
 @click.help_option('-h', '--help', help='Show this message and exit')
