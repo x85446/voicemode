@@ -332,7 +332,9 @@ async def whisper_install(
 
             if missing:
                 logger.info(f"Missing whisper build dependencies: {', '.join(missing)}")
-                success, output = install_missing_dependencies(missing, interactive=True)
+                # Check if we're in an interactive terminal (not MCP context)
+                is_interactive = sys.stdin.isatty() if hasattr(sys.stdin, 'isatty') else False
+                success, output = install_missing_dependencies(missing, interactive=is_interactive)
                 if not success:
                     return {
                         "success": False,
