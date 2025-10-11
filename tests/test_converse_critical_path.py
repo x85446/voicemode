@@ -201,13 +201,15 @@ class TestConverseSTTFailures:
     async def test_stt_failure_reports_clearly(self):
         """Test that STT failures are reported clearly."""
         from voice_mode.tools.converse import converse
+        import numpy as np
 
         # Mock successful TTS but failed STT
         with patch('voice_mode.simple_failover.simple_tts_failover') as mock_tts:
             mock_tts.return_value = (True, {'duration_ms': 100}, {'provider': 'kokoro'})
 
             with patch('voice_mode.tools.converse.record_audio') as mock_record:
-                mock_record.return_value = b'audio_data'
+                # Return a proper numpy array instead of bytes
+                mock_record.return_value = np.array([0, 100, 200, 100, 0], dtype=np.int16)
 
                 with patch('voice_mode.simple_failover.simple_stt_failover') as mock_stt:
                     mock_stt.return_value = {
@@ -235,12 +237,14 @@ class TestConverseSTTFailures:
     async def test_stt_no_speech_detected(self):
         """Test handling when no speech is detected."""
         from voice_mode.tools.converse import converse
+        import numpy as np
 
         with patch('voice_mode.simple_failover.simple_tts_failover') as mock_tts:
             mock_tts.return_value = (True, {'duration_ms': 100}, {'provider': 'kokoro'})
 
             with patch('voice_mode.tools.converse.record_audio') as mock_record:
-                mock_record.return_value = b'silence'
+                # Return a proper numpy array instead of bytes
+                mock_record.return_value = np.array([0, 0, 0, 0, 0], dtype=np.int16)
 
                 with patch('voice_mode.simple_failover.simple_stt_failover') as mock_stt:
                     mock_stt.return_value = {
