@@ -15,15 +15,16 @@
 # - Ubuntu/Debian: libportaudio2, ffmpeg
 # - Fedora: portaudio, ffmpeg
 #
-# **Required (build tools - for webrtcvad):**
-# - Ubuntu/Debian: python3-dev, gcc
-# - Fedora: python3-devel, gcc
+# **Required (build tools - for webrtcvad and simpleaudio):**
+# - Ubuntu/Debian: python3-dev, gcc, libasound2-dev
+# - Fedora: python3-devel, gcc, alsa-lib-devel
 # - Note: webrtcvad is a Python C extension used for silence detection. It must be compiled during installation.
-#   Testing confirmed: Only gcc is required, g++/gcc-c++ not needed.
+#   simpleaudio is a Python C extension used for audio playback. It requires ALSA headers to compile.
+#   Testing confirmed: Only gcc is required for core, g++/gcc-c++ not needed.
 #
 # **Optional (build from source):**
-# - Ubuntu/Debian: libasound2-dev, portaudio19-dev
-# - Fedora: alsa-lib-devel, portaudio-devel
+# - Ubuntu/Debian: portaudio19-dev
+# - Fedora: portaudio-devel
 #
 # **Required for WSL:**
 # - WSL Ubuntu/Debian: pulseaudio, pulseaudio-utils, libasound2-plugins
@@ -100,9 +101,9 @@ voicemode:
 
         - name: libasound2-dev
           description: ALSA development files (audio support)
-          required: false
+          required: true
           check_command: dpkg -l libasound2-dev
-          note: Optional - only needed for building, not runtime (libasound2 runtime lib is usually installed)
+          note: Required for compiling simpleaudio (C extension used for audio playback)
 
         - name: libasound2-plugins
           description: ALSA plugins for PulseAudio
@@ -159,9 +160,9 @@ voicemode:
 
         - name: alsa-lib-devel
           description: ALSA development files (audio support)
-          required: false
+          required: true
           check_command: rpm -q alsa-lib-devel
-          note: Optional - only needed for building, not runtime (alsa-lib runtime is usually installed)
+          note: Required for compiling simpleaudio (C extension used for audio playback)
 
         - name: portaudio
           description: PortAudio library (for sounddevice runtime)
