@@ -1,14 +1,55 @@
 # VoiceMode System Dependencies
-# Organized by: voicemode -> component -> OS/distribution -> package list
-#
-# SUMMARY:
-#   Installation: UV package manager (required)
-#   Core Runtime: portaudio, ffmpeg
-#   Core WSL: pulseaudio, pulseaudio-utils (required for WSL2 audio)
-#   Whisper: cmake, gcc, g++, make, portaudio-dev, alsa-dev
-#   Kokoro: cargo, rustc (ARM64 only)
-#   LiveKit: No system dependencies
-#
+# Organized by: voicemode → component → OS/distribution → package list
+
+## SUMMARY
+
+### Installation Tool
+**UV (required for installation):**
+- All platforms: UV package manager (https://astral.sh/uv)
+- Used by install script and for `uv tool install voice-mode`
+- Provides consistent binary location at ~/.local/bin
+
+### Core (VoiceMode base)
+**Required (runtime):**
+- macOS: portaudio, ffmpeg
+- Ubuntu/Debian: libportaudio2, ffmpeg
+- Fedora: portaudio, ffmpeg
+
+**Required (build tools - for webrtcvad):**
+- Ubuntu/Debian: python3-dev, gcc
+- Fedora: python3-devel, gcc
+- Note: webrtcvad is a Python C extension used for silence detection. It must be compiled during installation.
+  Testing confirmed: Only gcc is required, g++/gcc-c++ not needed.
+
+**Optional (build from source):**
+- Ubuntu/Debian: libasound2-dev, portaudio19-dev
+- Fedora: alsa-lib-devel, portaudio-devel
+
+**Required for WSL:**
+- WSL Ubuntu/Debian: pulseaudio, pulseaudio-utils, libasound2-plugins
+- WSL Fedora: pulseaudio, pulseaudio-utils
+- Note: Must be running for audio to work in WSL2
+
+**Optional (audio server - native Linux):**
+- Usually pre-installed on desktop Linux distributions
+
+### Whisper (STT)
+- macOS: cmake, portaudio
+- Ubuntu/Debian: cmake, gcc, g++, make, portaudio19-dev, libasound2-dev
+- Fedora: cmake, gcc, gcc-c++, make, portaudio-devel, alsa-lib-devel
+
+### Kokoro (TTS)
+- macOS: rust (optional)
+- Ubuntu/Debian: cargo, rustc (ARM64 only)
+- Fedora: cargo, rust (ARM64 only)
+
+### LiveKit
+- All platforms: No system dependencies (single binary)
+
+---
+
+## DETAIL
+
 # Structure:
 #   voicemode:
 #     component:  # core, whisper, kokoro, livekit
@@ -41,21 +82,21 @@ voicemode:
       packages:
         - name: python3-dev
           description: Python development headers (needed for building extensions)
-          required: false
+          required: true
           check_command: dpkg -l python3-dev
-          note: Optional - only needed if building packages from source (all VoiceMode deps have x86_64 wheels)
+          note: Required for compiling webrtcvad (C extension used for silence detection)
 
         - name: gcc
           description: C compiler (needed for building Python extensions)
-          required: false
+          required: true
           check_command: gcc --version
-          note: Optional - only needed if building packages from source (all VoiceMode deps have x86_64 wheels)
+          note: Required for compiling webrtcvad (C extension used for silence detection)
 
         - name: g++
           description: C++ compiler (needed for building Python extensions)
           required: false
           check_command: g++ --version
-          note: Optional - only needed if building packages from source (all VoiceMode deps have x86_64 wheels)
+          note: Optional - not needed for webrtcvad. Only needed if building other C++ packages from source.
 
         - name: libasound2-dev
           description: ALSA development files (audio support)
@@ -100,21 +141,21 @@ voicemode:
       packages:
         - name: python3-devel
           description: Python development headers (needed for building extensions)
-          required: false
+          required: true
           check_command: rpm -q python3-devel
-          note: Optional - only needed if building packages from source (all VoiceMode deps have x86_64 wheels)
+          note: Required for compiling webrtcvad (C extension used for silence detection)
 
         - name: gcc
           description: C compiler (needed for building Python extensions)
-          required: false
+          required: true
           check_command: gcc --version
-          note: Optional - only needed if building packages from source (all VoiceMode deps have x86_64 wheels)
+          note: Required for compiling webrtcvad (C extension used for silence detection)
 
         - name: gcc-c++
           description: C++ compiler (needed for building Python extensions)
           required: false
           check_command: g++ --version
-          note: Optional - only needed if building packages from source (all VoiceMode deps have x86_64 wheels)
+          note: Optional - not needed for webrtcvad. Only needed if building other C++ packages from source.
 
         - name: alsa-lib-devel
           description: ALSA development files (audio support)
@@ -255,6 +296,14 @@ voicemode:
   kokoro:
     description: Kokoro TTS service dependencies
 
+    common:  # All platforms
+      packages:
+        - name: git
+          description: Version control system (needed to clone kokoro repository)
+          required: true
+          check_command: git --version
+          note: Required for installing Kokoro from GitHub repository
+
     debian:
       packages:
         - name: cargo
@@ -304,4 +353,6 @@ voicemode:
 # - Linux distributions may need additional repositories (e.g., RPM Fusion for Fedora ffmpeg)
 # - ARM64 systems may need Rust for building certain Python packages from source
 # - WSL requires PulseAudio to be running for audio support
-# - All Python packages (numpy, scipy, sounddevice, etc.) have pre-built wheels for x86_64
+# - webrtcvad (C extension for silence detection) MUST be compiled during installation on all platforms
+#   This requires gcc/g++, python3-dev/python3-devel to be installed before running 'uv tool install voice-mode'
+# - Most other Python packages (numpy, scipy, sounddevice, etc.) have pre-built wheels for x86_64
