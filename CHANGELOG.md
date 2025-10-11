@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.1.0] - 2025-10-12
+
+### Added
+- **Lazy-Loading System Dependency Management** - Complete dependency checking and installation system
+  - Automatic detection and installation of system dependencies on-demand
+  - Lazy dependency checking that happens when needed (core deps on converse, build deps on service install)
+  - Single source of truth in `voice_mode/dependencies.yaml` for all platform dependencies
+  - CLI command `voicemode deps` to check and install dependencies interactively
+  - Non-interactive mode with `--yes` flag for automation
+  - Component-specific checking with `--component` flag (whisper, kokoro, core)
+  - Cross-platform support for Fedora, Ubuntu/Debian, and macOS
+  - In-memory caching of dependency status for performance
+  - WSL2-specific dependency handling (pulseaudio requirements)
+
+### Fixed
+- **ALSA Development Libraries Now Required for Core Installation**
+  - Fixed installation failures on Linux due to missing ALSA headers
+  - `simpleaudio` Python package requires ALSA development libraries to compile
+  - Updated dependencies.yaml to mark as required:
+    - Fedora: `alsa-lib-devel`
+    - Ubuntu/Debian: `libasound2-dev`
+  - Previously marked as optional, causing `uv tool install` failures
+  - Affects all Linux platforms (native and WSL)
+  - Tested on Fedora 42 ARM64
+
 ## [5.0.3] - 2025-10-05
 
 ### Fixed
