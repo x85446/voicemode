@@ -215,10 +215,11 @@ class TestHelpComprehensive:
         assert 'traceback' not in stderr_lower, \
             f"Traceback in stderr for {' '.join(command)}: {result.stderr}"
     
+    @pytest.mark.slow
     @pytest.mark.parametrize("command", discover_all_commands())
     def test_help_performance(self, command: List[str]):
         """Test that help commands respond quickly.
-        
+
         Ensures lazy loading is working and help doesn't trigger
         expensive imports.
         """
@@ -407,7 +408,8 @@ class TestHelpEdgeCases:
 
 class TestPerformanceBaseline:
     """Establish and verify performance baselines for help commands."""
-    
+
+    @pytest.mark.slow
     def test_main_help_baseline(self):
         """Test main help command meets performance baseline."""
         times = []
@@ -428,7 +430,8 @@ class TestPerformanceBaseline:
         
         avg_time = sum(times) / len(times)
         assert avg_time < 0.8, f"Main help average time {avg_time:.2f}s exceeds baseline"
-    
+
+    @pytest.mark.slow
     def test_no_performance_regression(self):
         """Ensure help performance doesn't regress over time."""
         # This could be enhanced to store and compare against historical data
