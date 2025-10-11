@@ -1,6 +1,6 @@
 #!/bin/bash
 # VoiceMode Universal Installer
-# Usage: curl -sSfO https://getvoicemode.com/install.sh && bash install.sh
+# Usage: curl -O https://getvoicemode.com/install.sh && bash install.sh
 
 # Parse command line arguments
 NON_INTERACTIVE=false
