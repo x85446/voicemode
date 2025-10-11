@@ -1,55 +1,55 @@
 # VoiceMode System Dependencies
 # Organized by: voicemode → component → OS/distribution → package list
-
-## SUMMARY
-
-### Installation Tool
-**UV (required for installation):**
-- All platforms: UV package manager (https://astral.sh/uv)
-- Used by install script and for `uv tool install voice-mode`
-- Provides consistent binary location at ~/.local/bin
-
-### Core (VoiceMode base)
-**Required (runtime):**
-- macOS: portaudio, ffmpeg
-- Ubuntu/Debian: libportaudio2, ffmpeg
-- Fedora: portaudio, ffmpeg
-
-**Required (build tools - for webrtcvad):**
-- Ubuntu/Debian: python3-dev, gcc
-- Fedora: python3-devel, gcc
-- Note: webrtcvad is a Python C extension used for silence detection. It must be compiled during installation.
-  Testing confirmed: Only gcc is required, g++/gcc-c++ not needed.
-
-**Optional (build from source):**
-- Ubuntu/Debian: libasound2-dev, portaudio19-dev
-- Fedora: alsa-lib-devel, portaudio-devel
-
-**Required for WSL:**
-- WSL Ubuntu/Debian: pulseaudio, pulseaudio-utils, libasound2-plugins
-- WSL Fedora: pulseaudio, pulseaudio-utils
-- Note: Must be running for audio to work in WSL2
-
-**Optional (audio server - native Linux):**
-- Usually pre-installed on desktop Linux distributions
-
-### Whisper (STT)
-- macOS: cmake, portaudio
-- Ubuntu/Debian: cmake, gcc, g++, make, portaudio19-dev, libasound2-dev
-- Fedora: cmake, gcc, gcc-c++, make, portaudio-devel, alsa-lib-devel
-
-### Kokoro (TTS)
-- macOS: rust (optional)
-- Ubuntu/Debian: cargo, rustc (ARM64 only)
-- Fedora: cargo, rust (ARM64 only)
-
-### LiveKit
-- All platforms: No system dependencies (single binary)
-
----
-
-## DETAIL
-
+#
+# ## SUMMARY
+#
+# ### Installation Tool
+# **UV (required for installation):**
+# - All platforms: UV package manager (https://astral.sh/uv)
+# - Used by install script and for `uv tool install voice-mode`
+# - Provides consistent binary location at ~/.local/bin
+#
+# ### Core (VoiceMode base)
+# **Required (runtime):**
+# - macOS: portaudio, ffmpeg
+# - Ubuntu/Debian: libportaudio2, ffmpeg
+# - Fedora: portaudio, ffmpeg
+#
+# **Required (build tools - for webrtcvad):**
+# - Ubuntu/Debian: python3-dev, gcc
+# - Fedora: python3-devel, gcc
+# - Note: webrtcvad is a Python C extension used for silence detection. It must be compiled during installation.
+#   Testing confirmed: Only gcc is required, g++/gcc-c++ not needed.
+#
+# **Optional (build from source):**
+# - Ubuntu/Debian: libasound2-dev, portaudio19-dev
+# - Fedora: alsa-lib-devel, portaudio-devel
+#
+# **Required for WSL:**
+# - WSL Ubuntu/Debian: pulseaudio, pulseaudio-utils, libasound2-plugins
+# - WSL Fedora: pulseaudio, pulseaudio-utils
+# - Note: Must be running for audio to work in WSL2
+#
+# **Optional (audio server - native Linux):**
+# - Usually pre-installed on desktop Linux distributions
+#
+# ### Whisper (STT)
+# - macOS: cmake, portaudio
+# - Ubuntu/Debian: cmake, gcc, g++, make, portaudio19-dev, libasound2-dev
+# - Fedora: cmake, gcc, gcc-c++, make, portaudio-devel, alsa-lib-devel
+#
+# ### Kokoro (TTS)
+# - macOS: rust (optional)
+# - Ubuntu/Debian: cargo, rustc (ARM64 only)
+# - Fedora: cargo, rust (ARM64 only)
+#
+# ### LiveKit
+# - All platforms: No system dependencies (single binary)
+#
+# ---
+#
+# ## DETAIL
+#
 # Structure:
 #   voicemode:
 #     component:  # core, whisper, kokoro, livekit
