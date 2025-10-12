@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Progress Indicator for Dependency Installation**
+  - Animated braille spinner shows installation activity by default
+  - New `--verbose/-v` flag for `voicemode deps` to show full package manager output
+  - Friendly progress messages with emoji (📦, ✅, ❌)
+  - Spinner runs in daemon thread for clean shutdown
+  - Addresses user feedback about installation appearing to hang with no progress indication
+
+### Fixed
+- **Kokoro Service PATH Configuration**
+  - Fixed hardcoded `/home/m/.local/bin` in systemd service file
+  - Now uses dynamic user home directory expansion with `os.path.expanduser()`
+  - Fixes "ModuleNotFoundError: No module named 'loguru'" and "Failed to spawn: uvicorn" errors
+  - Affects any Linux user with username other than 'm'
+  - Bug present since v2.16.0 (July 2025)
+
 ## [5.1.0] - 2025-10-12
 
 ### Added
