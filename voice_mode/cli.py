@@ -1534,7 +1534,8 @@ def config_edit(editor):
               help='Check specific component only')
 @click.option('--yes', '-y', is_flag=True, help='Install without prompting')
 @click.option('--dry-run', is_flag=True, help='Show what would be installed')
-def deps(component, yes, dry_run):
+@click.option('--verbose', '-v', is_flag=True, help='Show full installation output')
+def deps(component, yes, dry_run, verbose):
     """Check and install system dependencies.
 
     Shows dependency status and offers to install missing ones.
@@ -1544,6 +1545,7 @@ def deps(component, yes, dry_run):
         voicemode deps                    # Check all dependencies
         voicemode deps --component whisper  # Check whisper dependencies only
         voicemode deps --yes              # Install without prompting
+        voicemode deps --verbose          # Show full installation output
     """
     from voice_mode.utils.dependencies.checker import (
         check_component_dependencies,
@@ -1582,7 +1584,8 @@ def deps(component, yes, dry_run):
     # Offer to install
     success, message = install_missing_dependencies(
         all_missing,
-        interactive=not yes
+        interactive=not yes,
+        verbose=verbose
     )
 
     if success:

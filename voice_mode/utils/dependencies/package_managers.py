@@ -23,7 +23,7 @@ class PackageManager(ABC):
         pass
 
     @abstractmethod
-    def install_packages(self, package_names: List[str]) -> Tuple[bool, str]:
+    def install_packages(self, package_names: List[str], verbose: bool = False) -> Tuple[bool, str]:
         """Install packages. Returns (success, message)."""
         pass
 
@@ -47,11 +47,15 @@ class BrewManager(PackageManager):
             logger.debug(f"Error checking package {package_name}: {e}")
             return False
 
-    def install_packages(self, package_names: List[str]) -> Tuple[bool, str]:
+    def install_packages(self, package_names: List[str], verbose: bool = False) -> Tuple[bool, str]:
         cmd = ["brew", "install"] + package_names
         try:
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
-            return result.returncode == 0, result.stderr or result.stdout
+            if verbose:
+                result = subprocess.run(cmd, text=True, timeout=300)
+                return result.returncode == 0, ""
+            else:
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+                return result.returncode == 0, result.stderr or result.stdout
         except (subprocess.SubprocessError, OSError) as e:
             return False, str(e)
 
@@ -75,12 +79,16 @@ class AptManager(PackageManager):
             logger.debug(f"Error checking package {package_name}: {e}")
             return False
 
-    def install_packages(self, package_names: List[str]) -> Tuple[bool, str]:
+    def install_packages(self, package_names: List[str], verbose: bool = False) -> Tuple[bool, str]:
         # Need sudo for apt
         cmd = ["sudo", "apt-get", "install", "-y"] + package_names
         try:
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
-            return result.returncode == 0, result.stderr or result.stdout
+            if verbose:
+                result = subprocess.run(cmd, text=True, timeout=600)
+                return result.returncode == 0, ""
+            else:
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
+                return result.returncode == 0, result.stderr or result.stdout
         except (subprocess.SubprocessError, OSError) as e:
             return False, str(e)
 
@@ -104,12 +112,16 @@ class DnfManager(PackageManager):
             logger.debug(f"Error checking package {package_name}: {e}")
             return False
 
-    def install_packages(self, package_names: List[str]) -> Tuple[bool, str]:
+    def install_packages(self, package_names: List[str], verbose: bool = False) -> Tuple[bool, str]:
         # Need sudo for dnf
         cmd = ["sudo", "dnf", "install", "-y"] + package_names
         try:
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
-            return result.returncode == 0, result.stderr or result.stdout
+            if verbose:
+                result = subprocess.run(cmd, text=True, timeout=600)
+                return result.returncode == 0, ""
+            else:
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
+                return result.returncode == 0, result.stderr or result.stdout
         except (subprocess.SubprocessError, OSError) as e:
             return False, str(e)
 

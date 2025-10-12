@@ -5,6 +5,9 @@ import platform
 import os
 import subprocess
 import logging
+import sys
+import threading
+import time
 from typing import List, Dict, Optional, Tuple
 from pathlib import Path
 
@@ -183,15 +186,31 @@ def check_component_dependencies(
     return results
 
 
+def _spinner(stop_event, message="Installing"):
+    """Show a spinner animation while installation is in progress."""
+    spinner_chars = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
+    idx = 0
+    while not stop_event.is_set():
+        sys.stdout.write(f'\r   {spinner_chars[idx]} {message}...')
+        sys.stdout.flush()
+        idx = (idx + 1) % len(spinner_chars)
+        time.sleep(0.1)
+    # Clear the spinner line
+    sys.stdout.write('\r' + ' ' * 50 + '\r')
+    sys.stdout.flush()
+
+
 def install_missing_dependencies(
     missing: List[str],
-    interactive: bool = True
+    interactive: bool = True,
+    verbose: bool = False
 ) -> Tuple[bool, str]:
     """Install missing dependencies.
 
     Args:
         missing: List of package names to install
         interactive: If True, prompt for confirmation
+        verbose: If True, show full installation output
 
     Returns:
         Tuple[bool, str]: (success, message)
@@ -210,14 +229,36 @@ def install_missing_dependencies(
     except RuntimeError as e:
         return False, str(e)
 
-    success, output = pm.install_packages(missing)
+    # Show progress indicator
+    print(f"\n📦 Installing {len(missing)} package(s)...")
+
+    if verbose:
+        # Show full output
+        print("   Running with full output...\n")
+        success, output = pm.install_packages(missing, verbose=True)
+    else:
+        # Show spinner
+        stop_spinner = threading.Event()
+        spinner_thread = threading.Thread(target=_spinner, args=(stop_spinner, "Installing"))
+        spinner_thread.daemon = True
+        spinner_thread.start()
+
+        try:
+            success, output = pm.install_packages(missing)
+        finally:
+            stop_spinner.set()
+            spinner_thread.join(timeout=1)
 
     if success:
         # Clear cache so they get rechecked
         cache = get_cache()
         cache.clear()
+        print("✅ Installation complete!")
         logger.info(f"Successfully installed: {', '.join(missing)}")
     else:
+        print(f"❌ Installation failed")
+        if not verbose and output:
+            print(f"\nError output:\n{output}")
         logger.error(f"Failed to install dependencies: {output}")
 
     return success, output
