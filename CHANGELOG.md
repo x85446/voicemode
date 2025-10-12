@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.1.1] - 2025-10-12
+
 ### Added
 - **Progress Indicator for Dependency Installation**
   - Animated braille spinner shows installation activity by default
