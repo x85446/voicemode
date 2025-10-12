@@ -1,85 +1,75 @@
 # Voice MCP Makefile
 
-.PHONY: help build-package build-dev test test-package publish-test publish release install dev-install clean build-voice-mode publish-voice-mode sync-tomls claude cursor docs docs-serve docs-build docs-check docs-deploy coverage coverage-html coverage-xml test-unit test-integration test-all test-parallel test-markers build-installer test-installer-ubuntu test-installer-fedora test-installer-all test-installer-ci test-installer-ubuntu-fast test-installer-fedora-fast test-installer-all-fast publish-installer-test publish-installer publish-voicemode-test
+.PHONY: help install dev-install clean \
+	build build-package build-installer build-dev \
+	test test-package test-all test-unit test-integration test-parallel test-markers \
+	coverage coverage-html coverage-xml \
+	publish publish-package publish-installer \
+	publish-test publish-package-test publish-installer-test \
+	release release-package release-installer \
+	docs-serve docs-build docs-check docs-deploy \
+	clean-dist clean-package clean-installer \
+	test-installer-ubuntu test-installer-fedora test-installer-all test-installer-ci \
+	test-installer-ubuntu-fast test-installer-fedora-fast test-installer-all-fast
 
 # Default target
 help:
 	@echo "Voice MCP Build Targets:"
 	@echo ""
-	@echo "Development targets:"
+	@echo "Development:"
 	@echo "  install       - Install package in normal mode"
 	@echo "  dev-install   - Install package in editable mode with dev dependencies"
-	@echo "  test          - Run unit tests with pytest"
-	@echo "  clean         - Remove build artifacts and caches"
+	@echo "  clean         - Remove all build artifacts and caches"
 	@echo ""
-	@echo "Testing & Coverage:"
+	@echo "Testing:"
 	@echo "  test          - Run unit tests with pytest"
-	@echo "  coverage      - Run tests with coverage report"
-	@echo "  coverage-html - Generate and open HTML coverage report"
-	@echo "  coverage-xml  - Generate XML coverage report (for CI)"
 	@echo "  test-unit     - Run unit tests only"
 	@echo "  test-integration - Run integration tests"
 	@echo "  test-all      - Run all tests (including slow/manual)"
 	@echo "  test-parallel - Run tests in parallel"
 	@echo "  test-markers  - Show available test markers"
-	@echo "  CLAUDE.md     - Generate CLAUDE.md with consolidated startup context"
 	@echo ""
-	@echo "Installer Testing & Publishing:"
-	@echo "  build-installer                 - Build voice-mode-install package"
-	@echo "  test-installer-ubuntu           - Test on fresh Ubuntu clone (default)"
-	@echo "  test-installer-fedora           - Test on fresh Fedora clone (default)"
-	@echo "  test-installer-all              - Test on fresh clones of all platforms (default)"
-	@echo "  test-installer-ubuntu-fast      - Test on existing Ubuntu VM (no clone)"
-	@echo "  test-installer-fedora-fast      - Test on existing Fedora VM (no clone)"
-	@echo "  test-installer-all-fast         - Test on existing VMs (no clone)"
-	@echo "  test-installer-ci               - Test installer using Docker (CI mode)"
-	@echo "  publish-installer-test          - Publish voice-mode-install to TestPyPI"
-	@echo "  publish-installer               - Publish voice-mode-install to PyPI"
-	@echo "  publish-voicemode-test          - Publish voice-mode to TestPyPI"
+	@echo "Coverage:"
+	@echo "  coverage      - Run tests with coverage report"
+	@echo "  coverage-html - Generate and open HTML coverage report"
+	@echo "  coverage-xml  - Generate XML coverage report (for CI)"
 	@echo ""
-	@echo "Python package targets:"
-	@echo "  build-package - Build Python package for PyPI"
-	@echo "  build-dev     - Build development package with auto-versioning"
-	@echo "  test-package  - Test package installation"
-	@echo "  publish-test  - Publish to TestPyPI"
-	@echo "  publish       - Publish to PyPI"
-	@echo ""
-	@echo "Release targets:"
-	@echo "  release       - Create unified release for both packages"
-	@echo "  release-package - Release voice-mode package only"
-	@echo "  release-installer - Release voice-mode-install package only"
-	@echo ""
-	@echo "Build targets:"
+	@echo "Building:"
 	@echo "  build         - Build both packages"
 	@echo "  build-package - Build voice-mode package only"
 	@echo "  build-installer - Build voice-mode-install package only"
+	@echo "  build-dev     - Build development package with auto-versioning"
+	@echo "  test-package  - Test package installation"
 	@echo ""
-	@echo "Publish targets:"
+	@echo "Publishing to PyPI:"
 	@echo "  publish       - Publish both packages to PyPI"
 	@echo "  publish-package - Publish voice-mode package to PyPI"
 	@echo "  publish-installer - Publish voice-mode-install to PyPI"
+	@echo ""
+	@echo "Publishing to TestPyPI:"
 	@echo "  publish-test  - Publish both packages to TestPyPI"
 	@echo "  publish-package-test - Publish voice-mode to TestPyPI"
 	@echo "  publish-installer-test - Publish voice-mode-install to TestPyPI"
 	@echo ""
-	@echo "Clean targets:"
-	@echo "  clean         - Clean all build artifacts"
-	@echo "  clean-dist    - Clean only distribution artifacts"
-	@echo "  clean-package - Clean voice-mode artifacts only"
-	@echo "  clean-installer - Clean voice-mode-install artifacts only"
+	@echo "Release Management:"
+	@echo "  release       - Create unified release for both packages"
+	@echo "  release-package - Release voice-mode package only"
+	@echo "  release-installer - Release voice-mode-install package only"
 	@echo ""
-	@echo "Alternative package (voice-mode):"
-	@echo "  build-voice-mode  - Build voice-mode package"
-	@echo "  publish-voice-mode - Publish voice-mode to PyPI"
-	@echo "  sync-tomls        - Sync pyproject.toml changes to pyproject-voice-mode.toml"
+	@echo "Installer Testing:"
+	@echo "  test-installer-ubuntu      - Test on fresh Ubuntu clone"
+	@echo "  test-installer-fedora      - Test on fresh Fedora clone"
+	@echo "  test-installer-all         - Test on fresh clones of all platforms"
+	@echo "  test-installer-ubuntu-fast - Test on existing Ubuntu VM (no clone)"
+	@echo "  test-installer-fedora-fast - Test on existing Fedora VM (no clone)"
+	@echo "  test-installer-all-fast    - Test on existing VMs (no clone)"
+	@echo "  test-installer-ci          - Test installer using Docker"
 	@echo ""
-	@echo "Documentation targets:"
+	@echo "Documentation:"
 	@echo "  docs-serve    - Serve documentation locally (http://localhost:8000)"
 	@echo "  docs-build    - Build documentation site"
 	@echo "  docs-check    - Check documentation for errors (strict mode)"
 	@echo "  docs-deploy   - Deploy to ReadTheDocs (requires auth)"
-	@echo ""
-	@echo "  help          - Show this help message"
 
 # Install package
 install:
@@ -128,10 +118,10 @@ test:
 	@uv run pytest tests/ -v --tb=short
 	@echo "Tests completed!"
 
-# Test package installation
+# Test package installation (FIXED: Now uses UV)
 test-package: build-package
 	@echo "Testing package installation..."
-	cd /tmp && \
+	@cd /tmp && \
 	uv venv test-env && \
 	. test-env/bin/activate && \
 	uv pip install $(CURDIR)/dist/voice_mode-*.whl && \
@@ -281,7 +271,7 @@ release-installer:
 	fi; \
 	uv run python scripts/release.py $$version --package installer
 
-# Documentation targets
+# Documentation targets (FIXED: Now uses uv run python)
 docs-serve:
 	@echo "Starting documentation server at http://localhost:8000..."
 	@echo ""
@@ -564,42 +554,3 @@ publish-installer-test:
 	fi
 	@cd installer && uv publish --index-url https://test.pypi.org/legacy/
 	@echo "✅ Published to TestPyPI!"
-
-# Legacy publish-installer target (for compatibility - includes tests)
-publish-installer-with-tests: test-installer-all
-	@echo "Cleaning installer dist..."
-	@rm -rf installer/dist/*.whl installer/dist/*.tar.gz
-	@$(MAKE) build-installer
-	@echo "Publishing voice-mode-install to PyPI..."
-	@echo ""
-	@echo "⚠️  WARNING: This will publish to PRODUCTION PyPI!"
-	@read -p "Are you sure? Type 'yes' to continue: " confirm; \
-	if [ "$$confirm" != "yes" ]; then \
-		echo "Aborted."; \
-		exit 1; \
-	fi
-	@if [ -z "$$UV_PUBLISH_TOKEN" ]; then \
-		echo "❌ UV_PUBLISH_TOKEN not set!"; \
-		echo "Get a token from https://pypi.org/manage/account/token/"; \
-		echo "Then set: export UV_PUBLISH_TOKEN=\"pypi-your-token\""; \
-		exit 1; \
-	fi
-	@cd installer && uv publish
-	@echo "✅ Published to PyPI!"
-
-# Publish voice-mode to TestPyPI
-publish-voicemode-test: build-package
-	@echo "Publishing voice-mode to TestPyPI..."
-	@if [ -z "$$UV_PUBLISH_TOKEN" ]; then \
-		echo "❌ UV_PUBLISH_TOKEN not set!"; \
-		echo ""; \
-		echo "Get a token from https://test.pypi.org/manage/account/token/"; \
-		echo "Then set: export UV_PUBLISH_TOKEN=\"pypi-your-token\""; \
-		exit 1; \
-	fi
-	@uv publish --index-url https://test.pypi.org/legacy/
-	@echo ""
-	@echo "✅ Published to TestPyPI!"
-	@echo ""
-	@echo "Test installation with:"
-	@echo "  pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ voice-mode"
