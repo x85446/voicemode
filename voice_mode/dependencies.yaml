@@ -84,7 +84,7 @@ voicemode:
         - name: python3-dev
           description: Python development headers (needed for building extensions)
           required: true
-          check_command: dpkg -l python3-dev
+          # Don't use check_command - let it use _check_apt_package which properly checks dpkg output
           note: Required for compiling webrtcvad (C extension used for silence detection)
 
         - name: gcc
@@ -102,23 +102,23 @@ voicemode:
         - name: libasound2-dev
           description: ALSA development files (audio support)
           required: true
-          check_command: dpkg -l libasound2-dev
+          # Don't use check_command - let it use _check_apt_package which properly checks dpkg output
           note: Required for compiling simpleaudio (C extension used for audio playback)
 
         - name: libasound2-plugins
           description: ALSA plugins for PulseAudio
           required: false
-          check_command: dpkg -l libasound2-plugins
+          # Don't use check_command - let it use _check_apt_package which properly checks dpkg output
 
         - name: libportaudio2
           description: PortAudio library (for sounddevice)
           required: true
-          check_command: dpkg -l libportaudio2
+          # Don't use check_command - let it use _check_apt_package which properly checks dpkg output
 
         - name: portaudio19-dev
           description: PortAudio development files
           required: false
-          check_command: dpkg -l portaudio19-dev
+          # Don't use check_command - let it use _check_apt_package which properly checks dpkg output
           note: Optional - only needed for building, not runtime (libportaudio2 has the runtime library)
 
         - name: pulseaudio
@@ -130,7 +130,7 @@ voicemode:
         - name: pulseaudio-utils
           description: PulseAudio utilities
           required: wsl  # Required for WSL, optional for native Linux
-          check_command: dpkg -l pulseaudio-utils
+          # Don't use check_command - let it use _check_apt_package which properly checks dpkg output
           note: Essential for WSL2 audio. Usually pre-installed on native Linux desktops.
 
         - name: ffmpeg
@@ -209,6 +209,14 @@ voicemode:
 
   whisper:
     description: Whisper STT service dependencies
+
+    common:  # All platforms
+      packages:
+        - name: git
+          description: Version control system (needed to clone whisper.cpp repository)
+          required: true
+          check_command: git --version
+          note: Required for cloning whisper.cpp from GitHub
 
     debian:
       packages:

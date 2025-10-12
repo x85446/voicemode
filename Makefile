@@ -10,7 +10,8 @@
 	docs-serve docs-build docs-check docs-deploy \
 	clean-dist clean-package clean-installer \
 	test-installer-ubuntu test-installer-fedora test-installer-all test-installer-ci \
-	test-installer-ubuntu-fast test-installer-fedora-fast test-installer-all-fast
+	test-installer-ubuntu-fast test-installer-fedora-fast test-installer-all-fast \
+	vm-ubuntu vm-fedora vm-macos vm-ubuntu-quick vm-fedora-quick vm-macos-quick vm-clean vm-list
 
 # Default target
 help:
@@ -70,6 +71,16 @@ help:
 	@echo "  docs-build    - Build documentation site"
 	@echo "  docs-check    - Check documentation for errors (strict mode)"
 	@echo "  docs-deploy   - Deploy to ReadTheDocs (requires auth)"
+	@echo ""
+	@echo "Manual VM Testing:"
+	@echo "  vm-ubuntu     - Start fresh Ubuntu VM and show SSH command"
+	@echo "  vm-fedora     - Start fresh Fedora VM and show SSH command"
+	@echo "  vm-macos      - Start fresh macOS VM and show SSH command"
+	@echo "  vm-ubuntu-quick  - Start persistent Ubuntu VM (faster)"
+	@echo "  vm-fedora-quick  - Start persistent Fedora VM (faster)"
+	@echo "  vm-macos-quick   - Start persistent macOS VM (faster)"
+	@echo "  vm-clean      - Clean up persistent VMs"
+	@echo "  vm-list       - List all Tart VMs"
 
 # Install package
 install:
@@ -405,6 +416,8 @@ test-markers:
 
 # Build voice-mode-install package (always clean first to prevent old artifacts)
 build-installer: clean-installer
+	@echo "Syncing dependencies.yaml to installer..."
+	@bash scripts/sync-dependencies.sh
 	@echo "Building voice-mode-install package..."
 	@cd installer && uv build
 	@echo "✅ Package built: installer/dist/"
@@ -554,3 +567,156 @@ publish-installer-test:
 	fi
 	@cd installer && uv publish --index-url https://test.pypi.org/legacy/
 	@echo "✅ Published to TestPyPI!"
+
+# Manual VM Testing - Start fresh VMs and show SSH command
+vm-ubuntu:
+	@echo "Starting fresh Ubuntu VM..."
+	@if ! command -v tart >/dev/null 2>&1; then \
+		echo "❌ Tart is not installed!"; \
+		echo "Install from: https://github.com/cirruslabs/tart"; \
+		exit 1; \
+	fi
+	@echo "Cleaning up any existing manual-ubuntu VM..."
+	@tart delete manual-ubuntu 2>/dev/null || true
+	@echo "Creating fresh Ubuntu VM..."
+	@tart clone ghcr.io/cirruslabs/ubuntu:latest manual-ubuntu && \
+	tart run --no-graphics manual-ubuntu >/dev/null 2>&1 & \
+	echo "Waiting for VM to start..." && \
+	sleep 5 && \
+	echo "" && \
+	echo "✅ VM started! To connect:" && \
+	echo "" && \
+	echo "   ssh admin@$$(tart ip manual-ubuntu)" && \
+	echo "" && \
+	echo "   Username: admin" && \
+	echo "   Password: admin" && \
+	echo "" && \
+	echo "To stop the VM: tart stop manual-ubuntu" && \
+	echo "To delete the VM: tart delete manual-ubuntu"
+
+vm-fedora:
+	@echo "Starting fresh Fedora VM..."
+	@if ! command -v tart >/dev/null 2>&1; then \
+		echo "❌ Tart is not installed!"; \
+		echo "Install from: https://github.com/cirruslabs/tart"; \
+		exit 1; \
+	fi
+	@echo "Cleaning up any existing manual-fedora VM..."
+	@tart delete manual-fedora 2>/dev/null || true
+	@echo "Creating fresh Fedora VM..."
+	@tart clone ghcr.io/cirruslabs/fedora:latest manual-fedora && \
+	tart run --no-graphics manual-fedora >/dev/null 2>&1 & \
+	echo "Waiting for VM to start..." && \
+	sleep 5 && \
+	echo "" && \
+	echo "✅ VM started! To connect:" && \
+	echo "" && \
+	echo "   ssh admin@$$(tart ip manual-fedora)" && \
+	echo "" && \
+	echo "   Username: admin" && \
+	echo "   Password: admin" && \
+	echo "" && \
+	echo "To stop the VM: tart stop manual-fedora" && \
+	echo "To delete the VM: tart delete manual-fedora"
+
+vm-macos:
+	@echo "Starting fresh macOS VM..."
+	@if ! command -v tart >/dev/null 2>&1; then \
+		echo "❌ Tart is not installed!"; \
+		echo "Install from: https://github.com/cirruslabs/tart"; \
+		exit 1; \
+	fi
+	@echo "Cleaning up any existing manual-macos VM..."
+	@tart delete manual-macos 2>/dev/null || true
+	@echo "Creating fresh macOS VM..."
+	@tart clone ghcr.io/cirruslabs/macos-tahoe-base:latest manual-macos && \
+	tart run --no-graphics manual-macos >/dev/null 2>&1 & \
+	echo "Waiting for VM to start..." && \
+	sleep 5 && \
+	echo "" && \
+	echo "✅ VM started! To connect:" && \
+	echo "" && \
+	echo "   ssh admin@$$(tart ip manual-macos)" && \
+	echo "" && \
+	echo "   Username: admin" && \
+	echo "   Password: admin" && \
+	echo "" && \
+	echo "To stop the VM: tart stop manual-macos" && \
+	echo "To delete the VM: tart delete manual-macos"
+
+# Quick VM shell access (reuses existing VMs for faster startup)
+vm-ubuntu-quick:
+	@echo "Starting Ubuntu VM (quick mode - reuses existing VM)..."
+	@if ! command -v tart >/dev/null 2>&1; then \
+		echo "❌ Tart is not installed!"; \
+		exit 1; \
+	fi
+	@if ! tart list | grep -q "manual-ubuntu"; then \
+		echo "Creating VM: manual-ubuntu"; \
+		tart clone ghcr.io/cirruslabs/ubuntu:latest manual-ubuntu; \
+	else \
+		echo "Using existing manual-ubuntu VM"; \
+	fi
+	@tart run --no-graphics manual-ubuntu >/dev/null 2>&1 & \
+	sleep 5 && \
+	echo "" && \
+	echo "✅ VM started! To connect:" && \
+	echo "" && \
+	echo "   ssh admin@$$(tart ip manual-ubuntu)" && \
+	echo "" && \
+	echo "   Username: admin, Password: admin"
+
+vm-fedora-quick:
+	@echo "Starting Fedora VM (quick mode - reuses existing VM)..."
+	@if ! command -v tart >/dev/null 2>&1; then \
+		echo "❌ Tart is not installed!"; \
+		exit 1; \
+	fi
+	@if ! tart list | grep -q "manual-fedora"; then \
+		echo "Creating VM: manual-fedora"; \
+		tart clone ghcr.io/cirruslabs/fedora:latest manual-fedora; \
+	else \
+		echo "Using existing manual-fedora VM"; \
+	fi
+	@tart run --no-graphics manual-fedora >/dev/null 2>&1 & \
+	sleep 5 && \
+	echo "" && \
+	echo "✅ VM started! To connect:" && \
+	echo "" && \
+	echo "   ssh admin@$$(tart ip manual-fedora)" && \
+	echo "" && \
+	echo "   Username: admin, Password: admin"
+
+vm-macos-quick:
+	@echo "Starting macOS VM (quick mode - reuses existing VM)..."
+	@if ! command -v tart >/dev/null 2>&1; then \
+		echo "❌ Tart is not installed!"; \
+		exit 1; \
+	fi
+	@if ! tart list | grep -q "manual-macos"; then \
+		echo "Creating VM: manual-macos"; \
+		tart clone ghcr.io/cirruslabs/macos-tahoe-base:latest manual-macos; \
+	else \
+		echo "Using existing manual-macos VM"; \
+	fi
+	@tart run --no-graphics manual-macos >/dev/null 2>&1 & \
+	sleep 5 && \
+	echo "" && \
+	echo "✅ VM started! To connect:" && \
+	echo "" && \
+	echo "   ssh admin@$$(tart ip manual-macos)" && \
+	echo "" && \
+	echo "   Username: admin, Password: admin"
+
+# Clean up manual VMs
+vm-clean:
+	@echo "Cleaning up manual VMs..."
+	@tart delete manual-ubuntu 2>/dev/null || echo "  manual-ubuntu not found"
+	@tart delete manual-fedora 2>/dev/null || echo "  manual-fedora not found"
+	@tart delete manual-macos 2>/dev/null || echo "  manual-macos not found"
+	@echo "✅ Manual VMs cleaned up"
+
+# List all Tart VMs
+vm-list:
+	@echo "Available Tart VMs:"
+	@tart list
