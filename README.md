@@ -47,7 +47,7 @@ uvx voice-mode-install
 export OPENAI_API_KEY=your-openai-key  # Optional but recommended
 
 # Add VoiceMode to Claude
-claude mcp add voicemode voicemode
+claude mcp add --scope user voicemode -- uvx --refresh voice-mode
 
 # Start a voice conversation
 claude converse
