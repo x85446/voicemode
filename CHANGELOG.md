@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.1.2] - 2025-10-12
+
+### Fixed
+- **Kokoro Rust Dependency Detection**
+  - Fixed `voicemode kokoro install` failing with "can't find Rust compiler" on Fedora
+  - Marked Rust (cargo and rustc) as required dependencies for kokoro on Fedora
+  - Previously marked as optional (ARM64 only), but sudachipy requires Rust on all architectures
+  - Dependency chain: kokoro-fastapi → misaki[ja] → pyopenjtalk-plus → sudachipy
+  - `voicemode deps --component kokoro` now correctly checks for Rust compiler
+
+### Changed
+- **Service Auto-Enable Default**
+  - Changed `SERVICE_AUTO_ENABLE` default from `False` to `True`
+  - Services now automatically enable and start after installation by default
+  - Users can override with `VOICEMODE_SERVICE_AUTO_ENABLE=false` if desired
+  - Improves out-of-box experience - services "just work" after installation
+
 ## [5.1.1] - 2025-10-12
 
 ### Added

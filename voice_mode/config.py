@@ -375,7 +375,7 @@ FRONTEND_PORT = int(os.getenv("VOICEMODE_FRONTEND_PORT", "3000"))
 # ==================== SERVICE MANAGEMENT CONFIGURATION ====================
 
 # Auto-enable services after installation
-SERVICE_AUTO_ENABLE = env_bool("VOICEMODE_SERVICE_AUTO_ENABLE", False)
+SERVICE_AUTO_ENABLE = env_bool("VOICEMODE_SERVICE_AUTO_ENABLE", True)
 
 # ==================== SOUND FONTS CONFIGURATION ====================
 
