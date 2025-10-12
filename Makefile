@@ -11,6 +11,8 @@
 	clean-dist clean-package clean-installer \
 	test-installer-ubuntu test-installer-fedora test-installer-all test-installer-ci \
 	test-installer-ubuntu-fast test-installer-fedora-fast test-installer-all-fast \
+	test-installer-pypi test-installer-pypi-ubuntu test-installer-pypi-fedora \
+	test-installer-pypi-all test-installer-pypi-fast \
 	vm-ubuntu vm-fedora vm-macos vm-ubuntu-quick vm-fedora-quick vm-macos-quick vm-clean vm-list
 
 # Default target
@@ -57,7 +59,7 @@ help:
 	@echo "  release-package - Release voice-mode package only"
 	@echo "  release-installer - Release voice-mode-install package only"
 	@echo ""
-	@echo "Installer Testing:"
+	@echo "Installer Testing (Local Build):"
 	@echo "  test-installer-ubuntu      - Test on fresh Ubuntu clone"
 	@echo "  test-installer-fedora      - Test on fresh Fedora clone"
 	@echo "  test-installer-all         - Test on fresh clones of all platforms"
@@ -65,6 +67,13 @@ help:
 	@echo "  test-installer-fedora-fast - Test on existing Fedora VM (no clone)"
 	@echo "  test-installer-all-fast    - Test on existing VMs (no clone)"
 	@echo "  test-installer-ci          - Test installer using Docker"
+	@echo ""
+	@echo "Installer Testing (From PyPI):"
+	@echo "  test-installer-pypi        - Test latest from PyPI (all platforms)"
+	@echo "  test-installer-pypi-ubuntu - Test latest from PyPI on Ubuntu"
+	@echo "  test-installer-pypi-fedora - Test latest from PyPI on Fedora"
+	@echo "  test-installer-pypi-all    - Test latest from PyPI (fresh clones)"
+	@echo "  test-installer-pypi-fast   - Test latest from PyPI (existing VMs)"
 	@echo ""
 	@echo "Documentation:"
 	@echo "  docs-serve    - Serve documentation locally (http://localhost:8000)"
@@ -720,3 +729,56 @@ vm-clean:
 vm-list:
 	@echo "Available Tart VMs:"
 	@tart list
+
+# Test installer from PyPI - default target tests all platforms
+test-installer-pypi: test-installer-pypi-all
+
+# Test installer from PyPI on Ubuntu (fresh clone)
+test-installer-pypi-ubuntu:
+	@echo "Testing latest voice-mode-install from PyPI on fresh Ubuntu clone..."
+	@if ! command -v tart >/dev/null 2>&1; then \
+		echo "❌ Tart is not installed!"; \
+		echo "Install from: https://github.com/cirruslabs/tart"; \
+		exit 1; \
+	fi
+	@uv run python scripts/test_installer.py ubuntu --pypi --backend tart --clone-fresh
+
+# Test installer from PyPI on Fedora (fresh clone)
+test-installer-pypi-fedora:
+	@echo "Testing latest voice-mode-install from PyPI on fresh Fedora clone..."
+	@if ! command -v tart >/dev/null 2>&1; then \
+		echo "❌ Tart is not installed!"; \
+		echo "Install from: https://github.com/cirruslabs/tart"; \
+		exit 1; \
+	fi
+	@uv run python scripts/test_installer.py fedora --pypi --backend tart --clone-fresh
+
+# Test installer from PyPI on all platforms (fresh clones)
+test-installer-pypi-all:
+	@echo "Testing latest voice-mode-install from PyPI on fresh clones of all platforms..."
+	@if ! command -v tart >/dev/null 2>&1; then \
+		echo "❌ Tart is not installed!"; \
+		echo "Install from: https://github.com/cirruslabs/tart"; \
+		exit 1; \
+	fi
+	@echo ""
+	@echo "=== Testing Ubuntu (fresh clone) ==="; \
+	uv run python scripts/test_installer.py ubuntu --pypi --backend tart --clone-fresh || true; \
+	echo ""; \
+	echo "=== Testing Fedora (fresh clone) ==="; \
+	uv run python scripts/test_installer.py fedora --pypi --backend tart --clone-fresh || true
+
+# Test installer from PyPI on existing VMs (fast mode)
+test-installer-pypi-fast:
+	@echo "Testing latest voice-mode-install from PyPI on existing VMs..."
+	@if ! command -v tart >/dev/null 2>&1; then \
+		echo "❌ Tart is not installed!"; \
+		echo "Install from: https://github.com/cirruslabs/tart"; \
+		exit 1; \
+	fi
+	@echo ""
+	@echo "=== Testing Ubuntu (existing VM) ==="; \
+	uv run python scripts/test_installer.py ubuntu --pypi --backend tart || true; \
+	echo ""; \
+	echo "=== Testing Fedora (existing VM) ==="; \
+	uv run python scripts/test_installer.py fedora --pypi --backend tart || true

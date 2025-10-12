@@ -17,9 +17,12 @@ from typing import Optional
 class VMTester:
     """Base class for VM testing."""
 
-    def __init__(self, platform: str, wheel_path: Path):
+    def __init__(self, platform: str, wheel_path: Optional[Path] = None,
+                 use_pypi: bool = False, pypi_version: Optional[str] = None):
         self.platform = platform
         self.wheel_path = wheel_path
+        self.use_pypi = use_pypi
+        self.pypi_version = pypi_version
         self.results = {}
 
     def run_command(self, command: str, timeout: int = 300) -> tuple[int, str, str]:
@@ -32,6 +35,10 @@ class VMTester:
             ("cli_help", self._test_cli_help),
             ("dry_run", self._test_dry_run),
             ("platform_detection", self._test_platform_detection),
+            ("actual_install", self._test_actual_install),
+            ("voicemode_help", self._test_voicemode_help),
+            ("voicemode_version", self._test_voicemode_version),
+            ("mcp_server_startup", self._test_mcp_server_startup),
         ]
 
         results = {}
@@ -94,12 +101,70 @@ class VMTester:
         if expected and not any(s in stdout for s in expected):
             raise Exception(f"Platform not detected correctly. Expected one of {expected}")
 
+    def _test_actual_install(self):
+        """Test that voice-mode-install actually installs VoiceMode."""
+        # Run the actual installer
+        code, stdout, stderr = self.run_command(
+            "export PATH=\"$HOME/.local/bin:$PATH\"; "
+            "voice-mode-install --non-interactive"
+        )
+        if code != 0:
+            raise Exception(f"Installation failed: {stderr}")
+
+        # Check that installation completed message appears
+        if "Installation Complete!" not in stdout and "successfully installed" not in stdout:
+            raise Exception("Installation did not report success")
+
+    def _test_voicemode_help(self):
+        """Test that voicemode --help works after installation."""
+        code, stdout, stderr = self.run_command(
+            "export PATH=\"$HOME/.local/bin:$PATH\"; "
+            "voicemode --help"
+        )
+        if code != 0:
+            raise Exception(f"voicemode --help failed: {stderr}")
+
+        # Check that help output contains expected content
+        if "VoiceMode" not in stdout and "voice" not in stdout.lower():
+            raise Exception("voicemode --help output doesn't look right")
+
+    def _test_voicemode_version(self):
+        """Test that voicemode --version works after installation."""
+        code, stdout, stderr = self.run_command(
+            "export PATH=\"$HOME/.local/bin:$PATH\"; "
+            "voicemode --version"
+        )
+        if code != 0:
+            raise Exception(f"voicemode --version failed: {stderr}")
+
+        # Check that version output looks reasonable (contains a number)
+        if not any(char.isdigit() for char in stdout):
+            raise Exception(f"voicemode --version output doesn't contain version number: {stdout}")
+
+    def _test_mcp_server_startup(self):
+        """Test that MCP server can start (will timeout quickly but shouldn't crash)."""
+        # Try to start the MCP server - it will fail due to no stdin, but shouldn't crash
+        code, stdout, stderr = self.run_command(
+            "export PATH=\"$HOME/.local/bin:$PATH\"; "
+            "timeout 2 voicemode server stdio || true"
+        )
+
+        # Check that it didn't crash with an import error or similar
+        if "ImportError" in stderr or "ModuleNotFoundError" in stderr:
+            raise Exception(f"MCP server has import errors: {stderr}")
+
+        # Check that FFmpeg warning appears (expected)
+        if "FFmpeg" not in stderr and "ffmpeg" not in stderr.lower():
+            # FFmpeg warning might not always appear, so this is just informational
+            pass
+
 
 class TartVMTester(VMTester):
     """Test using local Tart VMs."""
 
-    def __init__(self, platform: str, wheel_path: Path, vm_name: Optional[str] = None, clone_fresh: bool = False):
-        super().__init__(platform, wheel_path)
+    def __init__(self, platform: str, wheel_path: Optional[Path] = None, vm_name: Optional[str] = None,
+                 clone_fresh: bool = False, use_pypi: bool = False, pypi_version: Optional[str] = None):
+        super().__init__(platform, wheel_path, use_pypi, pypi_version)
         self.base_vm_name = vm_name or f"voicemode-test-{platform}"
         self.clone_fresh = clone_fresh
         self.http_server_proc = None
@@ -142,15 +207,16 @@ class TartVMTester(VMTester):
             print(f"  Waiting for VM to boot...")
             time.sleep(15)
 
-        # Start HTTP server for wheel distribution
-        dist_dir = self.wheel_path.parent
-        self.http_server_proc = subprocess.Popen(
-            ["python3", "-m", "http.server", "8000"],
-            cwd=dist_dir,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
-        print(f"  Started HTTP server on port 8000")
+        # Start HTTP server for wheel distribution (only if using local wheel)
+        if self.wheel_path:
+            dist_dir = self.wheel_path.parent
+            self.http_server_proc = subprocess.Popen(
+                ["python3", "-m", "http.server", "8000"],
+                cwd=dist_dir,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
+            print(f"  Started HTTP server on port 8000")
 
         # Ensure VM is running (skip if we just cloned and started it)
         if not self.clone_fresh:
@@ -200,7 +266,7 @@ class TartVMTester(VMTester):
         return result.returncode, result.stdout, result.stderr
 
     def install_prerequisites(self):
-        """Install uv and download wheel in VM."""
+        """Install uv and voice-mode-install in VM."""
         print("  Installing prerequisites...")
 
         # Install uv
@@ -219,22 +285,36 @@ class TartVMTester(VMTester):
             raise Exception(f"uv not available after install: {stderr}")
         print(f"    uv version: {stdout.strip()}")
 
-        # Download wheel from host
-        print(f"    Downloading {self.wheel_path.name}...")
-        code, stdout, stderr = self.run_command(
-            f"curl -o /tmp/{self.wheel_path.name} http://192.168.64.1:8000/{self.wheel_path.name}"
-        )
-        if code != 0:
-            raise Exception(f"Failed to download wheel: {stderr}")
-
-        # Install wheel using uv tool install
+        # Install voice-mode-install
         print("    Installing voice-mode-install...")
-        code, stdout, stderr = self.run_command(
-            f"export PATH=\"$HOME/.local/bin:$PATH\"; "
-            f"uv tool install /tmp/{self.wheel_path.name}"
-        )
-        if code != 0:
-            raise Exception(f"Failed to install wheel: {stderr}")
+        if self.use_pypi:
+            # Install from PyPI
+            package_spec = "voice-mode-install"
+            if self.pypi_version:
+                package_spec = f"voice-mode-install=={self.pypi_version}"
+            print(f"    Installing from PyPI: {package_spec}")
+
+            code, stdout, stderr = self.run_command(
+                f"export PATH=\"$HOME/.local/bin:$PATH\"; "
+                f"uv tool install {package_spec}"
+            )
+            if code != 0:
+                raise Exception(f"Failed to install from PyPI: {stderr}")
+        else:
+            # Download and install wheel from host
+            print(f"    Downloading {self.wheel_path.name}...")
+            code, stdout, stderr = self.run_command(
+                f"curl -o /tmp/{self.wheel_path.name} http://192.168.64.1:8000/{self.wheel_path.name}"
+            )
+            if code != 0:
+                raise Exception(f"Failed to download wheel: {stderr}")
+
+            code, stdout, stderr = self.run_command(
+                f"export PATH=\"$HOME/.local/bin:$PATH\"; "
+                f"uv tool install /tmp/{self.wheel_path.name}"
+            )
+            if code != 0:
+                raise Exception(f"Failed to install wheel: {stderr}")
 
         # Verify installation
         print("    Verifying installation...")
@@ -250,8 +330,9 @@ class TartVMTester(VMTester):
 class DockerTester(VMTester):
     """Test using Docker containers (for CI)."""
 
-    def __init__(self, platform: str, wheel_path: Path):
-        super().__init__(platform, wheel_path)
+    def __init__(self, platform: str, wheel_path: Optional[Path] = None,
+                 use_pypi: bool = False, pypi_version: Optional[str] = None):
+        super().__init__(platform, wheel_path, use_pypi, pypi_version)
         self.container_name = f"voicemode-test-{platform}"
         self.image = self._get_image()
 
@@ -269,16 +350,18 @@ class DockerTester(VMTester):
         print(f"Setting up Docker container: {self.image}")
 
         # Start container
-        subprocess.run(
-            [
-                "docker", "run", "-d",
-                "--name", self.container_name,
-                "-v", f"{self.wheel_path.parent}:/dist:ro",
-                self.image,
-                "sleep", "infinity"
-            ],
-            check=True
-        )
+        docker_args = [
+            "docker", "run", "-d",
+            "--name", self.container_name
+        ]
+
+        # Only mount volume if using local wheel
+        if self.wheel_path:
+            docker_args.extend(["-v", f"{self.wheel_path.parent}:/dist:ro"])
+
+        docker_args.extend([self.image, "sleep", "infinity"])
+
+        subprocess.run(docker_args, check=True)
         print(f"  Started container {self.container_name}")
 
     def teardown(self):
@@ -301,7 +384,7 @@ class DockerTester(VMTester):
         return result.returncode, result.stdout, result.stderr
 
     def install_prerequisites(self):
-        """Install uv and wheel in container."""
+        """Install uv and voice-mode-install in container."""
         print("  Installing prerequisites...")
 
         # Install curl and python3
@@ -317,13 +400,28 @@ class DockerTester(VMTester):
         if code != 0:
             raise Exception(f"Failed to install uv: {stderr}")
 
-        # Install wheel using uv tool install
-        code, stdout, stderr = self.run_command(
-            f"export PATH=\"$HOME/.local/bin:$PATH\"; "
-            f"uv tool install /dist/{self.wheel_path.name}"
-        )
-        if code != 0:
-            raise Exception(f"Failed to install wheel: {stderr}")
+        # Install voice-mode-install
+        if self.use_pypi:
+            # Install from PyPI
+            package_spec = "voice-mode-install"
+            if self.pypi_version:
+                package_spec = f"voice-mode-install=={self.pypi_version}"
+            print(f"    Installing from PyPI: {package_spec}")
+
+            code, stdout, stderr = self.run_command(
+                f"export PATH=\"$HOME/.local/bin:$PATH\"; "
+                f"uv tool install {package_spec}"
+            )
+            if code != 0:
+                raise Exception(f"Failed to install from PyPI: {stderr}")
+        else:
+            # Install local wheel
+            code, stdout, stderr = self.run_command(
+                f"export PATH=\"$HOME/.local/bin:$PATH\"; "
+                f"uv tool install /dist/{self.wheel_path.name}"
+            )
+            if code != 0:
+                raise Exception(f"Failed to install wheel: {stderr}")
 
         # Verify installation
         code, stdout, stderr = self.run_command(
@@ -344,8 +442,16 @@ def main():
     parser.add_argument(
         "--wheel",
         type=Path,
-        required=True,
-        help="Path to wheel file"
+        help="Path to wheel file (mutually exclusive with --pypi)"
+    )
+    parser.add_argument(
+        "--pypi",
+        action="store_true",
+        help="Install from PyPI instead of local wheel"
+    )
+    parser.add_argument(
+        "--pypi-version",
+        help="Specific version to install from PyPI (e.g., 5.1.6)"
     )
     parser.add_argument(
         "--backend",
@@ -370,15 +476,24 @@ def main():
 
     args = parser.parse_args()
 
-    if not args.wheel.exists():
+    # Validate arguments
+    if args.wheel and args.pypi:
+        print("Error: --wheel and --pypi are mutually exclusive")
+        return 1
+
+    if not args.wheel and not args.pypi:
+        print("Error: Either --wheel or --pypi must be specified")
+        return 1
+
+    if args.wheel and not args.wheel.exists():
         print(f"Error: Wheel file not found: {args.wheel}")
         return 1
 
     # Create tester
     if args.backend == "tart":
-        tester = TartVMTester(args.platform, args.wheel, args.vm_name, args.clone_fresh)
+        tester = TartVMTester(args.platform, args.wheel, args.vm_name, args.clone_fresh, args.pypi, args.pypi_version)
     else:
-        tester = DockerTester(args.platform, args.wheel)
+        tester = DockerTester(args.platform, args.wheel, args.pypi, args.pypi_version)
 
     try:
         # Setup
