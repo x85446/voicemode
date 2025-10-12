@@ -415,7 +415,7 @@ test-installer-ubuntu: build-installer
 		echo "Install from: https://github.com/cirruslabs/tart"; \
 		exit 1; \
 	fi
-	@WHEEL=$$(ls -t installer/dist/voicemode_install-*.whl | head -1); \
+	@WHEEL=$$(ls -t installer/dist/voice_mode_install-*.whl | head -1); \
 	if [ -z "$$WHEEL" ]; then \
 		echo "❌ Wheel file not found. Run 'make build-installer' first."; \
 		exit 1; \
@@ -431,7 +431,7 @@ test-installer-fedora: build-installer
 		echo "Install from: https://github.com/cirruslabs/tart"; \
 		exit 1; \
 	fi
-	@WHEEL=$$(ls -t installer/dist/voicemode_install-*.whl | head -1); \
+	@WHEEL=$$(ls -t installer/dist/voice_mode_install-*.whl | head -1); \
 	if [ -z "$$WHEEL" ]; then \
 		echo "❌ Wheel file not found. Run 'make build-installer' first."; \
 		exit 1; \
@@ -447,7 +447,7 @@ test-installer-all: build-installer
 		echo "Install from: https://github.com/cirruslabs/tart"; \
 		exit 1; \
 	fi
-	@WHEEL=$$(ls -t installer/dist/voicemode_install-*.whl | head -1); \
+	@WHEEL=$$(ls -t installer/dist/voice_mode_install-*.whl | head -1); \
 	if [ -z "$$WHEEL" ]; then \
 		echo "❌ Wheel file not found. Run 'make build-installer' first."; \
 		exit 1; \
@@ -467,7 +467,7 @@ test-installer-ci: build-installer
 		echo "❌ Docker is not installed!"; \
 		exit 1; \
 	fi
-	@WHEEL=$$(ls -t installer/dist/voicemode_install-*.whl | head -1); \
+	@WHEEL=$$(ls -t installer/dist/voice_mode_install-*.whl | head -1); \
 	if [ -z "$$WHEEL" ]; then \
 		echo "❌ Wheel file not found. Run 'make build-installer' first."; \
 		exit 1; \
@@ -488,7 +488,7 @@ test-installer-ubuntu-fast: build-installer
 		echo "Install from: https://github.com/cirruslabs/tart"; \
 		exit 1; \
 	fi
-	@WHEEL=$$(ls -t installer/dist/voicemode_install-*.whl | head -1); \
+	@WHEEL=$$(ls -t installer/dist/voice_mode_install-*.whl | head -1); \
 	if [ -z "$$WHEEL" ]; then \
 		echo "❌ Wheel file not found. Run 'make build-installer' first."; \
 		exit 1; \
@@ -504,7 +504,7 @@ test-installer-fedora-fast: build-installer
 		echo "Install from: https://github.com/cirruslabs/tart"; \
 		exit 1; \
 	fi
-	@WHEEL=$$(ls -t installer/dist/voicemode_install-*.whl | head -1); \
+	@WHEEL=$$(ls -t installer/dist/voice_mode_install-*.whl | head -1); \
 	if [ -z "$$WHEEL" ]; then \
 		echo "❌ Wheel file not found. Run 'make build-installer' first."; \
 		exit 1; \
@@ -520,7 +520,7 @@ test-installer-all-fast: build-installer
 		echo "Install from: https://github.com/cirruslabs/tart"; \
 		exit 1; \
 	fi
-	@WHEEL=$$(ls -t installer/dist/voicemode_install-*.whl | head -1); \
+	@WHEEL=$$(ls -t installer/dist/voice_mode_install-*.whl | head -1); \
 	if [ -z "$$WHEEL" ]; then \
 		echo "❌ Wheel file not found. Run 'make build-installer' first."; \
 		exit 1; \
