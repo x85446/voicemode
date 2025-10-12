@@ -580,37 +580,40 @@
         <section>
             <h2>Quick Start<span class="typing-indicator"></span></h2>
             <div class="code-block">
-<span class="comment"># Download and run the installer</span><br>
-curl -O https://getvoicemode.com/install.sh && bash install.sh<br><br>
+<span class="comment"># Install VoiceMode MCP python package and dependencies</span><br>
+curl -LsSf https://astral.sh/uv/install.sh | sh<br>
+uvx voice-mode-install<br><br>
 <span class="comment"># Optional: Set OpenAI API key (backup if local services unavailable)</span><br>
 export OPENAI_API_KEY=your-openai-key<br><br>
-<span class="comment"># Start Claude Code and try voice mode</span><br>
+<span class="comment"># Add VoiceMode to Claude</span><br>
+claude mcp add voicemode voicemode<br><br>
+<span class="comment"># Start a voice conversation</span><br>
 claude converse
 </code>
             </div>
             <p style="margin-top: 1.5rem; color: var(--text-secondary);">
-                The installer automatically:
+                The voice-mode-install command automatically:
             </p>
             <ul style="list-style: none; color: var(--text-secondary); margin-left: 0;">
                 <li style="margin-bottom: 0.5rem; padding-left: 1.5rem; position: relative;">
                     <span style="position: absolute; left: 0; color: var(--accent);">✓</span>
-                    Installs system dependencies (Node.js, PortAudio, FFmpeg)
+                    Checks and installs system dependencies (PortAudio, FFmpeg, gcc, etc.)
                 </li>
                 <li style="margin-bottom: 0.5rem; padding-left: 1.5rem; position: relative;">
                     <span style="position: absolute; left: 0; color: var(--accent);">✓</span>
-                    Installs UV package manager and VoiceMode CLI
+                    Installs VoiceMode MCP package via UV
                 </li>
                 <li style="margin-bottom: 0.5rem; padding-left: 1.5rem; position: relative;">
                     <span style="position: absolute; left: 0; color: var(--accent);">✓</span>
-                    Installs Claude Code if not present
+                    Configures shell completions for the voicemode CLI
                 </li>
                 <li style="margin-bottom: 0.5rem; padding-left: 1.5rem; position: relative;">
                     <span style="position: absolute; left: 0; color: var(--accent);">✓</span>
-                    Configures VoiceMode as Claude Code MCP server
+                    Sets up optional local STT/TTS services (Whisper, Kokoro)
                 </li>
                 <li style="margin-bottom: 0.5rem; padding-left: 1.5rem; position: relative;">
                     <span style="position: absolute; left: 0; color: var(--accent);">✓</span>
-                    Sets up shell completions for tab completion
+                    Validates the installation and provides next steps
                 </li>
             </ul>
         </section>
