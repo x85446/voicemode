@@ -127,7 +127,7 @@ RestartSec=10
 WorkingDirectory={install_dir}
 StandardOutput=append:{os.path.join(voicemode_dir, 'logs', 'kokoro', 'kokoro.log')}
 StandardError=append:{os.path.join(voicemode_dir, 'logs', 'kokoro', 'kokoro.error.log')}
-Environment="PATH=/usr/local/bin:/usr/bin:/bin:/home/m/.local/bin"
+Environment="PATH={os.path.expanduser('~/.local/bin')}:/usr/local/bin:/usr/bin:/bin"
 [Install]
 WantedBy=default.target
 """
@@ -541,7 +541,7 @@ RestartSec=10
 WorkingDirectory={install_dir}
 StandardOutput=append:{os.path.join(voicemode_dir, 'logs', 'kokoro', 'kokoro.log')}
 StandardError=append:{os.path.join(voicemode_dir, 'logs', 'kokoro', 'kokoro.error.log')}
-Environment="PATH=/usr/local/bin:/usr/bin:/bin:/home/m/.local/bin"
+Environment="PATH={os.path.expanduser('~/.local/bin')}:/usr/local/bin:/usr/bin:/bin"
 
 [Install]
 WantedBy=default.target
