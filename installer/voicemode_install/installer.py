@@ -10,9 +10,10 @@ from .system import PlatformInfo, get_package_manager
 class PackageInstaller:
     """Install system packages using platform-specific package managers."""
 
-    def __init__(self, platform_info: PlatformInfo, dry_run: bool = False):
+    def __init__(self, platform_info: PlatformInfo, dry_run: bool = False, non_interactive: bool = False):
         self.platform = platform_info
         self.dry_run = dry_run
+        self.non_interactive = non_interactive
         self.package_manager = get_package_manager(platform_info.distribution)
 
     def install_packages(self, packages: List[PackageInfo]) -> bool:
@@ -45,7 +46,11 @@ class PackageInstaller:
             return False
 
     def _install_homebrew(self, packages: List[str]) -> bool:
-        """Install packages using Homebrew."""
+        """Install packages using Homebrew.
+
+        Note: Homebrew should already be installed by the time this is called.
+        The CLI ensures Homebrew is present before dependency checking.
+        """
         try:
             cmd = ['brew', 'install'] + packages
             result = subprocess.run(
@@ -55,11 +60,11 @@ class PackageInstaller:
             )
             return result.returncode == 0
         except subprocess.CalledProcessError as e:
-            print(f"Homebrew installation failed: {e}")
+            print(f"Homebrew package installation failed: {e}")
             return False
         except FileNotFoundError:
-            print("Error: Homebrew not found. Please install Homebrew first.")
-            print("Visit: https://brew.sh")
+            print("Error: Homebrew not found. This should have been installed earlier.")
+            print("Please report this as a bug.")
             return False
 
     def _install_apt(self, packages: List[str]) -> bool:

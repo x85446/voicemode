@@ -12,7 +12,7 @@ from .checker import DependencyChecker
 from .hardware import HardwareInfo
 from .installer import PackageInstaller
 from .logger import InstallLogger
-from .system import detect_platform, get_system_info, check_command_exists
+from .system import detect_platform, get_system_info, check_command_exists, check_homebrew_installed
 
 
 LOGO = """
@@ -66,6 +66,73 @@ def print_error(message: str):
 def check_existing_installation() -> bool:
     """Check if VoiceMode is already installed."""
     return check_command_exists('voicemode')
+
+
+def ensure_homebrew_on_macos(platform_info, dry_run: bool, non_interactive: bool) -> bool:
+    """
+    Ensure Homebrew is installed on macOS before checking dependencies.
+
+    Returns True if Homebrew is available or successfully installed, False otherwise.
+    """
+    # Only needed on macOS
+    if platform_info.distribution != 'darwin':
+        return True
+
+    # Check if already installed
+    if check_homebrew_installed():
+        return True
+
+    # Not installed
+    print_warning("Homebrew is not installed")
+    click.echo("Homebrew is the package manager required to install system dependencies on macOS.")
+    click.echo("Visit: https://brew.sh")
+    click.echo()
+
+    if dry_run:
+        print_step("[DRY RUN] Would install Homebrew (macOS package manager)")
+        return True
+
+    if non_interactive:
+        print_error("Homebrew not found and running in non-interactive mode")
+        click.echo("Please install Homebrew manually:")
+        click.echo('  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"')
+        return False
+
+    # Prompt user
+    if not click.confirm("Install Homebrew now?", default=True):
+        print_error("Homebrew installation declined")
+        click.echo("Please install Homebrew manually and run the installer again.")
+        return False
+
+    # Install Homebrew
+    print_step("Installing Homebrew...")
+    click.echo("This may take a few minutes and will require your password.")
+    click.echo()
+
+    try:
+        install_script = '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
+        result = subprocess.run(install_script, shell=True, check=True)
+
+        if result.returncode == 0:
+            print_success("Homebrew installed successfully")
+
+            # Verify
+            if check_homebrew_installed():
+                return True
+            else:
+                print_warning("Homebrew was installed but 'brew' command not found in PATH")
+                click.echo("You may need to add Homebrew to your PATH. Check the installation output above.")
+                return False
+        else:
+            print_error("Homebrew installation returned non-zero exit code")
+            return False
+
+    except subprocess.CalledProcessError as e:
+        print_error(f"Error installing Homebrew: {e}")
+        return False
+    except Exception as e:
+        print_error(f"Unexpected error installing Homebrew: {e}")
+        return False
 
 
 @click.command()
@@ -128,6 +195,11 @@ def main(dry_run, voice_mode_version, skip_services, non_interactive):
             print_warning("WSL detected - additional audio configuration may be needed")
         click.echo()
 
+        # Ensure Homebrew is installed on macOS (before checking dependencies)
+        if not ensure_homebrew_on_macos(platform_info, dry_run, non_interactive):
+            logger.log_error("Homebrew installation required but not available")
+            sys.exit(1)
+
         # Check for existing installation
         if check_existing_installation():
             print_warning("VoiceMode is already installed")
@@ -169,7 +241,7 @@ def main(dry_run, voice_mode_version, skip_services, non_interactive):
                     print_error("Cannot proceed without required dependencies")
                     sys.exit(1)
 
-            installer = PackageInstaller(platform_info, dry_run=dry_run)
+            installer = PackageInstaller(platform_info, dry_run=dry_run, non_interactive=non_interactive)
             if installer.install_packages(missing_deps):
                 print_success("System dependencies installed")
                 logger.log_install('system', missing_names, True)
@@ -185,7 +257,7 @@ def main(dry_run, voice_mode_version, skip_services, non_interactive):
 
         # Install VoiceMode
         print_step("Installing VoiceMode...")
-        installer = PackageInstaller(platform_info, dry_run=dry_run)
+        installer = PackageInstaller(platform_info, dry_run=dry_run, non_interactive=non_interactive)
 
         if installer.install_voicemode(version=voice_mode_version):
             print_success("VoiceMode installed successfully")

@@ -126,6 +126,11 @@ def check_command_exists(command: str) -> bool:
     return shutil.which(command) is not None
 
 
+def check_homebrew_installed() -> bool:
+    """Check if Homebrew is installed (macOS only)."""
+    return check_command_exists('brew')
+
+
 def get_system_info() -> dict:
     """Get comprehensive system information for logging."""
     platform_info = detect_platform()

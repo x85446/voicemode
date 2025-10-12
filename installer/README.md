@@ -37,6 +37,7 @@ uvx voice-mode-install --non-interactive
 - **uv** - Required to run the installer (`curl -LsSf https://astral.sh/uv/install.sh | sh`)
 - **Python 3.10+** - Usually pre-installed on modern systems
 - **sudo access** - Needed to install system packages (Linux)
+- **Homebrew** (macOS) - The installer will offer to install it if missing
 
 ## Supported Platforms
 
@@ -54,6 +55,7 @@ uvx voice-mode-install --non-interactive
 ✅ **Health Check** - Verifies installation after completion
 ✅ **Version Pinning** - Install specific VoiceMode versions
 ✅ **Hardware Detection** - Recommends optimal setup for your system
+✅ **Homebrew Auto-Install** - Offers to install Homebrew on macOS if missing
 
 ### Phase 2 (Future)
 
@@ -64,12 +66,13 @@ uvx voice-mode-install --non-interactive
 
 1. **Platform Detection** - Identifies OS, distribution, and architecture
 2. **Dependency Checking** - Compares installed packages against `dependencies.yaml`
-3. **Package Installation** - Uses platform-specific package managers:
-   - macOS: `brew install`
+3. **Package Manager Setup** (macOS only) - Checks for Homebrew and offers to install if missing
+4. **Package Installation** - Uses platform-specific package managers:
+   - macOS: `brew install` (installs Homebrew first if needed)
    - Ubuntu/Debian: `sudo apt install`
    - Fedora: `sudo dnf install`
-4. **VoiceMode Installation** - Runs `uv tool install voice-mode[==version]`
-5. **Post-Install** - Configures shell completion and verifies installation
+5. **VoiceMode Installation** - Runs `uv tool install voice-mode[==version]`
+6. **Post-Install** - Configures shell completion and verifies installation
 
 ## Installation Logs
 
