@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.1.6] - 2025-10-12
+
+### Added
+- **Release Management Script** - Automated script for version bumping and release preparation
+- **Homebrew Auto-Installation** - Automatic detection and installation of Homebrew on macOS
+
+### Fixed
+- **dpkg False Positives** - Fixed false positive detections in dpkg checks
+- **Tart VM Targets** - Added support for Tart VM testing targets
+
+### Changed
+- **Makefile Cleanup** - Reorganized and cleaned up Makefile structure
+
+### Documentation
+- **Code Reading Guide** - Added comprehensive guide for understanding voicemode converse command
+
 ## [5.1.5] - 2025-10-12
 
 ## [5.1.4] - 2025-10-12
