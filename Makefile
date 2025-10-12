@@ -25,7 +25,7 @@ help:
 	@echo "  CLAUDE.md     - Generate CLAUDE.md with consolidated startup context"
 	@echo ""
 	@echo "Installer Testing & Publishing:"
-	@echo "  build-installer                 - Build voicemode-install package"
+	@echo "  build-installer                 - Build voice-mode-install package"
 	@echo "  test-installer-ubuntu           - Test on fresh Ubuntu clone (default)"
 	@echo "  test-installer-fedora           - Test on fresh Fedora clone (default)"
 	@echo "  test-installer-all              - Test on fresh clones of all platforms (default)"
@@ -33,8 +33,8 @@ help:
 	@echo "  test-installer-fedora-fast      - Test on existing Fedora VM (no clone)"
 	@echo "  test-installer-all-fast         - Test on existing VMs (no clone)"
 	@echo "  test-installer-ci               - Test installer using Docker (CI mode)"
-	@echo "  publish-installer-test          - Publish voicemode-install to TestPyPI"
-	@echo "  publish-installer               - Publish voicemode-install to PyPI"
+	@echo "  publish-installer-test          - Publish voice-mode-install to TestPyPI"
+	@echo "  publish-installer               - Publish voice-mode-install to PyPI"
 	@echo "  publish-voicemode-test          - Publish voice-mode to TestPyPI"
 	@echo ""
 	@echo "Python package targets:"
@@ -400,9 +400,9 @@ test-markers:
 	@echo "Usage: uv run pytest -m 'marker_name'"
 	@echo "Example: uv run pytest -m 'not slow'"
 
-# Build voicemode-install package
+# Build voice-mode-install package
 build-installer:
-	@echo "Building voicemode-install package..."
+	@echo "Building voice-mode-install package..."
 	@cd installer && uv build
 	@echo "✅ Package built: installer/dist/"
 	@ls -lh installer/dist/
@@ -533,9 +533,9 @@ test-installer-all-fast: build-installer
 	echo "=== Testing Fedora ==="; \
 	python3 scripts/test_installer.py fedora --wheel "$$WHEEL" --backend tart || true
 
-# Publish voicemode-install to TestPyPI
+# Publish voice-mode-install to TestPyPI
 publish-installer-test: build-installer
-	@echo "Publishing voicemode-install to TestPyPI..."
+	@echo "Publishing voice-mode-install to TestPyPI..."
 	@if [ -z "$$UV_PUBLISH_TOKEN" ]; then \
 		echo "❌ UV_PUBLISH_TOKEN not set!"; \
 		echo ""; \
@@ -548,11 +548,11 @@ publish-installer-test: build-installer
 	@echo "✅ Published to TestPyPI!"
 	@echo ""
 	@echo "Test installation with:"
-	@echo "  uvx --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ voicemode-install --dry-run"
+	@echo "  uvx --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ voice-mode-install --dry-run"
 
-# Publish voicemode-install to PyPI
+# Publish voice-mode-install to PyPI
 publish-installer: build-installer test-installer-all
-	@echo "Publishing voicemode-install to PyPI..."
+	@echo "Publishing voice-mode-install to PyPI..."
 	@echo ""
 	@echo "⚠️  WARNING: This will publish to PRODUCTION PyPI!"
 	@read -p "Are you sure? Type 'yes' to continue: " confirm; \
@@ -572,7 +572,7 @@ publish-installer: build-installer test-installer-all
 	@echo "✅ Published to PyPI!"
 	@echo ""
 	@echo "Install with:"
-	@echo "  uvx voicemode-install"
+	@echo "  uvx voice-mode-install"
 
 # Publish voice-mode to TestPyPI
 publish-voicemode-test: build-package

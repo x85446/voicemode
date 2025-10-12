@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test voicemode-install package across different platforms.
+Test voice-mode-install package across different platforms.
 
 Supports both local Tart VMs and CI environments (Docker/GitHub runners).
 """
@@ -60,7 +60,7 @@ class VMTester:
         """Test CLI help command."""
         code, stdout, stderr = self.run_command(
             "export PATH=\"$HOME/.local/bin:$PATH\"; "
-            "voicemode-install --help"
+            "voice-mode-install --help"
         )
         if code != 0 or "VoiceMode Installer" not in stdout:
             raise Exception(f"CLI help failed: {stderr}")
@@ -69,7 +69,7 @@ class VMTester:
         """Test dry-run mode."""
         code, stdout, stderr = self.run_command(
             "export PATH=\"$HOME/.local/bin:$PATH\"; "
-            "voicemode-install --dry-run --non-interactive"
+            "voice-mode-install --dry-run --non-interactive"
         )
         if code != 0 or "DRY RUN" not in stdout:
             raise Exception(f"Dry run failed: {stderr}")
@@ -78,7 +78,7 @@ class VMTester:
         """Test platform detection."""
         code, stdout, stderr = self.run_command(
             "export PATH=\"$HOME/.local/bin:$PATH\"; "
-            "voicemode-install --dry-run --non-interactive"
+            "voice-mode-install --dry-run --non-interactive"
         )
         if code != 0:
             raise Exception(f"Platform detection failed: {stderr}")
@@ -228,7 +228,7 @@ class TartVMTester(VMTester):
             raise Exception(f"Failed to download wheel: {stderr}")
 
         # Install wheel using uv tool install
-        print("    Installing voicemode-install...")
+        print("    Installing voice-mode-install...")
         code, stdout, stderr = self.run_command(
             f"export PATH=\"$HOME/.local/bin:$PATH\"; "
             f"uv tool install /tmp/{self.wheel_path.name}"
@@ -240,7 +240,7 @@ class TartVMTester(VMTester):
         print("    Verifying installation...")
         code, stdout, stderr = self.run_command(
             f"export PATH=\"$HOME/.local/bin:$PATH\"; "
-            f"voicemode-install --version"
+            f"voice-mode-install --version"
         )
         if code != 0:
             raise Exception(f"Installation verification failed: {stderr}")
@@ -328,14 +328,14 @@ class DockerTester(VMTester):
         # Verify installation
         code, stdout, stderr = self.run_command(
             f"export PATH=\"$HOME/.local/bin:$PATH\"; "
-            f"voicemode-install --version"
+            f"voice-mode-install --version"
         )
         if code != 0:
             raise Exception(f"Installation verification failed: {stderr}")
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Test voicemode-install package")
+    parser = argparse.ArgumentParser(description="Test voice-mode-install package")
     parser.add_argument(
         "platform",
         choices=["ubuntu", "debian", "fedora"],
