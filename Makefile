@@ -45,7 +45,28 @@ help:
 	@echo "  publish       - Publish to PyPI"
 	@echo ""
 	@echo "Release targets:"
-	@echo "  release       - Create a new release (tags, pushes, triggers GitHub workflow)"
+	@echo "  release       - Create unified release for both packages"
+	@echo "  release-package - Release voice-mode package only"
+	@echo "  release-installer - Release voice-mode-install package only"
+	@echo ""
+	@echo "Build targets:"
+	@echo "  build         - Build both packages"
+	@echo "  build-package - Build voice-mode package only"
+	@echo "  build-installer - Build voice-mode-install package only"
+	@echo ""
+	@echo "Publish targets:"
+	@echo "  publish       - Publish both packages to PyPI"
+	@echo "  publish-package - Publish voice-mode package to PyPI"
+	@echo "  publish-installer - Publish voice-mode-install to PyPI"
+	@echo "  publish-test  - Publish both packages to TestPyPI"
+	@echo "  publish-package-test - Publish voice-mode to TestPyPI"
+	@echo "  publish-installer-test - Publish voice-mode-install to TestPyPI"
+	@echo ""
+	@echo "Clean targets:"
+	@echo "  clean         - Clean all build artifacts"
+	@echo "  clean-dist    - Clean only distribution artifacts"
+	@echo "  clean-package - Clean voice-mode artifacts only"
+	@echo "  clean-installer - Clean voice-mode-install artifacts only"
 	@echo ""
 	@echo "Alternative package (voice-mode):"
 	@echo "  build-voice-mode  - Build voice-mode package"
@@ -74,9 +95,10 @@ dev-install:
 
 # Build Python package
 build-package:
-	@echo "Building Python package..."
-	python -m build
-	@echo "Package built successfully in dist/"
+	@echo "Building voice-mode package..."
+	@uv build
+	@echo "✅ Package built: dist/"
+	@ls -lh dist/
 
 # Build development package with auto-versioning
 build-dev:
@@ -84,7 +106,7 @@ build-dev:
 	@# Save current version
 	@cp voice_mode/__version__.py voice_mode/__version__.py.bak
 	@# Get current version and append .dev suffix with timestamp
-	@CURRENT_VERSION=$$(python -c "exec(open('voice_mode/__version__.py').read()); print(__version__)") && \
+	@CURRENT_VERSION=$$(uv run python -c "exec(open('voice_mode/__version__.py').read()); print(__version__)") && \
 	DEV_VERSION="$$CURRENT_VERSION.dev$$(date +%Y%m%d%H%M%S)" && \
 	echo "__version__ = \"$$DEV_VERSION\"" > voice_mode/__version__.py && \
 	echo "Building version $$DEV_VERSION..." && \
@@ -110,163 +132,154 @@ test:
 test-package: build-package
 	@echo "Testing package installation..."
 	cd /tmp && \
-	python -m venv test-env && \
+	uv venv test-env && \
 	. test-env/bin/activate && \
-	pip install $(CURDIR)/dist/voice_mode-*.whl && \
+	uv pip install $(CURDIR)/dist/voice_mode-*.whl && \
 	voice-mode --help && \
 	deactivate && \
 	rm -rf test-env
 	@echo "Package test successful!"
 
-# Publish to TestPyPI
-publish-test: build-package
-	@echo "Publishing to TestPyPI..."
-	@echo "Make sure you have configured ~/.pypirc with testpypi credentials"
-	python -m twine upload --repository testpypi dist/*
-	@echo "Published to TestPyPI. Install with:"
-	@echo "  pip install --index-url https://test.pypi.org/simple/ voice-mode"
+# Publish to TestPyPI - unified target for both packages
+publish-test: clean-dist build
+	@echo "Publishing both packages to TestPyPI..."
+	@if [ -z "$$UV_PUBLISH_TOKEN" ]; then \
+		echo "❌ UV_PUBLISH_TOKEN not set!"; \
+		echo "Get a token from https://test.pypi.org/manage/account/token/"; \
+		echo "Then set: export UV_PUBLISH_TOKEN=\"pypi-your-test-token\""; \
+		exit 1; \
+	fi
+	@uv publish --index-url https://test.pypi.org/legacy/
+	@cd installer && uv publish --index-url https://test.pypi.org/legacy/
+	@echo "✅ Both packages published to TestPyPI!"
 
-# Publish to PyPI
-publish: build-package
-	@echo "Publishing to PyPI..."
-	@echo "Make sure you have configured ~/.pypirc with pypi credentials"
-	python -m twine upload dist/*
-	@echo "Published to PyPI. Install with:"
-	@echo "  pip install voice-mode"
+# Publish voice-mode package to TestPyPI
+publish-package-test:
+	@echo "Cleaning voice-mode dist..."
+	@rm -rf dist/*.whl dist/*.tar.gz
+	@$(MAKE) build-package
+	@echo "Publishing voice-mode to TestPyPI..."
+	@if [ -z "$$UV_PUBLISH_TOKEN" ]; then \
+		echo "❌ UV_PUBLISH_TOKEN not set!"; \
+		echo "Get a token from https://test.pypi.org/manage/account/token/"; \
+		echo "Then set: export UV_PUBLISH_TOKEN=\"pypi-your-test-token\""; \
+		exit 1; \
+	fi
+	@uv publish --index-url https://test.pypi.org/legacy/
+	@echo "✅ Published to TestPyPI!"
 
-# Clean build artifacts
+# Publish to PyPI - unified target for both packages
+publish: clean-dist build
+	@echo "Publishing both packages to PyPI..."
+	@echo ""
+	@echo "⚠️  WARNING: This will publish BOTH packages to PRODUCTION PyPI!"
+	@read -p "Are you sure? Type 'yes' to continue: " confirm; \
+	if [ "$$confirm" != "yes" ]; then \
+		echo "Aborted."; \
+		exit 1; \
+	fi
+	@if [ -z "$$UV_PUBLISH_TOKEN" ]; then \
+		echo "❌ UV_PUBLISH_TOKEN not set!"; \
+		echo "Get a token from https://pypi.org/manage/account/token/"; \
+		echo "Then set: export UV_PUBLISH_TOKEN=\"pypi-your-token\""; \
+		exit 1; \
+	fi
+	@echo ""
+	@echo "Publishing voice-mode..."
+	@uv publish
+	@echo "✅ voice-mode published!"
+	@echo ""
+	@echo "Publishing voice-mode-install..."
+	@cd installer && uv publish
+	@echo "✅ voice-mode-install published!"
+
+# Publish voice-mode package only
+publish-package:
+	@echo "Cleaning voice-mode dist..."
+	@rm -rf dist/*.whl dist/*.tar.gz
+	@$(MAKE) build-package
+	@echo "Publishing voice-mode to PyPI..."
+	@if [ -z "$$UV_PUBLISH_TOKEN" ]; then \
+		echo "❌ UV_PUBLISH_TOKEN not set!"; \
+		exit 1; \
+	fi
+	@uv publish
+	@echo "✅ voice-mode published!"
+
+# Publish voice-mode-install package only
+publish-installer:
+	@echo "Cleaning installer dist..."
+	@rm -rf installer/dist/*.whl installer/dist/*.tar.gz
+	@$(MAKE) build-installer
+	@echo "Publishing voice-mode-install to PyPI..."
+	@if [ -z "$$UV_PUBLISH_TOKEN" ]; then \
+		echo "❌ UV_PUBLISH_TOKEN not set!"; \
+		exit 1; \
+	fi
+	@cd installer && uv publish
+	@echo "✅ voice-mode-install published!"
+
+# Clean build artifacts - Three-tier approach for flexibility
 clean:
-	@echo "Cleaning build artifacts..."
-	rm -rf dist/ build/ *.egg-info .pytest_cache __pycache__
-	rm -rf htmlcov/ .coverage coverage.xml .coverage.*
-	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
-	find . -type f -name "*.pyc" -delete
-	@echo "Cleanup complete!"
+	@echo "Cleaning all build artifacts..."
+	@$(MAKE) clean-package
+	@$(MAKE) clean-installer
+	@echo "✅ All build artifacts cleaned!"
 
-# Release - Create a new release and tag
+clean-package:
+	@echo "Cleaning voice-mode build artifacts..."
+	@rm -rf dist/ build/ *.egg-info .pytest_cache __pycache__
+	@rm -rf htmlcov/ .coverage coverage.xml .coverage.*
+	@find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+	@find . -type f -name "*.pyc" -delete
+
+clean-installer:
+	@echo "Cleaning voice-mode-install build artifacts..."
+	@rm -rf installer/dist/*.whl installer/dist/*.tar.gz
+
+# Clean only distribution artifacts (for publish safety)
+clean-dist:
+	@echo "Cleaning distribution artifacts..."
+	@rm -rf dist/*.whl dist/*.tar.gz
+	@rm -rf installer/dist/*.whl installer/dist/*.tar.gz
+	@echo "✅ Distribution artifacts cleaned!"
+
+# Release targets - Create a new release and tag
 release:
-	@echo "Creating a new release..."
+	@echo "Creating unified release for voice-mode and voice-mode-install..."
 	@echo ""
-	@echo "Current version: $$(grep -E '^__version__ = ' voice_mode/__version__.py | cut -d'"' -f2)"
+	@echo "Current version: $$(uv run python scripts/release.py --current)"
 	@echo ""
-	@read -p "Enter new version (e.g., 0.1.3): " version; \
+	@read -p "Enter new version (e.g., 5.1.5): " version; \
 	if [ -z "$$version" ]; then \
 		echo "Error: Version cannot be empty"; \
 		exit 1; \
 	fi; \
-	echo "Updating version to $$version..."; \
-	sed -i.bak 's/^__version__ = .*/__version__ = "'$$version'"/' voice_mode/__version__.py && \
-	rm voice_mode/__version__.py.bak; \
-	echo "Updating server.json version..."; \
-	sed -i.bak 's/"version": "[^"]*"/"version": "'$$version'"/' server.json && \
-	rm server.json.bak; \
-	echo "Updating CHANGELOG.md..."; \
-	date=$$(date +%Y-%m-%d); \
-	sed -i.bak "s/## \[Unreleased\]/## [Unreleased]\n\n## [$$version] - $$date/" CHANGELOG.md && \
-	rm CHANGELOG.md.bak; \
-	git add voice_mode/__version__.py server.json CHANGELOG.md && \
-	git commit -m "chore: bump version to $$version" && \
-	git tag -a "v$$version" -m "Release v$$version" && \
-	echo "" && \
-	echo "✅ Version bumped and tagged!" && \
-	echo "" && \
-	echo "Pushing to GitHub..." && \
-	git push origin && \
-	git push origin "v$$version" && \
-	echo "" && \
-	echo "🚀 Release pipeline triggered!" && \
-	echo "" && \
-	echo "GitHub Actions will now:" && \
-	echo "1. Create a GitHub release with changelog" && \
-	echo "2. Publish to PyPI" && \
-	echo "" && \
-	echo "Monitor progress at: https://github.com/mbailey/voice-mode/actions"
+	uv run python scripts/release.py $$version
 
-# Build voice-mode package
-build-voice-mode:
-	@echo "Building voice-mode package..."
-	@# Temporarily swap pyproject files
-	@mv pyproject.toml pyproject-voice-mode.toml.tmp
-	@cp pyproject-voice-mode.toml pyproject.toml
-	@# Build the package
-	python -m build
-	@# Restore original pyproject.toml
-	@mv pyproject-voice-mode.toml.tmp pyproject.toml
-	@echo "voice-mode package built successfully in dist/"
-
-# Publish voice-mode to PyPI
-publish-voice-mode: build-voice-mode
-	@echo "Publishing voice-mode to PyPI..."
-	@echo "Make sure you have configured ~/.pypirc with pypi credentials"
-	@# Find the latest voice-mode wheel and sdist
-	@latest_wheel=$$(ls -t dist/voice_mode-*.whl 2>/dev/null | head -1); \
-	latest_sdist=$$(ls -t dist/voice_mode-*.tar.gz 2>/dev/null | head -1); \
-	if [ -z "$$latest_wheel" ] || [ -z "$$latest_sdist" ]; then \
-		echo "Error: voice-mode distribution files not found. Run 'make build-voice-mode' first."; \
+release-package:
+	@echo "Creating release for voice-mode package only..."
+	@echo ""
+	@echo "Current version: $$(uv run python scripts/release.py --current)"
+	@echo ""
+	@read -p "Enter new version (e.g., 5.1.5): " version; \
+	if [ -z "$$version" ]; then \
+		echo "Error: Version cannot be empty"; \
 		exit 1; \
 	fi; \
-	python -m twine upload "$$latest_wheel" "$$latest_sdist"
-	@echo "Published to PyPI. Install with:"
-	@echo "  pip install voice-mode"
+	uv run python scripts/release.py $$version --package package
 
-# Generate CLAUDE.md from template
-CLAUDE.md: CLAUDE.md.in GLOSSARY.md docs/tasks/README.md docs/tasks/key-insights.md docs/tasks/implementation-notes.md docs/configuration/environment.md
-	@echo "Generating CLAUDE.md from template..."
-	@# Start with the template
-	@cp CLAUDE.md.in CLAUDE.md.tmp
-	@# Replace timestamp
-	@sed -i.bak "s/@TIMESTAMP@/$$(date -u +%Y-%m-%dT%H:%M:%SZ)/g" CLAUDE.md.tmp && rm CLAUDE.md.tmp.bak
-	@# Process @include directives
-	@while grep -q "@include " CLAUDE.md.tmp; do \
-		file=$$(grep -m1 "@include " CLAUDE.md.tmp | sed 's/.*@include //'); \
-		if [ -f "$$file" ]; then \
-			sed -i.bak "/@include $$file/r $$file" CLAUDE.md.tmp && rm CLAUDE.md.tmp.bak; \
-			sed -i.bak "/@include $$file/d" CLAUDE.md.tmp && rm CLAUDE.md.tmp.bak; \
-		else \
-			echo "Warning: Could not find $$file"; \
-			sed -i.bak "s|@include $$file|[File not found: $$file]|" CLAUDE.md.tmp && rm CLAUDE.md.tmp.bak; \
-		fi; \
-	done
-	@# Process @include-section directives (file, pattern, lines)
-	@while grep -q "@include-section " CLAUDE.md.tmp; do \
-		line=$$(grep -m1 "@include-section " CLAUDE.md.tmp); \
-		file=$$(echo "$$line" | awk '{print $$2}'); \
-		pattern=$$(echo "$$line" | awk '{print $$3}' | tr -d '"'); \
-		lines=$$(echo "$$line" | awk '{print $$4}'); \
-		if [ -f "$$file" ]; then \
-			grep -A $$lines "$$pattern" "$$file" > include.tmp || true; \
-			sed -i.bak "/@include-section $$file/r include.tmp" CLAUDE.md.tmp && rm CLAUDE.md.tmp.bak; \
-			rm -f include.tmp; \
-		fi; \
-		sed -i.bak "/@include-section $$file/d" CLAUDE.md.tmp && rm CLAUDE.md.tmp.bak; \
-	done
-	@mv CLAUDE.md.tmp CLAUDE.md
-	@echo "✅ CLAUDE.md generated successfully!"
-
-# Prepare everything and start Claude
-claude: CLAUDE.md
-	@echo "Preparing to start Claude Code..."
+release-installer:
+	@echo "Creating release for voice-mode-install package only..."
 	@echo ""
-	@# Check if Claude is installed
-	@if ! command -v claude >/dev/null 2>&1; then \
-		echo "❌ Claude Code is not installed!"; \
-		echo ""; \
-		echo "Install with:"; \
-		echo "  npm install -g @anthropic-ai/claude-code"; \
+	@echo "Current version: $$(uv run python scripts/release.py --current)"
+	@echo ""
+	@read -p "Enter new version (e.g., 5.1.5): " version; \
+	if [ -z "$$version" ]; then \
+		echo "Error: Version cannot be empty"; \
 		exit 1; \
-	fi
-	@echo "✅ Claude Code is installed"
-	@echo ""
-	@# Check environment
-	@if [ -z "$$OPENAI_API_KEY" ]; then \
-		echo "⚠️  Warning: OPENAI_API_KEY is not set"; \
-		echo "  Voice Mode requires this for TTS/STT"; \
-		echo ""; \
-	fi
-	@# Start Claude
-	@echo "Starting Claude Code..."
-	@echo ""
-	@claude converse
+	fi; \
+	uv run python scripts/release.py $$version --package installer
 
 # Documentation targets
 docs-serve:
@@ -276,7 +289,7 @@ docs-serve:
 	@echo "Installing documentation dependencies..."
 	@uv pip install -e ".[docs]"
 	@# Process README for docs
-	@python scripts/process-readme-for-docs.py README.md docs/README_PROCESSED.md
+	@uv run python scripts/process-readme-for-docs.py README.md docs/README_PROCESSED.md
 	@echo "Press Ctrl+C to stop the server"
 	@.venv/bin/mkdocs serve
 
@@ -286,7 +299,7 @@ docs-build:
 	@echo "Installing documentation dependencies..."
 	@uv pip install -e ".[docs]"
 	@# Process README for docs
-	@python scripts/process-readme-for-docs.py README.md docs/README_PROCESSED.md
+	@uv run python scripts/process-readme-for-docs.py README.md docs/README_PROCESSED.md
 	@.venv/bin/mkdocs build
 	@echo "Documentation built to site/ directory"
 
@@ -296,7 +309,7 @@ docs-check:
 	@echo "Installing documentation dependencies..."
 	@uv pip install -e ".[docs]"
 	@# Process README for docs
-	@python scripts/process-readme-for-docs.py README.md docs/README_PROCESSED.md
+	@uv run python scripts/process-readme-for-docs.py README.md docs/README_PROCESSED.md
 	@echo ""
 	@echo "Running strict documentation check..."
 	@.venv/bin/mkdocs build --strict
@@ -400,12 +413,16 @@ test-markers:
 	@echo "Usage: uv run pytest -m 'marker_name'"
 	@echo "Example: uv run pytest -m 'not slow'"
 
-# Build voice-mode-install package
-build-installer:
+# Build voice-mode-install package (always clean first to prevent old artifacts)
+build-installer: clean-installer
 	@echo "Building voice-mode-install package..."
 	@cd installer && uv build
 	@echo "✅ Package built: installer/dist/"
 	@ls -lh installer/dist/
+
+# Unified build target for both packages
+build: build-package build-installer
+	@echo "✅ Both packages built successfully!"
 
 # Test installer on fresh Ubuntu clone (default)
 test-installer-ubuntu: build-installer
@@ -421,7 +438,7 @@ test-installer-ubuntu: build-installer
 		exit 1; \
 	fi; \
 	echo "Using wheel: $$WHEEL"; \
-	python3 scripts/test_installer.py ubuntu --wheel "$$WHEEL" --backend tart --clone-fresh
+	uv run python scripts/test_installer.py ubuntu --wheel "$$WHEEL" --backend tart --clone-fresh
 
 # Test installer on fresh Fedora clone (default)
 test-installer-fedora: build-installer
@@ -437,7 +454,7 @@ test-installer-fedora: build-installer
 		exit 1; \
 	fi; \
 	echo "Using wheel: $$WHEEL"; \
-	python3 scripts/test_installer.py fedora --wheel "$$WHEEL" --backend tart --clone-fresh
+	uv run python scripts/test_installer.py fedora --wheel "$$WHEEL" --backend tart --clone-fresh
 
 # Test installer on fresh clones of all platforms (default)
 test-installer-all: build-installer
@@ -455,10 +472,10 @@ test-installer-all: build-installer
 	echo "Using wheel: $$WHEEL"; \
 	echo ""; \
 	echo "=== Testing Ubuntu (fresh clone) ==="; \
-	python3 scripts/test_installer.py ubuntu --wheel "$$WHEEL" --backend tart --clone-fresh || true; \
+	uv run python scripts/test_installer.py ubuntu --wheel "$$WHEEL" --backend tart --clone-fresh || true; \
 	echo ""; \
 	echo "=== Testing Fedora (fresh clone) ==="; \
-	python3 scripts/test_installer.py fedora --wheel "$$WHEEL" --backend tart --clone-fresh || true
+	uv run python scripts/test_installer.py fedora --wheel "$$WHEEL" --backend tart --clone-fresh || true
 
 # Test installer using Docker (CI mode)
 test-installer-ci: build-installer
@@ -475,10 +492,10 @@ test-installer-ci: build-installer
 	echo "Using wheel: $$WHEEL"; \
 	echo ""; \
 	echo "=== Testing Ubuntu (Docker) ==="; \
-	python3 scripts/test_installer.py ubuntu --wheel "$$WHEEL" --backend docker || true; \
+	uv run python scripts/test_installer.py ubuntu --wheel "$$WHEEL" --backend docker || true; \
 	echo ""; \
 	echo "=== Testing Fedora (Docker) ==="; \
-	python3 scripts/test_installer.py fedora --wheel "$$WHEEL" --backend docker || true
+	uv run python scripts/test_installer.py fedora --wheel "$$WHEEL" --backend docker || true
 
 # Test installer on existing Ubuntu VM (fast, no clone)
 test-installer-ubuntu-fast: build-installer
@@ -494,7 +511,7 @@ test-installer-ubuntu-fast: build-installer
 		exit 1; \
 	fi; \
 	echo "Using wheel: $$WHEEL"; \
-	python3 scripts/test_installer.py ubuntu --wheel "$$WHEEL" --backend tart
+	uv run python scripts/test_installer.py ubuntu --wheel "$$WHEEL" --backend tart
 
 # Test installer on existing Fedora VM (fast, no clone)
 test-installer-fedora-fast: build-installer
@@ -510,7 +527,7 @@ test-installer-fedora-fast: build-installer
 		exit 1; \
 	fi; \
 	echo "Using wheel: $$WHEEL"; \
-	python3 scripts/test_installer.py fedora --wheel "$$WHEEL" --backend tart
+	uv run python scripts/test_installer.py fedora --wheel "$$WHEEL" --backend tart
 
 # Test installer on existing VMs (fast, no clone)
 test-installer-all-fast: build-installer
@@ -528,30 +545,31 @@ test-installer-all-fast: build-installer
 	echo "Using wheel: $$WHEEL"; \
 	echo ""; \
 	echo "=== Testing Ubuntu ==="; \
-	python3 scripts/test_installer.py ubuntu --wheel "$$WHEEL" --backend tart || true; \
+	uv run python scripts/test_installer.py ubuntu --wheel "$$WHEEL" --backend tart || true; \
 	echo ""; \
 	echo "=== Testing Fedora ==="; \
-	python3 scripts/test_installer.py fedora --wheel "$$WHEEL" --backend tart || true
+	uv run python scripts/test_installer.py fedora --wheel "$$WHEEL" --backend tart || true
 
 # Publish voice-mode-install to TestPyPI
-publish-installer-test: build-installer
+publish-installer-test:
+	@echo "Cleaning installer dist..."
+	@rm -rf installer/dist/*.whl installer/dist/*.tar.gz
+	@$(MAKE) build-installer
 	@echo "Publishing voice-mode-install to TestPyPI..."
 	@if [ -z "$$UV_PUBLISH_TOKEN" ]; then \
 		echo "❌ UV_PUBLISH_TOKEN not set!"; \
-		echo ""; \
 		echo "Get a token from https://test.pypi.org/manage/account/token/"; \
-		echo "Then set: export UV_PUBLISH_TOKEN=\"pypi-your-token\""; \
+		echo "Then set: export UV_PUBLISH_TOKEN=\"pypi-your-test-token\""; \
 		exit 1; \
 	fi
 	@cd installer && uv publish --index-url https://test.pypi.org/legacy/
-	@echo ""
 	@echo "✅ Published to TestPyPI!"
-	@echo ""
-	@echo "Test installation with:"
-	@echo "  uvx --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ voice-mode-install --dry-run"
 
-# Publish voice-mode-install to PyPI
-publish-installer: build-installer test-installer-all
+# Legacy publish-installer target (for compatibility - includes tests)
+publish-installer-with-tests: test-installer-all
+	@echo "Cleaning installer dist..."
+	@rm -rf installer/dist/*.whl installer/dist/*.tar.gz
+	@$(MAKE) build-installer
 	@echo "Publishing voice-mode-install to PyPI..."
 	@echo ""
 	@echo "⚠️  WARNING: This will publish to PRODUCTION PyPI!"
@@ -562,17 +580,12 @@ publish-installer: build-installer test-installer-all
 	fi
 	@if [ -z "$$UV_PUBLISH_TOKEN" ]; then \
 		echo "❌ UV_PUBLISH_TOKEN not set!"; \
-		echo ""; \
 		echo "Get a token from https://pypi.org/manage/account/token/"; \
 		echo "Then set: export UV_PUBLISH_TOKEN=\"pypi-your-token\""; \
 		exit 1; \
 	fi
 	@cd installer && uv publish
-	@echo ""
 	@echo "✅ Published to PyPI!"
-	@echo ""
-	@echo "Install with:"
-	@echo "  uvx voice-mode-install"
 
 # Publish voice-mode to TestPyPI
 publish-voicemode-test: build-package
