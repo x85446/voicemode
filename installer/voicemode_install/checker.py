@@ -156,7 +156,12 @@ class DependencyChecker:
                 text=True
             )
             # dpkg -l returns 0 even if package not found, check output
-            return result.returncode == 0 and package_name in result.stdout
+            # Look for lines starting with "ii" (installed) followed by the exact package name
+            for line in result.stdout.splitlines():
+                parts = line.split()
+                if len(parts) >= 2 and parts[0] == 'ii' and parts[1] == package_name:
+                    return True
+            return False
         except FileNotFoundError:
             return False
 

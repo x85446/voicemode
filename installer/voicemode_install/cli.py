@@ -135,39 +135,47 @@ def ensure_homebrew_on_macos(platform_info, dry_run: bool, non_interactive: bool
         return False
 
 
-@click.command()
-@click.option('--dry-run', is_flag=True, help='Show what would be installed without installing')
-@click.option('--voice-mode-version', default=None, help='Specific VoiceMode version to install')
-@click.option('--skip-services', is_flag=True, help='Skip local service installation')
-@click.option('--non-interactive', is_flag=True, help='Run without prompts (assumes yes)')
-@click.version_option(__version__)
+EPILOG = """
+\b
+Examples:
+  # Normal installation
+  voice-mode-install
+
+  # Dry run (see what would be installed)
+  voice-mode-install --dry-run
+
+  # Install specific version
+  voice-mode-install --voice-mode-version=5.1.3
+
+  # Skip service installation
+  voice-mode-install --skip-services
+"""
+
+
+@click.command(epilog=EPILOG, context_settings={'help_option_names': ['-h', '--help']})
+@click.option('-d', '--dry-run', is_flag=True, help='Show what would be installed without installing')
+@click.option('-v', '--voice-mode-version', default=None, help='Specific VoiceMode version to install')
+@click.option('-s', '--skip-services', is_flag=True, help='Skip local service installation')
+@click.option('-n', '--non-interactive', is_flag=True, help='Run without prompts (assumes yes)')
+@click.version_option(__version__, '-V', '--version')
 def main(dry_run, voice_mode_version, skip_services, non_interactive):
-    """
-    VoiceMode Installer - Install VoiceMode and its system dependencies.
+    """VoiceMode Installer - Install VoiceMode and its system dependencies.
 
     This installer will:
-    \b
-    1. Detect your operating system and architecture
-    2. Check for missing system dependencies
-    3. Install required packages (with your permission)
-    4. Install VoiceMode using uv
-    5. Optionally install local voice services
-    6. Configure shell completions
-    7. Verify the installation
 
-    Examples:
-    \b
-      # Normal installation
-      voice-mode-install
+      1. Detect your operating system and architecture
 
-      # Dry run (see what would be installed)
-      voice-mode-install --dry-run
+      2. Check for missing system dependencies
 
-      # Install specific version
-      voice-mode-install --voice-mode-version=5.1.3
+      3. Install required packages (with your permission)
 
-      # Skip service installation
-      voice-mode-install --skip-services
+      4. Install VoiceMode using uv
+
+      5. Optionally install local voice services
+
+      6. Configure shell completions
+
+      7. Verify the installation
     """
     # Initialize logger
     logger = InstallLogger()
