@@ -119,6 +119,7 @@ async def update_kokoro_service_files(
         service_content = f"""[Unit]
 Description=VoiceMode Kokoro TTS Service
 After=network.target
+
 [Service]
 Type=simple
 ExecStart={start_script_path}
@@ -128,6 +129,7 @@ WorkingDirectory={install_dir}
 StandardOutput=append:{os.path.join(voicemode_dir, 'logs', 'kokoro', 'kokoro.log')}
 StandardError=append:{os.path.join(voicemode_dir, 'logs', 'kokoro', 'kokoro.error.log')}
 Environment="PATH={os.path.expanduser('~/.local/bin')}:/usr/local/bin:/usr/bin:/bin"
+
 [Install]
 WantedBy=default.target
 """
@@ -519,16 +521,63 @@ async def kokoro_install(
         # Install systemd service on Linux
         elif system == "Linux":
             logger.info("Installing systemd user service for kokoro-fastapi...")
+
+            # First, start kokoro manually to download models and install dependencies
+            # This avoids systemd timeout issues on first start
+            logger.info("Starting kokoro manually to download models and dependencies...")
+            process = subprocess.Popen(
+                ["bash", start_script_path],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                cwd=install_dir
+            )
+
+            # Wait for kokoro to be ready (check health endpoint)
+            max_wait = 180  # 3 minutes should be enough for first download
+            wait_interval = 5
+            waited = 0
+            kokoro_ready = False
+
+            while waited < max_wait:
+                await asyncio.sleep(wait_interval)
+                waited += wait_interval
+                try:
+                    async with aiohttp.ClientSession() as session:
+                        async with session.get(f"http://127.0.0.1:{port}/health", timeout=aiohttp.ClientTimeout(total=2)) as response:
+                            if response.status == 200:
+                                logger.info("Kokoro is ready!")
+                                kokoro_ready = True
+                                break
+                except:
+                    pass  # Not ready yet, keep waiting
+
+            # Stop the manually started process
+            if kokoro_ready:
+                logger.info("Stopping manually started kokoro...")
+                process.terminate()
+                try:
+                    process.wait(timeout=10)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+            else:
+                logger.warning(f"Kokoro did not become ready after {max_wait}s, continuing anyway...")
+                process.terminate()
+                try:
+                    process.wait(timeout=10)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+
+            # Now create systemd service file
             systemd_user_dir = os.path.expanduser("~/.config/systemd/user")
             os.makedirs(systemd_user_dir, exist_ok=True)
-            
+
             # Create log directory
             log_dir = os.path.join(voicemode_dir, 'logs', 'kokoro')
             os.makedirs(log_dir, exist_ok=True)
-            
+
             service_name = "voicemode-kokoro.service"
             service_path = os.path.join(systemd_user_dir, service_name)
-            
+
             service_content = f"""[Unit]
 Description=VoiceMode Kokoro TTS Service
 After=network.target
@@ -546,40 +595,34 @@ Environment="PATH={os.path.expanduser('~/.local/bin')}:/usr/local/bin:/usr/bin:/
 [Install]
 WantedBy=default.target
 """
-            
+
             with open(service_path, 'w') as f:
                 f.write(service_content)
-            
-            # Reload systemd and enable service
+
+            # Reload systemd
             try:
                 subprocess.run(["systemctl", "--user", "daemon-reload"], check=True)
-                subprocess.run(["systemctl", "--user", "enable", service_name], check=True)
-                subprocess.run(["systemctl", "--user", "start", service_name], check=True)
-                
                 result["systemd_service"] = service_path
-                result["systemd_enabled"] = True
-                result["message"] += f"\nSystemd service installed and started: {service_name}"
-                result["service_status"] = "managed_by_systemd"
+                result["message"] += f"\nSystemd service created: {service_name}"
             except subprocess.CalledProcessError as e:
+                logger.warning(f"Failed to reload systemd: {e}")
                 result["systemd_service"] = service_path
-                result["systemd_enabled"] = False
-                result["message"] += f"\nSystemd service created but not started: {e}"
-                logger.warning(f"Systemd service error: {e}")
-            
-            # Handle auto_enable
-            enable_message = ""
+                result["message"] += f"\nSystemd service created: {service_name}"
+
+            # Handle auto_enable - this will enable and start the service
             if auto_enable is None:
                 auto_enable = SERVICE_AUTO_ENABLE
-            
+
             if auto_enable:
                 logger.info("Auto-enabling kokoro service...")
                 from voice_mode.tools.service import enable_service
                 enable_result = await enable_service("kokoro")
                 if "✅" in enable_result:
-                    enable_message = " Service auto-enabled."
+                    result["message"] += " Service auto-enabled."
+                    result["service_status"] = "managed_by_systemd"
                 else:
                     logger.warning(f"Auto-enable failed: {enable_result}")
-                result["message"] += enable_message
+                    result["message"] += f" Warning: {enable_result}"
         
         # Start service if requested (skip if launchagent or systemd was installed)
         if auto_start and system not in ["Darwin", "Linux"]:
