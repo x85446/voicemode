@@ -624,12 +624,18 @@ claude converse
         <div class="highlight-box">
             <h3>
                 <span class="label">Optional</span>
-                Self-Hosted ASR & TTS
+                Self-Hosted Voice Services
             </h3>
             <p>
-                For complete privacy, run speech recognition and text-to-speech locally instead of using OpenAI. 
+                For complete privacy, run speech recognition and text-to-speech locally instead of using OpenAI.
                 Both <a href="https://github.com/ggerganov/whisper.cpp">whisper.cpp</a> and <a href="https://github.com/remsky/Kokoro-FastAPI">Kokoro-FastAPI</a> provide OpenAI-compatible APIs for seamless integration.
             </p>
+            <div class="code-block" style="margin-top: 1rem;">
+<span class="comment"># Install local speech-to-text (Whisper)</span><br>
+voicemode whisper install<br><br>
+<span class="comment"># Install local text-to-speech (Kokoro)</span><br>
+voicemode kokoro install
+            </div>
         </div>
 
         <section>
