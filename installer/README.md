@@ -1,10 +1,10 @@
-# voicemode-install
+# voice-mode-install
 
 A standalone installer package for VoiceMode that handles system dependency detection and installation.
 
 ## Overview
 
-`voicemode-install` simplifies the VoiceMode installation process by:
+`voice-mode-install` simplifies the VoiceMode installation process by:
 
 1. **Detecting your platform** - Identifies your OS, distribution, and architecture
 2. **Checking dependencies** - Scans for required system packages
@@ -17,19 +17,19 @@ A standalone installer package for VoiceMode that handles system dependency dete
 
 ```bash
 # Install and run
-uvx voicemode-install
+uvx voice-mode-install
 
 # Dry run (see what would be installed)
-uvx voicemode-install --dry-run
+uvx voice-mode-install --dry-run
 
 # Install specific version
-uvx voicemode-install --voice-mode-version=5.1.3
+uvx voice-mode-install --voice-mode-version=5.1.3
 
 # Skip service installation
-uvx voicemode-install --skip-services
+uvx voice-mode-install --skip-services
 
 # Non-interactive mode
-uvx voicemode-install --non-interactive
+uvx voice-mode-install --non-interactive
 ```
 
 ## Prerequisites
@@ -96,19 +96,19 @@ source ~/.bashrc  # or ~/.zshrc for zsh
 The installer needs sudo access to install system packages. Run:
 ```bash
 sudo -v  # Refresh sudo credentials
-uvx voicemode-install
+uvx voice-mode-install
 ```
 
 ### Network errors during installation
 
 - Check your internet connection
-- Try again with: `uvx voicemode-install`
-- Use `uvx --refresh voicemode-install` to get the latest installer
+- Try again with: `uvx voice-mode-install`
+- Use `uvx --refresh voice-mode-install` to get the latest installer
 
 ### Installation hangs or fails
 
 1. Check the log file: `~/.voicemode/install.log`
-2. Try a dry run: `uvx voicemode-install --dry-run`
+2. Try a dry run: `uvx voice-mode-install --dry-run`
 3. Report issues with log file attached
 
 ## Development
@@ -125,7 +125,7 @@ uv build
 ```bash
 cd installer/
 uv pip install -e .
-voicemode-install --dry-run
+voice-mode-install --dry-run
 ```
 
 ### Project Structure

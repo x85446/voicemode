@@ -91,16 +91,16 @@ def main(dry_run, voice_mode_version, skip_services, non_interactive):
     Examples:
     \b
       # Normal installation
-      voicemode-install
+      voice-mode-install
 
       # Dry run (see what would be installed)
-      voicemode-install --dry-run
+      voice-mode-install --dry-run
 
       # Install specific version
-      voicemode-install --voice-mode-version=5.1.3
+      voice-mode-install --voice-mode-version=5.1.3
 
       # Skip service installation
-      voicemode-install --skip-services
+      voice-mode-install --skip-services
     """
     # Initialize logger
     logger = InstallLogger()
