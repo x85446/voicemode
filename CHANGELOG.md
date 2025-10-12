@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Kokoro First-Time Installation Timeout**
+  - Fixed systemd timeout error during first kokoro installation
+  - Now starts kokoro manually before systemd to download models and dependencies
+  - Waits for health check (max 3 minutes) before creating systemd service
+  - Eliminates "timeout exceeded" errors on first install
+  - Systemd service starts quickly on subsequent boots since everything is cached
+
 ## [5.1.2] - 2025-10-12
 
 ### Fixed
