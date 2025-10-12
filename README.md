@@ -31,27 +31,27 @@ Natural voice conversations for AI assistants. VoiceMode brings human-like voice
 
 ## Quick Start
 
-### Automatic Installation (Recommended)
+### Install VoiceMode and dependencies with UV (Recommended)
 
-Install Claude Code with VoiceMode configured and ready to run on Linux, macOS, and Windows WSL:
+- Linux (fedora, debian/ubuntu) 
+- macOS
+- Windows WSL
 
 ```bash
-# Download and run the installer
-curl -O https://getvoicemode.com/install.sh && bash install.sh
+# Install VoiceMode MCP python package and dependencies
+curl -LsSf https://astral.sh/uv/install.sh | sh 
+uvx voice-mode-install
 
 # While local voice services can be installed automatically, we recommend
 # providing an OpenAI API key as a fallback in case local services are unavailable
 export OPENAI_API_KEY=your-openai-key  # Optional but recommended
 
+# Add VoiceMode to Claude
+claude mcp add voicemode voicemode
+
 # Start a voice conversation
 claude converse
 ```
-
-This installer will:
-- Install all system dependencies (Node.js, audio libraries, etc.)
-- Install Claude Code if not already installed
-- Configure VoiceMode as an MCP server
-- Set up your system for voice conversations
 
 ### Manual Installation
 
@@ -79,7 +79,7 @@ The `converse` function makes voice interactions natural - it automatically wait
 
 ```bash
 sudo apt update
-sudo apt install -y ffmpeg libasound2-dev libasound2-plugins libportaudio2 portaudio19-dev pulseaudio pulseaudio-utils python3-dev 
+sudo apt install -y ffmpeg gcc libasound2-dev libasound2-plugins libportaudio2 portaudio19-dev pulseaudio pulseaudio-utils python3-dev
 ```
 
 **Note for WSL2 users**: WSL2 requires additional audio packages (pulseaudio, libasound2-plugins) for microphone access.
@@ -89,7 +89,7 @@ sudo apt install -y ffmpeg libasound2-dev libasound2-plugins libportaudio2 porta
 <summary><strong>Fedora/RHEL</strong></summary>
 
 ```bash
-sudo dnf install alsa-lib-devel ffmpeg portaudio-devel python3-devel
+sudo dnf install alsa-lib-devel ffmpeg gcc portaudio portaudio-devel python3-devel
 ```
 </details>
 
