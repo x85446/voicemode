@@ -435,14 +435,15 @@ async def kokoro_install(
         }
         
         # Install/update service files
+        # Don't auto-enable yet - we need to handle platform-specific setup first
         service_update_result = await update_kokoro_service_files(
             install_dir=install_dir,
             voicemode_dir=voicemode_dir,
             port=port,
             start_script_path=start_script_path,
-            auto_enable=auto_enable
+            auto_enable=False  # Don't auto-enable yet for any platform
         )
-        
+
         if not service_update_result.get("success"):
             logger.error(f"Failed to update service files: {service_update_result.get('error', 'Unknown error')}")
             result["error"] = f"Service file update failed: {service_update_result.get('error', 'Unknown error')}"
