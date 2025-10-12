@@ -322,16 +322,16 @@ voicemode:
     fedora:
       packages:
         - name: cargo
-          description: Rust package manager (needed for building sudachipy on ARM)
-          required: false
+          description: Rust package manager (needed for building sudachipy)
+          required: true
           check_command: cargo --version
-          note: Only required for ARM64 architecture
+          note: Required for building sudachipy dependency
 
         - name: rust
           description: Rust compiler
-          required: false
+          required: true
           check_command: rustc --version
-          note: Only required for ARM64 architecture
+          note: Required for building sudachipy dependency
 
     darwin:
       packages:
