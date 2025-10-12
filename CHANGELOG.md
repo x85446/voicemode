@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.1.5] - 2025-10-12
+
 ## [5.1.4] - 2025-10-12
 
 ### Added
@@ -21,6 +23,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Automatically installs VoiceMode after dependencies are ready
   - Makefile targets for building, testing, and publishing installer package
   - Improved command existence checking using shutil.which
+
+### Fixed
+- **Installer Package Naming Consistency**
+  - Fixed wheel filename pattern in Makefile from `voicemode_install` to `voice_mode_install`
+  - Corrected package name from `voicemode-install` to `voice-mode-install` in all documentation
+  - Updated README.md, CLI examples, and test scripts to use correct hyphenated name
+  - PyPI package naming now consistent: `voice-mode-install` (package) → `voice_mode_install` (wheel) → `voicemode_install` (module)
+  - Synchronized installer version (5.1.4) with voicemode for simpler version management
 
 ## [5.1.3] - 2025-10-12
 
