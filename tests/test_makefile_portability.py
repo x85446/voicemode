@@ -40,7 +40,7 @@ class TestMakefilePortability:
         # Test the clean target which uses find commands
         result = subprocess.run(['make', 'clean'], capture_output=True, text=True)
         assert result.returncode == 0, f"make clean failed: {result.stderr}"
-        assert "Cleanup complete!" in result.stdout
+        assert "All build artifacts cleaned!" in result.stdout
     
     @pytest.mark.skipif(platform.system() != "Linux", reason="Linux-specific test")
     def test_makefile_targets_on_linux(self):
@@ -48,7 +48,7 @@ class TestMakefilePortability:
         # Test the clean target which uses find commands
         result = subprocess.run(['make', 'clean'], capture_output=True, text=True)
         assert result.returncode == 0, f"make clean failed: {result.stderr}"
-        assert "Cleanup complete!" in result.stdout
+        assert "All build artifacts cleaned!" in result.stdout
     
     def test_date_command_portability(self):
         """Test that date commands in Makefile are portable."""
