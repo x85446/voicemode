@@ -51,15 +51,14 @@ def whisper_model_unified(model_name, all, no_install, no_activate, no_restart):
         current_model = get_active_model()
         installed_models = get_installed_whisper_models()
 
-        # Calculate totals
+        # Calculate totals in MB (format_size expects MB)
         total_installed_size = sum(
-            (model_dir / f"ggml-{name}.bin").stat().st_size
+            WHISPER_MODEL_REGISTRY[name]["size_mb"]
             for name in installed_models
-            if (model_dir / f"ggml-{name}.bin").exists()
         )
 
         total_available_size = sum(
-            info["size_mb"] * 1024 * 1024
+            info["size_mb"]
             for info in WHISPER_MODEL_REGISTRY.values()
         )
 
