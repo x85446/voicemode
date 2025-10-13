@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.1.9] - 2025-10-14
+
+### Fixed
+- **Whisper model size display** - Fixed incorrect size calculation in `voicemode whisper model --all`
+  - Totals were showing millions of GB instead of reasonable values
+  - Changed calculation to use MB values directly from registry
+  - Fixes issue #81
+
 ## [5.1.8] - 2025-10-13
 
 ## [5.1.7] - 2025-10-13
