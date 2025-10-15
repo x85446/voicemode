@@ -86,8 +86,14 @@ def load_voicemode_env():
 # Base directory for all voicemode data (default: ~/.voicemode)
 # VOICEMODE_BASE_DIR=~/.voicemode
 
+# Models directory (default: ~/.voicemode/models)
+# VOICEMODE_MODELS_DIR=~/.voicemode/models
+
 # Enable debug mode (true/false)
 # VOICEMODE_DEBUG=false
+
+# Enable VAD debug logging (true/false)
+# VOICEMODE_VAD_DEBUG=false
 
 # Save all audio and transcriptions (true/false)
 # VOICEMODE_SAVE_ALL=false
@@ -98,7 +104,10 @@ def load_voicemode_env():
 # Save transcription files (true/false)
 # VOICEMODE_SAVE_TRANSCRIPTIONS=false
 
-# Enable audio feedback (true/false)
+# Skip TTS for faster text-only responses (true/false)
+# VOICEMODE_SKIP_TTS=false
+
+# Enable audio feedback chimes (true/false)
 # VOICEMODE_AUDIO_FEEDBACK=true
 
 # Enable sound fonts for tool use hooks (true/false)
@@ -132,7 +141,7 @@ def load_voicemode_env():
 # Comma-separated list of STT endpoints
 # VOICEMODE_STT_BASE_URLS=http://127.0.0.1:2022/v1,https://api.openai.com/v1
 
-# Comma-separated list of preferred voices  
+# Comma-separated list of preferred voices
 # VOICEMODE_VOICES=af_sky,alloy
 
 # Comma-separated list of preferred models
@@ -152,7 +161,7 @@ def load_voicemode_env():
 #############
 
 # Whisper model to use (tiny, base, small, medium, large, large-v2, large-v3)
-# VOICEMODE_WHISPER_MODEL=large-v2
+# VOICEMODE_WHISPER_MODEL=base
 
 # Whisper server port (default: 2022)
 # VOICEMODE_WHISPER_PORT=2022
@@ -161,7 +170,7 @@ def load_voicemode_env():
 # VOICEMODE_WHISPER_LANGUAGE=auto
 
 # Path to Whisper models
-# VOICEMODE_WHISPER_MODEL_PATH=~/.voicemode/models/whisper
+# VOICEMODE_WHISPER_MODEL_PATH=~/.voicemode/services/whisper/models
 
 #############
 # Kokoro Configuration
@@ -178,6 +187,141 @@ def load_voicemode_env():
 
 # Default Kokoro voice
 # VOICEMODE_KOKORO_DEFAULT_VOICE=af_sky
+
+#############
+# LiveKit Configuration
+#############
+
+# LiveKit server port (default: 7880)
+# VOICEMODE_LIVEKIT_PORT=7880
+
+# Frontend server host (default: 127.0.0.1)
+# VOICEMODE_FRONTEND_HOST=127.0.0.1
+
+# Frontend server port (default: 3000)
+# VOICEMODE_FRONTEND_PORT=3000
+
+#############
+# Recording & Voice Activity Detection
+#############
+
+# Default maximum listening duration in seconds (default: 120)
+# VOICEMODE_DEFAULT_LISTEN_DURATION=120.0
+
+# Disable silence detection for noisy environments (true/false)
+# VOICEMODE_DISABLE_SILENCE_DETECTION=false
+
+# VAD aggressiveness level 0-3, higher = more strict (default: 2)
+# VOICEMODE_VAD_AGGRESSIVENESS=2
+
+# Silence threshold in milliseconds before stopping (default: 1000)
+# VOICEMODE_SILENCE_THRESHOLD_MS=1000
+
+# Minimum recording duration in seconds (default: 0.5)
+# VOICEMODE_MIN_RECORDING_DURATION=0.5
+
+# Initial silence grace period before VAD starts (default: 1.0)
+# VOICEMODE_INITIAL_SILENCE_GRACE_PERIOD=1.0
+
+# Audio feedback chime timing
+# Silence before chime in seconds - helps Bluetooth devices wake up (default: 0.1)
+# VOICEMODE_CHIME_LEADING_SILENCE=0.1
+
+# Silence after chime in seconds - prevents cutoff (default: 0.2)
+# VOICEMODE_CHIME_TRAILING_SILENCE=0.2
+
+#############
+# Audio Format Configuration
+#############
+
+# Global audio format: pcm, opus, mp3, wav, flac, aac (default: pcm)
+# VOICEMODE_AUDIO_FORMAT=pcm
+
+# TTS-specific format override (default: pcm for optimal streaming)
+# VOICEMODE_TTS_AUDIO_FORMAT=pcm
+
+# STT-specific format override (default: mp3 if global format is pcm, otherwise uses global format)
+# VOICEMODE_STT_AUDIO_FORMAT=mp3
+
+# Format-specific quality settings
+# VOICEMODE_OPUS_BITRATE=32000
+# VOICEMODE_MP3_BITRATE=64k
+# VOICEMODE_AAC_BITRATE=64k
+
+#############
+# Streaming Configuration
+#############
+
+# Enable streaming playback for lower latency (true/false, default: true)
+# VOICEMODE_STREAMING_ENABLED=true
+
+# Download chunk size in bytes (default: 4096)
+# VOICEMODE_STREAM_CHUNK_SIZE=4096
+
+# Initial buffer before playback starts in milliseconds (default: 150)
+# VOICEMODE_STREAM_BUFFER_MS=150
+
+# Maximum buffer size in seconds (default: 2.0)
+# VOICEMODE_STREAM_MAX_BUFFER=2.0
+
+#############
+# Event Logging
+#############
+
+# Enable comprehensive event logging (true/false, default: true)
+# VOICEMODE_EVENT_LOG_ENABLED=true
+
+# Event log directory (default: ~/.voicemode/logs/events)
+# VOICEMODE_EVENT_LOG_DIR=~/.voicemode/logs/events
+
+# Log rotation policy (currently only 'daily' supported)
+# VOICEMODE_EVENT_LOG_ROTATION=daily
+
+#############
+# Pronunciation System
+#############
+
+# Enable pronunciation rules (true/false, default: true)
+# VOICEMODE_PRONUNCIATION_ENABLED=true
+
+# Custom pronunciation config paths (comma-separated)
+# VOICEMODE_PRONUNCIATION_CONFIG=
+
+# Log pronunciation substitutions (true/false, default: false)
+# VOICEMODE_PRONUNCIATION_LOG_SUBSTITUTIONS=false
+
+# Privacy mode - hide pronunciations from LLM tool listings (true/false, default: false)
+# VOICEMODE_PRONUNCIATION_PRIVATE_MODE=false
+
+#############
+# Think Out Loud Mode (Experimental)
+#############
+
+# Enable multi-voice thinking mode (true/false, default: false)
+# VOICEMODE_THINK_OUT_LOUD=false
+
+# Voice persona mappings for thinking roles (role:voice pairs, comma-separated)
+# VOICEMODE_THINKING_VOICES=analytical:am_adam,creative:af_sarah,critical:af_bella,synthesis:af_nova
+
+# Thinking presentation style: sequential, debate, or chorus (default: sequential)
+# VOICEMODE_THINKING_STYLE=sequential
+
+# Announce which voice is speaking (true/false, default: true)
+# VOICEMODE_THINKING_ANNOUNCE_VOICE=true
+
+#############
+# Service Management
+#############
+
+# Auto-enable services after installation (true/false, default: true)
+# VOICEMODE_SERVICE_AUTO_ENABLE=true
+
+#############
+# Advanced Configuration
+#############
+
+# Download progress style: auto, rich, simple (default: auto)
+# VOICEMODE_PROGRESS_STYLE=auto
 
 #############
 # API Keys (set these in your environment for security)

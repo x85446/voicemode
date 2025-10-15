@@ -23,7 +23,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `min_listen_duration` → `listen_duration_min` (minimum recording duration before silence detection)
   - Paired max/min suffixes make parameter relationship clearer
 
+- **Audio Feedback Configuration Variable Renames** - Renamed for clarity
+  - `VOICEMODE_PIP_LEADING_SILENCE` → `VOICEMODE_CHIME_LEADING_SILENCE`
+  - `VOICEMODE_PIP_TRAILING_SILENCE` → `VOICEMODE_CHIME_TRAILING_SILENCE`
+  - Users with custom configurations must update their environment variables
+
 ### Added
+
+- **Comprehensive Configuration Template** - Expanded default voicemode.env template with 37 additional variables
+  - Recording & VAD configuration (listen duration, silence detection, VAD aggressiveness)
+  - Audio format configuration (global and per-operation format settings, bitrate controls)
+  - Streaming configuration (chunk size, buffering, playback controls)
+  - Event logging configuration (enable/disable, directory, rotation)
+  - Pronunciation system configuration (enable, logging, privacy mode)
+  - Think Out Loud mode (experimental multi-voice thinking feature)
+  - Service management (auto-enable, LiveKit, frontend settings)
+  - Advanced configuration (models directory, progress style, VAD debug)
+  - All defaults verified to match actual code behavior
 
 - **Tool Loading Configuration System**
   - Fine-grained control over which MCP tools are loaded
