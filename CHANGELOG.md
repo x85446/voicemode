@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### ⚠️ BREAKING CHANGES
+
+- **Selective Tool Loading by Default** - Dramatically reduced token usage by loading only essential tools
+  - Only `converse` and `service` tools loaded by default (2.6k tokens vs previous 26k tokens)
+  - **90% reduction in MCP tool token usage** from ~26,000 to ~2,600 tokens
+  - New configuration options for controlling tool loading:
+    - `VOICEMODE_TOOLS_ENABLED` - Whitelist specific tools (e.g., "converse,service")
+    - `VOICEMODE_TOOLS_DISABLED` - Blacklist specific tools (loads all except those listed)
+  - Default: `VOICEMODE_TOOLS_ENABLED=converse,service` for minimal token footprint
+  - Users who need additional tools can enable them via configuration
+
+- **Converse Tool Parameter Renames** - Clarified listen duration parameter names
+  - `listen_duration` → `listen_duration_max` (maximum recording duration)
+  - `min_listen_duration` → `listen_duration_min` (minimum recording duration before silence detection)
+  - Paired max/min suffixes make parameter relationship clearer
+
+### Added
+
+- **Tool Loading Configuration System**
+  - Fine-grained control over which MCP tools are loaded
+  - Whitelist mode (`VOICEMODE_TOOLS_ENABLED`) for explicit tool selection
+  - Blacklist mode (`VOICEMODE_TOOLS_DISABLED`) for excluding specific tools
+  - Configuration examples in default voicemode.env template
+  - Documentation in tool loading architecture reference
+
+### Changed
+
+- Default configuration template now includes tool loading examples
+- MCP tool loading optimized for Amazon Q and other token-constrained environments
+- Updated documentation to reflect new default minimal tool set
+
+### Fixed
+
+- Converse tool description reduced to under 10,024 characters for Amazon Q compatibility (#84)
+- Test suite updated to match Makefile output changes
+
 ## [5.1.9] - 2025-10-14
 
 ### Fixed
