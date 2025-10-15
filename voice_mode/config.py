@@ -105,6 +105,24 @@ def load_voicemode_env():
 # VOICEMODE_SOUNDFONTS_ENABLED=false
 
 #############
+# Tool Loading Configuration
+#############
+
+# Control which MCP tools are loaded to reduce token usage
+# Whitelist mode - only load specified tools (most efficient)
+# VOICEMODE_TOOLS_ENABLED=converse,service
+
+# Blacklist mode - load all tools except specified ones
+# VOICEMODE_TOOLS_DISABLED=pronunciation_add,pronunciation_remove
+
+# Examples:
+# Minimal (just voice conversation): VOICEMODE_TOOLS_ENABLED=converse
+# Voice + config: VOICEMODE_TOOLS_ENABLED=converse,service,config_get,config_set
+# Load all tools: VOICEMODE_TOOLS_DISABLED=
+# All except pronunciation: VOICEMODE_TOOLS_DISABLED=pronunciation_add,pronunciation_remove,pronunciation_list
+# Default: converse,service (basic voice interaction and service management)
+
+#############
 # Provider Configuration
 #############
 
@@ -404,11 +422,11 @@ INITIAL_SILENCE_GRACE_PERIOD = float(os.getenv("VOICEMODE_INITIAL_SILENCE_GRACE_
 # Default listen duration for converse tool
 DEFAULT_LISTEN_DURATION = float(os.getenv("VOICEMODE_DEFAULT_LISTEN_DURATION", "120.0"))  # Default 120s listening time
 
-# Audio feedback pip/chime configuration
-# Leading silence before pips to allow Bluetooth devices to wake up
-PIP_LEADING_SILENCE = float(os.getenv("VOICEMODE_PIP_LEADING_SILENCE", "0.1"))  # Default 0.1s - minimal delay for Bluetooth
-# Trailing silence after pips to prevent cutoff
-PIP_TRAILING_SILENCE = float(os.getenv("VOICEMODE_PIP_TRAILING_SILENCE", "0.2"))  # Default 0.2s - reduced for responsiveness
+# Audio feedback chime configuration
+# Leading silence before chimes to allow Bluetooth devices to wake up
+CHIME_LEADING_SILENCE = float(os.getenv("VOICEMODE_CHIME_LEADING_SILENCE", "0.1"))  # Default 0.1s - minimal delay for Bluetooth
+# Trailing silence after chimes to prevent cutoff
+CHIME_TRAILING_SILENCE = float(os.getenv("VOICEMODE_CHIME_TRAILING_SILENCE", "0.2"))  # Default 0.2s - reduced for responsiveness
 
 # Audio format configuration
 AUDIO_FORMAT = os.getenv("VOICEMODE_AUDIO_FORMAT", "pcm").lower()
