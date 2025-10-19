@@ -6,6 +6,11 @@ import os
 import logging
 from typing import Dict, List, Tuple, Optional
 
+try:
+    import sounddevice as sd
+except ImportError:
+    sd = None
+
 logger = logging.getLogger("voice-mode")
 
 
@@ -138,24 +143,101 @@ def check_pulseaudio_status() -> Tuple[bool, str]:
         return False, f"Error checking PulseAudio: {e}"
 
 
+def get_device_by_identifier(identifier, device_type: str) -> Optional[int]:
+    """Find audio device by name (partial match) or index.
+
+    Args:
+        identifier: Device name (string, partial match supported) or device index (int or string)
+        device_type: 'input' or 'output'
+
+    Returns:
+        Device index if found, None otherwise
+    """
+    if identifier is None or identifier == '':
+        return None
+
+    if sd is None:
+        logger.error("sounddevice module not available")
+        return None
+
+    try:
+        devices = sd.query_devices()
+    except Exception as e:
+        logger.error(f"Error querying audio devices: {e}")
+        return None
+
+    # Determine which channel count to check based on device_type
+    channel_key = 'max_input_channels' if device_type == 'input' else 'max_output_channels'
+
+    # Try to parse as integer index first, but only if it's a reasonable device index
+    # This allows numeric strings like "410" in "Jabra SPEAK 410" to be treated as names
+    is_numeric = False
+    try:
+        device_index = int(identifier)
+        is_numeric = True
+
+        # Only treat as index if it's in valid range (0 to num_devices-1)
+        if 0 <= device_index < len(devices):
+            # Validate device has the right capabilities
+            if devices[device_index][channel_key] > 0:
+                return device_index
+            else:
+                logger.warning(f"Device {device_index} ({devices[device_index]['name']}) "
+                              f"does not support {device_type}")
+                return None
+        # If numeric but out of range, fall through to name matching
+        # This handles cases like "410" which should match "Jabra SPEAK 410 USB"
+    except ValueError:
+        # Not an integer, treat as device name
+        pass
+
+    # Search by name (case-insensitive partial match)
+    identifier_lower = str(identifier).lower()
+    matches = []
+
+    for idx, device in enumerate(devices):
+        device_name = device['name'].lower()
+        # Check if identifier is in device name (partial match)
+        if identifier_lower in device_name:
+            # Check if device has the right capabilities
+            if device[channel_key] > 0:
+                matches.append((idx, device['name']))
+
+    if len(matches) == 0:
+        # Log appropriate message based on whether it was numeric or not
+        if is_numeric:
+            logger.warning(f"Device index {identifier} out of range (0-{len(devices)-1}) "
+                          f"and no device name matching '{identifier}' found")
+        else:
+            logger.warning(f"No {device_type} device found matching '{identifier}'")
+        return None
+
+    if len(matches) > 1:
+        logger.info(f"Found {len(matches)} devices matching '{identifier}': "
+                   f"{', '.join([f'{idx}:{name}' for idx, name in matches])}")
+        logger.info(f"Using first match: {matches[0][0]} ({matches[0][1]})")
+
+    return matches[0][0]
+
+
 def diagnose_audio_setup() -> List[str]:
     """Run basic audio diagnostics and return list of findings.
-    
+
     Returns:
         List of diagnostic messages
     """
     findings = []
-    
+
     # Check platform
     system = platform.system()
     findings.append(f"Platform: {system}")
-    
+
     # Check if WSL
     if system == "Linux" and os.path.exists("/proc/version"):
         with open("/proc/version", "r") as f:
             if "microsoft" in f.read().lower() or "wsl" in f.read().lower():
                 findings.append("Environment: WSL detected")
-    
+
     # Check packages on Linux
     if system == "Linux":
         packages = check_system_audio_packages()
@@ -164,11 +246,11 @@ def diagnose_audio_setup() -> List[str]:
             findings.append(f"Missing packages: {', '.join(missing)}")
         else:
             findings.append("All required packages installed")
-        
+
         # Check PulseAudio
         pa_running, pa_status = check_pulseaudio_status()
         findings.append(f"PulseAudio: {pa_status}")
-    
+
     # Check Python audio
     try:
         import sounddevice as sd
@@ -177,5 +259,5 @@ def diagnose_audio_setup() -> List[str]:
         findings.append(f"Audio devices: {len(devices)} total, {input_count} input devices")
     except Exception as e:
         findings.append(f"sounddevice error: {e}")
-    
+
     return findings

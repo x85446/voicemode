@@ -20,6 +20,17 @@ make test
 # Run specific test
 uv run pytest tests/test_voice_mode.py -v
 
+# Run tests by type
+make test-unit        # Unit tests only
+make test-integration # Integration tests only
+make test-all        # All tests including slow/manual
+make test-parallel   # Run tests in parallel with pytest-xdist
+
+# Coverage reports
+make coverage        # Run tests with coverage, opens HTML report
+make coverage-html   # Open HTML coverage report
+make coverage-xml    # Generate XML coverage for CI
+
 # Clean build artifacts
 make clean
 ```
@@ -48,13 +59,17 @@ voicemode config set VOICEMODE_TTS_VOICE nova
 # Build Python package
 make build-package
 
-# Build development version (auto-versioned)
-make build-dev  
+# Build development version (auto-versioned with .devYYYYMMDDHHMMSS suffix)
+make build-dev
 
 # Test package installation
 make test-package
 
-# Release workflow (bumps version, tags, pushes)
+# Release workflow - comprehensive automation:
+# 1. Prompts for new version
+# 2. Updates voice_mode/__version__.py, server.json, CHANGELOG.md
+# 3. Creates git commit and tag
+# 4. Pushes to GitHub triggering CI/CD
 make release
 ```
 
@@ -68,6 +83,15 @@ make docs-build
 
 # Check docs for errors (strict mode)
 make docs-check
+```
+
+### Development Environment
+```bash
+# Generate CLAUDE.md from template with consolidated context
+make CLAUDE.md
+
+# Prepare environment and start Claude Code interactive session
+make claude
 ```
 
 ## Architecture Overview
@@ -85,7 +109,10 @@ make docs-check
    - **providers.py**: Provider discovery and registry management
    - **devices.py**: Audio device detection and management
    - Services subdirectory contains install/uninstall tools for Whisper, Kokoro, and LiveKit
-   - See [Tool Loading Architecture](docs/reference/tool-loading-architecture.md) for internal details
+   - **Tool Loading Modes**: Control which tools are loaded via environment variables:
+     - `VOICEMODE_TOOLS_ENABLED`: Whitelist mode - only load specified tools
+     - `VOICEMODE_TOOLS_DISABLED`: Blacklist mode - load all except specified tools
+     - Tools auto-imported from directory structure at runtime
 
 3. **Provider System (`voice_mode/providers.py`)**
    - Dynamic discovery of OpenAI-compatible TTS/STT endpoints
@@ -106,6 +133,10 @@ make docs-check
    - Next.js-based web interface for LiveKit integration
    - Real-time voice conversation UI
    - Built and bundled with the Python package
+   - **Build Hook System**: Automatic frontend compilation during package build:
+     - Auto-detects Node.js and builds frontend if available
+     - Control via `BUILD_FRONTEND` env var (true/false/auto)
+     - Graceful fallback if frontend build fails
 
 ### Service Architecture
 
@@ -134,6 +165,8 @@ Services can be installed and managed through MCP tools, with automatic service 
 - Service installation tools handle platform-specific setup (launchd on macOS, systemd on Linux)
 - Event logging and conversation logging are available for debugging
 - WebRTC VAD is used for silence detection when available
+- Configuration precedence: Project `.voicemode.env` > User config > Environment > Defaults
+- WSL2 requires additional audio packages (pulseaudio, libasound2-plugins) for microphone access
 
 ## Testing Approach
 
@@ -142,6 +175,11 @@ Services can be installed and managed through MCP tools, with automatic service 
 - Use `pytest` for running tests, with fixtures for mocking external services
 - Integration tests verify service discovery and provider selection
 - The project includes comprehensive test coverage for configuration, providers, and tools
+- **Test Markers**: Use pytest markers to run specific test types:
+  - `@pytest.mark.unit`: Fast unit tests
+  - `@pytest.mark.integration`: Integration tests with external dependencies
+  - `@pytest.mark.slow`: Tests that take significant time
+  - `@pytest.mark.manual`: Tests requiring user interaction
 
 ## Logging
 
@@ -172,3 +210,23 @@ VoiceMode maintains comprehensive logs in the `~/.voicemode/` directory:
 - **Event Logs** (`logs/events/`): Detailed operational events including TTS/STT operations, errors, and provider selection
 - **Audio Recordings** (`audio/`): Saved TTS outputs and STT inputs for debugging and review
 - **Debug Logs** (`logs/debug/`): Verbose debugging information when running with `--debug` flag
+
+## CI/CD Pipeline
+
+GitHub Actions workflows handle automation:
+- **create-release.yml**: Automated release creation from tags
+- **publish-pypi-and-mcp.yml**: Package publishing to PyPI and MCP registry
+- **test.yml**: Test suite execution on push/PR
+- **test-installer.yml**: Installer script testing across platforms
+- **deploy-pages.yml**: Documentation deployment to GitHub Pages
+- **deploy-worker.yml**: Worker deployment for services
+
+## Critical Files for Development
+
+- **`voice_mode/tools/__init__.py`**: Tool loading and discovery logic
+- **`build_hooks.py`**: Custom build hooks for frontend compilation
+- **`voice_mode/config.py`**: Configuration management system
+- **`voice_mode/cli.py`**: CLI command definitions
+- **`voice_mode/server.py`**: MCP server setup and initialization
+- **`server.json`**: MCP server manifest with tool definitions
+- **`.voicemode.env`**: Project-level configuration overrides

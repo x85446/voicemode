@@ -57,6 +57,7 @@ install:
 dev-install:
 	@echo "Installing voice-mode with development dependencies..."
 	uv pip install -e ".[dev,test]"
+	@echo "To activate virtual environment, run 'source .venv/bin/activate'"
 	@echo "Development installation complete!"
 
 # Build Python package

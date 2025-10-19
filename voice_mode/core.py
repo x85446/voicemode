@@ -391,12 +391,32 @@ async def text_to_speech(
                 try:
                     import sounddevice as sd
                     import sys
-                    
+
                     # Save current stdio state
                     original_stdin = sys.stdin
                     original_stdout = sys.stdout
                     original_stderr = sys.stderr
-                    
+
+                    # Set output device if configured
+                    from .utils.audio_diagnostics import get_device_by_identifier
+                    from .config import OUTPUT_DEVICE
+
+                    original_device = sd.default.device.copy() if hasattr(sd.default.device, 'copy') else list(sd.default.device)
+                    logger.info(f"Current sounddevice default device before setting: {sd.default.device}")
+                    if OUTPUT_DEVICE and OUTPUT_DEVICE != "" and OUTPUT_DEVICE.upper() != "SYSTEM_DEFAULT":
+                        logger.info(f"Attempting to set output device from config: '{OUTPUT_DEVICE}'")
+                        device_index = get_device_by_identifier(OUTPUT_DEVICE, 'output')
+                        if device_index is not None:
+                            old_device = sd.default.device
+                            sd.default.device = [sd.default.device[0] if sd.default.device else None, device_index]
+                            logger.info(f"Changed output device from {old_device} to {sd.default.device} (device index {device_index})")
+                            if debug:
+                                logger.debug(f"Using configured output device index {device_index}")
+                        else:
+                            logger.warning(f"Configured output device '{OUTPUT_DEVICE}' not found, using default")
+                    else:
+                        logger.info(f"No OUTPUT_DEVICE configured, using system default: {sd.default.device[1] if sd.default.device else 'None'}")
+
                     try:
                         # Force initialization before playing
                         sd.default.samplerate = audio.frame_rate
@@ -430,6 +450,8 @@ async def text_to_speech(
                         metrics['playback'] = time.perf_counter() - playback_start
                         return True, metrics
                     finally:
+                        # Restore original device
+                        sd.default.device = original_device
                         # Restore stdio if it was changed
                         if sys.stdin != original_stdin:
                             sys.stdin = original_stdin

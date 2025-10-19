@@ -627,6 +627,26 @@ async def play_audio_feedback(
 def record_audio(duration: float) -> np.ndarray:
     """Record audio from microphone"""
     logger.info(f"🎤 Recording audio for {duration}s...")
+
+    # Import config and helper
+    from voice_mode.config import INPUT_DEVICE
+    from voice_mode.utils.audio_diagnostics import get_device_by_identifier
+
+    # Set input device if configured
+    original_device = sd.default.device.copy() if hasattr(sd.default.device, 'copy') else list(sd.default.device)
+    logger.info(f"Current sounddevice default device before setting input: {sd.default.device}")
+    if INPUT_DEVICE and INPUT_DEVICE != "" and INPUT_DEVICE.upper() != "SYSTEM_DEFAULT":
+        logger.info(f"Attempting to set input device from config: '{INPUT_DEVICE}'")
+        device_index = get_device_by_identifier(INPUT_DEVICE, 'input')
+        if device_index is not None:
+            old_device = sd.default.device
+            sd.default.device = [device_index, sd.default.device[1] if sd.default.device else None]
+            logger.info(f"Changed input device from {old_device} to {sd.default.device} (device index {device_index})")
+        else:
+            logger.warning(f"Configured input device '{INPUT_DEVICE}' not found, using default")
+    else:
+        logger.info(f"No INPUT_DEVICE configured, using system default: {sd.default.device[0] if sd.default.device else 'None'}")
+
     if DEBUG:
         try:
             devices = sd.query_devices()
@@ -635,7 +655,7 @@ def record_audio(duration: float) -> np.ndarray:
             logger.debug(f"Recording config - Sample rate: {SAMPLE_RATE}Hz, Channels: {CHANNELS}, dtype: int16")
         except Exception as dev_e:
             logger.error(f"Error querying audio devices: {dev_e}")
-    
+
     # Save current stdio state
     import sys
     original_stdin = sys.stdin
@@ -727,6 +747,8 @@ def record_audio(duration: float) -> np.ndarray:
         
         return np.array([])
     finally:
+        # Restore original device
+        sd.default.device = original_device
         # Restore stdio if it was changed
         if sys.stdin != original_stdin:
             sys.stdin = original_stdin
@@ -770,7 +792,26 @@ def record_audio_with_silence_detection(max_duration: float, disable_silence_det
         return (record_audio(max_duration), True)
     
     logger.info(f"🎤 Recording with silence detection (max {max_duration}s)...")
-    
+
+    # Import config and helper
+    from voice_mode.config import INPUT_DEVICE
+    from voice_mode.utils.audio_diagnostics import get_device_by_identifier
+
+    # Set input device if configured
+    original_device = sd.default.device.copy() if hasattr(sd.default.device, 'copy') else list(sd.default.device)
+    logger.info(f"Current sounddevice default device before setting input: {sd.default.device}")
+    if INPUT_DEVICE and INPUT_DEVICE != "" and INPUT_DEVICE.upper() != "SYSTEM_DEFAULT":
+        logger.info(f"Attempting to set input device from config: '{INPUT_DEVICE}'")
+        device_index = get_device_by_identifier(INPUT_DEVICE, 'input')
+        if device_index is not None:
+            old_device = sd.default.device
+            sd.default.device = [device_index, sd.default.device[1] if sd.default.device else None]
+            logger.info(f"Changed input device from {old_device} to {sd.default.device} (device index {device_index})")
+        else:
+            logger.warning(f"Configured input device '{INPUT_DEVICE}' not found, using default")
+    else:
+        logger.info(f"No INPUT_DEVICE configured, using system default: {sd.default.device[0] if sd.default.device else 'None'}")
+
     try:
         # Initialize VAD with provided aggressiveness or default
         effective_vad_aggressiveness = vad_aggressiveness if vad_aggressiveness is not None else VAD_AGGRESSIVENESS
@@ -1004,6 +1045,8 @@ def record_audio_with_silence_detection(max_duration: float, disable_silence_det
             return (record_audio(max_duration), True)
             
         finally:
+            # Restore original device
+            sd.default.device = original_device
             # Restore stdio
             if sys.stdin != original_stdin:
                 sys.stdin = original_stdin
@@ -1011,10 +1054,12 @@ def record_audio_with_silence_detection(max_duration: float, disable_silence_det
                 sys.stdout = original_stdout
             if sys.stderr != original_stderr:
                 sys.stderr = original_stderr
-    
+
     except Exception as e:
         logger.error(f"VAD initialization failed: {e}")
         logger.info("Falling back to fixed duration recording")
+        # Restore original device
+        sd.default.device = original_device
         # For fallback, assume speech is present since we can't detect
         return (record_audio(max_duration), True)
 
@@ -1436,12 +1481,40 @@ async def converse(
     
     # Run startup initialization if needed
     await startup_initialization()
-    
+
     # Refresh audio device cache to pick up any device changes (AirPods, etc.)
     # This takes ~1ms and ensures we use the current default device
     import sounddevice as sd
-    sd._terminate()
-    sd._initialize()
+    from voice_mode.config import INPUT_DEVICE, OUTPUT_DEVICE
+    from voice_mode.utils.audio_diagnostics import get_device_by_identifier
+
+    # Only refresh if using system defaults (no explicit configuration)
+    # If user has configured specific devices, preserve those settings
+    using_system_defaults = (not INPUT_DEVICE or INPUT_DEVICE == "" or INPUT_DEVICE.upper() == "SYSTEM_DEFAULT") and \
+                            (not OUTPUT_DEVICE or OUTPUT_DEVICE == "" or OUTPUT_DEVICE.upper() == "SYSTEM_DEFAULT")
+    logger.debug(f"-mic/speaker- do device refresh: {using_system_defaults}")
+    if using_system_defaults:
+        # Using system defaults, safe to refresh for device changes
+        sd._terminate()
+        sd._initialize()
+        logger.debug("-mic/speaker- refreshed to system defaults")
+    else:
+        # User has configured specific devices, preserve them
+        logger.info(f"-mic/speaker- using user-configured devices - Input: '{INPUT_DEVICE}', Output: '{OUTPUT_DEVICE}'")
+
+        if INPUT_DEVICE and INPUT_DEVICE != "" and INPUT_DEVICE.upper() != "SYSTEM_DEFAULT":
+            input_idx = get_device_by_identifier(INPUT_DEVICE, 'input')
+            if input_idx is not None:
+                current_output = sd.default.device[1] if sd.default.device else None
+                sd.default.device = [input_idx, current_output]
+                logger.info(f"Set input device: {INPUT_DEVICE} -> device {input_idx}")
+
+        if OUTPUT_DEVICE and OUTPUT_DEVICE != "" and OUTPUT_DEVICE.upper() != "SYSTEM_DEFAULT":
+            output_idx = get_device_by_identifier(OUTPUT_DEVICE, 'output')
+            if output_idx is not None:
+                current_input = sd.default.device[0] if sd.default.device else None
+                sd.default.device = [current_input, output_idx]
+                logger.info(f"Set output device: {OUTPUT_DEVICE} -> device {output_idx}")
     
     # Get event logger and start session
     event_logger = get_event_logger()

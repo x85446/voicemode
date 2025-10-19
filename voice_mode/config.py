@@ -388,6 +388,28 @@ SOUNDFONTS_ENABLED = env_bool("VOICEMODE_SOUNDFONTS_ENABLED", False)
 SAMPLE_RATE = 24000  # Standard TTS sample rate for both OpenAI and Kokoro
 CHANNELS = 1
 
+# ==================== AUDIO DEVICE CONFIGURATION ====================
+
+def _strip_quotes(value: str) -> str:
+    """Strip surrounding quotes from environment variable values.
+
+    Handles both single and double quotes to support device names with spaces.
+    Examples:
+        "Jabra" -> Jabra
+        'Jabra SPEAK 410' -> Jabra SPEAK 410
+        Jabra -> Jabra
+    """
+    value = value.strip()
+    if (value.startswith('"') and value.endswith('"')) or \
+       (value.startswith("'") and value.endswith("'")):
+        return value[1:-1]
+    return value
+
+# Audio device selection - can be device name (partial match) or device index
+# If not set or set to "SYSTEM_DEFAULT", uses system default devices
+INPUT_DEVICE = _strip_quotes(os.getenv("VOICEMODE_INPUT_DEVICE", "SYSTEM_DEFAULT"))
+OUTPUT_DEVICE = _strip_quotes(os.getenv("VOICEMODE_OUTPUT_DEVICE", "SYSTEM_DEFAULT"))
+
 # ==================== SILENCE DETECTION CONFIGURATION ====================
 
 # Disable silence detection (useful for noisy environments)
